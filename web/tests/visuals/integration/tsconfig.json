@@ -1,4 +1,4 @@
 {
   "extends": "../../../tsconfig.json",
-  "include": ["../../../src/visuals/integration", "foundation-page.tsx", "fixture-module.ts"]
+  "include": ["../../../src/visuals/integration", "foundation-page.tsx", "fixture-module.ts", "reviewed-figures.d.ts"]
 }

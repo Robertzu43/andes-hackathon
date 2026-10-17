@@ -5,9 +5,9 @@ handoff. It adds no app package, router, backend call, stored identity or live
 notification. The approved foundation packet and visual addendum are inputs;
 `800205a4be2c94833234c852760b2eb09c6ed079` is the prerequisite, not a rendered app.
 
-The current slice is the common host and an intentionally synthetic lifecycle
-probe. It is **not** acceptance of the finished Hairline Phone, Anatomy relay or
-full app. Component 49 owns the package, tokens, global locale and router;
+The common host has a synthetic lifecycle probe and an isolated fixture binding
+the actual frozen Hairline Phone and Anatomy relay. Builder binding evidence is
+**not** independent acceptance or full-app acceptance. Component 49 owns the package, tokens, global locale and router;
 50/51 own placement; 56 reviews visuals independently; 52 accepts the integrated
 app; 44 alone merges after actionable reviews are resolved.
 
@@ -47,10 +47,10 @@ must be idempotent: cancellation and a late result can both ask for teardown.
 A throwing/rejected mount must use its signal to clean any resources it already
 allocated. The host isolates partial markup in a disposable child node.
 
-53's announced bridge is `visuals/hairline/index.mjs`; 54's is
-`visuals/anatomy/index.mjs`. Their immutable source and exported types must be
-reviewed before adding literal imports. No upstream engine is copied, installed
-or imported by this host. Library licence/provenance stays with those modules.
+53's bridge is `visuals/hairline/index.mjs`; 54's is
+`visuals/anatomy/index.mjs`. Their immutable source and exported types are reviewed
+before adding literal fixture imports. No upstream engine is copied into this
+host or modified. Library licence/provenance stays with those modules.
 
 ## Placement and enhancement
 
@@ -196,6 +196,7 @@ stylesheet was edited. This fixture is excluded from the default app build.
 
 ```sh
 node web/node_modules/typescript/bin/tsc --noEmit -p web/tests/visuals/integration/tsconfig.json
+node web/tests/visuals/integration/prepare-figures.mjs
 node web/tests/visuals/integration/serve-foundation.mjs --build
 node web/tests/visuals/integration/serve-foundation.mjs --preview
 node web/tests/visuals/integration/foundation-check.mjs http://localhost:3055 /tmp/andes55-foundation-evidence
@@ -213,10 +214,49 @@ keyboard action; StrictMode and disclosure/remove/remount cleanup; actual
 shared-router disposal/return; and an independent primary action after import
 failure. The optional synthetic probe is a manifest-declared dynamic chunk.
 
-The build report measures the synthetic production fixture, not an actual
-driver/contact feature with finished artwork. The regular foundation build
+The default build report measures the synthetic production fixture, not an actual
+driver/contact feature. The regular foundation build
 remains free of visual imports. Whole-app routing/session/no-JS acceptance and
-actual artwork bundle cost remain with the next reviewed integration slice.
+feature-owned placement remain with the next reviewed integration slice.
+
+### Frozen artwork fixture
+
+`figure-sources.mjs` pins Phone to
+`9d757a909268ebf4c9b45068fa4954fed873ddc8` and relay to
+`feb009167e3ae064d4480dc87d65c3b5b7fdbfcd`. The original observer batching,
+shared-token and partial-initialization cleanup findings were source-reviewed
+against those fixes. Hairline's final delta adds the strict TypeScript bridge
+declaration without changing runtime source. Original old-head review holds
+do not become new-head acceptance automatically.
+
+`prepare-figures.mjs` uses exact Git archives into ignored
+`.codus/visual-fixtures/`, verifies every file byte-for-byte against its object,
+and records SHA-256 hashes. It preserves all module licences. Only the owned
+fixture config aliases literal module imports to these snapshots; the modules
+are not copied into another lane's source or added to this PR's diff. React and
+Hairline resolve from the actual shared package/lock, never another session.
+The fixture-only ambient declarations use the host lifecycle type; real feature
+imports consume the figure owners' own `index.d.mts` files.
+
+Open `/?art=phone&locale=es` or `/?art=relay&locale=pt-BR` after building/starting
+the same owned foundation fixture. Both retain one real shared shell/router and
+an explicitly unconfigured demo session. Primary controls remain above the
+closed help disclosure. No module accepts live trip or alert data.
+
+```sh
+node web/tests/visuals/integration/figures-check.mjs http://localhost:3055 /tmp/andes55-bound-figures
+```
+
+The actual-figure runner covers both languages, all five viewport sizes,
+closed/open captures, named controls, stopped rest, keyboard range/scenario
+selection, trusted touch, explicit motion, native browser tab hiding, reduced
+motion, route teardown and 4× artwork crops. It verifies no art requests before
+opening and no PhoneCanvas request at rest. Relay delivery and help remain
+unconfirmed even in the explicitly demonstrated acknowledgement example.
+Production manifests must list both figure entries as dynamic chunks; the report
+records compiled raw/gzip sizes and the full dependency-source manifest.
+These compiled fixture sizes are separate from source gzip and are not a
+complete feature-route delta or physical-device performance measurement.
 
 First publish this adapter with fixture evidence. Next bind reviewed immutable
 53/54 modules and 49's rendered foundation, then measure actual production chunk

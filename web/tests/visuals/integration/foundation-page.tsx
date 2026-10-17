@@ -15,21 +15,23 @@ const loadFixture = () => {
   return import('./fixture-module.ts');
 };
 const failFixture = async () => { throw new Error('Synthetic optional-module failure'); };
+const loadPhone = () => import('andes-reviewed-phone');
+const loadRelay = () => import('andes-reviewed-relay');
 const query = new URLSearchParams(location.search);
 const initialLocale: VisualLocale = query.get('locale') === 'pt-BR' ? 'pt-BR' : 'es';
-const kind: VisualKind = query.get('kind') === 'relay' ? 'relay' : 'phone';
-const load = query.has('failure') ? failFixture : loadFixture;
+const kind: VisualKind = query.get('art') === 'relay' || query.get('kind') === 'relay' ? 'relay' : 'phone';
+const load = query.has('failure') ? failFixture : query.get('art') === 'phone' ? loadPhone : query.get('art') === 'relay' ? loadRelay : loadFixture;
 const copy = {
   es: {
     title: 'Tu viaje', note: 'Prueba local del montaje visual. No hay un viaje ni se envía una solicitud.',
     action: 'Probar acción local', result: 'Acciones locales', help: 'Ayuda opcional, solo cuando estés detenido',
-    disclosure: 'Ver explicación del teléfono', remove: 'Retirar ilustración de prueba', restore: 'Restaurar ilustración de prueba',
+    disclosure: 'Ver explicación', remove: 'Retirar ilustración de prueba', restore: 'Restaurar ilustración de prueba',
     contact: 'Ir a contactos de prueba', contacts: 'Contactos de prueba', back: 'Volver a la prueba del viaje',
   },
   'pt-BR': {
     title: 'Sua viagem', note: 'Teste local da montagem visual. Não há uma viagem e nenhuma solicitação é enviada.',
     action: 'Testar ação local', result: 'Ações locais', help: 'Ajuda opcional, apenas quando estiver parado',
-    disclosure: 'Ver explicação do telefone', remove: 'Remover ilustração de teste', restore: 'Restaurar ilustração de teste',
+    disclosure: 'Ver explicação', remove: 'Remover ilustração de teste', restore: 'Restaurar ilustração de teste',
     contact: 'Ir para contatos de teste', contacts: 'Contatos de teste', back: 'Voltar ao teste da viagem',
   },
 };
