@@ -8,7 +8,13 @@ numeric cadence, provider, live escalation rule or new API. Existing issue gates
 remain open. Robert owns the forthcoming security/status/sharing contract;
 lane44 coordinates integration rather than creating a parallel contract.
 
-## What the published backend actually supports
+Publication update: Robert's [PR74](https://github.com/Bimbi-Dev/andes-hackathon/pull/74)
+at `4c138ca1d00742400a850cd72b0888cc59260a36` now supplies status, sharing and
+demo-session contracts. The inventory below preserves the earlier frozen baseline
+and describes that new source separately. PR74 remains under independent review;
+this proposal neither accepts it nor replaces Robert's implementation policy.
+
+## Frozen baseline and newly published successor
 
 Source inspected: Robert's frozen
 [`c752de8a3b424bcbc086764dc11052348b27e320`](https://github.com/Bimbi-Dev/andes-hackathon/tree/c752de8a3b424bcbc086764dc11052348b27e320).
@@ -16,6 +22,8 @@ Its `src`, `db`, package manifests and compiler configuration are unchanged from
 `ebc8fb1`; the later commit adds architecture material. Runtime integration
 `5591c9b` separately corrects authorization time after a quota-lock wait. Neither
 revision publishes the contextual policy below.
+
+### Frozen c752 baseline
 
 | Published seam | Actual behavior | Remaining gap |
 | --- | --- | --- |
@@ -30,9 +38,37 @@ The source inventory is in [runtime.md](../../contracts/runtime.md),
 [trip commands](../../../src/trips/routes.ts) and the
 [persisted schema](../../../db/migrations/001-core.sql). No status or sharing
 endpoint is registered in this frozen backend. The proposed `/status` and
-`/sharing` seam names remain Robert-owned intentions; HTTP methods, DTOs and
-authorization changes must come from his published contract before clients bind
-to them.
+`/sharing` seams were unpublished at that snapshot. The following PR74 inventory
+supersedes that absence for the new source, without changing the frozen evidence.
+
+### PR74 source inventory, pending independent acceptance
+
+The [new runtime contract](https://github.com/Bimbi-Dev/andes-hackathon/blob/4c138ca1d00742400a850cd72b0888cc59260a36/docs/contracts/runtime.md#security-checks-part-1)
+and [route source](https://github.com/Bimbi-Dev/andes-hackathon/blob/4c138ca1d00742400a850cd72b0888cc59260a36/src/checks/routes.ts)
+publish these actual seams:
+
+| Route or configuration | Source-backed behavior | Binding limit |
+| --- | --- | --- |
+| `POST /v1/trips/:id/sharing` | Owner-only, idempotent `{state:'stopped'\|'resumed', reason:'user'\|'page_hidden'\|'permission_denied'\|'error'}` returns `{id,sharing}`. Stop preserves the first stop time; resume clears it. Closed trips return 409. | This reports sharing state, not a declared meal/rest or a general motion/lifecycle event stream. |
+| `GET /v1/trips/:id/status` | Returns trip status/pause/expected arrival, an open asking check or null, latest incident or null, delivery facts and optional location freshness/age/capture-time/accuracy. Incident/delivery details require driver or incident scope; location metadata requires map access. | No coordinates, phone numbers or recipient IDs. The DTO has no `readAt`; clients must not invent one. Authorization and race review remain pending. |
+| `POST /v1/demo/session` | Explicit demo mode exposes synthetic driver/family/colleague personas with tokens and seeded IDs. Production OIDC remains a different identity mode. | Source currently includes a live-phone configuration branch despite the PR body's refusal claim; that discrepancy was sent to the auth/privacy reviewer. It grants no permission for live sends or deployment. |
+| Control-worker check configuration | All four `SILENCE_MS`, `ASK_GRACE_MS`, `ARRIVAL_GRACE_MS`, `CHECK_SWEEP_MS` must be positive integers; all unset disables checks and partial configuration fails. The production template leaves them unset. | Demo timing values are not approved safety bounds. This documentation change sets none of them. |
+
+The [sweeper](https://github.com/Bimbi-Dev/andes-hackathon/blob/4c138ca1d00742400a850cd72b0888cc59260a36/src/checks/sweep.ts)
+uses the latest location receipt, OK/resume, incident resolution or trip creation
+as its silence signal. Arrival-overdue separately uses expected arrival and the
+driver's last action. Thus fresh GPS can prevent a silence check when no expected
+arrival is set; it still is not a human confirmation. This differs from the
+proposal's independently agreed human-status follow-up and needs an explicit
+policy reconciliation before live activation, not an unreviewed code override.
+
+An unanswered asking check can create a `missed_check` incident with the same
+fan-out as SOS: family gets SMS/WhatsApp/voice, colleague SMS/WhatsApp, group stays
+unavailable. OK closes an asking check; it does not resolve an active incident.
+Pause/arrival/cancel cancel asking checks. The new code still supplies no bounded
+declared-activity pause, road-context veto or opportunity-expiry contract. The
+proposal's separate unknown-status audience, timing and interaction requirements
+remain review questions for Robert alongside this published demo behavior.
 
 Lane41's PR65 is a separate driver-owned catalog/bootstrap proposal. It supplies
 neither recipient invitation/shared-trip discovery nor the missing contextual
@@ -115,8 +151,9 @@ do not validate an ANDES prompting policy.
 
 Before lane41/45/50/51 implement the missing seam, Robert needs to publish:
 
-1. The authoritative status/sharing/security-policy ownership, actual paths and
-   DTOs, separating existing persisted facts from proposed contextual decisions.
+1. The reviewed status/sharing/security-policy semantics following the published
+   PR74 contracts, including scopes, check-versus-incident meaning and activation
+   limits. Any extensions need an explicit contract rather than parallel routes.
 2. The declared-activity and bounded-pause acknowledgement/expiry contract, its
    offline pending state and interaction with independent follow-up and active SOS.
 3. The opportunity identity/version, expiry, local veto and late-response rules,
