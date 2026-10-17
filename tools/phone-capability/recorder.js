@@ -76,6 +76,9 @@ export function createRecorder(options = {}) {
   let lastTick = null;
   let intervalId = null;
   let watch = null;
+  // Latest requested position options per source, kept outside the bounded buffer so the
+  // acquisition settings survive eviction of the geolocation-request observation itself.
+  const acquisition = { sample: null, watch: null };
   const observations = [];
   const cleanups = [];
 
@@ -263,6 +266,7 @@ export function createRecorder(options = {}) {
     const geolocation = geolocationApi('sample');
     if (!geolocation) return;
     record('geolocation-request', { source: 'sample', options: request });
+    acquisition.sample = request;
     try {
       geolocation.getCurrentPosition((p) => onPosition('sample', p), (e) => onPositionError('sample', e), request);
     } catch (error) {
@@ -278,6 +282,7 @@ export function createRecorder(options = {}) {
     const geolocation = geolocationApi('watch');
     if (!geolocation) return;
     record('geolocation-request', { source: 'watch', options: request });
+    acquisition.watch = request;
     try {
       const id = geolocation.watchPosition((p) => onPosition('watch', p), (e) => onPositionError('watch', e), request);
       watch = { geolocation, id };
@@ -305,6 +310,7 @@ export function createRecorder(options = {}) {
         schema: TRACE_SCHEMA,
         session: { id: sessionId, label, state, startedAt, stoppedAt },
         config: { maxObservations, tickIntervalMs, gapThresholdMs, staleAfterMs, rawCoordinates },
+        acquisition: { geolocation: { sample: acquisition.sample, watch: acquisition.watch } },
         environment,
         capabilities,
         redaction: { coordinates: rawCoordinates ? 'included-by-tester-choice' : 'omitted' },

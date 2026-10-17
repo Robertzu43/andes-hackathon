@@ -51,6 +51,7 @@ Nothing is attached, scheduled or queried until `start()`. Location is touched o
 
 - `session`: random `id`, `label`, `state`, `startedAt` and `stoppedAt` (each `{ mono, wall }`).
 - `config`: the options above.
+- `acquisition.geolocation`: the most recently requested position `options` per source (`sample`, `watch`), or `null` when that source was never requested. Kept in recorder state, outside the bounded buffer, so the acquisition settings survive even when the `geolocation-request` observation itself has been evicted (`summary.dropped`).
 - `environment`: `source` (`global` or `injected`), `physicalDeviceVerified` (always `false`; a trace cannot prove which device or conditions produced it), `userAgent`, `navigatorStandalone`, `displayModeStandalone`, `timeOrigin`.
 - `capabilities`: `secureContext`; `apis` with `exposed`, `not-exposed` or `unknown` for geolocation, permissions, motion, notifications, service worker, push, wake lock, battery, network information, page freeze and visibility; `permissionsAtStart` for motion (always `unknown`) and notifications. `exposed` means the object exists, not that it works on the device.
 - `redaction.coordinates`: `omitted`, or `included-by-tester-choice`.

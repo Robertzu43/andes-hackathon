@@ -577,6 +577,20 @@ test('the buffer keeps the newest observations and counts what it dropped', () =
   assert.deepEqual(trace.summary, { recorded: 5, retained: 3, dropped: 2, ticks: 0 });
 });
 
+test('acquisition settings survive buffer eviction of the request observation', () => {
+  const b = fakeBrowser({ permissions: false });
+  const recorder = createRecorder({ env: b.env, maxObservations: 3 });
+  recorder.start();
+  recorder.watchPosition({ maximumAge: 123456, timeout: 7890, enableHighAccuracy: true });
+  const [[, watch]] = [...b.geo.watches];
+  for (let i = 0; i < 4; i += 1) watch.success({ coords: { accuracy: 20 }, timestamp: WALL0 });
+  const trace = recorder.exportTrace();
+  assert.equal(trace.summary.dropped, 3);
+  assert.equal(ofType(trace, 'geolocation-request').length, 0); // evicted from the buffer
+  assert.deepEqual(trace.acquisition.geolocation.watch, { enableHighAccuracy: true, maximumAge: 123456, timeout: 7890 });
+  assert.equal(trace.acquisition.geolocation.sample, null);
+});
+
 test('invalid options are rejected before anything starts', () => {
   const b = fakeBrowser({ permissions: false });
   const invalid = [
