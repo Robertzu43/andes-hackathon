@@ -21,6 +21,7 @@ CREATE TABLE security_checks (
   id uuid PRIMARY KEY, trip_id uuid NOT NULL REFERENCES trips,
   reason text NOT NULL CHECK (reason IN ('arrival_overdue','silence','sharing_stopped')),
   status text NOT NULL CHECK (status IN ('asking','ok','escalated','cancelled')),
+  signal_at timestamptz NOT NULL, -- last_signal_at when the check opened; used in the alert text
   created_at timestamptz NOT NULL, ask_until timestamptz NOT NULL,
   closed_at timestamptz, incident_id uuid REFERENCES incidents
 );
@@ -37,11 +38,18 @@ A trip is eligible when `status='active' AND checkins_active AND NOT paused` and
 2. `silence`: `now - last_signal_at > SILENCE_MS`.
 3. `arrival_overdue`: `expected_arrival_at IS NOT NULL AND now > greatest(expected_arrival_at, last checkin_ok) + ARRIVAL_GRACE_MS`.
 
-Opening a check sets `status='asking'`, `ask_until = now + ASK_GRACE_MS`. A driver `checkin_ok` (existing `POST /v1/trips/:id/commands`) closes the open check as `ok`; it also moves `last_signal_at`, so the same reason does not reopen immediately. Arrival/cancel closes an open check as `cancelled`. Pause suspends checks (existing `checkins_active=false`); SOS is never suspended.
+Opening a check sets `status='asking'`, `signal_at = last_signal_at`, `ask_until = now + ASK_GRACE_MS`. Closing rules for an `asking` check:
+
+- Driver `checkin_ok` (existing `POST /v1/trips/:id/commands`) → `ok`. It also moves `last_signal_at`, so the same reason does not reopen immediately.
+- Arrival, cancel or pause → `cancelled`. Pause suspends further checks (existing `checkins_active=false`).
+- SOS → `escalated` with the SOS `incident_id` (in the SOS transaction), so no second incident is created.
+- At escalation time, if the trip already has an active incident, attach to it (`escalated`, that `incident_id`) instead of creating one; `one_active_incident` must never be hit.
+
+SOS is never suspended.
 
 ### Sweeper
 
-`checkOnce(ctx, support)` in a new `src/checks/sweep.ts`, added to `control()` in `src/worker.ts` as `loop(() => checkOnce(ctx, support), CHECK_SWEEP_MS, signal)`. Each trip is handled in its own short `withTripTransaction` (SQL only, no provider I/O), so a restart loses nothing: all state is in PostgreSQL. Open checks past `ask_until` escalate: create the incident with `trigger='missed_check'`, `check_reason=<reason>`, fan out jobs, mark the check `escalated` with `incident_id`.
+`checkOnce(ctx, support)` in a new `src/checks/sweep.ts`, added to `control()` in `src/worker.ts` as `loop(() => checkOnce(ctx, support), CHECK_SWEEP_MS, signal)`. Each trip is handled in its own short `withTripTransaction` (SQL only, no provider I/O) inside its own try/catch, so one failing trip never blocks the others, and a restart loses nothing: all state is in PostgreSQL. Open checks past `ask_until` escalate: create the incident with `trigger='missed_check'`, `check_reason=<reason>`, actor and `incidents.driver_id` = `trip.driver_id` (`authorizeJob` invalidates jobs otherwise), fan out jobs, mark the check `escalated` with `incident_id`.
 
 ### Fan-out (shared by SOS and escalation)
 
@@ -57,27 +65,31 @@ The existing per-channel `unavailable` reasons, unique `(incident, recipient, ch
 
 ### Message wording (`authorizeJob` summary in `src/notifications/dispatch.ts`)
 
-Replace trip/driver UUIDs with the truck label and a maps link. Spanish templates:
+Replace the trip/driver UUIDs with the truck label and a maps link, but **keep `Incidente {incidentId}`**: since `0eb515c` it is how a recipient finds the incident to read (`GET /v1/incidents/:id`), acknowledge and act on it (`docs/contracts/runtime.md`). If `CONTACT_APP_URL` is set, also append `Ver: {CONTACT_APP_URL}/incidents/{incidentId}`.
 
-- `sos`: `ANDES — ALERTA: el conductor del camión {truck} pidió ayuda (posible robo). Última ubicación hace {age} (±{acc} m): https://maps.google.com/?q={lat},{lon}. Llámalo. Si no responde, llama al {emergency}.`
-- `missed_check`: `ANDES: el conductor del camión {truck} no confirmó su estado ({reasonText}). Última ubicación hace {age} (±{acc} m): {link}. No sabemos qué pasó. Llámalo; si no responde, llama al {emergency}.`
-- `reasonText`: `arrival_overdue` → `no llegó a la hora prevista`; `silence` → `sin señal desde {time local}`; `sharing_stopped` → `dejó de compartir su ubicación`.
-- No location → `ubicación no disponible`. `{emergency}` comes from `EMERGENCY_NUMBERS` (JSON, e.g. `{"PE":"105","BR":"190"}`) by `trips.country`; missing → omit the sentence.
+Zavu builds SMS/voice as `${entry.text} ${summary}` (`src/notifications/zavu.ts:70`), so the brand prefix comes from the qualification `text`. The summaries below have no prefix. Set the qualification `text` to `ANDES:`, not `ANDES: estado sin confirmar.`. WhatsApp sends the whole summary in one template variable, so the approved template must be generic. Spanish summaries:
+
+- `sos`: `ALERTA: el conductor del camión {truck} pidió ayuda (posible robo). Incidente {incidentId}. Última ubicación hace {age} (±{acc} m): https://maps.google.com/?q={lat},{lon}. Llámalo. Si no responde, llama al {emergency}.`
+- `missed_check`: `el conductor del camión {truck} no confirmó su estado ({reasonText}). Incidente {incidentId}. Última ubicación hace {age} (±{acc} m): {link}. No sabemos qué pasó. Llámalo; si no responde, llama al {emergency}.`
+- `reasonText`: `arrival_overdue` → `no llegó a la hora prevista`; `silence` → `sin señal desde {security_checks.signal_at in trip time zone, HH:MM}`; `sharing_stopped` → `dejó de compartir su ubicación`.
+- No location → `ubicación no disponible`. `{emergency}` comes from `EMERGENCY_NUMBERS` (JSON, e.g. `{"PE":"105","BR":"190"}`) by `trips.country`; missing → omit the sentence. `authorizeJob` runs in the emergency/ordinary delivery workers, so set it there.
+- Alerts are Spanish-only for the demo, including pt-BR trips. `ponytail:` add pt-BR summaries when a Brazilian corridor is tested.
+- Update `tests/dispatch.test.mjs` (lines ~14-15, 38-39) for the new summary; it must still assert `Incidente {id}`.
 
 ### New endpoints
 
-- `POST /v1/trips/:id/sharing` `{state:'stopped'|'resumed', reason:'user'|'page_hidden'|'permission_denied'|'error'}`. Driver only, idempotent like other mutations. `stopped` sets `sharing_stopped_at`; `resumed` clears it; both append a trip_event. Needed because the phone adapter (PR #52) can stop sharing silently.
+- `POST /v1/trips/:id/sharing` `{state:'stopped'|'resumed', reason:'user'|'page_hidden'|'permission_denied'|'error'}`. Driver only, `idempotent()` like other mutations. `stopped` sets `sharing_stopped_at`; `resumed` clears it; both append a trip_event with `kind='sharing_stopped:<reason>'` or `'sharing_resumed'` (`trip_events` has no detail column). Needed because the phone adapter (PR #52) can stop sharing silently.
 - `GET /v1/trips/:id/status`, for the driver and contacts with an accepted, unrevoked grant on the trip; it drives both screens:
 
 ```json
 { "trip": {"status":"active","paused":false,"expectedArrivalAt":"…|null"},
   "check": {"status":"asking","reason":"silence","askUntil":"…"} ,
-  "incident": {"id":"…","trigger":"missed_check","checkReason":"silence","status":"active","label":null,"createdAt":"…"},
+  "incident": {"id":"…","trigger":"missed_check","checkReason":"silence","status":"active","createdAt":"…"},
   "deliveries": [{"role":"family","channel":"sms","status":"accepted","unavailableReason":null}],
   "location": {"freshness":"stale","ageMs":183000,"capturedAt":"…","accuracy":30} }
 ```
 
-`check`/`incident` are null when absent. `location` follows the existing snapshot rules (map grant or driver; else omitted). `deliveries` never contains phone numbers or recipient IDs. The driver page polls this to show the large "Estoy bien" prompt while `check.status='asking'`.
+`check` is the open check, else null. `incident` is the **latest** incident on the trip (active or resolved), else null; this is how the driver UI learns a resolved incident's ID to label it. Part 1 does not return `label`; part 2 adds `incident.label` after both are merged. `location` follows the existing snapshot rules (map grant or driver; else omitted). `deliveries` never contains phone numbers or recipient IDs. The driver page polls this to show the large "Estoy bien" prompt while `check.status='asking'`.
 
 ### Settings
 
@@ -85,7 +97,7 @@ Environment variables, demo values in parentheses: `SILENCE_MS` (120000), `ASK_G
 
 ### Tests (`tests/checks.test.mjs`, real PostgreSQL, fake clock)
 
-Silence opens a check; `checkin_ok` closes it and does not reopen at once; unanswered check escalates once with family 3 jobs + colleague 2 jobs + group unavailable; arrival cancels an open check; pause prevents checks; `sharing stopped` opens a check immediately; sweeper restart mid-escalation creates no duplicate incident; status endpoint denies a revoked contact and hides phone numbers.
+Silence opens a check; `checkin_ok` closes it and does not reopen at once; unanswered check escalates once with family 3 jobs + colleague 2 jobs + group unavailable; arrival and pause cancel an open check; pause prevents new checks; SOS during `asking` closes the check with the SOS incident and creates one incident only; escalation with an existing active incident attaches instead of failing; `sharing stopped` opens a check immediately; sweeper restart mid-escalation creates no duplicate incident; one failing trip does not stop the sweep for others; status endpoint denies a revoked contact and hides phone numbers.
 
 ## Part 2 — Incident data (this session)
 
@@ -106,16 +118,19 @@ CREATE TABLE reports (
 );
 ```
 
-- View `security_events(kind, latitude, longitude, occurred_at, synthetic)`: incidents labelled `robo`/`intento_robo` with a location, `UNION ALL` reports. `falsa_alarma`, `sin_senal` and `otro` never enter it.
+- View `security_events(kind, latitude, longitude, occurred_at, synthetic)`: incidents labelled `robo`/`intento_robo` with a location (`occurred_at = incidents.created_at`, the alert time; `located_at` may be older), `UNION ALL` reports. `falsa_alarma`, `sin_senal` and `otro` never enter it.
 
 ### Endpoints (`src/insights/routes.ts`)
 
+Both mutations use `idempotent()` (Idempotency-Key header). Query parameters arrive as strings (`coerceTypes:false`), so declare them as string patterns and parse them. The incident lookup is copied into this file rather than exported from `src/incidents/routes.ts`, which part 1 rewrites.
+
 - `POST /v1/incidents/:id/label` `{label}`: trip owner only; allowed while active or resolved; relabel overwrites and records `labeled_at/by`.
 - `POST /v1/reports` `{kind, latitude, longitude, occurredAt}`: any authenticated identity; `occurredAt` not in the future and at most 365 days old. Reported while stopped (enforced in the UI only).
+- After both parts merge: add `label` to `incident` in `GET /v1/trips/:id/status`.
 - `GET /v1/insights/hotspots?days=90` (1–365). **Public** (added to the auth exemption in `src/api/app.ts`), aggregate only:
   - cell = `floor(lat / 0.05)`, `floor(lon / 0.05)` (~5.5 km), returned as the cell centre;
   - band = `noche` when the local hour in `INSIGHTS_TIME_ZONE` is 22–05, else `dia`;
-  - rows `{lat, lon, band, robo, intentoRobo, total, synthetic}` only where `total >= INSIGHTS_MIN_COUNT` (3);
+  - rows `{lat, lon, band, robo, intentoRobo, total, synthetic}` (all counts; `synthetic` = how many of `total` are seeded) only where `total >= INSIGHTS_MIN_COUNT` (3);
   - envelope `{generatedAt, days, cellDegrees, minCount, includesSynthetic, cells}`. No IDs, drivers, routes or timestamps per event.
 - `GET /v1/insights/advice?lat=&lon=&locale=es|pt-BR`, authenticated: counts `security_events` in the 3×3 cells around the point, current band, last 90 days. If the count is at least the minimum it returns `{level:'caution', count, band, text}`, otherwise `{level:'none'}`. Spanish text: `{n} reportes de robo en esta zona de {noche|día} (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro.` A Brazilian Portuguese version is included as well. The driver page shows it as a banner or voice prompt that needs no tap.
 
