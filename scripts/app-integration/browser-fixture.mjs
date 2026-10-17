@@ -12,7 +12,7 @@ import pg from 'pg';
 import {command, disposableDatabase, stop, testEnvironment} from './runtime.mjs';
 import {verifiedBackendSource} from './source-pin.mjs';
 
-export const FOUNDATION_SHA = '3283fe675ebeee04bb2be8a62f42ab5c475b4b0e';
+export const FOUNDATION_SHA = '6f8dc52a566d3880cf1f10bbfd5282a888725ca1';
 export const BROWSER_CLIENT_SHA = 'db7034fc9e1dba035b87368117376e9730d6b830';
 const repo = fileURLToPath(new URL('../../', import.meta.url));
 function blob(revision, path) {
@@ -141,7 +141,24 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
     console.log(`SYNTHETIC browser fixture: foundation ${FOUNDATION_SHA}; client ${BROWSER_CLIENT_SHA}; real local signed API/PostgreSQL`);
     console.log(`Local: ${fixture.origin}/session`);
     console.log('Mount: import /__andes_fixture__/bootstrap.mjs and call mountSession(); synthetic credentials stay in memory');
-    const deadline = setTimeout(() => void fixture.close(), 600000);
-    for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => {clearTimeout(deadline); void fixture.close();});
-  } catch {await fixture?.close(); console.error('Synthetic browser fixture failed; check frozen source, dependency root and documented prerequisites'); process.exitCode = 1;}
+    // IPC is only for the bounded lifecycle test; it contains no credentials.
+    process.send?.({origin: fixture.origin, directory: fixture.directory});
+    let stopping = false;
+    const shutdown = async () => {
+      if (stopping) return;
+      stopping = true; clearTimeout(deadline);
+      try {await fixture.close();}
+      finally {if (process.connected) process.disconnect();}
+    };
+    const deadline = setTimeout(() => void shutdown(), 600000);
+    for (const signal of ['SIGTERM', 'SIGINT', 'SIGHUP']) process.once(signal, () => void shutdown());
+    process.once('disconnect', () => void shutdown());
+  } catch (error) {
+    await fixture?.close();
+    console.error('Synthetic browser fixture failed; check frozen source, dependency root and documented prerequisites');
+    if (error.message.startsWith('Integration database setup failed (')) {
+      console.error(error.message + '; set APP_INTEGRATION_PG_BIN to the intended PostgreSQL 15+ binary directory');
+    }
+    process.exitCode = 1;
+  }
 }

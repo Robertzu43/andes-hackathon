@@ -5,7 +5,11 @@ import {existsSync} from 'node:fs';
 import {readFile, readdir} from 'node:fs/promises';
 import {join} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {fork} from 'node:child_process';
+import {once} from 'node:events';
+import {createServer} from 'node:net';
 import {startBrowserFixture} from '../../scripts/app-integration/browser-fixture.mjs';
+import {stop, testEnvironment} from '../../scripts/app-integration/runtime.mjs';
 
 test('frozen foundation proxy and accepted gateway reach the actual signed SQL backend', {timeout: 60000}, async t => {
   const fixture = await startBrowserFixture(process.env.APP_INTEGRATION_WEB_ROOT);
@@ -86,4 +90,33 @@ test('frozen foundation proxy and accepted gateway reach the actual signed SQL b
   gateway.dispose();
   await fixture.close();
   assert.equal(existsSync(fixture.directory), false, 'Owned frontend extraction and database resources must be cleaned');
+});
+
+test('interactive CLI cleans owned resources on aux terminal hangup', {timeout: 30000}, async t => {
+  const extra = {APP_INTEGRATION_WEB_ROOT: process.env.APP_INTEGRATION_WEB_ROOT};
+  for (const key of ['APP_INTEGRATION_PG_BIN', 'APP_INTEGRATION_PG_PORT', 'APP_INTEGRATION_ADMIN_URL']) {
+    if (process.env[key]) extra[key] = process.env[key];
+  }
+  const child = fork('scripts/app-integration/browser-fixture.mjs', [], {env: testEnvironment(extra), silent: true, execArgv: []});
+  child.stdout.resume(); child.stderr.resume();
+  t.after(() => stop(child));
+  const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 20000);
+  try {
+    const ready = await Promise.race([
+      once(child, 'message', {signal: abort.signal}).then(([value]) => value),
+      once(child, 'exit', {signal: abort.signal}).then(() => {throw Error('Interactive fixture exited before readiness');}),
+    ]);
+    assert.equal((await fetch(ready.origin + '/v1/me')).status, 401);
+    const exited = once(child, 'exit', {signal: abort.signal});
+    child.kill('SIGHUP');
+    const [code, signal] = await exited;
+    assert.equal(code, 0); assert.equal(signal, null);
+    assert.equal(existsSync(ready.directory), false);
+    if (!process.env.APP_INTEGRATION_ADMIN_URL) {
+      const probe = createServer();
+      try {
+        await new Promise((resolve, reject) => {probe.once('error', reject); probe.listen(Number(process.env.APP_INTEGRATION_PG_PORT ?? 56446), '127.0.0.1', resolve);});
+      } finally {if (probe.listening) await new Promise(resolve => probe.close(resolve));}
+    }
+  } finally {clearTimeout(timer); abort.abort();}
 });

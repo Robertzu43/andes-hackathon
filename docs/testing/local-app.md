@@ -285,26 +285,28 @@ PostgreSQL/HTTP checks. Its twelve observed cases pass frozen `7a7d28c`; a missi
 case stays pending, and altered source age, replay key, invented delivery, missing
 trip identities and second-SOS state/capability each fail. Canonical/noncanonical
 and symlinked calls emit nonempty JSON. Old/new receipts reject across checker
-versions, and hashes confirm the source receipts remain unchanged. This is Q46's
-pairing observation. Q52's independent producer-fix and fresh-runtime confirmation
-remain separate from Q48's completed checker review. `wholeAppAccepted` is false.
+versions, and hashes confirm the source receipts remain unchanged. Q52 independently
+confirmed the producer guard and receipt pairing at `f1eb570`/`871ff20` in
+[comment6243193140](https://github.com/Bimbi-Dev/andes-hackathon/pull/71#issuecomment-6243193140).
+That review does not independently rerun the whole 76-check runtime, expanded
+native client or CI seam. `wholeAppAccepted` is false.
 
 ## Real browser fixture and proxy preparation
 
 The opt-in browser fixture extracts exact foundation
-`3283fe675ebeee04bb2be8a62f42ab5c475b4b0e` and accepted API/gateway
+`6f8dc52a566d3880cf1f10bbfd5282a888725ca1` and accepted API/gateway
 `db7034fc9e1dba035b87368117376e9730d6b830` into a private directory. The backend
 remains pinned to `5591c9b`. It reuses an explicitly supplied installed web package
 whose package and lockfile match the frozen foundation, with caches in the private
 run directory. It installs nothing and changes no shared frontend source.
 
 ```sh
-git fetch origin 3283fe675ebeee04bb2be8a62f42ab5c475b4b0e
+git fetch origin 6f8dc52a566d3880cf1f10bbfd5282a888725ca1
 git fetch origin db7034fc9e1dba035b87368117376e9730d6b830
 APP_INTEGRATION_WEB_ROOT=/absolute/frozen-foundation/web node scripts/app-integration/check-browser-seam.mjs
 ```
 
-This runs backend typecheck/build plus six checks over actual development and
+This runs backend typecheck/build plus seven checks over actual development and
 production-preview HTTP sockets, signed `/v1/me`, SQL identity persistence,
 production-proxy idempotent truck creation, missing-target JSON503, rejected
 authorization and owned-resource cleanup. It consumes the existing API45 gateway;
@@ -338,8 +340,25 @@ Production builds omit the test mount hook and fixture modules. The separate
 production-preview proxy is exercised by the explicit check, without browser-hook
 injection. The interactive process stops after ten minutes or SIGINT/SIGTERM,
 closing its web/API children and dropping only its owned database/temporary files.
+Terminal SIGHUP and parent IPC disconnect also trigger cleanup. A real CLI-child
+regression sends the aux hangup signal and requires clean exit, removed extraction
+and a freed owned PostgreSQL port; the original missing-handler failure is retained
+in the provisional browser observation record.
 Do not run it concurrently with another owned cluster on port56446; select an
 explicit spare `APP_INTEGRATION_PG_PORT` when needed.
+
+Select the intended PostgreSQL installation explicitly with
+`APP_INTEGRATION_PG_BIN=/absolute/postgresql/bin` when the aux shell's `pg_config`
+belongs to another runtime. The observed Conda shell selected `/opt/anaconda3/bin`
+and failed cluster initialization; the explicit local PostgreSQL16.14 directory
+worked. No source guard or database isolation was weakened to resolve it.
+
+The prior fixture `c2501a4` remains frozen against foundation `3283fe6`. Its native
+agent-Chrome observations include actual Continue → signed `/v1/me` → authenticated,
+ES/PT-BR, signout, locale-only storage and a persisted synthetic SQL identity.
+The new foundation binding changes only the reviewed header CSS for readable
+Portuguese labels at narrow widths; it preserves package/session/proxy exports.
+Old captures retain their original source identity and are not relabelled.
 
 The released `andes-operate-v1` contract and foundation scope remain the visual
 oracle. Browser observations of this fixture are provisional server/session seam
