@@ -4,9 +4,9 @@ export const QUALIFICATION_SCHEMA = 'andes.phone-observations.qualification/1';
 
 // Engineering guardrails only; #9/#11 have not accepted a capability/resource budget.
 export const PROVISIONAL_BUDGET = Object.freeze({
-  revision: 'engineering-only/2', bufferCapacity: 128, maxEvents: 200_000,
+  revision: 'engineering-only/3', bufferCapacity: 128, maxEvents: 200_000,
   maxCallbacksPerStream: 10_000_000, maxRequests: 100, maxSessionMs: 86_400_000,
-  minEmitIntervalMs: 1000, requestTimeoutMs: 10_000, maximumAgeMs: 0,
+  minEmitIntervalMs: 1000, requestTimeoutMs: 10_000, permissionPromptTimeoutMs: 120_000, maximumAgeMs: 0,
   freshnessMs: null, clockToleranceMs: 100,
 });
 
@@ -18,16 +18,37 @@ const text = (value) => typeof value === 'string' && value.length > 0 && value.l
 const listenable = (target) => typeof target?.addEventListener === 'function' &&
   typeof target?.removeEventListener === 'function';
 const permissionState = (value) => ['granted', 'denied', 'prompt'].includes(value) ? value : 'unknown';
+const DEFAULT_CLOCK = { now: () => ({ wallMs: Date.now(), monoMs: globalThis.performance?.now() }) };
+const AFTER_DELIVERY = Symbol('after-delivery');
+
+function syntheticPlatform(platform, clock) {
+  if (clock === DEFAULT_CLOCK || !['navigator', 'document', 'setTimeout', 'clearTimeout']
+    .every((key) => Object.hasOwn(platform, key))) return false;
+  const nativeWindow = read(() => globalThis.window);
+  let prototype = platform;
+  for (let depth = 0; prototype; depth += 1, prototype = Object.getPrototypeOf(prototype)) {
+    if (depth > 64 || prototype === globalThis || prototype === nativeWindow) return false;
+  }
+  const nativeNavigator = read(() => globalThis.navigator);
+  const nativeDocument = read(() => globalThis.document);
+  const nativeMotion = read(() => globalThis.DeviceMotionEvent);
+  const nativeGeo = read(() => nativeNavigator.geolocation);
+  return !(nativeNavigator && platform.navigator === nativeNavigator) &&
+    !(nativeDocument && platform.document === nativeDocument) &&
+    !(nativeMotion && platform.DeviceMotionEvent === nativeMotion) &&
+    !(nativeGeo && read(() => platform.navigator.geolocation) === nativeGeo) &&
+    platform.setTimeout !== globalThis.setTimeout && platform.clearTimeout !== globalThis.clearTimeout;
+}
 
 export function createPhoneObservationAdapter({
   platform = globalThis,
-  clock = { now: () => ({ wallMs: Date.now(), monoMs: globalThis.performance?.now() }) },
+  clock = DEFAULT_CLOCK,
   sink = () => {}, mode = 'device', contextKey = null, qualification = null,
   budget = PROVISIONAL_BUDGET,
 } = {}) {
   if (!['device', 'synthetic-test'].includes(mode)) throw new TypeError('Invalid mode');
-  if (mode === 'synthetic-test' && platform === globalThis) {
-    throw new TypeError('Synthetic mode requires an injected platform');
+  if (mode === 'synthetic-test' && !syntheticPlatform(platform, clock)) {
+    throw new TypeError('Synthetic mode requires detached injected platform and clock');
   }
   if (typeof clock?.now !== 'function' || typeof sink !== 'function' ||
       typeof platform.setTimeout !== 'function' || typeof platform.clearTimeout !== 'function') {
@@ -40,6 +61,8 @@ export function createPhoneObservationAdapter({
   let sequence = 0;
   let delivering = false;
   let gestureDepth = 0;
+  let transitionDepth = 0;
+  const deliveries = [];
 
   const visibility = () => read(() => platform.document.visibilityState, 'unknown');
   const live = (s) => current === s && s.active;
@@ -60,6 +83,30 @@ export function createPhoneObservationAdapter({
     return at;
   }
 
+  function transition(action) {
+    transitionDepth += 1;
+    let result;
+    try { result = action(); }
+    finally { transitionDepth -= 1; if (transitionDepth === 0) flushEvents(); }
+    return result?.[AFTER_DELIVERY] ? result[AFTER_DELIVERY]() : result;
+  }
+
+  function flushEvents() {
+    if (delivering) return;
+    delivering = true;
+    try {
+      while (deliveries.length) {
+        const { session: s, event } = deliveries.shift();
+        try {
+          const result = sink(copy(event));
+          if (result && typeof result.then === 'function') {
+            s.sinkErrors += 1; Promise.resolve(result).catch(() => {});
+          }
+        } catch { s.sinkErrors += 1; }
+      }
+    } finally { delivering = false; }
+  }
+
   function emit(s, type, data = {}, sourceTime = null, at = atSession(s), terminal = false) {
     if (!terminal && (!live(s) || s.emitted >= limits.maxEvents)) return;
     sequence += 1;
@@ -71,7 +118,7 @@ export function createPhoneObservationAdapter({
       sourceTime, clientReceiptTime: at, serverReceiptTime: null,
       revision: s.context.revision, policyVersion: null,
       budgetRevision: limits.revision, visibility: visibility(),
-      permission: copy(s.permission),
+      permission: s.permission,
       provenance: {
         mode, qualificationEvidence: text(reviewed?.evidenceRef) ? reviewed.evidenceRef : null,
         contextKey: text(contextKey) ? contextKey : null,
@@ -81,25 +128,18 @@ export function createPhoneObservationAdapter({
       interpretation: 'observation-only', data,
     };
     if (s.events.length === limits.bufferCapacity) { s.events.shift(); s.dropped += 1; }
-    s.events.push(copy(event));
-    // No async queue or retries. Sink failures are diagnostic counts, never delivery evidence.
-    delivering = true;
-    try {
-      const result = sink(copy(event));
-      if (result && typeof result.then === 'function') {
-        s.sinkErrors += 1;
-        Promise.resolve(result).catch(() => {});
-      }
-    } catch { s.sinkErrors += 1; }
-    finally { delivering = false; }
-    if (s.pendingTerminal) deliverTerminal(s);
+    const retained = copy(event);
+    s.events.push(retained);
+    // Capture once, deliver a detached copy only at a settled transition boundary.
+    deliveries.push({ session: s, event: retained });
     if (!terminal && live(s) && s.emitted >= limits.maxEvents) finish(s, 'event-budget');
   }
 
   function subscribe(s, target, name, handler) {
     if (!listenable(target)) return false;
-    target.addEventListener(name, handler);
-    s.cleanups.push(() => target.removeEventListener(name, handler));
+    const listener = (...args) => transition(() => handler(...args));
+    target.addEventListener(name, listener);
+    s.cleanups.push(() => target.removeEventListener(name, listener));
     return true;
   }
 
@@ -130,15 +170,9 @@ export function createPhoneObservationAdapter({
     }
     // Reserve one terminal emission beyond the ordinary cap. Invalidate first and
     // defer delivery across a reentrant sink so stop cannot recursively call it.
-    s.pendingTerminal = { at: atSession(s), data: { reason, sharingState: 'stopped',
-      resumable: ['visibility-lost', 'pagehide', 'freeze', 'duration-budget', 'event-budget'].includes(reason) } };
-    if (!delivering) deliverTerminal(s);
-  }
-
-  function deliverTerminal(s) {
-    const terminal = s.pendingTerminal;
-    s.pendingTerminal = null;
-    emit(s, 'session-stop', terminal.data, null, terminal.at, true);
+    emit(s, 'session-stop', { reason, sharingState: 'stopped',
+      resumable: ['visibility-lost', 'pagehide', 'freeze', 'duration-budget', 'event-budget'].includes(reason) },
+    null, atSession(s), true);
   }
 
   function releaseWakeLock(s, reason = 'session-stopped') {
@@ -165,6 +199,7 @@ export function createPhoneObservationAdapter({
     s.permission[stream] = { state, browserState, source };
     if (state !== 'granted') cancel(s, stream === 'geolocation' ? 'geo' : 'motion');
     emit(s, 'permission', { stream, state, browserState, source, requestId });
+    if (stream === 'geolocation' && state === 'granted') s.geo?.armGrantedTimeout?.();
   }
 
   function observePermission(s, name, stream) {
@@ -175,8 +210,10 @@ export function createPhoneObservationAdapter({
     let pending;
     try { pending = permissions.query({ name }); }
     catch { return; }
-    Promise.resolve(pending).then((status) => {
+    const epoch = s.permissionEpoch[stream];
+    Promise.resolve(pending).then((status) => transition(() => {
       if (!live(s)) return;
+      s.permissionStatuses.set(name, status);
       const update = () => {
         const state = permissionState(status?.state);
         // A single sensor's grant cannot restore a revoked two-sensor motion grant.
@@ -188,10 +225,34 @@ export function createPhoneObservationAdapter({
       };
       // A passive initial prompt/unknown must not cancel the explicit in-flight prompt.
       const state = permissionState(status?.state);
-      if (state === 'granted' || state === 'denied') update();
+      if (state === 'denied' || (state === 'granted' && epoch === s.permissionEpoch[stream])) update();
       if (live(s)) subscribe(s, status, 'change', () => { if (live(s)) update(); });
-    }, () => {}); // Unsupported queries do not fabricate a grant or a denial.
+    })).catch(() => { s.permissionObserverErrors += 1; }); // Include throws in the fulfil path.
   }
+
+  function ambiguousLocationDenial(s, requestId) {
+    const epoch = ++s.permissionEpoch.geolocation;
+    const status = s.permissionStatuses.get('geolocation');
+    if (permissionState(read(() => status.state)) === 'denied') {
+      updatePermission(s, 'geolocation', 'denied', 'permissions:geolocation', requestId);
+      return;
+    }
+    // Code 1 alone also covers prompt dismissal / policy failure. It proves no
+    // grant, but cannot establish a persistent user denial.
+    s.permission.geolocation = { state: 'unknown', browserState: 'unknown', source: 'position-error-ambiguous' };
+    emit(s, 'permission-observed', { stream: 'geolocation', browserState: 'unknown',
+      source: 'position-error-ambiguous', requestId });
+    const permissions = read(() => platform.navigator.permissions);
+    if (typeof permissions?.query !== 'function') return;
+    let pending;
+    try { pending = permissions.query({ name: 'geolocation' }); } catch { return; }
+    Promise.resolve(pending).then((fresh) => transition(() => {
+      if (!live(s) || s.permissionEpoch.geolocation !== epoch) return;
+      updatePermission(s, 'geolocation', permissionState(fresh?.state), 'permissions:geolocation-after-error', requestId);
+    })).catch(() => { s.permissionObserverErrors += 1; });
+  }
+
+  function obsoleteReason(s) { return live(s) ? 'obsolete-request' : 'session-stopped'; }
 
   function allowed(s, stream) {
     const expectedKind = mode === 'device' ? 'physical-device-review' : 'synthetic-fixture';
@@ -211,15 +272,23 @@ export function createPhoneObservationAdapter({
       return { ok: false, reason: 'duration-or-clock-budget' };
     }
     let reason = null;
-    if (!allowed(s, stream)) reason = 'unqualified';
+    if (mode === 'synthetic-test' && !syntheticPlatform(platform, clock)) reason = 'synthetic-platform-not-detached';
+    else if (!allowed(s, stream)) reason = 'unqualified';
     else if (read(() => platform.isSecureContext) !== true) reason = 'insecure-or-unknown-context';
     else if (visibility() !== 'visible') reason = 'not-visible';
     else if (!activated() && s.permission[stream].state !== 'granted') reason = 'user-gesture-required';
     else if (['denied', 'revoked'].includes(s.permission[stream].state)) reason = 'permission-denied-or-revoked';
     else if (s.requests >= limits.maxRequests) reason = 'request-budget';
-    if (reason) { emit(s, 'acquisition-blocked', { stream, reason }); return { ok: false, reason }; }
+    if (reason) return acquisitionBlocked(s, stream, reason);
     s.requests += 1;
     return { ok: true };
+  }
+
+  function acquisitionBlocked(s, stream, reason) {
+    const key = `${stream}:${reason}`;
+    if (s.blockedDiagnostics.has(key)) s.suppressedBlocked += 1;
+    else { s.blockedDiagnostics.add(key); emit(s, 'acquisition-blocked', { stream, reason }); }
+    return { ok: false, reason };
   }
 
   function requestTime(s, token, stream) {
@@ -239,7 +308,7 @@ export function createPhoneObservationAdapter({
     s.callbacks[stream] += 1;
     if (s.callbacks[stream] > limits.maxCallbacksPerStream) {
       cancel(s, stream);
-      emit(s, 'stream-stopped', { stream, reason: 'callback-budget' });
+      emit(s, 'stream-stopped', { stream: stream === 'geo' ? 'geolocation' : stream, reason: 'callback-budget' });
       return null;
     }
     return at;
@@ -264,14 +333,16 @@ export function createPhoneObservationAdapter({
         motion: { state: 'unknown', browserState: 'unknown', source: 'not-queried' },
       },
       geo: null, motion: null, cleanups: [], permissionQueries: new Set(), events: [], dropped: 0, emitted: 0,
+      permissionEpoch: { geolocation: 0, motion: 0 }, permissionStatuses: new Map(),
       requests: 0, callbacks: { geo: 0, motion: 0 }, sinkErrors: 0, cleanupErrors: 0, suppressedErrors: 0,
-      clockUncertain: false, stopReason: null, timer: null, pendingTerminal: null,
+      blockedDiagnostics: new Set(), suppressedBlocked: 0,
+      clockUncertain: false, stopReason: null, timer: null, permissionObserverErrors: 0,
       locationIntent: null, motionIntent: false, wakeIntent: false, wakeLock: null,
     };
     s.lastMono = s.started.monoMs;
     current = s;
     try {
-      s.timer = platform.setTimeout(() => finish(s, 'duration-budget'), limits.maxSessionMs);
+      s.timer = platform.setTimeout(() => transition(() => finish(s, 'duration-budget')), limits.maxSessionMs);
       subscribe(s, platform.document, 'visibilitychange', () => {
         if (live(s) && visibility() !== 'visible') {
           finish(s, 'visibility-lost');
@@ -295,23 +366,53 @@ export function createPhoneObservationAdapter({
     const api = read(() => platform.navigator.geolocation);
     const method = watch ? 'watchPosition' : 'getCurrentPosition';
     if (typeof api?.[method] !== 'function' || (watch && typeof api.clearWatch !== 'function')) {
-      emit(s, 'acquisition-blocked', { stream: 'geolocation', reason: 'api-unavailable' });
-      return { ok: false, reason: 'api-unavailable' };
+      return acquisitionBlocked(s, 'geolocation', 'api-unavailable');
     }
     const consent = preciseConsent?.granted === true && text(preciseConsent.purpose) && text(preciseConsent.reference) ?
       { purpose: preciseConsent.purpose, reference: preciseConsent.reference } : null;
     s.locationIntent = { watch, preciseConsent: consent ? { granted: true, ...consent } : null, enableHighAccuracy };
-    const token = { active: true, api, watchId: null, timer: null, lastEmit: null, lastError: null, lastSource: null };
+    const token = { active: true, api, watchId: null, timer: null, lastEmit: null, lastError: null, lastSource: null,
+      completed: false, failureReason: null, phase: null, deadline: null, armGrantedTimeout: null };
     s.geo = token;
+    s.permissionEpoch.geolocation += 1;
     const options = { enableHighAccuracy, maximumAge: limits.maximumAgeMs, timeout: limits.requestTimeoutMs };
     const requestId = `${s.generation}:geo:${s.requests}`;
     emit(s, 'acquisition-request', { stream: 'geolocation', requestId, watch, options });
+    flushEvents(); // Settled request-created phase; the consumer may withdraw before the native call.
     if (!requestTime(s, token, 'geo')) return { ok: false, reason: live(s) ? 'obsolete-request' : 'session-stopped' };
+    function timeout(reason) {
+      if (!live(s) || s.geo !== token) return;
+      token.failureReason = reason;
+      cancel(s, 'geo'); emit(s, 'acquisition-timeout', { requestId, watch, options, reason });
+    }
+    function arm(phase) {
+      if (watch || !live(s) || s.geo !== token || token.phase === phase) return true;
+      const at = requestTime(s, token, 'geo');
+      if (!at) return false;
+      read(() => platform.clearTimeout(token.timer));
+      token.phase = phase;
+      const duration = phase === 'awaiting-permission' ? limits.permissionPromptTimeoutMs : limits.requestTimeoutMs;
+      token.deadline = at.monoMs + duration;
+      try {
+        token.timer = platform.setTimeout(() => transition(() => timeout(phase === 'awaiting-permission' ?
+          'permission-prompt-timeout' : 'acquisition-timeout')), duration);
+      } catch {
+        token.failureReason = 'timer-unavailable'; cancel(s, 'geo');
+        emit(s, 'acquisition-error', { stream: 'geolocation', requestId, watch, options, reason: 'timer-unavailable' });
+        return false;
+      }
+      return true;
+    }
+    token.armGrantedTimeout = () => arm('acquiring');
     observePermission(s, 'geolocation', 'geolocation');
     if (!requestTime(s, token, 'geo')) return { ok: false, reason: live(s) ? 'obsolete-request' : 'session-stopped' };
-    const success = (position) => {
+    const success = (position) => transition(() => {
       const at = callback(s, token, 'geo');
       if (!at) return;
+      if (!watch && token.deadline !== null && at.monoMs >= token.deadline) {
+        timeout(token.phase === 'awaiting-permission' ? 'permission-prompt-timeout' : 'acquisition-timeout'); return;
+      }
+      token.completed = true;
       if (!watch) cancel(s, 'geo');
       // A successful callback is a grant at that callback, not proof of future permission.
       s.permission.geolocation = { state: 'granted', browserState: 'granted', source: 'position-callback' };
@@ -339,25 +440,25 @@ export function createPhoneObservationAdapter({
         data.purpose = consent.purpose;
       }
       emit(s, 'geolocation', data, { value: sourceWall, basis: 'unix-epoch-ms', provenance: 'position.timestamp' }, at);
-    };
-    const failure = (error) => {
+    });
+    const failure = (error) => transition(() => {
       const at = callback(s, token, 'geo');
       if (!at) return;
       const code = [1, 2, 3].includes(error?.code) ? error.code : null;
+      if (!watch || code === 1) token.failureReason = code === 1 ? 'permission-not-granted' : 'geolocation-error';
       if (!watch || code === 1) cancel(s, 'geo');
-      if (code === 1) updatePermission(s, 'geolocation', 'denied', 'position-error', requestId);
+      if (code === 1) ambiguousLocationDenial(s, requestId);
       if (code !== 1 && token.lastError !== null && at.monoMs - token.lastError < limits.minEmitIntervalMs) {
         s.suppressedErrors += 1; return;
       }
       token.lastError = at.monoMs;
       emit(s, 'geolocation-error', { requestId, watch, options, code }); // Omit sensitive raw platform messages.
-    };
+    });
     try {
-      // Bound a one-shot even when the browser waits indefinitely for permission.
-      if (!watch) token.timer = platform.setTimeout(() => {
-        if (!live(s) || s.geo !== token) return;
-        cancel(s, 'geo'); emit(s, 'acquisition-timeout', { requestId, watch, options });
-      }, limits.requestTimeoutMs);
+      // Permission waiting and post-grant acquisition have separate bounds.
+      if (!arm(s.permission.geolocation.state === 'granted' ? 'acquiring' : 'awaiting-permission')) {
+        return { ok: false, reason: 'timer-unavailable', requestId };
+      }
       const id = api[method](success, failure, options);
       if (watch) {
         token.watchId = id;
@@ -367,7 +468,9 @@ export function createPhoneObservationAdapter({
       cancel(s, 'geo'); emit(s, 'acquisition-error', { stream: 'geolocation', requestId, watch, options });
       return { ok: false, reason: 'platform-error' };
     }
-    return { ok: true, requestId };
+    return { [AFTER_DELIVERY]: () => !live(s) ? { ok: false, reason: 'session-stopped', requestId } :
+      token.failureReason ? { ok: false, reason: token.failureReason, requestId } :
+      !token.active && !token.completed ? { ok: false, reason: 'obsolete-request', requestId } : { ok: true, requestId } };
   }
 
   function acquireMotion() {
@@ -377,22 +480,27 @@ export function createPhoneObservationAdapter({
     if (!result.ok) return Promise.resolve(result);
     const api = read(() => platform.DeviceMotionEvent);
     if (!api || !listenable(platform)) {
-      emit(s, 'acquisition-blocked', { stream: 'motion', reason: 'unsupported-permission-route' });
-      return Promise.resolve({ ok: false, reason: 'unsupported-permission-route' });
+      return Promise.resolve(acquisitionBlocked(s, 'motion', 'unsupported-permission-route'));
     }
     s.motionIntent = true;
     const token = { active: true, timer: null, handler: null, lastEmit: null };
     s.motion = token;
     const requestId = `${s.generation}:motion:${s.requests}`;
     emit(s, 'acquisition-request', { stream: 'motion', requestId });
+    flushEvents(); // Settled request-created phase, still inside the explicit gesture.
     const requestedAt = requestTime(s, token, 'motion');
-    if (!requestedAt) return Promise.resolve({ ok: false, reason: 'session-stopped' });
+    if (!requestedAt) return Promise.resolve({ ok: false, reason: obsoleteReason(s) });
     function pendingTime() {
       const at = requestTime(s, token, 'motion');
       if (!at) return null;
       const elapsed = at.monoMs - requestedAt.monoMs;
-      if (elapsed < 0 || elapsed >= limits.requestTimeoutMs) {
-        cancel(s, 'motion'); emit(s, 'acquisition-timeout', { requestId });
+      if (elapsed < 0) {
+        token.failureReason = 'clock-regressed'; cancel(s, 'motion');
+        emit(s, 'acquisition-error', { stream: 'motion', requestId, reason: 'clock-regressed' }); return null;
+      }
+      if (elapsed >= limits.permissionPromptTimeoutMs) {
+        token.failureReason = 'permission-prompt-timeout';
+        cancel(s, 'motion'); emit(s, 'acquisition-timeout', { requestId, reason: token.failureReason });
         return null;
       }
       return at;
@@ -406,12 +514,19 @@ export function createPhoneObservationAdapter({
       updatePermission(s, 'motion', 'unknown', 'requestPermission-threw', requestId);
       return Promise.resolve({ ok: false, reason: 'permission-request-failed' });
     }
-    token.timer = platform.setTimeout(() => {
-      if (!live(s) || s.motion !== token) return;
-      cancel(s, 'motion'); emit(s, 'acquisition-timeout', { requestId });
-    }, limits.requestTimeoutMs);
-    return Promise.resolve(answer).then((answerState) => {
-      if (!pendingTime()) return { ok: false, reason: 'obsolete-request' };
+    try {
+      token.timer = platform.setTimeout(() => transition(() => {
+        if (!live(s) || s.motion !== token) return;
+        token.failureReason = 'permission-prompt-timeout';
+        cancel(s, 'motion'); emit(s, 'acquisition-timeout', { requestId, reason: token.failureReason });
+      }), limits.permissionPromptTimeoutMs);
+    } catch {
+      Promise.resolve(answer).catch(() => {}); cancel(s, 'motion');
+      emit(s, 'acquisition-error', { stream: 'motion', requestId, reason: 'timer-unavailable' });
+      return Promise.resolve({ ok: false, reason: 'timer-unavailable' });
+    }
+    return Promise.resolve(answer).then((answerState) => transition(() => {
+      if (!pendingTime()) return { ok: false, reason: token.failureReason ?? obsoleteReason(s) };
       read(() => platform.clearTimeout(token.timer)); token.timer = null;
       const state = explicitPermission ? permissionState(answerState) : 'unknown';
       if (explicitPermission) {
@@ -421,9 +536,10 @@ export function createPhoneObservationAdapter({
         // Method absence is not a grant. The browser controls whether events arrive.
         emit(s, 'permission-observed', { stream: 'motion', browserState: 'unknown', source: 'browser-managed' });
       }
+      flushEvents(); // Permission observation is settled before deciding whether to subscribe.
       // Permission delivery invokes the local sink; revalidate after that reentrant boundary.
-      if (!pendingTime()) return { ok: false, reason: 'obsolete-request' };
-      token.handler = (event) => {
+      if (!pendingTime()) return { ok: false, reason: token.failureReason ?? obsoleteReason(s) };
+      token.handler = (event) => transition(() => {
         const at = callback(s, token, 'motion');
         if (!at) return;
         if (token.lastEmit !== null && at.monoMs - token.lastEmit < limits.minEmitIntervalMs) return;
@@ -435,17 +551,21 @@ export function createPhoneObservationAdapter({
           intervalMs: nonnegative(event.interval), accuracy: 'unknown',
           freshness: 'unknown', candidateMotionChange: 'unclassified',
         }, { value: nonnegative(event.timeStamp), basis: 'dom-event-ms-unreconciled', provenance: 'event.timeStamp' }, at);
-      };
+      });
       try { platform.addEventListener('devicemotion', token.handler); }
       catch { cancel(s, 'motion'); return { ok: false, reason: 'platform-error' }; }
       observePermission(s, 'accelerometer', 'motion');
       observePermission(s, 'gyroscope', 'motion');
-      return { ok: true, requestId };
-    }, () => {
+      return { [AFTER_DELIVERY]: () => live(s) && s.motion === token && token.active ?
+        { ok: true, requestId } : { ok: false, reason: obsoleteReason(s), requestId } };
+    }), () => transition(() => {
       if (!pendingTime()) return { ok: false, reason: 'obsolete-request' };
       cancel(s, 'motion'); updatePermission(s, 'motion', 'unknown', 'requestPermission-rejected', requestId);
       return { ok: false, reason: 'permission-request-failed' };
-    });
+    })).catch(() => transition(() => {
+      cancel(s, 'motion'); emit(s, 'acquisition-error', { stream: 'motion', requestId, reason: 'platform-error' });
+      return { ok: false, reason: 'platform-error' };
+    }));
   }
 
   function withUserGesture(event, action) {
@@ -481,11 +601,12 @@ export function createPhoneObservationAdapter({
         releaseWakeLock(s, reason);
         emit(s, 'wake-lock', { state: 'unavailable', reason });
       };
-      token.timer = platform.setTimeout(() => fail('request-timeout'), limits.requestTimeoutMs);
+      try { token.timer = platform.setTimeout(() => transition(() => fail('request-timeout')), limits.requestTimeoutMs); }
+      catch { fail('timer-unavailable'); return; }
       let pending;
       try { pending = api.request('screen'); }
       catch { fail('request-failed'); return; }
-      Promise.resolve(pending).then((sentinel) => {
+      Promise.resolve(pending).then((sentinel) => transition(() => {
         const at = requestTime(s, token, 'wakeLock');
         if (!at) {
           Promise.resolve(read(() => sentinel?.release())).catch(() => {});
@@ -510,7 +631,7 @@ export function createPhoneObservationAdapter({
         });
         emit(s, 'wake-lock', { state: 'held', scope: 'visible-screen-only' });
         resolve(live(s) && s.wakeLock === token ? { ok: true } : { ok: false, reason: 'session-stopped' });
-      }, () => fail('request-failed'));
+      }), () => transition(() => fail('request-failed'))).catch(() => transition(() => fail('platform-error')));
     });
   }
 
@@ -527,7 +648,7 @@ export function createPhoneObservationAdapter({
     }
     start(previous.context);
     const resumed = current;
-    const location = previous.locationIntent ? acquireLocation(previous.locationIntent) : null;
+    const location = previous.locationIntent ? transition(() => acquireLocation(previous.locationIntent)) : null;
     const motion = previous.motionIntent ? acquireMotion() : null;
     const wakeLock = previous.wakeIntent ? requestWakeLock() : null;
     return Promise.all([motion, wakeLock]).then(([motion, wakeLock]) => ({
@@ -543,10 +664,24 @@ export function createPhoneObservationAdapter({
 
   function revokeConsent() {
     const s = current;
-    if (!s || !live(s)) return;
+    if (!s) return;
+    // Withdrawal also purges a previously stopped session. Copies already handed
+    // to a consumer require that consumer's independent deletion/revocation path.
+    for (const event of s.events) {
+      if (event.type === 'geolocation') {
+        event.data.coordinates = null; event.data.redaction = 'consent-withdrawn';
+      }
+    }
+    for (const item of deliveries) {
+      if (item.session === s && item.event.type === 'geolocation') {
+        item.event.data.coordinates = null; item.event.data.redaction = 'consent-withdrawn';
+      }
+    }
+    s.locationIntent = null; s.motionIntent = false; s.wakeIntent = false;
     for (const stream of ['geolocation', 'motion']) {
       s.permission[stream] = { state: 'revoked', browserState: 'unknown', source: 'host-consent-withdrawal' };
     }
+    if (!live(s)) return;
     if (!delivering && s.emitted + 1 < limits.maxEvents) emit(s, 'consent-revoked');
     finish(s, 'consent-revoked');
   }
@@ -558,15 +693,19 @@ export function createPhoneObservationAdapter({
       sessionId: s.context.sessionId, permission: s.permission, budget: limits,
       summary: { emitted: s.emitted, retained: s.events.length, dropped: s.dropped,
         requests: s.requests, callbacks: s.callbacks, sinkErrors: s.sinkErrors, cleanupErrors: s.cleanupErrors,
-        suppressedErrors: s.suppressedErrors },
+        suppressedErrors: s.suppressedErrors, suppressedBlocked: s.suppressedBlocked,
+        permissionObserverErrors: s.permissionObserverErrors },
       events: s.events,
     }) : { state: 'idle', events: [] };
   }
 
-  return { start, stop, resume, withUserGesture, requestWakeLock,
-    acquireLocation, acquireMotion, revokeConsent, snapshot,
-    stopLocation: () => { if (current) { current.locationIntent = null; cancel(current, 'geo'); } },
-    stopMotion: () => { if (current) { current.motionIntent = false; cancel(current, 'motion'); } },
+  return { start: (context) => transition(() => start(context)), stop: () => transition(stop),
+    resume: () => transition(resume), withUserGesture: (event, action) => transition(() => withUserGesture(event, action)),
+    requestWakeLock: () => transition(requestWakeLock),
+    acquireLocation: (options) => transition(() => acquireLocation(options)),
+    acquireMotion: () => transition(acquireMotion), revokeConsent: () => transition(revokeConsent), snapshot,
+    stopLocation: () => transition(() => { if (current) { current.locationIntent = null; cancel(current, 'geo'); } }),
+    stopMotion: () => transition(() => { if (current) { current.motionIntent = false; cancel(current, 'motion'); } }),
   };
 }
 
@@ -580,7 +719,8 @@ function validateBudget(input) {
   const budget = Object.fromEntries(Object.keys(PROVISIONAL_BUDGET).map((key) => [key, input?.[key]]));
   if (!text(budget.revision)) throw new TypeError('A budget revision is required');
   const maxima = { bufferCapacity: 1000, maxEvents: 2_000_000, maxCallbacksPerStream: 100_000_000,
-    maxRequests: 1000, maxSessionMs: 604_800_000, minEmitIntervalMs: 60_000, requestTimeoutMs: 60_000 };
+    maxRequests: 1000, maxSessionMs: 604_800_000, minEmitIntervalMs: 60_000, requestTimeoutMs: 60_000,
+    permissionPromptTimeoutMs: 300_000 };
   for (const [key, max] of Object.entries(maxima)) {
     if (!Number.isSafeInteger(budget[key]) || budget[key] < 1 || budget[key] > max) {
       throw new RangeError(`Invalid bounded budget: ${key}`);
