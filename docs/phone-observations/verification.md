@@ -1,15 +1,22 @@
 # #19 author verification and handoff
 
+Current software source is `a5a383f`, preserving the author's `4417cf6` repairs
+and adding the post-throttle motion work cap and GPS-only queue composition.
+Node24.17.0: **102/102 author/recorder checks and 12/12 complementary reviewer
+controls pass**. Historical results below remain historical. Full current
+disposition, portable commands, unchanged reviewer differences and pending
+integration/confirmation gates are in [the current report](robert-current-disposition.md).
+
 Base: `origin/main` at `bc8eeabfe5220e66a83be972b480a1d1ae8d87d2`.
 Branch: `sebasbimbi/feat/andes-phone-observations`.
 Scope: `src/phone-observations/**`, `tests/phone-observations/**`,
 `docs/phone-observations/**`. Existing recorder, collaborator-owned contracts and
 previous published task branches are unchanged.
 
-Command, using the preinstalled Node 22.22.3 executable:
+Historical command, with Node22.22.3 on PATH:
 
 ```sh
-/Users/sebasbimbi/.nvm/versions/node/v22.22.3/bin/node --test \
+node --test \
   tests/phone-observations/adapter.test.mjs tests/phone-capability/recorder.test.mjs
 ```
 

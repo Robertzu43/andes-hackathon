@@ -106,15 +106,19 @@ explicit trusted configuration boundary, not device attestation or evidence
 verification. No qualifying production configuration is supplied in this PR.
 Only visible acquisition is implemented, even if another context was reviewed.
 
-Tests explicitly choose `mode: 'synthetic-test'`, inject both platform and clock,
+Tests explicitly choose `mode: 'synthetic-test'`, inject both detached platform and clock,
 and use `kind: 'synthetic-fixture'`. That kind is rejected in device mode, and
-synthetic mode refuses the default real global platform. No fixture is imported
+synthetic mode refuses inherited global aliases and directly reused native
+browser objects/timers at construction and acquisition. No fixture is imported
 by the module. Synthetic results cannot populate the #9 matrix.
 
 Permission snapshots retain state, raw browser state and source. They describe
 the latest observed permission, not an ongoing OS guarantee. Passive monitors
-are queried only after explicit acquisition, at most once per permission name
-per session. Unsupported/rejected queries leave unknowns rather than asserting a
+are queried only after explicit acquisition, with one passive subscription per
+permission name per session. Code1 can trigger a fresh status query because a
+dismissed prompt does not prove persistent denial. Only browser-confirmed denial
+is terminal; ambiguous errors retain unknown until fresh evidence arrives.
+Unsupported/rejected queries leave unknowns rather than asserting a
 grant or denial. `granted` becoming denied/prompt/unknown is recorded as `revoked`
 and retires that stream. A single sensor grant cannot restore a revoked combined
 motion grant. When a browser cannot expose motion permission changes, silence is
