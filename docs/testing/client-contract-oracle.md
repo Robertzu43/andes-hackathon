@@ -175,3 +175,46 @@ assertions holding exits 0. Each collection is bounded. Candidate/trace provenan
 must still be verified independently. There is **no lane42 acceptance yet**.
 Real IndexedDB reload/offline tests wait for its frozen exports and the local
 browser foundation; lane46's real backend/auth/process tests remain separate.
+
+## Actual client-to-backend bridge
+
+`api-backend.probes.mjs` connects the frozen client **78efad0** to actual backend
+HTTP/SQL using lane46's frozen **df05aeb** runtime helper and its owned PostgreSQL
+cluster. It does not implement a duplicate backend. Backend source remains
+**ebc8fb1**; the helper archive must already have dependencies and built output.
+Archive/verify both exact candidates before running: the script records those
+source claims but does not authenticate arbitrary supplied directories.
+
+```sh
+env -u APP_INTEGRATION_ADMIN_URL \
+  APP_INTEGRATION_PG_BIN=/ABS/POSTGRES/BIN APP_INTEGRATION_PG_PORT=56447 \
+  ANDES_REVIEW_API_ROOT=/ABS/78EFAD0/ARCHIVE \
+  ANDES_REVIEW_RUNTIME_ROOT=/ABS/DF05AEB/BUILT/ARCHIVE \
+  ANDES_REVIEW_RECEIPT_PATH=/tmp/q47-client-backend.receipt.json \
+  node tests/client-contract-review/api-backend.probes.mjs
+```
+
+The helper creates/drops its own database and cluster; it rejects an inherited
+admin-service URL. The API listens on an OS-assigned loopback port. Auth uses real
+RS256 verification against an explicitly injected synthetic public key, not remote
+OIDC or a login bypass. JWTs/headers/passwords are never written to the receipt.
+Channel support defaults empty; no worker, provider, AWS service or send is enabled.
+Cleanup closes API/context pools and removes only this run's owned resources.
+
+Executed with Node 26.3.0 and PostgreSQL 16.14: **37 actual HTTP exchanges and all
+12 scenarios passed**. These cover explicit confirm/idempotent replay, stale and
+unavailable snapshots, an older upload not replacing the latest source fix,
+cross-user rejection, reports, SOS, acknowledgement/action, owner resolution and
+arrival preserving SOS. Revocation uses a separate still-active trip to isolate
+permission loss from map closure. Local signout makes no subsequent HTTP request.
+
+The resulting sanitized synthetic-run receipt is committed at
+[`client-contract-reviews/bridge-78efad0.receipt.json`](client-contract-reviews/bridge-78efad0.receipt.json).
+Lane52 PR60 **5f43ebb** checker returned `backend-receipt-checks-pass` for all 12
+cases and `wholeAppAccepted: false`. All identities and coordinates are synthetic.
+This records actual local code execution, not participant/device/provider evidence.
+
+Separately, the complete lane46 **df05aeb** runner passed typecheck/build and **61
+tests** on this lane's owned cluster/port. Its explicit `check-ci-seam.mjs` mode was
+not run. Neither run establishes browser CORS, frontend state/cache cleanup,
+production remote JWT/JWKS, SQS, PostgreSQL failover or physical-device behavior.
