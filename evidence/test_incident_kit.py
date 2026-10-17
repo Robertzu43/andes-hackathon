@@ -157,6 +157,23 @@ class RuleTest(unittest.TestCase):
         writer.writerows(rows)
         path.write_text(out.getvalue(), encoding="utf-8")
 
+    def add_source(self, row_id, **changes):
+        path = self.folder / "sources.csv"
+        rows = list(csv.DictReader(io.StringIO(path.read_text(encoding="utf-8"))))
+        fields = list(rows[0])
+        row = dict.fromkeys(fields, "")
+        row.update({"source_id": row_id, "case_id": "SYN-A-W", "kind": "other",
+                    "provided_by": "SYN-A-C", "evidence_basis": "contact_status_only",
+                    "timestamped_record": "no", "storage_ref": "SYNTHETIC no stored file",
+                    "note_private": "SYNTHETIC"})
+        row.update(changes)
+        rows.append(row)
+        out = io.StringIO()
+        writer = csv.DictWriter(out, fieldnames=fields, restval="")
+        writer.writeheader()
+        writer.writerows(rows)
+        path.write_text(out.getvalue(), encoding="utf-8")
+
     def errors(self):
         return kit.check(self.folder)[1].errors
 
@@ -188,11 +205,21 @@ class RuleTest(unittest.TestCase):
 
     def test_recalled_times_need_the_named_participants_own_account(self):
         self.edit("timeline", "SYN-A-W-E07", source_ids="SYN-A-W-S1")
-        self.assertRejected("recalled times need the named participant's own account")
+        self.assertRejected("recalled times need the named participant's own attributed account")
         result, report = kit.export(self.folder)
         self.assertIsNone(result)
-        self.assertTrue(any("recalled times need the named participant's own account" in error
+        self.assertTrue(any("recalled times need the named participant's own attributed account" in error
                             for error in report.errors))
+
+    def test_recalled_times_need_an_attributed_account_from_that_participant(self):
+        self.add_source("SYN-A-W-S5")
+        self.edit("timeline", "SYN-A-W-E07", source_ids="SYN-A-W-S1;SYN-A-W-S5")
+        self.assertRejected("recalled times need the named participant's own attributed account")
+        self.edit("sources", "SYN-A-W-S5", evidence_basis="attributed_account")
+        result, report = kit.export(self.folder)
+        self.assertEqual(report.errors, [])
+        event = events_of(result)["SYN-A-W-E07"]
+        self.assertEqual(event["source_ids"], ["SYN-A-W-S1", "SYN-A-W-S5"])
 
     def test_unknown_time_stays_unknown(self):
         self.edit("timeline", "SYN-A-W-E15", observed_time="2026-09-14T22:40-03:00", time_zone="America/Sao_Paulo")

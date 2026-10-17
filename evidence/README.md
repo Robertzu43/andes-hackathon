@@ -29,7 +29,7 @@ Tools for reconstructing real freight trips with independent truck drivers and t
 
 - Required columns and allowed values; IDs, country codes, language tags and IANA zones; times that carry an offset matching their zone.
 - Every source and event belongs to a known case and pair, and every event cites evidence from its own case.
-- Observed times come from timestamped records. Recalled times come from the participant's own account, as a range.
+- Observed times come from timestamped records. Recalled times come from the participant's own attributed account, as a range.
 - Every participant has a consent reference, and both people consent to sharing before a case exports. The tool checks that the reference exists; it does not judge consent validity.
 - Robbery, security, fatigue and rest events are never treated as recorded by phone, location or contact metadata alone. Reports need a cited attributed account. No reply alone stays unknown, with contact status separate from incident verification. A suspicion needs the participant's cited account and stated basis; corroboration needs a specific independent observation supporting the claim. A filed complaint that repeats an allegation is still an attributed account.
 - Contradicting accounts stay as linked rows, and unknown times stay unknown.

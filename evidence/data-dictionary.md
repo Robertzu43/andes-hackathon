@@ -116,7 +116,7 @@ Keep contact status and incident verification in separate rows. An unanswered ca
 ### Time rules
 
 - `observed`: `observed_time` and `observed_source_id`, a timestamped record also listed in `source_ids`. No recalled times.
-- `recalled`: both recalled times, earliest first, with `reported_by` naming the participant whose memory it is and that participant's own untimestamped account in `source_ids`. No observed time.
+- `recalled`: both recalled times, earliest first, with `reported_by` naming the participant whose memory it is and that participant's own untimestamped attributed account in `source_ids`. No observed time.
 - `both`: everything above. The export reports how far the record falls from the memory.
 - `unknown`: no times. The row still counts and keeps its place in `seq`.
 - `check` warns when observed times run backwards against `seq`, which points to a clock difference between sources or an ordering mistake.

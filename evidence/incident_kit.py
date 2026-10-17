@@ -465,9 +465,10 @@ def check_times(event: dict, cited: list[dict], report: Report) -> None:
     if recalled:
         if event["reported_by"] == "record":
             report.error(where, "recalled times need the participant who recalled them in reported_by")
-        if not any(source["timestamped_record"] == "no" and source["provided_by"] == event["reported_by"]
-                   for source in cited):
-            report.error(where, "recalled times need the named participant's own account (an untimestamped source)")
+        if not any(source["timestamped_record"] == "no" and source["provided_by"] == event["reported_by"] and
+                   source["evidence_basis"] == "attributed_account" for source in cited):
+            report.error(where, "recalled times need the named participant's own attributed account "
+                                "(an untimestamped source)")
         earliest, latest = parse_time(event["recalled_earliest"]), parse_time(event["recalled_latest"])
         if earliest and latest and earliest > latest:
             report.error(where, "recalled_earliest is after recalled_latest")
