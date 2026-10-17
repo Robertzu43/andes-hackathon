@@ -162,8 +162,10 @@ a 512 KiB bound. Do not commit or paste them into a PR. Give an authorised local
 reviewer their path plus the producer commit, exact command and raw test output.
 
 Receipt export checks that `src/`, `db/`, manifests and compiler config still match
-backend `5591c9b55fe7f4505e36ccee96d27aa913e0debf`, including unstaged and untracked
-runtime changes. Export requires a Git checkout containing that commit. A changed
+backend `5591c9b55fe7f4505e36ccee96d27aa913e0debf`, including unstaged, untracked
+and Git-ignored runtime files. Git ignore rules never remove files from the runtime
+inventory: the migrator can execute an ignored numbered SQL file. Export requires
+a Git checkout containing that commit. A changed
 backend needs source review and coordinated oracle rebinding before receipt reuse;
 setting a revision label cannot bypass the source check.
 
@@ -268,3 +270,10 @@ the source-reviewed replacement is published. A backend label change alone must
 never convert old receipt data into new evidence. Additional root test forwarding
 changes `package.json`, so a later integration head must be explicitly reviewed
 and rebound again before its receipts can be accepted.
+
+Q52's ignored-migration finding is covered by
+`tests/app-integration/source-pin.test.mjs`. It uses a private standalone clone,
+verifies clean source as a positive control, adds a migration that matches the
+actual runtime filename rule while excluded by that clone's Git rules, and
+requires both the source guard and real export command to reject it before any
+evidence directory is created. It changes no live source or shared Git excludes.
