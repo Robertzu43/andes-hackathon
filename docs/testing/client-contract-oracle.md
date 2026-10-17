@@ -115,3 +115,18 @@ Node 26.3.0: author suite 47 passed, reviewer probes 29 passed, oracle self-chec
 compiler. No backend files were changed or dependencies installed. Actual backend
 identity/SQL, browser auth/CORS, UI cache cleanup and device/provider behavior remain
 unproved. New lane41 read routes or a later candidate need a separate delta review.
+
+Latest API delta review: **ACCEPT** at
+`78efad0a207e98cc44336a03ba6af9fc0c1d2901`. The four-file delta canonicalizes UUID
+path parameters and projects only the four required credential fields. The same
+29 probes pass through `drivers/api-78efad0.mjs`; 48 author tests and both
+NodeNext/ESNext-Bundler strict TypeScript configurations pass. Additionally:
+
+```sh
+ANDES_REVIEW_API_ROOT=/ABS/78EFAD0/ARCHIVE \
+  node tests/client-contract-review/api-delta.probes.mjs
+```
+
+The two focused controls check both nested path UUIDs share a lowercase replay
+scope and that credential injection never reads an unrelated getter. Earlier
+accepted evidence remains pinned to its original SHA rather than silently moved.
