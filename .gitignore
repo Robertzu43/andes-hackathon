@@ -1,0 +1,17 @@
+# codus / agent machine-generated files
+AGENTS.md
+CLAUDE.md
+.claude/
+.codex/
+.codus/
+project.json
+
+# secrets and local env
+.env
+.env.*
+.envrc
+*.pem
+*.key
+
+# OS / editor
+.DS_Store
