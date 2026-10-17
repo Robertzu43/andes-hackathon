@@ -37,7 +37,7 @@ export function createDriverJourney({
   const listeners = new Set();
   const now = () => { try { const value = clock(); return Number.isFinite(value) ? value : null; } catch { return null; } };
   const unresolved = (slot) => ['pending', 'unknown'].includes(writes.get(slot)?.state);
-  const lockedForm = () => unresolved('draft') || unresolved('confirm') || activation !== null;
+  const lockedForm = () => tripId !== null || unresolved('draft') || unresolved('confirm') || activation !== null;
   const operationState = (run) => ({ state: run.state, request: copy(run.request), result: copy(run.result),
     clientReceivedAtMs: run.clientReceivedAtMs, sourceTime: null });
 
@@ -180,7 +180,7 @@ export function createDriverJourney({
     } else if (slot === 'draft') { draft = data; }
     else if (slot === 'confirm') {
       activation = { data, clientReceivedAtMs: receivedAt, source: 'confirm-response', sourceTime: null };
-      tripId = data.id; trip = blankFact();
+      tripId = data.id; trip = blankFact(); location = blankFact(); incident = blankFact();
     } else if (slot === 'command') {
       // A command acknowledgement is not a refreshed trip state or a wellbeing outcome.
       trip.invalidated = true; location.invalidated = true;
@@ -262,6 +262,7 @@ export function createDriverJourney({
 
   function saveDraft() {
     const problem = writeGate(); if (problem) return Promise.resolve(problem);
+    if (tripId) return Promise.resolve(blocked('journey-already-bound'));
     if (draft) return Promise.resolve(blocked('draft-already-saved'));
     if (!text(form.text, 10000)) return Promise.resolve(blocked('text-required'));
     const errors = validateFields(form.fields);
@@ -274,8 +275,9 @@ export function createDriverJourney({
   function confirmTrip({ confirmed = false } = {}) {
     const problem = writeGate(); if (problem) return Promise.resolve(problem);
     if (confirmed !== true) return Promise.resolve(blocked('explicit-confirm-required'));
-    if (!draft) return Promise.resolve(blocked('draft-required'));
     if (activation) return Promise.resolve(copy(writes.get('confirm').result));
+    if (tripId) return Promise.resolve(blocked('journey-already-bound'));
+    if (!draft) return Promise.resolve(blocked('draft-required'));
     const errors = validateFields(form.fields, { complete: true });
     if (Object.keys(errors).length) return Promise.resolve(blocked('incomplete-or-invalid-fields', { errors }));
     const fields = inputFields(form.fields);
@@ -297,7 +299,9 @@ export function createDriverJourney({
   function requestHelp() {
     const problem = writeGate(); if (problem) return Promise.resolve(problem);
     if (!tripId) return Promise.resolve(blocked('trip-required'));
-    if (incident.data?.status === 'active') return Promise.resolve({ kind: 'ok', data: copy(incident.data) });
+    if (incident.data?.status === 'active' && incident.data.tripId === tripId) {
+      return Promise.resolve({ kind: 'ok', data: copy(incident.data) });
+    }
     return submit('sos', { operation: 'sos', params: { id: tripId }, body: {} }, { newIntent: true });
   }
 
@@ -332,6 +336,7 @@ export function createDriverJourney({
     const normalized = id.toLowerCase();
     if (tripId && tripId !== normalized) return Promise.resolve(blocked('journey-already-bound'));
     if (unresolved('confirm')) return Promise.resolve(blocked('unresolved-submission'));
+    if (!tripId && (draft || unresolved('draft'))) return Promise.resolve(blocked('journey-already-bound'));
     tripId = normalized;
     return read('trip', { operation: 'readTrip', params: { id: tripId } });
   }

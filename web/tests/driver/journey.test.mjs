@@ -366,3 +366,52 @@ test('rejection of an explicit retry cannot erase an earlier unknown submission 
   assert.equal((await b.journey.confirmTrip({ confirmed: true })).code, 'unresolved-submission');
   assert.deepEqual(b.calls[1].request, b.calls[2].request);
 });
+
+test('an opened trip prevents another draft and retains only that trip location and help', async () => {
+  const b = fixture(); b.ready();
+  b.server.trip = { id: ids.elsewhere, driver_id: ids.actor, truck_id: ids.truck,
+    status: 'active', paused: false, map_active: true, checkins_active: true, version: 1 };
+  b.server.snapshot.tripId = ids.elsewhere;
+  b.server.incident = { id: ids.incident, tripId: ids.elsewhere, status: 'active', groupCapability: 'unavailable' };
+  await b.journey.openTrip(ids.elsewhere); await b.journey.refreshLocation(); await b.journey.refreshIncident(ids.incident);
+  const before = b.journey.snapshot();
+  assert.equal(b.journey.editForm({ text: 'Another trip', fields }).code, 'form-locked');
+  assert.equal(b.journey.selectContacts([ids.grant]).code, 'form-locked');
+  assert.equal((await b.journey.saveDraft()).code, 'journey-already-bound');
+  assert.equal((await b.journey.confirmTrip({ confirmed: true })).code, 'journey-already-bound');
+  assert.equal((await b.journey.openTrip(ids.draft)).code, 'journey-already-bound');
+  assert.equal((await b.journey.requestHelp()).data.tripId, ids.elsewhere);
+  const after = b.journey.snapshot();
+  assert.equal(after.tripId, ids.elsewhere); assert.deepEqual(after.location, before.location);
+  assert.deepEqual(after.incident, before.incident);
+  assert.equal(b.calls.some(({ request }) => ['createDraft', 'confirmDraft', 'sos'].includes(request.operation)), false);
+});
+
+test('pending, unknown or saved draft cannot be crossed by openTrip or lose its original intent', async () => {
+  for (const state of ['pending', 'unknown', 'saved']) {
+    const b = fixture(); b.ready(); b.journey.editForm({ text: 'Current draft', fields });
+    const answer = deferred(); b.handlers.createDraft = () => answer.promise;
+    const pending = b.journey.saveDraft(); await settle();
+    const request = b.calls[0].request;
+    if (state === 'unknown') { answer.reject(new Error('lost')); await pending; }
+    if (state === 'saved') { answer.resolve(ok({ id: ids.draft, status: 'draft', rawText: request.body.text,
+      fields: request.body.fields, missingFields: [] })); await pending; }
+    const before = b.journey.snapshot().operations.draft;
+    assert.equal((await b.journey.openTrip(ids.elsewhere)).code, 'journey-already-bound');
+    assert.equal(b.journey.snapshot().tripId, null);
+    assert.deepEqual(b.journey.snapshot().operations.draft, before);
+    assert.equal(b.calls.length, 1);
+    if (state === 'pending') { answer.resolve(ok({ id: ids.draft, status: 'draft', rawText: request.body.text,
+      fields: request.body.fields, missingFields: [] })); await pending; }
+    if (state === 'unknown') {
+      b.handlers.createDraft = () => ok({ id: ids.draft, status: 'draft', rawText: request.body.text,
+        fields: request.body.fields, missingFields: [] });
+      assert.equal((await b.journey.retryUnknown('draft', { confirmed: true })).kind, 'ok');
+      assert.deepEqual(b.calls[1].request, request);
+    }
+    assert.equal((await b.journey.confirmTrip({ confirmed: true })).kind, 'ok');
+    assert.equal((await b.journey.requestHelp()).data.tripId, ids.draft);
+    assert.equal(b.calls.filter(({ request }) => request.operation === 'sos').length, 1);
+    b.journey.dispose();
+  }
+});

@@ -92,6 +92,17 @@ test('persisted driver journey keeps explicit confirmation, last location and ac
   assert.equal((await journey.sendCommand('checkin_ok')).kind, 'ok');
   assert.equal((await journey.sendCommand('rest_report')).kind, 'ok');
   const help = await journey.requestHelp(); assert.equal(help.kind, 'ok');
+  // A fresh controller opened from persisted state cannot start a second journey
+  // while retaining this trip's location/incident, the independent PR63 finding.
+  const restored = controller(t, f); await provideCatalog(restored, f);
+  await restored.openTrip(tripId); await restored.refreshLocation(); await restored.refreshIncident(help.data.id);
+  assert.equal(restored.editForm({ text: 'SYNTHETIC second journey' }).code, 'form-locked');
+  assert.equal((await restored.saveDraft()).code, 'journey-already-bound');
+  assert.equal((await restored.confirmTrip({ confirmed: true })).code, 'journey-already-bound');
+  assert.equal((await restored.requestHelp()).data.tripId, tripId);
+  assert.equal(restored.snapshot().location.data.tripId, tripId);
+  assert.equal((await f.ctx.pool.query('SELECT count(*) FROM trip_drafts')).rows[0].count, '1');
+  assert.equal((await f.ctx.pool.query('SELECT count(*) FROM incidents')).rows[0].count, '1');
   assert.equal((await journey.sendCommand('arrived')).kind, 'ok');
   await journey.openTrip(tripId); assert.equal(journey.snapshot().trip.data.status, 'arrived');
   assert.equal(journey.snapshot().incident.data.status, 'active');

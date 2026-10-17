@@ -45,7 +45,9 @@ state remains `not-loaded` until `openTrip` reads it. No successful local-only
 activation is supplied by default.
 
 This controller owns one journey at a time. A different trip cannot overwrite an
-already bound trip. A separate instance with the same verified session can open
+already bound trip. Opening a trip locks draft form/contact edits, draft creation
+and new confirmation. Pending, unknown and accepted drafts also block opening
+another trip; their captured intents are not discarded. A separate instance with the same verified session can open
 another persisted trip; logout/disposal must destroy the old instance. There is
 no local storage or hydration claim. Page kill loses memory, including unresolved
 intents; do not start a new write to compensate for an uncertain prior write.
@@ -184,3 +186,41 @@ browser client binding or component41's missing catalog read contract. UI render
 follows the verified component49 foundation plus Brain Design Contract. Those are
 remaining dependency gaps. Physical/human evidence gates for #13 stay open. No
 merge or issue closure is performed by this author lane.
+
+## Independent PR63 cross-trip repair
+
+Reviewer47 found a P2 overlap bug at c256e75a1b58168925a8e9f760c3759ee33bfa0a:
+opening A, reading its location/active incident, then drafting/confirming B could
+leave A facts cached and return A incident from help without sending SOS for B.
+The [original review](https://github.com/Bimbi-Dev/andes-hackathon/pull/63#pullrequestreview-5560547636)
+is accepted. The guard now enforces the documented one-journey contract across
+open, form edits, save and confirm; confirm initializes all three read facts, and
+cached help additionally checks trip identity. Repeated same-journey confirmation
+retains its original receipt. No unknown intent is silently retired.
+
+Current evidence: **28/28 author controller checks**, strict TypeScript 5.9.3
+consumer checks and **4/4 actual signed API/PostgreSQL journeys pass** on Node24.17.0.
+The persisted journey now explicitly restores a fresh controller from a real trip
+with location and active incident, rejects the overlapping draft/confirm and
+asserts one persisted draft/incident and same-trip help. The unchanged reviewer
+probe reports **7/7 pass**, versus **6/7** on frozen c256e75. Its SHA-256 remains
+2f780e0073396fc59d43a325194845aa53b953eed34a452b51e36a9ba0dad3c4.
+
+The reviewer probe was read/run in its owner directory without editing it:
+
+```sh
+ANDES_REVIEW_DRIVER_ROOT="$PWD" node /Users/sebasbimbi/.codus/workspaces/andes-channel-review/tests/client-contract-review/driver.probes.mjs
+```
+
+Raw before/after results are /private/tmp/andes-driver-review-before.json and
+/private/tmp/andes-driver-review-after.json; author output is
+/private/tmp/andes-driver-review-after.tap. Reviewer47 confirmation of the new
+immutable head remains required. No merge or product qualification is claimed.
+
+The typed client has since published createDriverTransport and bindJourneySession
+in PR59 at db7034fc9e1dba035b87368117376e9730d6b830. That binding's prior checks
+pin c256e75 and must be rerun with this corrected head. Q41 owner catalogs are
+published separately in PR65; their missing server readAt normalization remains
+a contract gap. PR53 monitoring is parked; UI must not depend on its projector.
+See [command source inventory](command-source-inventory.md) for current voluntary
+OK/rest/pause semantics and pending status/policy contracts.

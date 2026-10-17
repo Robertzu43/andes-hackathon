@@ -73,3 +73,18 @@ binding are still needed for a browser journey. Production OIDC, proxy/CORS,
 durable client intent recovery after page kill, reviewed monitoring projection and
 component49/Brain UI foundation remain separate work. The accepted phone adapter
 and Robert-owned #18/#21 contracts are neither copied nor changed here.
+
+## PR63 overlap repair rerun
+
+After the independent c256e75 cross-trip finding, all four actual persisted
+journeys were rerun on Node24.17.0 against the same frozen backend archive and
+the lane-owned PostgreSQL16.14 cluster; **4 passed, 0 failed**. The first journey
+now also opens its real persisted trip in a fresh controller, reads its location
+and incident, rejects creating/confirming another draft, preserves same-trip help
+and verifies no additional draft or incident row. This supplements the 28 current
+author unit checks and unchanged independent 7-case probe.
+
+The Codus workers slot was closed after the run. Because the older postgres
+process survived aux_stop, its exact owned cluster identity was verified and it
+was shut down with pg_ctl fast stop. Unsandboxed pg_isready then reported no
+response. No sister cluster or external service was changed.
