@@ -41,7 +41,9 @@ mountVisual(host: HTMLElement, {
 }): { setMotion(motion: 'still' | 'interactive'): void; destroy(): void }
 ```
 
-This is a bundler entry with a TSX implementation. The bridge uses ReactDOM's
+This is a bundler entry with a TSX implementation. Its companion `index.d.mts`
+re-exports the implementation's types so strict lazy import callbacks resolve
+the same contract without an implicit-any module. The bridge uses ReactDOM's
 createRoot, supplies es/pt-BR figure labels and a labelled native range. It owns
 only its appended child. Abort and repeated destroy are safe and preserve host
 siblings/captions. A pre-aborted signal creates no root. The host owns its explicit
