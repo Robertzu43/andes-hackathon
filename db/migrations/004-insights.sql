@@ -19,9 +19,9 @@ CREATE TABLE reports (
 );
 CREATE INDEX reports_time ON reports(occurred_at);
 CREATE VIEW security_events AS
-  SELECT label AS kind, latitude, longitude, created_at AS occurred_at, false AS synthetic FROM incidents
-    WHERE label IN ('robo','intento_robo') AND latitude IS NOT NULL
-  UNION ALL SELECT kind, latitude, longitude, occurred_at, synthetic FROM reports;
+  SELECT label AS kind, latitude, longitude, created_at AS occurred_at, false AS synthetic, driver_id AS contributor FROM incidents
+    WHERE label IN ('robo','intento_robo') AND latitude IS NOT NULL AND accuracy <= 1000
+  UNION ALL SELECT kind, latitude, longitude, occurred_at, synthetic, reporter_id FROM reports;
 CREATE FUNCTION time_band(t timestamptz, tz text) RETURNS text LANGUAGE sql STABLE AS $$
   SELECT CASE WHEN extract(hour FROM t AT TIME ZONE tz) >= 22 OR extract(hour FROM t AT TIME ZONE tz) < 6 THEN 'noche' ELSE 'dia' END
 $$;
