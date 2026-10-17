@@ -27,7 +27,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run typecheck:client-api
       - run: npm test
+      - run: npm run test:client-api
       - run: npm run demo
       - uses: actions/setup-python@v5
         with:
