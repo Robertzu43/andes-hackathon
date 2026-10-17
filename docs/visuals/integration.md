@@ -11,6 +11,13 @@ full app. Component 49 owns the package, tokens, global locale and router;
 50/51 own placement; 56 reviews visuals independently; 52 accepts the integrated
 app; 44 alone merges after actionable reviews are resolved.
 
+The framework-neutral host at `646daafc75ee16dd0a90ef7322ed4e9ba1045af8`
+received independent adapter-only technical PASS from component 56, sealed at
+review receipt `4afff24704a0605b4f6da32754c9b6ac8bc3363c`. That receipt does
+not cover later React binding changes. The rendered foundation dependency is now
+`6f8dc52a566d3880cf1f10bbfd5282a888725ca1`, including the narrow Portuguese
+language-selector fix. Its package/router/shared files are consumed unchanged.
+
 ## Shared interface
 
 The two illustration owners agreed to this framework-neutral module boundary:
@@ -81,6 +88,27 @@ Keep the import callback stable. Do not re-render geometry every frame.
 `visualShell` supports prerendered HTML; it does not make a client-rendered app
 work with JavaScript disabled. That app-level fallback remains the feature and
 foundation owners' responsibility.
+
+The supplied React adapter implements that lifecycle in `react.ts`:
+
+```tsx
+import { useI18n } from './foundation/index.ts';
+import { OptionalVisual } from './visuals/integration/react.ts';
+
+const loadPhone = () => import('./visuals/hairline/index.mjs');
+function PhoneHelp() {
+  const { locale } = useI18n();
+  return <OptionalVisual locale={locale} kind="phone" load={loadPhone} />;
+}
+```
+
+Use a reviewed module at that import path. `OptionalVisual` accepts the same
+locale/kind/copy/load/timeout inputs and an optional unique ID. It renders the
+caption first, imports its scoped stylesheet and cleans up through an effect.
+Its HTML prop is memoized so an unrelated parent update cannot replace artwork
+that the module mounted imperatively. StrictMode cleanup, explicit locale
+changes and route disposal are exercised in the fixture. The framework-neutral
+`index.ts` does not import React; callers opt in through `react.ts`.
 
 Place this below the primary trip/action content in parked setup or help. Never
 put trip, check-in or SOS controls inside its root or gate them on an import.
@@ -158,6 +186,37 @@ Tab visibility races are deterministic DOM tests, not an actual phone background
 qualification. PNGs still require visual inspection and independent review.
 
 ## Remaining integration evidence
+
+The owned `foundation.html` fixture mounts one actual `FoundationRoot`, its
+approved home/contact routes, shared `useI18n`, tokens, `PrimaryAction` and
+demo banner. Its gateway is explicitly unconfigured/demo, never authenticated.
+The synthetic primary control sends nothing. Native help disclosure mounts the
+React adapter below that control. No app entry, feature registry or global
+stylesheet was edited. This fixture is excluded from the default app build.
+
+```sh
+node web/node_modules/typescript/bin/tsc --noEmit -p web/tests/visuals/integration/tsconfig.json
+node web/tests/visuals/integration/serve-foundation.mjs --build
+node web/tests/visuals/integration/serve-foundation.mjs --preview
+node web/tests/visuals/integration/foundation-check.mjs http://localhost:3055 /tmp/andes55-foundation-evidence
+```
+
+Run the preview through Codus `aux_start dev`, replacing the earlier standalone
+fixture on the same owned port 3055. It consumes the actual shared Vite config
+and adds only an owned fixture-entry middleware. `--build` writes to
+`/tmp/andes55-foundation-build`, leaving the default `web/dist` intact. The
+check uses production output and records twenty locale/kind/viewport cases,
+closed/open captures and these integration behaviors: unchanged artwork after
+an unrelated primary-action render; old module disposed on locale change;
+native background-tab stop with no automatic restart; reduced-motion static
+keyboard action; StrictMode and disclosure/remove/remount cleanup; actual
+shared-router disposal/return; and an independent primary action after import
+failure. The optional synthetic probe is a manifest-declared dynamic chunk.
+
+The build report measures the synthetic production fixture, not an actual
+driver/contact feature with finished artwork. The regular foundation build
+remains free of visual imports. Whole-app routing/session/no-JS acceptance and
+actual artwork bundle cost remain with the next reviewed integration slice.
 
 First publish this adapter with fixture evidence. Next bind reviewed immutable
 53/54 modules and 49's rendered foundation, then measure actual production chunk
