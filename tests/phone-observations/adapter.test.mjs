@@ -73,6 +73,45 @@ const fix = (timestamp = WALL, accuracy = 20) => ({
   timestamp, coords: { latitude: -12.04318, longitude: -77.02824, accuracy, altitude: 3871.25, speed: 12, heading: 90 },
 });
 
+test('B1 motion work cap applies after throttle while raw callback accounting remains observable', async () => {
+  const b = fixture({ budget: { ...PROVISIONAL_BUDGET, maxCallbacksPerStream: 8 } });
+  b.adapter.start(context()); b.adapter.acquireLocation({ watch: true });
+  const pending = b.adapter.acquireMotion(); b.motionRequests[0].resolve('granted'); await pending;
+  for (let n = 0; n < 120; n += 1) {
+    b.advance(1000 / 60); b.platform.dispatch('devicemotion', { timeStamp: n });
+  }
+  const summary = b.adapter.snapshot().summary;
+  assert.equal(b.platform.count('devicemotion'), 1);
+  assert.equal(summary.callbacks.motion, 120);
+  assert.ok(summary.processedCallbacks.motion < 8);
+  assert.equal(summary.suppressedMotion, 120 - summary.processedCallbacks.motion);
+  for (let n = 0; n < 9; n += 1) { b.advance(1000); b.platform.dispatch('devicemotion'); }
+  assert.equal(b.platform.count('devicemotion'), 0);
+  assert.equal(b.last('stream-stopped').data.reason, 'callback-budget');
+  assert.equal(b.adapter.snapshot().summary.processedCallbacks.motion, 9);
+  b.latestWatch().success(fix()); assert.equal(b.last('geolocation').data.accuracyM, 20);
+  b.adapter.stop();
+});
+
+test('B1 raw callback guard independently retires a motion flood without stopping GPS', async () => {
+  const b = fixture({ budget: { ...PROVISIONAL_BUDGET, maxCallbacksPerStream: 100, maxRawCallbacksPerStream: 4 } });
+  b.adapter.start(context()); b.adapter.acquireLocation({ watch: true });
+  const pending = b.adapter.acquireMotion(); b.motionRequests[0].resolve('granted'); await pending;
+  for (let n = 0; n < 100; n += 1) b.platform.dispatch('devicemotion');
+  assert.deepEqual(b.last('stream-stopped').data, { stream: 'motion', reason: 'raw-callback-budget' });
+  assert.equal(b.adapter.snapshot().summary.callbacks.motion, 5);
+  assert.equal(b.adapter.snapshot().summary.processedCallbacks.motion, 1);
+  assert.equal(b.events.filter(event => event.type === 'motion').length, 1);
+  assert.equal(b.watches.size, 1); assert.equal(b.adapter.snapshot().state, 'started');
+  b.adapter.stop();
+});
+
+test('B1 raw callback budget requires its own positive finite bounded value', () => {
+  for (const maxRawCallbacksPerStream of [0, Infinity, NaN, 100_000_001]) {
+    assert.throws(() => fixture({ budget: { ...PROVISIONAL_BUDGET, maxRawCallbacksPerStream } }), RangeError);
+  }
+});
+
 test('construction and start never acquire, query, prompt or upload', () => {
   const b = fixture();
   assert.equal(b.timers.size + b.platform.count() + b.document.count(), 0);

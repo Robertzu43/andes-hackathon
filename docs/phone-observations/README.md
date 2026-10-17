@@ -154,14 +154,16 @@ No battery/data efficiency is claimed; the browser still controls sensor rate.
 
 | Input | Default | Meaning |
 | --- | --- | --- |
-| `revision` | `engineering-only/2` | Must match explicit qualification |
+| `revision` | `engineering-only/4` | Must match explicit qualification |
 | `bufferCapacity` | 128 | Retained local events; evictions counted |
 | `maxEvents` | 200000 | Ordinary emissions; one additional reserved stop event |
-| `maxCallbacksPerStream` | 10000000 | Callback processing before retiring each stream |
+| `maxCallbacksPerStream` | 10000000 | Motion work after throttle; GPS callbacks before retiring that stream |
+| `maxRawCallbacksPerStream` | 10000000 | Independent raw-callback safety cap, including suppressed samples |
 | `maxRequests` | 100 | All acquisition attempts past the gates per session |
 | `maxSessionMs` | 86400000 | Local deadline; checked against monotonic elapsed time too |
 | `minEmitIntervalMs` | 1000 | Per-request observation emission spacing; no queued samples |
-| `requestTimeoutMs` | 10000 | One-shot and motion-prompt local timeout |
+| `requestTimeoutMs` | 10000 | GPS acquisition timeout after a known permission grant |
+| `permissionPromptTimeoutMs` | 120000 | Separate bounded permission wait, also constrained by session expiry |
 | `maximumAgeMs` | 0 | Browser position cache request; callback age is still retained |
 | `freshnessMs` | `null` | Unset means unknown, never fresh |
 | `clockToleranceMs` | 100 | Wall/monotonic divergence flag; not accuracy certification |
@@ -172,8 +174,13 @@ minutes. This is a software ceiling, not a measured capability/resource budget.
 Location requests default to `enableHighAccuracy: true`; an explicit boolean
 override and the original options remain observable on results and errors. The
 browser treats this as a hint: underlying source and achieved accuracy remain
-unknown/measured per callback, never inferred from the option. A callback flood
-is discarded after its cap; rate suppression retains no backlog. Nonterminal GPS
+unknown/measured per callback, never inferred from the option. Motion samples
+suppressed by the emission interval do not consume the useful-work cap. Raw
+callbacks remain observable in `summary.callbacks`; `processedCallbacks` and
+`suppressedMotion` distinguish useful processing from suppressed motion samples.
+The separate raw cap retires only the affected stream with reason
+`raw-callback-budget`; useful-work exhaustion reports `callback-budget`.
+Both caps are finite, and rate suppression retains no backlog. Nonterminal GPS
 errors have a separate one-second throttle and suppressed-error count; permission
 denial bypasses it, cancels the watch and remains observable. Successful fixes
 retain their own throttle. Permission/control events consume the ordinary budget;
