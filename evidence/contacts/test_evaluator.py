@@ -199,6 +199,37 @@ class ContactContractTests(unittest.TestCase):
 
 
 class LinkContractTests(unittest.TestCase):
+    def test_malformed_offset_components_never_create_a_valid_link(self):
+        for offset in ("+00:99", "-00:99", "+01:60", "-01:60", "+24:00", "-24:00"):
+            with self.subTest(offset=offset):
+                record = fixture()
+                record["links"][0].update(issued_at=f"2026-10-17T12:00:00{offset}",
+                                          expires_at=f"2026-10-17T13:00:00{offset}")
+                with self.assertRaises(RecordError):
+                    evaluate(record, instant("2026-10-17T11:00:00Z"))
+                with self.assertRaises(RecordError):
+                    instant(f"2026-10-17T11:00:00{offset}")
+
+    def test_documented_timestamp_shape_rejects_extended_offset_forms(self):
+        for timestamp in ("2026-10-17T12:00:00+0000", "2026-10-17T12:00:00+00:00:99",
+                          "2026-10-17T12:00:00+00:00.5", "2026-10-17 12:00:00Z",
+                          "2026-10-17T12:00:00Z\n", "2026-10-17T12:00:00.1234567Z"):
+            with self.subTest(timestamp=timestamp), self.assertRaises(RecordError):
+                instant(timestamp)
+
+    def test_valid_offsets_and_fractional_expiry_preserve_equivalent_instants(self):
+        record = fixture()
+        for offset, hour in (("Z", "12"), ("+00:00", "12"), ("-05:00", "07"),
+                             ("+05:30", "17")):
+            minute = "30" if offset == "+05:30" else "00"
+            with self.subTest(offset=offset):
+                self.assertEqual(instant(f"2026-10-17T{hour}:{minute}:00{offset}"),
+                                 instant("2026-10-17T12:00:00Z"))
+        self.assertTrue(evaluate(record, instant("2026-10-17T18:29:59.999999+05:30"))
+                        ["links"][0]["model_contract_valid"])
+        self.assertFalse(evaluate(record, instant("2026-10-17T18:30:00+05:30"))
+                         ["links"][0]["model_contract_valid"])
+
     def test_exact_issue_and_expiry_boundaries_and_timezone_equivalence(self):
         record = fixture()
         for timestamp, valid in (("2026-10-17T11:59:59Z", False), ("2026-10-17T12:00:00Z", True),

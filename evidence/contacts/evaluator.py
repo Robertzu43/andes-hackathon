@@ -64,6 +64,13 @@ def _language(value, path):
 def instant(value):
     if not isinstance(value, str):
         raise RecordError("timestamp: expected ISO 8601 string with timezone")
+    # fromisoformat normalises offsets such as +00:99; reject them before parsing.
+    if not re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+        r"(?:\.[0-9]{1,6})?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])",
+        value,
+    ):
+        raise RecordError("timestamp: expected YYYY-MM-DDTHH:MM:SS[.ffffff]Z or +/-HH:MM")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:

@@ -16,6 +16,8 @@ python3 -B evidence/contacts/evaluator.py evidence/contacts/fixtures/synthetic-a
 
 The clock is explicit. Tests use invented instants, surrogate IDs and channel labels. JSON output is deterministic for a given input and clock. Exit 0 means a structurally valid synthetic record was evaluated; it can still describe an unavailable contact or an invalid link. Exit 2 means malformed input or a missing/unreadable file. Neither exit code passes a human evidence gate.
 
+Timestamp inputs use `YYYY-MM-DDTHH:MM:SS[.ffffff]` followed by uppercase `Z` or an explicit `+HH:MM` / `-HH:MM` offset. Optional fractional seconds contain 1–6 digits. Offset hours must be 00–23 and minutes 00–59; invalid calendar dates and local time components are rejected too. Compact offsets, offset seconds/fractions and timezone-free values are outside this fixture format. Equivalent valid offsets retain the same inclusive issue and exclusive expiry boundaries.
+
 | Fixture | Expected model result at the instant above |
 | --- | --- |
 | `synthetic-candidate.json` | One action candidate, a planned action, one contract-valid model link; assistance and enrolment remain unestablished |
