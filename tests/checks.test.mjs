@@ -161,7 +161,7 @@ test('status drives both screens without phone numbers and follows grant scopes'
   f.advance(60000); await sweep(f);
   const alerted = (await f.req('GET', path, undefined, family.jwt)).body;
   assert.equal(alerted.check, null);
-  assert.deepEqual({...alerted.incident, id: typeof alerted.incident.id}, {id: 'string', trigger: 'missed_check', checkReason: 'silence', status: 'active', createdAt: '2026-10-17T12:03:00.001Z'});
+  assert.deepEqual({...alerted.incident, id: typeof alerted.incident.id}, {id: 'string', trigger: 'missed_check', checkReason: 'silence', status: 'active', label: null, createdAt: '2026-10-17T12:03:00.001Z'});
   assert.deepEqual(alerted.deliveries.map(d => `${d.role}:${d.channel}:${d.status}`), ['family:sms:pending', 'family:voice:pending', 'family:whatsapp:pending', 'group:group:unavailable']);
   assert.doesNotMatch(JSON.stringify(alerted), /\+55|contact|recipient/);
   await f.ctx.pool.query('UPDATE contact_grants SET map_accepted=false');
