@@ -107,6 +107,11 @@ test('an unanswered check escalates once to family (3 channels), colleague (2) a
   assert.deepEqual({...incidents[0], id: undefined}, {id: undefined, driver_id: f.me.id, trigger: 'missed_check', check_reason: 'silence', status: 'active'});
   assert.deepEqual(await checksOf(f, trip), [{reason: 'silence', status: 'escalated', incident_id: incidents[0].id}]);
   assert.deepEqual(await jobsOf(f, incidents[0].id), expectedFanOut);
+  const {authorizeJob, claimJob} = await import('../dist/notifications/dispatch.js');
+  const {provider} = await import('./helpers/dispatch.mjs');
+  const job = (await f.ctx.pool.query("SELECT j.id AS \"jobId\",j.version,j.class FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 AND cg.role='family' AND j.channel='sms'", [incidents[0].id])).rows[0];
+  const attempt = await authorizeJob(f.ctx, await claimJob(f.ctx, job, 'checks-test'), provider());
+  assert.match(attempt.payload.text, /^ANDES: estado sin confirmar\. el conductor del camión SYNTHETIC truck no confirmó su estado \(sin señal desde 09:00\)\. Incidente [0-9a-f-]{36}\. Última ubicación no disponible\./);
 });
 
 test('arrival and pause cancel an open check; a paused trip gets no new check', async t => {
@@ -184,4 +189,19 @@ test('status drives both screens without phone numbers and follows grant scopes'
   assert.equal((await f.req('GET', path, undefined, f.stranger)).status, 403);
   await f.req('POST', `/v1/trips/${trip}/contacts/${family.grant}/revoke`, {}, family.jwt);
   assert.equal((await f.req('GET', path, undefined, family.jwt)).status, 403);
+});
+
+test('alert wording names the truck, keeps the incident ID and never invents location', async () => {
+  const {alertSummary} = await import('../dist/notifications/wording.js');
+  const now = new Date('2026-10-17T12:05:00Z');
+  const base = {truck: 'ABC-123', country: 'PE', timeZone: 'America/Lima', now, signalAt: null,
+    location: {latitude: -12.1, longitude: -77.03, accuracy: 18.4, captured_at: new Date('2026-10-17T12:02:00Z')}};
+  const env = {EMERGENCY_NUMBERS: '{"PE":"105"}', CONTACT_APP_URL: 'https://andes.example'};
+  assert.equal(alertSummary({...base, incident: {id: 'i-1', trigger: 'sos', check_reason: null}}, env),
+    'ALERTA: el conductor del camión ABC-123 pidió ayuda (posible robo). Incidente i-1. Última ubicación hace 3 min (±18 m): https://maps.google.com/?q=-12.1,-77.03. Llámalo. Si no responde, llama al 105. Ver: https://andes.example/incidents/i-1');
+  assert.equal(alertSummary({...base, location: null, signalAt: new Date('2026-10-17T11:58:00Z'), incident: {id: 'i-2', trigger: 'missed_check', check_reason: 'silence'}}, {}),
+    'el conductor del camión ABC-123 no confirmó su estado (sin señal desde 06:58). Incidente i-2. Última ubicación no disponible. No sabemos qué pasó. Llámalo.');
+  assert.match(alertSummary({...base, incident: {id: 'i-3', trigger: 'missed_check', check_reason: 'arrival_overdue'}}, env), /no llegó a la hora prevista\). Incidente i-3\..*Llámalo; si no responde, llama al 105\./);
+  assert.match(alertSummary({...base, incident: {id: 'i-4', trigger: 'missed_check', check_reason: 'sharing_stopped'}}, {}), /dejó de compartir su ubicación/);
+  assert.match(alertSummary({...base, location: {...base.location, captured_at: new Date('2026-10-17T10:00:00Z')}, incident: {id: 'i-5', trigger: 'sos', check_reason: null}}, {}), /hace 2 h 5 min/);
 });
