@@ -8,9 +8,11 @@ import {disposableDatabase} from './runtime.mjs';
 assert.equal(process.env.ANDES_APP_INTEGRATION, 'synthetic-only');
 assert.ok(process.connected, 'Fixture resource owner requires a private IPC parent');
 let directory, creation, closing;
+const deadline = setTimeout(() => void close(), 600000);
 async function close() {
   if (closing) return closing;
   closing = (async () => {
+    clearTimeout(deadline);
     try {const runtime = await creation; await runtime?.cleanup();}
     finally {
       if (directory) await rm(directory, {recursive: true, force: true});

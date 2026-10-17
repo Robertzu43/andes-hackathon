@@ -27,7 +27,8 @@ async function ownedResources(directory) {
     if (process.env[key]) extra[key] = process.env[key];
   }
   const owner = fork(fileURLToPath(new URL('./browser-resources.mjs', import.meta.url)), [], {
-    env: testEnvironment(extra), silent: true, execArgv: [],
+    // The PTY may kill its entire foreground group. IPC still bounds this owner.
+    env: testEnvironment(extra), silent: true, execArgv: [], detached: true,
   });
   owner.stdout.resume(); owner.stderr.resume();
   const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 30000);

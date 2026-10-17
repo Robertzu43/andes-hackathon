@@ -97,7 +97,8 @@ for (const shutdownSignal of ['SIGHUP', 'SIGKILL']) test(`interactive CLI resour
   for (const key of ['APP_INTEGRATION_PG_BIN', 'APP_INTEGRATION_PG_PORT', 'APP_INTEGRATION_ADMIN_URL']) {
     if (process.env[key]) extra[key] = process.env[key];
   }
-  const child = fork('scripts/app-integration/browser-fixture.mjs', [], {env: testEnvironment(extra), silent: true, execArgv: []});
+  // Own a separate test process group so force-kill cannot affect the runner.
+  const child = fork('scripts/app-integration/browser-fixture.mjs', [], {env: testEnvironment(extra), silent: true, execArgv: [], detached: true});
   child.stdout.resume(); child.stderr.resume();
   t.after(() => stop(child));
   const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 20000);
@@ -108,7 +109,8 @@ for (const shutdownSignal of ['SIGHUP', 'SIGKILL']) test(`interactive CLI resour
     ]);
     assert.equal((await fetch(ready.origin + '/v1/me')).status, 401);
     const exited = once(child, 'exit', {signal: abort.signal});
-    child.kill(shutdownSignal);
+    if (shutdownSignal === 'SIGKILL') process.kill(-child.pid, 'SIGKILL');
+    else child.kill(shutdownSignal);
     const [code, signal] = await exited;
     if (shutdownSignal === 'SIGHUP') {assert.equal(code, 0); assert.equal(signal, null);}
     else {assert.equal(code, null); assert.equal(signal, 'SIGKILL');}

@@ -342,8 +342,10 @@ injection. The interactive process stops after ten minutes or SIGINT/SIGTERM,
 closing its web/API children and dropping only its owned database/temporary files.
 Terminal SIGHUP triggers cleanup too. A separate IPC resource owner holds the
 disposable database and removes the extraction after parent disconnect, including
-forced SIGKILL that cannot run a foreground signal handler. Real CLI-child
-regressions cover both hangup and forced exit, requiring removed extraction and a
+forced SIGKILL that cannot run a foreground signal handler. That owner uses a
+separate process group, private IPC and a ten-minute deadline, so a PTY group kill
+cannot skip its cleanup. Real CLI-child regressions cover both hangup and forced
+process-group exit, requiring removed extraction and a
 freed owned PostgreSQL port. The original aux-stop failure remains preserved in
 the provisional browser observation record.
 Do not run it concurrently with another owned cluster on port56446; select an
