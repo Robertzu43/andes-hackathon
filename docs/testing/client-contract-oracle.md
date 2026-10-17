@@ -358,6 +358,55 @@ Raw outputs are `client-contract-reviews/queue-8dabaff.probes.json` and
 `queue-8dabaff-races.probes.json`. A newer corrected frozen head needs a separate
 re-review; status observability and bridge checks do not clear these findings.
 
+### Native browser storage at 8dabaff
+
+The reviewer additionally exercised the frozen queue's real IndexedDB adapter in
+the embedded Chromium browser, served only on owned loopback port57447. This is
+nonvisual browser-runtime evidence; no product UI acceptance or UI manifest is
+claimed. The synthetic transport never forwards uploads to a network API.
+
+`serve-browser-queue.mjs` serves only the browser probe and six whitelisted frozen
+queue modules, with no-store/CSP headers. Run through the workspace aux pipeline:
+
+```sh
+ANDES_REVIEW_QUEUE_ROOT=/ABS/8DABAFF/ARCHIVE ANDES_REVIEW_BROWSER_PORT=57447 \
+  node tests/client-contract-review/serve-browser-queue.mjs
+```
+
+Open `http://127.0.0.1:57447/?db=q47-review-UNIQUE-LOWERCASE-RUN` in an isolated
+browser tab, then use `window.__q47Queue`:
+
+1. `seed()` commits two synthetic user/trip scopes and returns actual records.
+2. Navigate to the same owned DB with a changed `reload` query, wait for the new
+   module to initialize, then call `verifyReload(previousRecords, previousInstance)`.
+   The probe rejects reuse of the same page-instance UUID, preventing a navigation
+   acknowledgement from being mistaken for a completed reload.
+3. `flushBThenOfflineA()` drains only B through a valid synthetic receipt, then
+   loses one A upload response. Stop cancels the scheduled retry.
+4. Navigate to a second new document and verify the retained record again.
+5. `capacity()` fills capacity3 and checks the one oldest pending eviction count.
+6. `retirementRace()` pauses token acquisition, awaits native-store revocation and
+   stop, releases the token and reports actual requests begun after retirement.
+7. `cleanup()` closes storage and deletes only the explicitly named reviewer DB.
+   Close the test tab and stop the aux service; verify the owned port is free.
+
+Actual result: **seven runtime checks passed, one failed**. Both new documents
+preserved source/provenance, scoped drain and synthetic-loss retention passed,
+capacity/eviction accounting passed, the bearer sentinel never entered either
+store, and revocation removed location records. The original P1 still reproduced:
+**zero requests before completed retirement, one new request afterward**, while
+the scope was revoked. Raw browser observations, three distinct page-instance
+UUIDs, request bodies/keys and cleanup are committed in
+`client-contract-reviews/queue-8dabaff-native-idb.json`.
+
+Both owned databases, the test tab and server were removed; no listener remained
+on57447. Resource timing showed only local fixture/module loads. A background
+screenshot attempt returned "No browser instance" despite working tab-targeted
+evaluation, so no screenshot is claimed. This does not qualify offline radio,
+quota/eviction pressure, concurrent tabs, actual backend auth/SQL, app signout host
+cleanup, rendered product UI, physical capture or provider behavior. The later
+`9b53b74` repair is a separate candidate and is not covered by these results.
+
 ## Actual client-to-backend bridge
 
 `api-backend.probes.mjs` connects the frozen client **78efad0** to actual backend
