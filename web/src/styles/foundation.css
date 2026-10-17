@@ -15,7 +15,7 @@ h3 { font-size: 1.125rem; }
 p + p { margin-block-start: .75rem; }
 .andes-app { max-width: 72rem; min-height: 100svh; margin-inline: auto; display: flex; flex-direction: column; }
 .andes-header { padding: 1.25rem 1.5rem 0; border-block-end: 1px solid var(--border); }
-.andes-header-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block-end: 1.25rem; }
+.andes-header-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-block-end: 1.25rem; }
 .andes-header-top > a { text-decoration: none; color: var(--ink); }
 .andes-brand { display: inline-flex; align-items: center; gap: .5rem; font-weight: 750; font-size: 1.5rem; letter-spacing: .025em; line-height: 1; }
 .andes-brand svg { width: 2rem; height: 2rem; flex: none; fill: none; stroke: var(--primary); stroke-width: 8; stroke-linejoin: round; }
@@ -90,10 +90,11 @@ p + p { margin-block-start: .75rem; }
   .andes-main { padding: 3.5rem 3rem 4.5rem; }
   .andes-footer { padding-inline: 3rem; }
 }
+@media (max-width: 30rem) {
+  .andes-language { flex: none; flex-direction: column; align-items: flex-start; gap: .125rem; }
+}
 @media (max-width: 24rem) {
   .andes-header, .andes-main, .andes-footer, .andes-demo { padding-inline: 1.25rem; }
-  .andes-language { flex-direction: column; align-items: flex-start; gap: .125rem; }
-  .andes-language select { width: 8.5rem; }
   .andes-fact-row { grid-template-columns: 1fr; gap: .5rem; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; } }
