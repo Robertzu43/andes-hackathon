@@ -1,0 +1,9 @@
+# Direction decision
+
+Seed87851eab, approved catalogue revisionc3b204a1eed6, actual assigned grounded index3: Radio check conversation. Empty earlier symlink invocations did not execute the CLI; the real-path invocation produced this one roll, preserved in concept-seed.txt.
+
+Fusion assessment on audience identification and product clarity: vertical-video feed would hide concurrent trip facts and invite swiping; gate-board relates to travel but schedules are not the mechanism and departure sorting loses active contact responsibility; tinted-glass timetable adds tilted opaque chrome and one-size text that weakens phone comprehension; lexicon shoulder requires long reading and no direct-action priority; design-annual plate stamp adds decorative attribution rather than real attributed events; split-flap board's animation and multi-trip ranking obscure one driver's immediate action. None beats the grounded conversation record on both axes. No challenger is adopted; no catalogue board is used as a build reference.
+
+Chosen structure: persistent short trip identity, four independently labelled factual rows (response, location, agreed check/deadline if actually available, per-channel state), then named timestamped driver/contact events and a stable large action area. This is not a messaging service: no composer, typing, delivered/read marks without matching actual facts. Unknown/last-known content stays visible and doesn't turn green when a network request succeeds. First-time empty home immediately offers trip preparation; an active trip immediately exposes its actual available state.
+
+User has delegated continuous implementation, so this is an explicit implementation assumption carried into the reviewable contract rather than a new aesthetic approval stop. Private process/seed stays outside rendered assets. A different user preference can revise it without changing product facts.

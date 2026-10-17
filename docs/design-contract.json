@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractId": "andes-operate-v1",
+  "createdAt": "2026-10-17T22:50:54.409515+00:00",
+  "surface": {
+    "type": "web",
+    "name": "ANDES driver and trusted-contact app",
+    "mode": "operate",
+    "subject": "Freight trip and trusted-contact coordination",
+    "audience": "LATAM freight owner-operators with one or two trucks and accepted contacts; es and pt-BR",
+    "job": "Prepare/confirm a trip, share scoped source-aged facts, report intent and contact action, and distinguish unresolved delivery/help",
+    "productTruth": [
+      "PRODUCT.md",
+      "docs/seo/keyword-map.md",
+      "docs/contracts/runtime.md at backend ebc8fb1; actual source overrides provisional UI assumptions"
+    ]
+  },
+  "scope": {
+    "kind": "new-surface",
+    "modules": [
+      "session",
+      "home",
+      "trucks",
+      "trusted-contacts",
+      "trip-draft-confirm",
+      "active-trip",
+      "checkin",
+      "alert-status",
+      "contact-response",
+      "trip-summary",
+      "privacy"
+    ],
+    "affectedSharedSurfaces": [
+      "header-navigation",
+      "route-router",
+      "localisation",
+      "form-fields",
+      "state-feedback",
+      "brand-icons",
+      "api-session-boundary"
+    ],
+    "excluded": [
+      "public marketing website",
+      "native mobile application",
+      "paid/live provider activation",
+      "research analytics/authority reporting",
+      "unverified safety/fatigue/robbery claims"
+    ]
+  },
+  "direction": {
+    "incumbentDisposition": "create",
+    "territory": "Radio check conversation record",
+    "rationale": "Show separate attributed updates and source times in a familiar phone-first task flow; one or two trucks need legible contact action rather than fleet surveillance. Seed87851eab selects grounded candidate3; see private selection record.",
+    "signature": "Named driver/contact/source update with explicit event time, adjacent to four separate fact rows and a stable permitted-action area; no fake chat capability",
+    "palette": [
+      "canvas #F2F6F6",
+      "surface #FCFDFD",
+      "ink #173139",
+      "muted #4D6268",
+      "primary #166675",
+      "onPrimary #F9FCFC",
+      "warning #805312",
+      "danger #A93232",
+      "border #CAD6D8"
+    ],
+    "typography": [
+      "One platform system-ui sans, regular/medium/semibold/bold; actual system rendering inspected at all target widths",
+      "Task labels16px+, supporting text14px+, headings24/30px, tabular times; product familiarity and fast local rendering override marketing display defaults"
+    ],
+    "layout": "Mobile first single-task flow with clear labels, thumb-sized actions and persistent trip identity; wider layouts use bounded content and a supporting fact column. No nested card grids, decorative left rails or map dominating unknown facts. Shared blueprints specify every route.",
+    "motion": "150\u2013200ms state transitions only, visible-first, no page-load choreography; reduced-motion disables nonessential transitions",
+    "density": "Low density for driver actions, compact labelled event rows for facts, generous separation between tasks; high-priority state stays in first390x844viewport",
+    "copyVoice": "Plain Spanish and Brazilian Portuguese, sentence case, named action verbs, source-attributed reports, explicit unknown and recovery. Camiones/Caminh\u00f5es, no jargon or implied emergency guarantee.",
+    "accessibility": [
+      "Text contrast>=4.5:1 and boundary/focus>=3:1 measured at runtime",
+      "44px minimum touch targets with56px primary driver actions; no screen input required while moving to prevent escalation",
+      "Keyboard/focus restoration, semantic labels/live status, no colour-only meaning",
+      "Spanish/pt-BR expanded text, no horizontal overflow at360px; reduced motion",
+      "No route/participant/coordinate data in share metadata; generic noindex task pages"
+    ],
+    "antiDefaults": [
+      "No fake live map/green safety status",
+      "No generated testimonials, credibility badges or invented delivery",
+      "No decorative stripes, gradients, identical icon tiles or nested cards",
+      "No bot/composer/typing affordances without backend capability",
+      "No countdown owned solely by browser; unknown source age remains explicit"
+    ]
+  },
+  "sources": [
+    {
+      "id": "user-updated:impeccable",
+      "kind": "project",
+      "revision": "sha256:1e458a10d63318f89462c8d39bd48254ff39982f6628c1e45fe127d269cf043c",
+      "role": "craft and product register",
+      "reason": "Actual locally updated skill governs accessible product workflows; source-status verified",
+      "reference": "/Users/sebasbimbi/.claude/skills/impeccable"
+    },
+    {
+      "id": "user-updated:anthropic-frontend-design",
+      "kind": "project",
+      "revision": "sha256:404fa218d2bceee72b50221c08cd30987242420d81f9528582e4cbaa2210b7f1",
+      "role": "subject-grounded originality",
+      "reason": "New UI needs a concrete trip/contact identity; product task constraints override expressive marketing suggestions",
+      "reference": "/Users/sebasbimbi/.claude/skills/frontend-design"
+    },
+    {
+      "id": "project:andes-product",
+      "kind": "project",
+      "revision": "sha256:e0e3cd59050a3818550a6d5c5124dbb59f38f48e1fe058a676299eb69af94ef6",
+      "role": "verified workflow and API truth",
+      "reason": "Actual backend APIs and user brief determine actions and honest unavailable states",
+      "reference": "PRODUCT.md"
+    }
+  ],
+  "implementation": {
+    "componentSystem": "One49-owned React/TypeScript/Vite web foundation with source-owned accessible controls, shared tokens/localisation and same-origin /v1 transport; supported versions pinned after package checks",
+    "shadcnRole": "not-used",
+    "constraints": [
+      "web/package and shared UI belong49; root backend/CI belongs44; no duplicate dependency files",
+      "41 additive read routes,45 transport,42 observation queue,50 driver,51 contact/privacy; typed interfaces reconcile through actual contracts",
+      "Use existing /snapshot and forthcoming verified /status; do not wire provisional PR53 projection before Robert comments are resolved",
+      "No pretend login: real externally issuedOIDC or explicitly synthetic local test session only",
+      "Required utility metadata/noindex, generic share assets, graceful404; no external analytics",
+      "Every module needs rendered state/control/viewport evidence and independent acceptance before software completion"
+    ]
+  },
+  "acceptance": [
+    {
+      "id": "A01",
+      "statement": "Driver can persist an owned truck, accepted contacts and explicitly confirmed trip against the actual backend; reload preserves facts",
+      "source": "User complete-app instruction; issues13\u201319; Robert runtime"
+    },
+    {
+      "id": "A02",
+      "statement": "Response/location/server-check/channel facts remain separate; stale/offline/revoked/error transitions cannot imply safety or delivery",
+      "source": "issues19/21/22; Robert PR52/53 feedback"
+    },
+    {
+      "id": "A03",
+      "statement": "SOS is visibly pending until accepted; contact acknowledgement/action and owner resolution remain distinct and access scoped",
+      "source": "issues29\u201335; Robert runtime"
+    },
+    {
+      "id": "A04",
+      "statement": "Every meaningful control works with error/loading/permission and duplicate-input states in es/pt-BR at mobile+desktop targets",
+      "source": "issue13; shared utility blueprints"
+    },
+    {
+      "id": "A05",
+      "statement": "Visual/manual check-in never becomes mandatory while moving to prevent an alarm; unqualified sensor modes and wake lock limits stay explicit",
+      "source": "issues9/11/24 and physical capability constraints"
+    },
+    {
+      "id": "A06",
+      "statement": "Every actionable review finding is resolved/responded with evidence before integration; no author self-signoff",
+      "source": "User mutual review correction and continuous-build instruction"
+    }
+  ]
+}

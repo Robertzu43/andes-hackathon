@@ -60,3 +60,7 @@ Snapshot freshness uses a synthetic 120-second engineering bound. It does not ce
 49: shared runtime/package, global i18n/navigation, approved primitives/tokens/fonts/assets. 45: `web/src/lib/api/**` and API/session tests. 50: driver feature modules. 51: trusted-contact feature modules. 52: independent whole-app acceptance. 41: additive backend reads. 44: root runtime/CI and sole integration/merge. 46: isolated backend test/demo runtime.
 
 UI acceptance will cover actual approved routes at desktop/mobile and Spanish/Brazilian Portuguese contexts, keyboard/focus, long text, loading/empty/error/permission/auth states, reduced motion and numeric overflow. This document contains no completed render, test suite, browser capture, independent acceptance, device observation or human comprehension result. No public deployment, live sends, spending, recruitment or real trip collection occurred. Existing safety/evidence gates and reciprocal review requirements remain open.
+
+## Later foundation checkpoint
+
+Brain released the verified product/route/identity contract after the initial inventory. The implemented shared runtime and exact export/proxy/session seams are documented in `web/README.md`. The inventory above describes its pinned inspected backend and the gaps at that time; newer read/status contracts still require actual source-backed integration. Robert's six PR #53 integration findings were reproduced in 14 author assertions, and the provisional projection is parked outside this app pending his agreement. No foundation code imports it.

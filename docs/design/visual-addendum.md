@@ -1,0 +1,12 @@
+# Visual addendum: Hairline + Anatomy
+Status: approved implementation direction following Sebastian's explicit request, 2026-10-17. Adds supporting illustrations; retains the verified radio-check product information hierarchy, shared type/palette and route map.
+
+Hairline: use the existing Phone figure as a restrained optional setup illustration. Its layers open as the pointer crosses; its rest pose is readable without interaction. Text explains only the phone permissions and foreground limits the actual app supports. Package motion is decorative; use no raw diagnostic onRead values as driver status. A custom freight figure is a later bounded option only if it helps an actual empty state, after this shipped module is integrated.
+
+Anatomy Figure (40–80 purposeful parts): a mechanical message relay with a dispatch lever and separate receipt flag. In a clearly labelled explanation, controls step from locally queued to server accepted to delivery unconfirmed; a contact confirmation flag moves only in an explicitly demonstrated acknowledged scenario. Make the object readable at rest. This explains distinct evidence stages, not the live journey or physical server hardware. No invented latencies, medical/fatigue numbers or provider success. Source all real labels/states from runtime contracts. Use a pure model, plain SVG, keyboard/touch controls, stopped rest by default; optional explicit play only when parked.
+
+Placements: setup/help sections on existing home/session/contact routes or a disclosure controlled by their feature owner. Keep primary trip/SOS/check-in controls immediately visible. Illustration failure cannot disable a trip action. Do not add routes, backend endpoints, production login or a second layout system just for visual work.
+
+Ownership:53 Hairline module;54 Anatomy module;55 shared visual hosting adapter/locale/caption integration within its owned directory;56 independent visual/accessibility/performance reviewer;49 shared foundation/package/router;50 driver pages;51 contact pages;52 full-app acceptance;44 sole merge train.
+
+Acceptance: real mobile/desktop screenshots reviewed, visual explanation agrees with source contract and remains legible still, keyboard/touch/reduced-motion checks, hidden/offscreen cleanup, no raw account identifiers in snapshots, no secret/contract/design-marker leakage, dependency and compressed bundle budget documented. Independent56 signs exact revision, then52 validates in full app. No whole-app acceptance from a standalone figure.

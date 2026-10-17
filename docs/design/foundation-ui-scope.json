@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractId": "andes-operate-v1",
+  "scope": "foundation-only; downstream feature content and real API session integration excluded",
+  "routes": ["/", "/session", "/trucks", "/contacts", "/trips/new", "/trips/:tripId", "/trips/:tripId/check-in", "/trips/:tripId/alerts", "/contact/trips/:tripId", "/contact/invitations/:grantId", "/trips/:tripId/summary", "/privacy"],
+  "fixtureRoutes": ["/tests/fixtures/preview.html", "/tests/fixtures/session.html"],
+  "viewports": [{"width":390,"height":844},{"width":1440,"height":900},{"width":1920,"height":1080},{"width":360,"height":800},{"width":430,"height":932}],
+  "contexts": ["es", "pt-BR", "keyboard", "reduced-motion", "unconfigured", "synthetic-demo"],
+  "modules": [
+    {"id":"shell", "sections":["header","navigation","main","footer"], "controls":["home-brand","navigation-links","language-choice","session-link","privacy-link","skip-link"], "states":["default","active-route","narrow","long-labels","focus"]},
+    {"id":"router", "sections":["generic-title","route-outlet"], "controls":["links","back","reload","home-recovery"], "states":["unavailable-feature","unknown-path","invalid-identifier","noindex-generic-metadata"]},
+    {"id":"session", "sections":["access","test-mode","demo-label"], "controls":["begin","end"], "states":["unconfigured","signed-out","connecting","authenticated","expired","error","duplicate-input","focus"]},
+    {"id":"fields", "sections":["label-and-hint","input-and-error","scope-choices","actions"], "controls":["text-input","select","checkbox","submit","disabled-button"], "states":["default","validation-error","busy","saved","disabled","focus","long-content"]},
+    {"id":"facts-feedback", "sections":["trip-identity","fact-rows","attributed-update","feedback"], "controls":["retry"], "states":["source-aged","unknown","loading","empty","error","permission","long-content"]},
+    {"id":"brand", "sections":["small-mark","app-icon","apple-icon","share-image"], "controls":[], "states":["16px","32px","48px","180px","512px","1200x630"]}
+  ],
+  "evidenceLocation": "outside repository; builder captures/checks followed by exact-SHA independent review",
+  "independentReview": "pending; this scope inventory is not a passing UI Evidence Manifest"
+}
