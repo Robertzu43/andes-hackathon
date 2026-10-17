@@ -153,4 +153,68 @@ stranger credentials cannot read, and only the driver's credential resolves befo
 fresh contact reads observe resolution. Calls use Fastify injection, not an external
 network server, OIDC login, AWS, a provider adapter or a production account.
 
+
+## Contact-route readiness inventory
+
+Source review: backend `c752de8a3b424bcbc086764dc11052348b27e320` runtime and
+contacts/location/incidents/API route files; those route files are unchanged from
+the tested `ebc8fb1` feature base. Published, unmerged PR65 at
+`748d30c6e6c595fd1a2c2c648a045750de3dd9c8` supplies `docs/contracts/client-read.md`,
+`src/client-read/routes.ts` and its tests. Its additions are inventoried here,
+not imported or claimed integrated. Brain's contacts/invitation/contact-trip/privacy
+blueprints determine the UI tasks; rendering still waits for49's committed foundation.
+
+Lane45 owns authenticated transport/session binding. A route UUID never grants
+access. Each write below uses the existing authenticated Idempotency-Key contract.
+
+| App route/control | Actual inputs and supported action | Missing support or boundary |
+| --- | --- | --- |
+| `/contacts`: reload | PR65 contacts/bootstrap GET returns driver-owned grant ID/contactId/phone, requested/accepted scopes, status and consent timestamps/attribution | Bound100 and hasMore; no cursor. Recipient requests return their own driver lists, not incoming invitations. |
+| `/contacts`: invite | Registered target UUID, E.164 destination and nonempty map/incident scopes; existing contacts POST records pending state | No directory/phone-to-user lookup, enrollment or invitation notification. Pending is not accepted. |
+| `/contacts`: revoke | Known grant ID from driver catalog or own receipt; existing standing revoke POST with empty body | Server checks participant; permanent, including future trip selection. No restore operation. |
+| `/contact/invitations/:grantId`: load | Route grant ID and current recipient need requested scopes, driver binding and current grant state | Incoming invitation list/detail is missing. A local hint or URL cannot restore authoritative metadata. |
+| `/contact/invitations/:grantId`: accept | Explicit nonempty subset of requested scopes; existing accept POST | Verified destination/recipient checks stay server-owned; handle revoked/already-accepted/phone conflicts. No invitation-expiry field exists. |
+| `/contact/invitations/:grantId`: withdraw | Known grant ID; existing standing revoke | No invented reject/restore/acceptance-notification action. |
+| `/contact/trips/:tripId`: discover | Trip ID needs driver/grant/effective permissions and active incident binding | PR65 trip list is driver-only; contact shared-trip discovery is missing. Selected grant IDs do not prove current authorization. |
+| `/contact/trips/:tripId`: location | Existing snapshot GET rechecks current map consent/map-active | Preserve capture/receipt/read times and age. Map403 does not deny a separately permitted incident. |
+| `/contact/trips/:tripId`: incident | Existing incident GET with known incident UUID | UUID discovery from a shared trip is missing. Read returns only ID/trip/status/createdAt/resolvedAt/group capability; open SOS survives arrival under incident consent. |
+| `/contact/trips/:tripId`: acknowledge | Read active incident; existing acknowledgement POST with empty body | Receipt is not action, delivery, help or resolution. |
+| `/contact/trips/:tripId`: action/cannot assist | Active incident plus explicit1–300-character report; existing actions POST | Free-text attributed reports only; other participants' history and structured inability/conflict reconciliation are absent. |
+| `/contact/trips/:tripId`: revoke trip | Known trip/grant IDs; existing trip revoke POST | Other trips may retain standing consent; ambiguous revoke keeps reads blocked; authorized prior work may complete. |
+| `/contact/trips/:tripId`: resolve | Existing resolve POST is driver-only | Contact UI must not offer it; arrival/ack/action never resolves. |
+| `/privacy`: inspect/revoke | Driver catalog supplies current standing state; existing standing/trip revokes accept known IDs | Recipient standing management and effective per-trip-revocation reload are missing reads. Local receipts remain historical. |
+| `/privacy`: optional reuse/restore/deletion | No supporting API/prerequisite evidence | Explain unsupported capability; no research toggle, restore, deletion or emergency-number action is enabled. |
+
+PR65 profile GET exposes only the current actor's id/phone/verification, not a
+user directory. Driver trip summaries retain selected grant IDs,50active/20recent
+bounds and truncation flags; they expose no effective per-trip-grant revocation,
+incident discovery, coordinates or provider facts. Forthcoming response/deadline/
+channel status remains a separate actual-contract dependency; PR53 stays unwired.
+
+### Minimal retrieval request to41
+
+Q41 chooses/publishes paths and DTOs;45 types actual contracts before51 consumes
+them. The immediate need is two bounded participant-authorized retrievals with
+stable IDs/order and explicit truncation:
+
+1. Incoming invitation list/detail for the authenticated recipient: grant ID,
+   driver binding, requested/accepted operational scopes, pending/accepted/revoked
+   state and applicable existing consent timestamps. This supports invitation
+   reload and recipient consent management. A minimal revoked tombstone must not
+   retain protected trip access. Exclude others' phones/claims, route/cargo/location
+   details and provider internals.
+2. Shared-trip list/detail for an authenticated accepted contact: trip/driver/grant
+   binding, current effective map/incident permissions or denial, per-trip revoke
+   state and permitted active-incident UUID. Keep an open incident discoverable
+   after arrival/map closure under incident consent. Reuse snapshot for coordinates
+   and age; discovery need not duplicate notification or event-history APIs.
+
+Both reads distinguish unauthorized/missing from legitimate empty results and
+recheck standing/trip revocation under existing backend rules. No query/body owner
+selects another actor. Useful controls: stranger, wrong recipient, narrowed scope,
+revoke then reload, arrived trip with active SOS. Shared phone values cannot prove
+identity/consent. Driver per-trip-grant-state reload, structured inability, report
+history, directory enrollment, deletion and channel/deadline status remain explicit
+separate gaps outside this minimal request. No scaffold or success fixture is added.
+
 Refs #15, #35, #14. No issue completion is implied.
