@@ -1,5 +1,10 @@
 # PR52 feedback disposition
 
+This is the historical F1–F4 disposition at `b34ca56`. For the current source,
+see [the complete Robert disposition](robert-current-disposition.md). Later
+permission-wait and code1 contracts require separate reviewer expectations;
+these old results are not current-head acceptance.
+
 All four P2 findings in the [published lane52 review](https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560327744)
 are accepted as real defects in `cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961`.
 The live review, inline comments and issue comments were read before changes;
@@ -26,18 +31,20 @@ Runtime: preinstalled **Node 22.22.3**, no dependencies or physical APIs.
 | Exact preserved reviewer 22 probes | **18 pass, 4 fail**, exit 1 | **22 pass, 0 fail**, exit 0 |
 | Exact preserved reviewer `reproduce.mjs` | Four mismatches, exit 1 | **F1–F4 all match expectations**, exit 0 |
 
-Commands from this author worktree; the reviewer directory is the pre-existing,
-read-only evidence location, not an author-edited copy:
+Portable commands from a candidate checkout. The reviewer branch publishes
+byte-identical historical files with the hashes below; it does not rewrite them.
 
 ```sh
 node --test tests/phone-observations/adapter.test.mjs tests/phone-capability/recorder.test.mjs
 node --test --test-name-pattern='^F[1-4] ' tests/phone-observations/adapter.test.mjs
-ANDES_CANDIDATE_DIR="$PWD" node --test /Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs
-ANDES_CANDIDATE_DIR="$PWD" node /Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/reproduce.mjs
+reviewer_dir=$(mktemp -d)
+git fetch origin sebasbimbi/test/andes-robert-phone
+git archive origin/sebasbimbi/test/andes-robert-phone review-probes/historical/cc4dc5d2 | tar -x -C "$reviewer_dir"
+ANDES_CANDIDATE_DIR="$PWD" node --test "$reviewer_dir/review-probes/historical/cc4dc5d2/probes.test.mjs"
+ANDES_CANDIDATE_DIR="$PWD" node "$reviewer_dir/review-probes/historical/cc4dc5d2/reproduce.mjs"
 ```
 
-Raw before/after author-run outputs are preserved locally under
-`/private/tmp/andes-pr52-author-feedback/`: `reviewer-before.tap`,
+Raw historical before/after author-run outputs remain preserved as `reviewer-before.tap`,
 `reproduce-before.json`, `author-regressions-before.tap`, `author-after.tap`,
 `reviewer-after.tap`, `reproduce-after.json`. The original reviewer archive,
 tests, review and failed runs remain untouched in the reviewer evidence directory.

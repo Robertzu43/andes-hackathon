@@ -1,5 +1,10 @@
 # Robert PR52 feedback disposition
 
+Historical six-finding disposition for `4aca76c`. The newer Robert review
+5560599386 and corrected source are covered by
+[the complete current disposition](robert-current-disposition.md). Earlier
+fixes and passing controls do not close later findings.
+
 The six findings in [CHANGES_REQUESTED review 5560453602](https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560453602)
 against b34ca56a79515104d7412d46f0e20d7045a5ba8e are accepted. The original
 review body, timestamp, reviewer, reviewed commit and URL are preserved in
@@ -26,10 +31,11 @@ called by the selected baseline pattern. R4 has a separate new factory test.
 No physical API, provider, DB, install, deployment or merge was used.
 
 ```sh
-node --test tests/phone-observations/adapter.test.mjs tests/phone-capability/recorder.test.mjs
-node --test --test-name-pattern='^R[12356] ' /private/tmp/andes-phone-robert-baseline/tests/phone-observations/adapter.test.mjs
-ANDES_CANDIDATE_DIR="$PWD" node --test /Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs
-ANDES_CANDIDATE_DIR="$PWD" node /Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/reproduce.mjs
+author_dir=$(mktemp -d)
+git archive 4aca76c34a5c1639dccad9cff6a01f00f7023ac2 | tar -x -C "$author_dir"
+node --test "$author_dir/tests/phone-observations/adapter.test.mjs" "$author_dir/tests/phone-capability/recorder.test.mjs"
+# Reproduce historical independent expectations with the parameterized commands
+# in review-fixes.md, setting ANDES_CANDIDATE_DIR to this author_dir.
 ```
 
 The exact preserved independent probes now report **19/22 pass, 3 fail**.
@@ -41,9 +47,9 @@ are reported differences requiring independent reviewer disposition, not a green
 independent verdict. The full original evidence hashes are in
 [review-fixes.md](review-fixes.md) and were rechecked unchanged.
 
-Raw author outputs: /private/tmp/andes-phone-review-tests.tap,
-/private/tmp/andes-phone-robert-baseline.tap and
-/private/tmp/andes-phone-preserved-probes.tap. Historical evidence remains historical.
+Historical raw author outputs remain preserved as `andes-phone-review-tests.tap`,
+`andes-phone-robert-baseline.tap` and `andes-phone-preserved-probes.tap`.
+New portable reviewer evidence is linked in the current disposition.
 
 ## Integration boundary and outstanding confirmations
 
