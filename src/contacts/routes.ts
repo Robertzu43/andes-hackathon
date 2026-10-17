@@ -16,7 +16,7 @@ export function contactRoutes(app: FastifyInstance, ctx: Context) {
   })));
   app.post('/v1/contacts/:id/accept', { schema: { params: idParams, body: object(scopeChoices) } }, request => transaction(ctx.pool, async client => {
     const id = (request.params as { id: string }).id;
-    const grant = (await client.query('SELECT * FROM contact_grants WHERE id=$1 FOR UPDATE', [id])).rows[0];
+    const grant = (await client.query('SELECT * FROM contact_grants WHERE id=$1 FOR NO KEY UPDATE', [id])).rows[0];
     if (!grant) problem(404, 'grant_not_found'); if (grant.contact_id !== request.actor.id) problem(403, 'forbidden');
     return idempotent(ctx, client, request, async () => {
       const body = request.body as { map: boolean; incident: boolean };
@@ -30,11 +30,11 @@ export function contactRoutes(app: FastifyInstance, ctx: Context) {
   }));
   app.post('/v1/contacts/:id/revoke', { schema: { params: idParams, body: empty } }, request => transaction(ctx.pool, async client => {
     const id = (request.params as { id: string }).id;
-    const grant = (await client.query('SELECT * FROM contact_grants WHERE id=$1 FOR UPDATE', [id])).rows[0];
+    const grant = (await client.query('SELECT * FROM contact_grants WHERE id=$1 FOR NO KEY UPDATE', [id])).rows[0];
     if (!grant) problem(404, 'grant_not_found');
     if (grant.driver_id !== request.actor.id && grant.contact_id !== request.actor.id) problem(403, 'forbidden');
     return idempotent(ctx, client, request, async () => {
-      // Confirmation locks this grant before inserting a trip; existing-trip decisions never lock a grant.
+      // Stable grant keys need NO KEY UPDATE: SOS inserts take implicit FK KEY SHARE under their trip lock.
       await client.query('SELECT t.id FROM trips t JOIN trip_grants tg ON tg.trip_id=t.id WHERE tg.grant_id=$1 ORDER BY t.id FOR UPDATE OF t', [id]);
       await client.query('UPDATE contact_grants SET revoked_at=COALESCE(revoked_at,$2),revoked_by=COALESCE(revoked_by,$3) WHERE id=$1', [id, ctx.clock(), request.actor.id]);
       await client.query('UPDATE trip_grants SET revoked_at=COALESCE(revoked_at,$2),revoked_by=COALESCE(revoked_by,$3) WHERE grant_id=$1', [id, ctx.clock(), request.actor.id]);

@@ -31,19 +31,21 @@ export function tripRoutes(app: FastifyInstance, ctx: Context) {
     if (!draft) problem(404, 'draft_not_found'); if (draft.driver_id !== request.actor.id) problem(403, 'forbidden');
     return idempotent(ctx, client, request, async () => {
       const body = request.body as { fields?: DraftFields; contactGrantIds: string[] };
+      const grantIds = body.contactGrantIds.map(id => id.toLowerCase()).toSorted();
+      if (new Set(grantIds).size !== grantIds.length) problem(400, 'duplicate_contact_grants');
       const fields: DraftFields = { ...draft.fields, ...body.fields }; validateRegionalFields(fields);
       if (missingFields(fields).length) problem(409, 'draft_incomplete');
       const already = (await client.query('SELECT id FROM trips WHERE id=$1', [id])).rows[0];
       if (already) problem(409, 'draft_already_confirmed');
       if (!(await client.query('SELECT id FROM trucks WHERE id=$1 AND driver_id=$2', [fields.truckId, request.actor.id])).rowCount) problem(403, 'truck_not_owned');
-      for (const grant of body.contactGrantIds.toSorted()) {
-        const row = (await client.query('SELECT * FROM contact_grants WHERE id=$1 AND driver_id=$2 FOR UPDATE', [grant, request.actor.id])).rows[0];
+      for (const grant of grantIds) {
+        const row = (await client.query('SELECT * FROM contact_grants WHERE id=$1 AND driver_id=$2 FOR NO KEY UPDATE', [grant, request.actor.id])).rows[0];
         if (!row?.accepted_at || row.revoked_at || (!row.map_accepted && !row.incident_accepted)) problem(409, 'contact_not_accepted');
       }
       await client.query('UPDATE trip_drafts SET fields=$2 WHERE id=$1', [id, fields]);
       await client.query(`INSERT INTO trips(id,driver_id,truck_id,origin,destination,country,locale,time_zone,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
         [id, request.actor.id, fields.truckId, fields.origin, fields.destination, fields.country, fields.locale, fields.timeZone, ctx.clock()]);
-      for (const grant of body.contactGrantIds) await client.query('INSERT INTO trip_grants(trip_id,grant_id) VALUES($1,$2)', [id, grant]);
+      for (const grant of grantIds) await client.query('INSERT INTO trip_grants(trip_id,grant_id) VALUES($1,$2)', [id, grant]);
       return { id, status: 'active', fields };
     });
   }));

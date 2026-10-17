@@ -46,3 +46,14 @@ Real signed synthetic JWT signature, issuer, audience, expiry checks; driver/tru
 - `env -u TEST_DATABASE_URL npm test`: expected exit 1, explicit `TEST_DATABASE_URL is required (use a disposable PostgreSQL database)` assertion, not skipped tests.
 
 No deployment, external provider call, phone collection or participant contact was performed. The test DB env and local logs are ignored/uncommitted; report contains no test credentials.
+
+## Independent review fix round 1
+
+The reviewer found two important concurrency defects in the initial Task 1 commit; the earlier lock narrative above omitted implicit foreign-key locks and is superseded by this section and the corrected runtime contract.
+
+1. Standing revoke held a grant `FOR UPDATE` then waited for its trip. Concurrent SOS held the trip and inserted a job referencing the grant; PostgreSQL implicitly requested grant `KEY SHARE`. These conflict, producing a deadlock. Added a real PostgreSQL trigger/advisory barrier that pauses SOS after taking its trip lock, observes standing revoke waiting for the trip, then releases SOS into the actual FK insert. RED: expected HTTP `[200,200]`, observed `[200,500]`. Changed acceptance, confirmation and standing revoke to grant `FOR NO KEY UPDATE`, compatible with implicit FK `KEY SHARE` while still serializing consent updates. Focused GREEN: 1/1 pass.
+2. Confirmation sorted caller UUID spellings, so uppercase `BBBB...` could sort before lowercase `aaaa...`, reversing two request lock orders for the same SQL UUIDs. Added a real row-lock barrier holding grant B: mixed-case confirmation queues first, lowercase confirmation queues second, then release B. RED: expected `[200,200]`, observed `[200,500]`. Normalize selected UUIDs to lowercase before duplicate validation, lock sorting and grant insertion. Case-alias duplicates now return 400 instead of reaching the SQL primary-key conflict. Focused GREEN: 1/1 pass.
+
+Both regressions were RED before production changes (`/tmp/andes-task1-review-red.log`); they use real SQL locks and observed pg_stat_activity wait conditions rather than arbitrary scheduling sleeps or mocked database outcomes. Exact focused command: `npm run build` then `node --test --test-name-pattern='foreign-key insert|mixed-case grant' tests/core.test.mjs` with the isolated TEST_DATABASE_URL loaded. Corrected runtime docs explicitly explain implicit FK locks and the required compatible lock mode; no longer claim no trip-to-grant lock edge.
+
+Fix-round final verification: `npm run typecheck` PASS; `npm run build` PASS; both focused SQL barrier regressions **2/2 PASS**; full `npm test` **12/12 PASS**, no skips/failures (about 1.03s); `git diff --check` PASS. No runtime dependency or schema migration changed in this fix. No push or unrelated plan/Zavu research staging.

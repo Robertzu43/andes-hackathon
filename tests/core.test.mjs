@@ -170,3 +170,51 @@ test('standing contact revoke serializes with confirmation and blocks every curr
   await f.req('POST', `/v1/trips/${active}/sos`, {});
   assert.equal((await f.ctx.pool.query("SELECT count(*) FROM jobs WHERE recipient_id=$1", [f.contactIdentity.id])).rows[0].count, '0');
 });
+
+// A standing grant's row lock must permit the implicit FK KEY SHARE taken while SOS holds its trip.
+test('SOS and standing revoke complete when grant lock overlaps the SOS foreign-key insert', async t => {
+  const f = await fixture(t); const { waitForBlockedQueries } = await import('./helpers/db-barriers.mjs');
+  const grant = await f.grant(); const trip = await f.trip([grant]);
+  const barrierKey = Math.floor(Math.random() * 1000000000);
+  await f.ctx.pool.query(`CREATE FUNCTION hold_incident() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_advisory_xact_lock(${barrierKey}); RETURN NEW; END $$`);
+  await f.ctx.pool.query('CREATE TRIGGER incident_barrier BEFORE INSERT ON incidents FOR EACH ROW EXECUTE FUNCTION hold_incident()');
+  const barrier = await f.ctx.pool.connect();
+  let sos; let revoke;
+  try {
+    await barrier.query('SELECT pg_advisory_lock($1)', [barrierKey]);
+    sos = f.req('POST', `/v1/trips/${trip}/sos`, {});
+    await waitForBlockedQueries(f.ctx.pool, 'INSERT INTO incidents%', 1);
+    revoke = f.req('POST', `/v1/contacts/${grant}/revoke`, {}, f.contact);
+    await waitForBlockedQueries(f.ctx.pool, 'SELECT t.id FROM trips t JOIN trip_grants%', 1);
+  } finally {
+    await barrier.query('SELECT pg_advisory_unlock($1)', [barrierKey]); barrier.release();
+  }
+  const outcomes = await Promise.all([sos, revoke]);
+  assert.deepEqual(outcomes.map(result => result.status), [200, 200]);
+  assert.equal((await f.ctx.pool.query("SELECT count(*) FROM jobs WHERE recipient_id=$1 AND status='cancelled'", [f.contactIdentity.id])).rows[0].count, '3');
+  assert.equal((await f.req('GET', `/v1/trips/${trip}/snapshot`, undefined, f.contact)).status, 403);
+});
+
+// Sorting raw UUID spellings can take A→B in one request and B→A in another.
+test('mixed-case grant UUID confirmations take one canonical lock order and reject case-alias duplicates', async t => {
+  const f = await fixture(t); const { waitForBlockedQueries } = await import('./helpers/db-barriers.mjs');
+  const grantA = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'; const grantB = 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
+  const initialA = await f.grant(); await f.ctx.pool.query('UPDATE contact_grants SET id=$1 WHERE id=$2', [grantA, initialA]);
+  const contact2 = await f.token('contact-2'); const identity2 = (await f.req('GET', '/v1/me', undefined, contact2)).body.id;
+  const invitedB = await f.req('POST', '/v1/contacts', { contactId: identity2, phone: '+5511999990000', map: true, incident: true });
+  assert.equal((await f.req('POST', `/v1/contacts/${invitedB.body.id}/accept`, { map: true, incident: true }, contact2)).status, 200);
+  await f.ctx.pool.query('UPDATE contact_grants SET id=$1 WHERE id=$2', [grantB, invitedB.body.id]);
+  const draft1 = await f.draft(); const draft2 = await f.draft();
+  const blocker = await f.ctx.pool.connect(); let mixed; let lower;
+  try {
+    await blocker.query('BEGIN'); await blocker.query('SELECT id FROM contact_grants WHERE id=$1 FOR UPDATE', [grantB]);
+    mixed = f.req('POST', `/v1/trip-drafts/${draft1.body.id}/confirm`, { confirmed: true, contactGrantIds: [grantA, grantB.toUpperCase()] });
+    await waitForBlockedQueries(f.ctx.pool, 'SELECT * FROM contact_grants WHERE id=$1 AND driver_id=$2%', 1);
+    lower = f.req('POST', `/v1/trip-drafts/${draft2.body.id}/confirm`, { confirmed: true, contactGrantIds: [grantA, grantB] });
+    await waitForBlockedQueries(f.ctx.pool, 'SELECT * FROM contact_grants WHERE id=$1 AND driver_id=$2%', 2);
+  } finally { await blocker.query('ROLLBACK'); blocker.release(); }
+  const outcomes = await Promise.all([mixed, lower]);
+  assert.deepEqual(outcomes.map(result => result.status), [200, 200]);
+  const duplicate = await f.draft();
+  assert.equal((await f.req('POST', `/v1/trip-drafts/${duplicate.body.id}/confirm`, { confirmed: true, contactGrantIds: [grantA, grantA.toUpperCase()] })).status, 400);
+});
