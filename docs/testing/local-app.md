@@ -288,3 +288,61 @@ and symlinked calls emit nonempty JSON. Old/new receipts reject across checker
 versions, and hashes confirm the source receipts remain unchanged. This is Q46's
 pairing observation. Q52's independent producer-fix and fresh-runtime confirmation
 remain separate from Q48's completed checker review. `wholeAppAccepted` is false.
+
+## Real browser fixture and proxy preparation
+
+The opt-in browser fixture extracts exact foundation
+`3283fe675ebeee04bb2be8a62f42ab5c475b4b0e` and accepted API/gateway
+`db7034fc9e1dba035b87368117376e9730d6b830` into a private directory. The backend
+remains pinned to `5591c9b`. It reuses an explicitly supplied installed web package
+whose package and lockfile match the frozen foundation, with caches in the private
+run directory. It installs nothing and changes no shared frontend source.
+
+```sh
+git fetch origin 3283fe675ebeee04bb2be8a62f42ab5c475b4b0e
+git fetch origin db7034fc9e1dba035b87368117376e9730d6b830
+APP_INTEGRATION_WEB_ROOT=/absolute/frozen-foundation/web node scripts/app-integration/check-browser-seam.mjs
+```
+
+This runs backend typecheck/build plus six checks over actual development and
+production-preview HTTP sockets, signed `/v1/me`, SQL identity persistence,
+production-proxy idempotent truck creation, missing-target JSON503, rejected
+authorization and owned-resource cleanup. It consumes the existing API45 gateway;
+the gateway only authenticates after actual server identity verification. Its
+token-free snapshot and duplicate-begin behavior are checked. This does not
+exercise the newer owner-read routes or any driver/contact feature controller.
+
+For an interactive local fixture, start this command through Codus's dev aux slot:
+
+```sh
+APP_INTEGRATION_WEB_ROOT=/absolute/frozen-foundation/web node scripts/app-integration/browser-fixture.mjs
+```
+
+The printed `/session` URL is the actual loopback server. After it loads, use the
+development browser console or browser automation to mount the existing shell:
+
+```js
+const fixture = await import('/__andes_fixture__/bootstrap.mjs');
+const session = fixture.mountSession();
+```
+
+Clicking Continue obtains an explicitly synthetic, short-lived signed credential
+from a same-origin fixture-only POST and verifies it through the real `/v1` proxy.
+Credentials stay in memory, never build environment, URL, storage or logs. The
+fixture POST requires the exact local origin/host and a custom header; CORS is
+disabled. This is a test credential issuer, not production login or provider
+revocation. Signout clears the memory session. The shared demo notice remains
+visible, and no feature journey or notification outcome is invented.
+
+Production builds omit the test mount hook and fixture modules. The separate
+production-preview proxy is exercised by the explicit check, without browser-hook
+injection. The interactive process stops after ten minutes or SIGINT/SIGTERM,
+closing its web/API children and dropping only its owned database/temporary files.
+Do not run it concurrently with another owned cluster on port56446; select an
+explicit spare `APP_INTEGRATION_PG_PORT` when needed.
+
+The released `andes-operate-v1` contract and foundation scope remain the visual
+oracle. Browser observations of this fixture are provisional server/session seam
+evidence. A Git-bound UI Evidence Manifest and independent review are still
+required for complete UI proof; this harness does not accept all twelve routes,
+all five viewports, accessibility, provider delivery or whole-app readiness.
