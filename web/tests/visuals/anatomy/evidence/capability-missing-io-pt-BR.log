@@ -1,0 +1,3 @@
+eval: {"kind":"missing-io","locale":"pt-BR","thrown":null,"handle":true,"initialStatic":true,"staticExamples":4,"activeAfterSetup":0,"activeAfterAbort":0,"outerAfterSetup":0,"outerAfterAbort":0,"changedByOldButton":false,"poseMatchesSelection":true,"documentCallbacks":0,"frames":0,"requestedFrames":0,"cancelledFrames":0,"created":0,"disconnected":0}
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/capability-missing-io-pt-BR.png · readout "No telefone"
+console: clean

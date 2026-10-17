@@ -68,6 +68,13 @@ IDs, listeners or global animation state. Shared CSS variables `--canvas`,
 `--surface`, `--ink`, `--muted`, `--primary`, `--on-primary`, `--border` and
 `--font-ui` are consumed with exact foundation fallback values.
 
+If `matchMedia` or `IntersectionObserver` is unavailable, mounting returns an
+inert handle and leaves the full four-example HTML explanation visible. No
+module listeners are acquired in that mode. When a capability exists but throws
+during setup, the module aborts its own listeners, disconnects any observer,
+cancels any queued frame and removes the caller's abort subscription before
+restoring the static explanation. The caller can still destroy the handle safely.
+
 ## Geometry and provenance
 
 Figure tier: 68 purposeful solids. The deck rests on eight foot parts; the
@@ -87,8 +94,8 @@ There is no gallery publication or external deployment.
 
 The browser imports only `index.mjs`, `render.mjs`, `model.mjs`, `styles.mjs`
 and generated `art.mjs`. The geometry kit and audit code are build-only.
-Combined unminified module source is approximately 162 kB raw, 27.6 kB gzip,
-21.3 kB Brotli. These are measured source compression costs, excluding React
+Combined unminified module source is approximately 163 kB raw, 27.8 kB gzip,
+21.5 kB Brotli. These are measured source compression costs, excluding React
 already owned by the foundation, and are not a production Vite chunk claim.
 There are no new package dependencies, fonts, images, WebGL contexts or remote
 requests. Source paths are outside the live journey and contain no private data.
@@ -105,6 +112,7 @@ node web/tests/visuals/anatomy/serve.mjs
 # In another terminal, with the installed Anatomy browser tools and Chrome:
 node web/tests/visuals/anatomy/browser.mjs
 node web/tests/visuals/anatomy/lifecycle.mjs
+node web/tests/visuals/anatomy/capabilities.mjs
 node web/tests/visuals/anatomy/legibility.mjs
 node web/tests/visuals/anatomy/typecheck.mjs /path/to/installed/foundation/web
 ```
@@ -137,8 +145,14 @@ Recorded checks:
   accessibility tree exposed four named buttons with the correct pressed state.
 - Zero initial autoplay, settled, offscreen and native background-tab frames;
   abort restored static content and detached interaction. See `lifecycle.json`.
-  A visible finite transition recorded 36 callbacks, with 0.70 ms p95 script
-  cost and 1.10 ms maximum on the final local Chrome run; these are not phone timings.
+  `lifecycle.json` records the visible finite transition's callback count and
+  measured script costs on local Chrome; these are not phone timings.
+- Capability regression tests reproduce the leak on reviewed revision
+  `186fd4e`, then exercise eight cases in each locale: absent observer/media,
+  throwing media/listener/observer constructor, throwing observe with a queued
+  animation frame, synchronous caller abort during observe, and normal setup.
+  The fixed cases retain useful text and leave zero callbacks/listeners/frames
+  after abort. An observer registered before observe throws is disconnected.
 - Actual script-disabled navigation retained all four static explanations.
   Reduced-motion selection retained a meaningful still flag. No console
   errors or external requests were observed.
@@ -152,6 +166,8 @@ Raw PNGs, per-run logs and executable browser actions are under
 establish physical iPhone behavior, human comprehension, screen-reader usability,
 provider delivery or whole-app acceptance. Independent component56 review and
 component55 hosting, then component52 integrated acceptance, remain separate.
-Component49 owns the committed rendered foundation; its remote branch was
-still at prerequisite `800205a` during this module's proof. Component44 alone
+Component49 owns the committed rendered foundation. The initial figure proof
+used prerequisite `800205a`; the lifecycle-fix pass verified the shared exports
+and tokens in foundation `3283fe675ebeee04bb2be8a62f42ab5c475b4b0e` without
+changing the shared package or importing a second app scaffold. Component44 alone
 owns merge integration after all actionable reviews are resolved.

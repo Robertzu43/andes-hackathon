@@ -1,0 +1,2 @@
+eval: {"kind":"healthy","locale":"es","thrown":null,"handle":true,"initialStatic":false,"staticExamples":4,"activeAfterSetup":7,"activeAfterAbort":0,"outerAfterSetup":1,"outerAfterAbort":0,"changedByOldButton":false,"poseMatchesSelection":true,"documentCallbacks":0,"frames":0,"requestedFrames":0,"cancelledFrames":0,"created":0,"disconnected":0}
+console: clean

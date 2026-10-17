@@ -11,9 +11,14 @@ export function mountVisual(host, { locale = 'es', motion = 'still', signal } = 
   if (signal?.aborted) return { setMotion() {}, destroy() {} };
   host.innerHTML = renderRelay(locale);
   const root = host.querySelector('.andes-relay');
+  // Keep the complete, unenhanced explanation when visibility or motion
+  // preferences cannot be observed. Acquire no listeners in this fallback.
+  if (typeof globalThis.matchMedia !== 'function' || typeof globalThis.IntersectionObserver !== 'function') {
+    return { setMotion() {}, destroy() {} };
+  }
   const own = new AbortController();
   const listen = { signal: own.signal };
-  const media = matchMedia('(prefers-reduced-motion: reduce)');
+  let media = null, observer = null;
   let mode = motion, selected = 'local', visible = false, frame = 0, last = 0, destroyed = false;
   const pose = { dispatch: 0, carriage: 0, flag: 0 };
   const moving = [...root.querySelectorAll('[data-relay-motion]')].filter(n => n.dataset.relayMotion !== 'fixed');
@@ -35,7 +40,7 @@ export function mountVisual(host, { locale = 'es', motion = 'still', signal } = 
   };
   const cancel = () => { if (frame) cancelAnimationFrame(frame); frame = 0; last = 0; };
   const snap = () => { const target = exampleOf(selected); for (const key of Object.keys(pose)) pose[key] = target[key]; paint(); cancel(); };
-  const canMove = () => !destroyed && mode === 'interactive' && visible && !document.hidden && !media.matches;
+  const canMove = () => !destroyed && mode === 'interactive' && visible && !document.hidden && media && !media.matches;
   function tick(now) {
     frame = 0;
     if (!canMove()) { snap(); return; }
@@ -63,36 +68,18 @@ export function mountVisual(host, { locale = 'es', motion = 'still', signal } = 
     root.querySelector('[data-relay-announcement]').textContent = `${copy.demo}. ${copy.headings[i]}. ${copy.details[i]}`;
     if (!canMove()) snap(); else if (!frame) frame = requestAnimationFrame(tick);
   }
-  root.querySelector('[data-relay-controls]').hidden = false;
-  root.querySelector('[data-relay-explanation]').hidden = false;
-  root.querySelector('[data-relay-static]').hidden = true;
-  root.dataset.relayExample = selected;
-  for (const button of buttons) button.addEventListener('click', () => choose(button.dataset.example), listen);
-  root.querySelector('[data-relay-controls]').addEventListener('keydown', event => {
-    const here = buttons.indexOf(document.activeElement);
-    if (here < 0) return;
-    const next = { ArrowRight: (here + 1) % 4, ArrowDown: (here + 1) % 4, ArrowLeft: (here + 3) % 4, ArrowUp: (here + 3) % 4, Home: 0, End: 3 }[event.key];
-    if (next === undefined) return;
-    event.preventDefault(); buttons[next].focus(); choose(buttons[next].dataset.example);
-  }, listen);
-  const visibility = () => { if (!canMove()) snap(); };
-  document.addEventListener('visibilitychange', visibility, listen);
-  media.addEventListener('change', visibility, listen);
-  const observer = new IntersectionObserver(entries => {
-    visible = entries[entries.length - 1].isIntersecting;
-    if (!visible) snap();
-  });
-  observer.observe(root.querySelector('svg'));
   function destroy() {
     if (destroyed) return;
-    destroyed = true; cancel(); observer.disconnect(); own.abort();
+    destroyed = true; cancel(); own.abort();
     signal?.removeEventListener('abort', destroy);
-    root.querySelector('[data-relay-controls]').hidden = true;
-    root.querySelector('[data-relay-explanation]').hidden = true;
-    root.querySelector('[data-relay-static]').hidden = false;
+    try { observer?.disconnect(); } finally {
+      snap();
+      root.querySelector('[data-relay-controls]').hidden = true;
+      root.querySelector('[data-relay-explanation]').hidden = true;
+      root.querySelector('[data-relay-static]').hidden = false;
+    }
   }
-  signal?.addEventListener('abort', destroy, { once: true });
-  return {
+  const handle = {
     setMotion(next) {
       if (!['still', 'interactive'].includes(next)) throw new RangeError('Unsupported relay motion');
       if (destroyed) return;
@@ -100,4 +87,34 @@ export function mountVisual(host, { locale = 'es', motion = 'still', signal } = 
     },
     destroy,
   };
+  try {
+    // Install the caller's cleanup before any module listener or observer.
+    signal?.addEventListener('abort', destroy, { once: true });
+    media = globalThis.matchMedia('(prefers-reduced-motion: reduce)');
+    for (const button of buttons) button.addEventListener('click', () => choose(button.dataset.example), listen);
+    root.querySelector('[data-relay-controls]').addEventListener('keydown', event => {
+      const here = buttons.indexOf(document.activeElement);
+      if (here < 0) return;
+      const next = { ArrowRight: (here + 1) % 4, ArrowDown: (here + 1) % 4, ArrowLeft: (here + 3) % 4, ArrowUp: (here + 3) % 4, Home: 0, End: 3 }[event.key];
+      if (next === undefined) return;
+      event.preventDefault(); buttons[next].focus(); choose(buttons[next].dataset.example);
+    }, listen);
+    const visibility = () => { if (!canMove()) snap(); };
+    document.addEventListener('visibilitychange', visibility, listen);
+    media.addEventListener('change', visibility, listen);
+    observer = new globalThis.IntersectionObserver(entries => {
+      visible = entries[entries.length - 1].isIntersecting;
+      if (!visible) snap();
+    });
+    observer.observe(root.querySelector('svg'));
+    // An instrumented host may abort synchronously while setup is running.
+    if (destroyed || signal?.aborted) { observer.disconnect(); destroy(); return handle; }
+    root.querySelector('[data-relay-controls]').hidden = false;
+    root.querySelector('[data-relay-explanation]').hidden = false;
+    root.querySelector('[data-relay-static]').hidden = true;
+    root.dataset.relayExample = selected;
+  } catch {
+    destroy();
+  }
+  return handle;
 }
