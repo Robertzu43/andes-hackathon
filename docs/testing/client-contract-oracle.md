@@ -172,9 +172,53 @@ node tests/client-contract-review/run-queue.mjs \
 
 Missing collector/candidate exits 2, assertion/collection failure exits 1, all
 assertions holding exits 0. Each collection is bounded. Candidate/trace provenance
-must still be verified independently. There is **no lane42 acceptance yet**.
-Real IndexedDB reload/offline tests wait for its frozen exports and the local
-browser foundation; lane46's real backend/auth/process tests remain separate.
+must still be verified independently.
+
+### PR66 frozen queue review
+
+`drivers/queue-0b1e7e6.mjs` binds the public queue/uploader/pipeline exports at
+`0b1e7e69f9ea5f0b28266554a5361ba7d299bfda` to the unchanged ten scenarios. It
+injects clone-isolated stores and synthetic fetch, and projects actual records,
+request bodies/keys and counters. Fixture sequence labels are decoded from their
+event IDs; source timestamps/coordinates come from actual retained records.
+The binding does not create a persisted intent, clear stores on signout, or add
+candidate safeguards. No real request leaves the process.
+
+```sh
+ANDES_REVIEW_QUEUE_ROOT=/ABS/0B1E7E6/ARCHIVE \
+  node tests/client-contract-review/run-queue.mjs \
+  --collector tests/client-contract-review/drivers/queue-0b1e7e6.mjs \
+  --candidate 0b1e7e69f9ea5f0b28266554a5361ba7d299bfda
+ANDES_REVIEW_QUEUE_ROOT=/ABS/0B1E7E6/ARCHIVE \
+  node tests/client-contract-review/queue-races.probes.mjs
+```
+
+Disposition: **FIX**. Node26.3.0 author suite **40 passed**. The unchanged queue
+oracle is **7 passed, 3 failed**: missing persisted ambiguous intent, wrong-trip
+receipt acceptance, and an unsupported signout boundary. That final item is an
+integration acceptance gap, not an executed signout implementation failure.
+The additional seven independently written scheduling/protocol probes produce
+**1 passed, 6 failed**, with these four distinct reproduced defects:
+
+1. Hold `getAccessToken()` inside a flush; await `pipeline.stop()` or
+   `revokeTrip()`; then release the token. A **new POST starts afterward**, with
+   zero requests before retirement and one afterward. This is a new transmission,
+   not a claim that an already sent request can be undone.
+2. A 200 response naming another trip, or containing malformed JSON, deletes the
+   sole retained sample and increments `uploaded`. The reported receipt uses the
+   requested trip ID even when the response named another trip.
+3. Lose the response to a one-sample upload, enqueue a second capture, and flush.
+   The unresolved one-sample key/body becomes a different key/two-sample body.
+   Records survive restart, but no batch intent is persisted for reconciliation.
+4. Nine network failures with default `maxAttempts: 8` make nine requests and
+   leave the record pending, never failed; the network catch skips exhaustion.
+
+Raw sanitized results are in `client-contract-reviews/queue-0b1e7e6.probes.json`
+and `queue-0b1e7e6-races.probes.json`. Expected failure exits are 1; these are
+candidate defect evidence, not failing fixture self-checks. The author owns fixes;
+preserve the assertions for the next frozen head. Browser IndexedDB reload/quota,
+signout host integration, physical capture and device/provider behavior remain
+unproved. No browser foundation was needed for these core reproductions.
 
 ## Actual client-to-backend bridge
 
