@@ -1,0 +1,223 @@
+{
+  "schema": "andes.reviewer-native-retirement/1",
+  "claimedCandidateSha": "9b53b7490da8aa36db9d1a124d87dac7e274f7e5",
+  "candidateIdentityVerifiedByRunner": false,
+  "passed": false,
+  "wholeAppAccepted": false,
+  "uiProofComplete": false,
+  "observations": {
+    "stop": {
+      "transition": "stop",
+      "requestsBeforeRetirementFinished": 0,
+      "newRequestsAfterRetirement": 1,
+      "scopeRevoked": false,
+      "state": {
+        "nativeIndexedDB": true,
+        "origin": "http://127.0.0.1:57447",
+        "dbName": "q47-review-9b53b74-20261017-stop",
+        "pageInstance": "b7a2176f-b39b-43d2-a196-1ca104c06a06",
+        "navigationStartedAt": 1792280926699.7,
+        "counts": {
+          "enqueued": 2,
+          "uploaded": 1,
+          "droppedOverflow": 0,
+          "droppedDuplicate": 0,
+          "droppedOutOfBounds": 0,
+          "rejectedValidation": 0,
+          "rejectedBounds": 0,
+          "rejectedMissing": 0,
+          "tripStoppedRejections": 0,
+          "conflictErrors": 0,
+          "receiptMismatches": 0,
+          "wipedByRevocation": 0,
+          "wipedBySignout": 0,
+          "failedRetained": 0,
+          "recoveredAfterInterruption": 0,
+          "pending": 1,
+          "uploading": 0,
+          "failed": 0,
+          "retained": 1
+        },
+        "records": [
+          {
+            "queueId": "q-2",
+            "seq": 2,
+            "state": "pending",
+            "tripId": "00000000-0000-4000-8000-000000000006",
+            "userId": "00000000-0000-4000-8000-000000000002",
+            "sample": {
+              "capturedAt": "2026-10-17T23:43:55.851Z",
+              "latitude": 0,
+              "longitude": 0,
+              "accuracy": 15
+            },
+            "capturedAtMs": 1792280635851,
+            "provenance": {
+              "eventId": "synthetic-browser:B",
+              "sessionId": "synthetic-browser-session",
+              "requestId": "synthetic-browser:B"
+            },
+            "enqueuedAtMs": 1792280935854,
+            "attempts": 0,
+            "lastError": null
+          }
+        ],
+        "meta": [
+          {
+            "id": "meta",
+            "seq": 2,
+            "counts": {
+              "enqueued": 2,
+              "uploaded": 1,
+              "droppedOverflow": 0,
+              "droppedDuplicate": 0,
+              "droppedOutOfBounds": 0,
+              "rejectedValidation": 0,
+              "rejectedBounds": 0,
+              "rejectedMissing": 0,
+              "tripStoppedRejections": 0,
+              "conflictErrors": 0,
+              "receiptMismatches": 0,
+              "wipedByRevocation": 0,
+              "wipedBySignout": 0,
+              "failedRetained": 0,
+              "recoveredAfterInterruption": 0
+            },
+            "revokedScopes": []
+          }
+        ],
+        "requests": [
+          {
+            "path": "/v1/trips/00000000-0000-4000-8000-000000000005/locations",
+            "key": "loc1-8faf57c260ef928985a7555e664c047ef3dfa6320f60b901131ef1657703ee9a",
+            "body": {
+              "observations": [
+                {
+                  "capturedAt": "2026-10-17T23:43:55.851Z",
+                  "latitude": 0,
+                  "longitude": 0,
+                  "accuracy": 15
+                }
+              ]
+            }
+          }
+        ],
+        "observed": [
+          "two scopes committed to native IndexedDB"
+        ]
+      }
+    },
+    "revoke": {
+      "transition": "revoke",
+      "requestsBeforeRetirementFinished": 0,
+      "newRequestsAfterRetirement": 1,
+      "scopeRevoked": true,
+      "state": {
+        "nativeIndexedDB": true,
+        "origin": "http://127.0.0.1:57447",
+        "dbName": "q47-review-9b53b74-20261017-revoke",
+        "pageInstance": "f0715333-37f1-45bb-b4e3-23a9bfe01f3b",
+        "navigationStartedAt": 1792280935972.2,
+        "counts": {
+          "enqueued": 2,
+          "uploaded": 1,
+          "droppedOverflow": 0,
+          "droppedDuplicate": 0,
+          "droppedOutOfBounds": 0,
+          "rejectedValidation": 0,
+          "rejectedBounds": 0,
+          "rejectedMissing": 0,
+          "tripStoppedRejections": 0,
+          "conflictErrors": 0,
+          "receiptMismatches": 0,
+          "wipedByRevocation": 1,
+          "wipedBySignout": 0,
+          "failedRetained": 0,
+          "recoveredAfterInterruption": 0,
+          "pending": 1,
+          "uploading": 0,
+          "failed": 0,
+          "retained": 1
+        },
+        "records": [
+          {
+            "queueId": "q-2",
+            "seq": 2,
+            "state": "pending",
+            "tripId": "00000000-0000-4000-8000-000000000006",
+            "userId": "00000000-0000-4000-8000-000000000002",
+            "sample": {
+              "capturedAt": "2026-10-17T23:44:04.812Z",
+              "latitude": 0,
+              "longitude": 0,
+              "accuracy": 15
+            },
+            "capturedAtMs": 1792280644812,
+            "provenance": {
+              "eventId": "synthetic-browser:B",
+              "sessionId": "synthetic-browser-session",
+              "requestId": "synthetic-browser:B"
+            },
+            "enqueuedAtMs": 1792280944813,
+            "attempts": 0,
+            "lastError": null
+          }
+        ],
+        "meta": [
+          {
+            "id": "meta",
+            "seq": 2,
+            "counts": {
+              "enqueued": 2,
+              "uploaded": 1,
+              "droppedOverflow": 0,
+              "droppedDuplicate": 0,
+              "droppedOutOfBounds": 0,
+              "rejectedValidation": 0,
+              "rejectedBounds": 0,
+              "rejectedMissing": 0,
+              "tripStoppedRejections": 0,
+              "conflictErrors": 0,
+              "receiptMismatches": 0,
+              "wipedByRevocation": 1,
+              "wipedBySignout": 0,
+              "failedRetained": 0,
+              "recoveredAfterInterruption": 0
+            },
+            "revokedScopes": [
+              "00000000-0000-4000-8000-000000000001 →00000000-0000-4000-8000-000000000005"
+            ]
+          }
+        ],
+        "requests": [
+          {
+            "path": "/v1/trips/00000000-0000-4000-8000-000000000005/locations",
+            "key": "loc1-0e2cc1f330887f1776e19115e5bade019773c03143dfd581b79efc1d5d32f962",
+            "body": {
+              "observations": [
+                {
+                  "capturedAt": "2026-10-17T23:44:04.812Z",
+                  "latitude": 0,
+                  "longitude": 0,
+                  "accuracy": 15
+                }
+              ]
+            }
+          }
+        ],
+        "observed": [
+          "two scopes committed to native IndexedDB"
+        ]
+      }
+    }
+  },
+  "cleanup": {
+    "ownedDatabasesDeleted": [
+      "q47-review-9b53b74-20261017-stop",
+      "q47-review-9b53b74-20261017-revoke"
+    ],
+    "testTabClosed": true,
+    "auxServiceStopped": true
+  },
+  "limitation": "Real native IndexedDB records are read before an injected scheduling pause; stop/revoke complete before release and a new synthetic fetch starts. No upload is forwarded to a network API. This is nonvisual runtime evidence, not product UI/device/provider qualification."
+}

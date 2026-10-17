@@ -93,6 +93,26 @@ globalThis.__q47Queue = {
     // Report the candidate's actual result: a nonzero value is the original P1.
     observed.push('retirement race executed with native IndexedDB'); return result;
   },
+  async retirementStoreRead(transition) {
+    check(['stop', 'revoke'].includes(transition), 'Unknown retirement transition');
+    let reached, release, held = false;
+    const wait = new Promise(resolve => { release = resolve; });
+    const reachedRead = new Promise(resolve => { reached = resolve; });
+    const get = stores.records.get.bind(stores.records);
+    stores.records.get = async key => {
+      const record = await get(key); // Actual IndexedDB result, then scheduling pause.
+      if (!held) { held = true; reached(); await wait; }
+      return record;
+    };
+    const upload = uploader();
+    const pipeline = createObservationPipeline({ queue, uploader: upload, ownerSubject: scopeA.userId });
+    const flushing = pipeline.flush(); await reachedRead;
+    if (transition === 'stop') await pipeline.stop();
+    else await pipeline.revokeTrip(scopeA.tripId);
+    const before = requests.length; release(); await flushing; upload.stop();
+    return { transition, requestsBeforeRetirementFinished: before,
+      newRequestsAfterRetirement: requests.length - before, scopeRevoked: queue.isScopeRevoked(scopeA), state: await inspect() };
+  },
   async cleanup() {
     for (const upload of uploaders) upload.stop();
     stores.close();

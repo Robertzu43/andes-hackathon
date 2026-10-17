@@ -407,6 +407,64 @@ quota/eviction pressure, concurrent tabs, actual backend auth/SQL, app signout h
 cleanup, rendered product UI, physical capture or provider behavior. The later
 `9b53b74` repair is a separate candidate and is not covered by these results.
 
+### Repair review at 9b53b74
+
+Disposition: **FIX** at
+`9b53b7490da8aa36db9d1a124d87dac7e274f7e5`. Fresh Node26.3.0 execution confirms
+**49 author tests pass and all seven original scheduling/protocol probes pass**.
+Receipt validation, network exhaustion and same-page retry batch pinning are
+improved; the original assertions were not modified. The unchanged ten-case
+oracle, bound to the new public `signOut()` and logical retained `uploading`
+records through `drivers/queue-9b53b74.mjs`, is **8 passed / 2 failed**.
+
+Five additional cases in `queue-repair.probes.mjs` exercise the same original
+retirement, durable ambiguity and signout requirements. All five reproduce defects:
+
+1. **Retirement remains racy after the final store await.** The stopped check is
+   followed by `await queue.getRecords(...)`. Hold a record read after obtaining
+   its result; complete stop or revocation; then release the read. Both start a
+   new POST, zero before retirement and one afterward. Recheck current lifecycle
+   and revocation synchronously after the final await immediately before fetch.
+2. **The original intent is not durable and is dropped on protocol failure.**
+   The sticky map lives only in the uploader. Lose a one-sample response, stop,
+   reopen, enqueue another capture and flush: the request becomes two samples
+   under a new key. A malformed200 followed by another capture produces the same
+   key/body change without a restart. Per-capture dedupe does not preserve the
+   original request or resolve its ambiguous outcome.
+3. **Signout can regain a prior-session receipt and retains owner/trip metadata.**
+   Hold an already sent response, await `pipeline.signOut()`, then release a
+   valid200. `lastReceipt.tripId` reappears for the old trip; persisted revoked
+   scope strings still contain the old user/trip IDs. Location deletion alone
+   does not satisfy the original signout privacy assertion.
+
+Both final-store-read races were independently repeated with the **real native
+IndexedDB adapter in the embedded browser**, not just memory stores. The wrapper
+pauses after an actual IndexedDB read; retirement completes before it releases
+the old snapshot. Stop and revoke both produced **one new fetch after retirement**.
+The synthetic transport never forwards the location to a network API. The two
+owned databases, tab and server were removed; the owned port was verified free.
+
+```sh
+ANDES_REVIEW_QUEUE_ROOT=/ABS/9B53B74/ARCHIVE \
+  node tests/client-contract-review/queue-races.probes.mjs
+ANDES_REVIEW_QUEUE_ROOT=/ABS/9B53B74/ARCHIVE \
+  node tests/client-contract-review/run-queue.mjs \
+  --collector tests/client-contract-review/drivers/queue-9b53b74.mjs \
+  --candidate 9b53b7490da8aa36db9d1a124d87dac7e274f7e5
+ANDES_REVIEW_QUEUE_ROOT=/ABS/9B53B74/ARCHIVE \
+  node tests/client-contract-review/queue-repair.probes.mjs
+```
+
+For native reproduction, serve the same browser fixture with this candidate,
+seed an owned database, then call `retirementStoreRead('stop')` or
+`retirementStoreRead('revoke')` separately on fresh seeded databases. It returns
+the actual before/after fetch count. Raw original/ten-case/additional results and
+native records are preserved in `client-contract-reviews/queue-9b53b74*.json`.
+Each additional Node case has a bounded wait. No author implementation is edited;
+the original seven probes and ten scenario assertions remain unchanged. These
+failures prevent queue acceptance; product UI, actual backend integration,
+physical/provider behavior and full app acceptance remain separate.
+
 ## Actual client-to-backend bridge
 
 `api-backend.probes.mjs` connects the frozen client **78efad0** to actual backend

@@ -1,0 +1,78 @@
+{
+  "passed": false,
+  "checks": [
+    {
+      "id": "retirement:stop-during-final-record-read",
+      "passed": false,
+      "actual": {
+        "requestsBeforeRetirementFinished": 0,
+        "newRequestsAfterRetirement": 1,
+        "revoked": false,
+        "pumpState": "stopped"
+      }
+    },
+    {
+      "id": "retirement:revoke-during-final-record-read",
+      "passed": false,
+      "actual": {
+        "requestsBeforeRetirementFinished": 0,
+        "newRequestsAfterRetirement": 1,
+        "revoked": true,
+        "pumpState": "idle"
+      }
+    },
+    {
+      "id": "intent:restart-plus-new-capture-preserves-original-key-and-body",
+      "passed": false,
+      "actual": {
+        "firstBatchSize": 1,
+        "replayBatchSize": 2,
+        "sameKey": false,
+        "persistedMeta": [
+          {
+            "id": "meta",
+            "seq": 2,
+            "counts": {
+              "enqueued": 2,
+              "uploaded": 2,
+              "droppedOverflow": 0,
+              "droppedDuplicate": 0,
+              "droppedOutOfBounds": 0,
+              "rejectedValidation": 0,
+              "rejectedBounds": 0,
+              "rejectedMissing": 0,
+              "tripStoppedRejections": 0,
+              "conflictErrors": 0,
+              "receiptMismatches": 0,
+              "wipedByRevocation": 0,
+              "wipedBySignout": 0,
+              "failedRetained": 0,
+              "recoveredAfterInterruption": 1
+            },
+            "revokedScopes": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "intent:malformed-success-keeps-the-original-ambiguous-request",
+      "passed": false,
+      "actual": {
+        "firstBatchSize": 1,
+        "replayBatchSize": 2,
+        "sameKey": false
+      }
+    },
+    {
+      "id": "signout:held-completion-cannot-restore-old-receipt-or-retain-owner-metadata",
+      "passed": false,
+      "actual": {
+        "retained": 0,
+        "cachedReceiptTrip": "00000000-0000-4000-8000-000000000005",
+        "persistedOldOwner": true,
+        "persistedOldTrip": true
+      }
+    }
+  ],
+  "limitation": "Frozen public queue/store/transport seams with independent scheduling, restart and privacy cases; no product UI or provider qualification."
+}
