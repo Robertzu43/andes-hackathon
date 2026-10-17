@@ -43,8 +43,8 @@ export function tripRoutes(app: FastifyInstance, ctx: Context) {
         if (!row?.accepted_at || row.revoked_at || (!row.map_accepted && !row.incident_accepted)) problem(409, 'contact_not_accepted');
       }
       await client.query('UPDATE trip_drafts SET fields=$2 WHERE id=$1', [id, fields]);
-      await client.query(`INSERT INTO trips(id,driver_id,truck_id,origin,destination,country,locale,time_zone,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [id, request.actor.id, fields.truckId, fields.origin, fields.destination, fields.country, fields.locale, fields.timeZone, ctx.clock()]);
+      await client.query(`INSERT INTO trips(id,driver_id,truck_id,origin,destination,country,locale,time_zone,created_at,expected_arrival_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        [id, request.actor.id, fields.truckId, fields.origin, fields.destination, fields.country, fields.locale, fields.timeZone, ctx.clock(), fields.expectedArrivalAt ?? null]);
       for (const grant of grantIds) await client.query('INSERT INTO trip_grants(trip_id,grant_id) VALUES($1,$2)', [id, grant]);
       return { id, status: 'active', fields };
     });
