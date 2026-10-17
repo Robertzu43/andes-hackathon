@@ -841,7 +841,8 @@
       "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/issues/1",
       "title": "[Section] Validate the promise",
       "state": "open",
-      "blocked_by": []
+      "blocked_by": [],
+      "assignee": "sebasbimbi"
     },
     "root/prepare": {
       "codus_node_id": "pn_mvcq4b4z_1b5c50",
@@ -852,7 +853,8 @@
       "state": "open",
       "blocked_by": [
         1
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "root/track": {
       "codus_node_id": "pn_mvcq4bld_5a4a26",
@@ -863,7 +865,8 @@
       "state": "open",
       "blocked_by": [
         2
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "root/checkins": {
       "codus_node_id": "pn_mvcq4bzi_84596d",
@@ -874,7 +877,8 @@
       "state": "open",
       "blocked_by": [
         3
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "root/escalate": {
       "codus_node_id": "pn_mvcq4cbz_9d83e8",
@@ -885,7 +889,8 @@
       "state": "open",
       "blocked_by": [
         4
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "root/verify": {
       "codus_node_id": "pn_mvcq4co3_59aaac",
@@ -896,7 +901,8 @@
       "state": "open",
       "blocked_by": [
         5
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "root/insights": {
       "codus_node_id": "pn_mvcq4dom_dc9234",
@@ -907,7 +913,8 @@
       "state": "open",
       "blocked_by": [
         6
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "validate/drivers": {
       "codus_node_id": "pn_mvcq4kwy_8aaba1",
@@ -916,7 +923,8 @@
       "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/issues/8",
       "title": "Reconstruct real trip incidents",
       "state": "open",
-      "blocked_by": []
+      "blocked_by": [],
+      "assignee": "sebasbimbi"
     },
     "validate/phone": {
       "codus_node_id": "pn_mvcq4l8x_bee2e7",
@@ -927,7 +935,8 @@
       "state": "open",
       "blocked_by": [
         8
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "validate/channels": {
       "codus_node_id": "pn_mvcq4lke_4912d2",
@@ -938,7 +947,8 @@
       "state": "open",
       "blocked_by": [
         9
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "validate/scope": {
       "codus_node_id": "pn_mvcq4lwg_71ec5d",
@@ -949,7 +959,8 @@
       "state": "open",
       "blocked_by": [
         10
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "validate/architecture": {
       "codus_node_id": "pn_mvcq4m7h_1e9695",
@@ -960,7 +971,8 @@
       "state": "open",
       "blocked_by": [
         11
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "prepare/ux": {
       "codus_node_id": "pn_mvcq4rfu_e36ab0",
@@ -971,7 +983,8 @@
       "state": "open",
       "blocked_by": [
         1
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "prepare/identity": {
       "codus_node_id": "pn_mvcq4rrf_96d642",
@@ -982,7 +995,8 @@
       "state": "open",
       "blocked_by": [
         13
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "prepare/contacts": {
       "codus_node_id": "pn_mvcq4s7y_319dc6",
@@ -993,7 +1007,8 @@
       "state": "open",
       "blocked_by": [
         14
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "prepare/start": {
       "codus_node_id": "pn_mvcq4sje_2fe977",
@@ -1004,7 +1019,8 @@
       "state": "open",
       "blocked_by": [
         15
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "prepare/finish": {
       "codus_node_id": "pn_mvcq4suz_0018d2",
@@ -1015,7 +1031,8 @@
       "state": "open",
       "blocked_by": [
         16
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "track/schema": {
       "codus_node_id": "pn_mvcq4wd4_d71f24",
@@ -1026,7 +1043,8 @@
       "state": "open",
       "blocked_by": [
         2
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "track/capture": {
       "codus_node_id": "pn_mvcq4wu8_92366b",
@@ -1037,7 +1055,8 @@
       "state": "open",
       "blocked_by": [
         18
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "track/context": {
       "codus_node_id": "pn_mvcq4x6a_a6e550",
@@ -1048,7 +1067,8 @@
       "state": "open",
       "blocked_by": [
         19
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "track/offline": {
       "codus_node_id": "pn_mvcq4xju_95fa11",
@@ -1059,7 +1079,8 @@
       "state": "open",
       "blocked_by": [
         20
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "track/health": {
       "codus_node_id": "pn_mvcq4xwo_59a114",
@@ -1070,7 +1091,8 @@
       "state": "open",
       "blocked_by": [
         21
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "checkins/policy": {
       "codus_node_id": "pn_mvcq51hd_759a61",
@@ -1081,7 +1103,8 @@
       "state": "open",
       "blocked_by": [
         3
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "checkins/prompt": {
       "codus_node_id": "pn_mvcq51tf_28691e",
@@ -1092,7 +1115,8 @@
       "state": "open",
       "blocked_by": [
         23
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "checkins/measure": {
       "codus_node_id": "pn_mvcq524q_291400",
@@ -1103,7 +1127,8 @@
       "state": "open",
       "blocked_by": [
         24
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "checkins/adapt": {
       "codus_node_id": "pn_mvcq52sw_695a01",
@@ -1114,7 +1139,8 @@
       "state": "open",
       "blocked_by": [
         25
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "checkins/watchdog": {
       "codus_node_id": "pn_mvcq5359_fe25ec",
@@ -1125,7 +1151,8 @@
       "state": "open",
       "blocked_by": [
         26
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "checkins/tune": {
       "codus_node_id": "pn_mvcq53mc_508b10",
@@ -1136,7 +1163,8 @@
       "state": "open",
       "blocked_by": [
         27
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "escalate/state": {
       "codus_node_id": "pn_mvcq57ru_d409aa",
@@ -1147,7 +1175,8 @@
       "state": "open",
       "blocked_by": [
         4
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "escalate/queue": {
       "codus_node_id": "pn_mvcq58gp_395557",
@@ -1158,7 +1187,8 @@
       "state": "open",
       "blocked_by": [
         29
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "escalate/dispatch": {
       "codus_node_id": "pn_mvcq58ts_414113",
@@ -1169,7 +1199,8 @@
       "state": "open",
       "blocked_by": [
         30
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "escalate/receipts": {
       "codus_node_id": "pn_mvcq597s_396408",
@@ -1180,7 +1211,8 @@
       "state": "open",
       "blocked_by": [
         31
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "escalate/retries": {
       "codus_node_id": "pn_mvcq59rg_7e0949",
@@ -1191,7 +1223,8 @@
       "state": "open",
       "blocked_by": [
         32
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "escalate/groups": {
       "codus_node_id": "pn_mvcq5a3m_491aa7",
@@ -1202,7 +1235,8 @@
       "state": "open",
       "blocked_by": [
         33
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "escalate/resolve": {
       "codus_node_id": "pn_mvcq5alm_7d649c",
@@ -1213,7 +1247,8 @@
       "state": "open",
       "blocked_by": [
         34
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "escalate/sandbox": {
       "codus_node_id": "pn_mvcq5axp_b3a938",
@@ -1224,7 +1259,8 @@
       "state": "open",
       "blocked_by": [
         35
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "verify/pilot": {
       "codus_node_id": "pn_mvcq5q95_fb987d",
@@ -1235,7 +1271,8 @@
       "state": "open",
       "blocked_by": [
         5
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "verify/decision": {
       "codus_node_id": "pn_mvcq5qkj_0775cc",
@@ -1246,7 +1283,8 @@
       "state": "open",
       "blocked_by": [
         37
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "insights/consent": {
       "codus_node_id": "pn_mvcq5fk5_cff5ef",
@@ -1257,7 +1295,8 @@
       "state": "open",
       "blocked_by": [
         6
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "insights/pool": {
       "codus_node_id": "pn_mvcq5fw1_d523dd",
@@ -1268,7 +1307,8 @@
       "state": "open",
       "blocked_by": [
         39
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "insights/rates": {
       "codus_node_id": "pn_mvcq5g87_e40250",
@@ -1279,7 +1319,8 @@
       "state": "open",
       "blocked_by": [
         40
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "insights/bias": {
       "codus_node_id": "pn_mvcq5gx4_dcdd0b",
@@ -1290,7 +1331,8 @@
       "state": "open",
       "blocked_by": [
         41
-      ]
+      ],
+      "assignee": "Robertzu43"
     },
     "insights/reports": {
       "codus_node_id": "pn_mvcq5hbf_5a3c63",
@@ -1301,7 +1343,8 @@
       "state": "open",
       "blocked_by": [
         42
-      ]
+      ],
+      "assignee": "sebasbimbi"
     },
     "insights/value": {
       "codus_node_id": "pn_mvcq5hqa_caef8a",
@@ -1312,7 +1355,8 @@
       "state": "open",
       "blocked_by": [
         43
-      ]
+      ],
+      "assignee": "sebasbimbi"
     }
   }
 }

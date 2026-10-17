@@ -22,6 +22,10 @@ Status: planning. The 44 task issues are open; publishing the plan does not comp
 
 The insights section is a later, conditional phase. The verify section includes the original decision/repair loops; those are decision gates, not fabricated completed tasks.
 
+## Ownership
+
+Each issue has one accountable owner. Sebastian (`sebasbimbi`, 20 issues) owns driver evidence, provider access, mobile and contact UX, consent and pilot decisions. Robert (`Robertzu43`, 24 issues) owns architecture, server state, durable jobs, channel integrations and reproducible evaluation. Sebastian starts with [#8](https://github.com/Bimbi-Dev/andes-hackathon/issues/8); Robert's first task is [#12](https://github.com/Bimbi-Dev/andes-hackathon/issues/12), still blocked by #11. See the [ownership matrix](docs/OWNERSHIP.md) for every issue and handoff.
+
 ## Product and evidence
 
 Project: ANDES (hackathon). Team: GOAT. This project has its own workspace and GitHub repository, separate from SurcoCheck.
