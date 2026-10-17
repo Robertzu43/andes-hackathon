@@ -1,0 +1,59 @@
+{
+  "instrumentOnly": true,
+  "candidateAcceptance": "pending",
+  "base": "800205a4be2c94833234c852760b2eb09c6ed079",
+  "primaryModel": "gpt-6.1-sol",
+  "reasoning": "xhigh",
+  "capturedAt": "2026-10-17T23:06:58.193Z",
+  "files": [
+    {
+      "path": "probe.js",
+      "sha256": "ebdff9e7b1084a53b77d2e892603b608a217f58aaf4b6dd17cbde28162ffab28",
+      "bytes": 8078
+    },
+    {
+      "path": "serve.mjs",
+      "sha256": "7650e5769bacdc84bcb5e81acf006a87dddc64ee3cdc67a13144c727b54f02e6",
+      "bytes": 1153
+    },
+    {
+      "path": "sensitivity.html",
+      "sha256": "e9c5d1a026115301ac42b6a829960a6c34cad96fdb4851eacf26f936840a6acb",
+      "bytes": 2296
+    },
+    {
+      "path": "sensitivity.actions.json",
+      "sha256": "0f87f4fc3e1259ae155c76c19395c048af737aa21788751f1ef02769b911b7d3",
+      "bytes": 2334
+    },
+    {
+      "path": "instrument/broken-drive.log",
+      "sha256": "9cf20d2b3c544d6155d0e86f2fd3187a11d6ffb183f03d8287f971c1e84d35a8",
+      "bytes": 5297
+    },
+    {
+      "path": "instrument/corrected-drive.log",
+      "sha256": "6d082a3109b435ec6f7e65fc3465e413cc7c564c8c2ba4d5dcf521823d545d56",
+      "bytes": 5220
+    },
+    {
+      "path": "instrument/broken-mobile.png",
+      "sha256": "3ff254235b34ae16e7aa4539c52f50701b14288a46dcb3d5863dd7f3a3a0ea1c",
+      "bytes": 27901,
+      "pngWidth": 346,
+      "pngHeight": 752
+    },
+    {
+      "path": "instrument/corrected-mobile.png",
+      "sha256": "b633df3abcc165a9922850e39d0d90fec5e809396295f2ddae949fd268cb808d",
+      "bytes": 32678,
+      "pngWidth": 346,
+      "pngHeight": 752
+    },
+    {
+      "path": "instrument/native-corrected.json",
+      "sha256": "39567e458db3c01322b222222ca45cb15ee52ccd8953794dd1b9859d12bf327e",
+      "bytes": 8223
+    }
+  ]
+}

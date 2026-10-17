@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ANDES reviewer instrument control</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { color-scheme: light; font: 16px system-ui; color: #173139; background: #f2f6f6; }
+  body { margin: 24px; }
+  main { max-width: 640px; margin: auto; }
+  button { font: inherit; min-width: 56px; min-height: 56px; margin: 8px 0; }
+  button:focus-visible { outline: 3px solid #166675; outline-offset: 3px; }
+  #part { width: 40px; height: 40px; background: #166675; }
+  .broken #undersized { min-width: 0; min-height: 0; width: 20px; height: 20px; padding: 0; }
+  .broken #wide { width: 120vw; }
+  .broken #primary { margin-top: 110vh; }
+</style>
+<main>
+  <h1>Control sintético del instrumento de revisión</h1>
+  <p>Solo prueba el instrumento. No es la aplicación ANDES ni evidencia de sus ilustraciones.</p>
+  <section id="scope" aria-label="Controles de sensibilidad">
+    <div id="wide">El modo defectuoso introduce desbordamiento intencional.</div>
+    <button id="undersized" type="button" aria-label="Control de tamaño">+</button>
+    <button id="named" type="button">Probar teclado</button>
+    <p id="outcome" role="status">Sin activar</p>
+    <div id="part" aria-hidden="true"></div>
+  </section>
+  <button id="primary" type="button">Acción principal sintética</button>
+</main>
+<script src="/probe.js"></script>
+<script>
+  const broken = new URLSearchParams(location.search).get('mode') !== 'corrected';
+  document.body.classList.toggle('broken', broken);
+  if (broken) {
+    document.querySelector('#undersized').removeAttribute('aria-label');
+    document.querySelector('#undersized').textContent = '';
+  }
+  document.querySelector('#named').addEventListener('click', () => {
+    document.querySelector('#outcome').textContent = 'Control activado';
+  });
+  andesVisualProbe.observe('#scope');
+  if (broken) {
+    document.querySelector('#part').animate([{ opacity: 1 }, { opacity: .5 }], { duration: 600, iterations: Infinity });
+    let ticks = 0;
+    const tick = () => {
+      document.querySelector('#part').style.transform = `translateX(${++ticks % 20}px)`;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+</script>
+</html>
