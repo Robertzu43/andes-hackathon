@@ -90,7 +90,18 @@ This is a callable seam for component44's reviewed CI change. Lane 46 does not e
 root package scripts or workflows without component44 coordination. The current
 default `npm test` includes only root tests, so it does **not** discover this new
 subdirectory. The explicit harness command is required. The locally owned-cluster
-mode is the default; CI-service mode must be separately exercised when wired.
+mode is the default. To verify CI-service mode locally against a second generated
+database on an owned server, including an unchanged input-database sentinel and
+an exact database inventory/cleanup check:
+
+```sh
+node scripts/app-integration/check-ci-seam.mjs
+```
+
+This control runs the same suite through the explicit admin URL, asserts that its
+input table/data survive and that the nested run leaves no extra database, then
+cleans up its own server. It establishes local seam behaviour; component44 still
+owns the actual CI workflow wiring and review.
 
 ## Scenario coverage and limits
 
