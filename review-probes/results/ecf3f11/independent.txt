@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: real committed HTTP write with lost response stays unknown; only explicit same-key replay reads the original result
+ok 1 - real committed HTTP write with lost response stays unknown; only explicit same-key replay reads the original result
+  ---
+  duration_ms: 215.845792
+  type: 'test'
+  ...
+# Subtest: a delayed real private-trip response cannot cross a session switch even when transport ignores abort
+ok 2 - a delayed real private-trip response cannot cross a session switch even when transport ignores abort
+  ---
+  duration_ms: 131.662334
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 452.825

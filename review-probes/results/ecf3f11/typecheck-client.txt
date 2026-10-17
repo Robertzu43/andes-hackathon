@@ -1,0 +1,3 @@
+
+> andes-backend@0.1.0 typecheck:client-api
+> tsc -p web/tests/api/tsconfig.json && tsc -p web/tests/api/tsconfig.json --module ESNext --moduleResolution Bundler

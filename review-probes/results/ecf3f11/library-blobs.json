@@ -1,0 +1,62 @@
+[
+  {
+    "path": "docs/client/api-boundary.md",
+    "source_blob": "ccb22d8a54917e6c0ee58a1ed070e54cea904c61",
+    "candidate_blob": "ccb22d8a54917e6c0ee58a1ed070e54cea904c61",
+    "unchanged": true
+  },
+  {
+    "path": "web/src/lib/api/client.ts",
+    "source_blob": "e2cfc373b7f49a0236be783643af535b6f4d08a2",
+    "candidate_blob": "e2cfc373b7f49a0236be783643af535b6f4d08a2",
+    "unchanged": true
+  },
+  {
+    "path": "web/src/lib/api/errors.ts",
+    "source_blob": "9f48b79f8d5498c097f794f4a3516213000a3d22",
+    "candidate_blob": "9f48b79f8d5498c097f794f4a3516213000a3d22",
+    "unchanged": true
+  },
+  {
+    "path": "web/src/lib/api/index.ts",
+    "source_blob": "b5dfb1c36e12c2e6c0f4c15faf43141564f59b70",
+    "candidate_blob": "b5dfb1c36e12c2e6c0f4c15faf43141564f59b70",
+    "unchanged": true
+  },
+  {
+    "path": "web/src/lib/api/responses.ts",
+    "source_blob": "f1d16fec64d08ba1edc20bc1d3244a012dc45575",
+    "candidate_blob": "f1d16fec64d08ba1edc20bc1d3244a012dc45575",
+    "unchanged": true
+  },
+  {
+    "path": "web/src/lib/api/session.ts",
+    "source_blob": "b941c8b5c2dd599f21812e7f36fcbc0f2845e179",
+    "candidate_blob": "b941c8b5c2dd599f21812e7f36fcbc0f2845e179",
+    "unchanged": true
+  },
+  {
+    "path": "web/src/lib/api/types.ts",
+    "source_blob": "57ffe57260a776ad4b622341d17f446621693b43",
+    "candidate_blob": "57ffe57260a776ad4b622341d17f446621693b43",
+    "unchanged": true
+  },
+  {
+    "path": "web/tests/api/client.test.mjs",
+    "source_blob": "cee7b7a728d7b961fb7727e8bb85d0f445269136",
+    "candidate_blob": "cee7b7a728d7b961fb7727e8bb85d0f445269136",
+    "unchanged": true
+  },
+  {
+    "path": "web/tests/api/contracts.types.ts",
+    "source_blob": "e73fa7339b0d450d0f4c87a12a2778bb4728d0b4",
+    "candidate_blob": "e73fa7339b0d450d0f4c87a12a2778bb4728d0b4",
+    "unchanged": true
+  },
+  {
+    "path": "web/tests/api/tsconfig.json",
+    "source_blob": "7654cf29504fa3392757ae01bed9bed9749dd577",
+    "candidate_blob": "7654cf29504fa3392757ae01bed9bed9749dd577",
+    "unchanged": true
+  }
+]

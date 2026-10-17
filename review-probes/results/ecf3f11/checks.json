@@ -1,0 +1,43 @@
+{
+  "reviewedHead": "ecf3f111c1eb3cf3d6d85f83e084dc95ef665c1f",
+  "node": "v24.17.0",
+  "checks": [
+    {
+      "name": "typecheck",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "typecheck-client",
+      "command": [
+        "npm",
+        "run",
+        "typecheck:client-api"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "combined",
+      "command": [
+        "npm",
+        "run",
+        "test:all"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "independent",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "review-probes/client-seam.test.mjs"
+      ],
+      "exit": 0
+    }
+  ]
+}

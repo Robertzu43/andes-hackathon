@@ -1,0 +1,264 @@
+
+> andes-backend@0.1.0 test:all
+> npm test && npm run test:tooling && npm run test:client-api
+
+
+> andes-backend@0.1.0 test
+> npm run build && node --test tests/*.test.mjs
+
+
+> andes-backend@0.1.0 build
+> tsc
+
+✔ typed client decodes real persisted drafts/trips and preserves explicit idempotency and JWT errors (368.396458ms)
+✔ typed snapshot decoding preserves source age and observes real backend consent revocation (155.920833ms)
+✔ typed incident receipts stay separate from reported action, arrival and explicit driver resolution (165.959166ms)
+✔ signed identity enforces issuer, audience, expiry, signature and driver/truck ownership (433.40475ms)
+✔ contacts accept their own explicit scopes with a trusted verified phone before selection (140.912958ms)
+✔ draft review and confirmation are explicit, complete and idempotent (88.428667ms)
+✔ location separates capture/receipt/read freshness, bounds history and honors revocation (221.067625ms)
+✔ SOS rolls back all state on SQL failure and simultaneous taps create one incident and independent jobs (132.85375ms)
+✔ trip and incident closure are independent; contact receipt/action are attributed and revoke cancels work (95.442542ms)
+✔ unqualified channels stay unavailable and accepted incident scope never grants map access (83.369458ms)
+✔ migration is repeat-safe and transaction failures release clients without committing (74.04175ms)
+✔ driver incident resolution preserves active trip and authorized attempts (106.853292ms)
+✔ standing contact revoke serializes with confirmation and blocks every current/future trip grant (126.324041ms)
+✔ SOS and standing revoke complete when grant lock overlaps the SOS foreign-key insert (135.764583ms)
+✔ mixed-case grant UUID confirmations take one canonical lock order and reject case-alias duplicates (134.527792ms)
+✔ AWS database components survive pinned pg parsing with verified CA TLS (4.909625ms)
+✔ non-superuser database owner bootstraps twice with app DML but no DDL or migration writes (341.728ms)
+✔ quota wait rechecks job lifetime after 999ms (414.800458ms)
+✔ quota wait rechecks job lifetime after 1000ms (111.794709ms)
+✔ quota wait rechecks job lifetime after 1001ms (115.927708ms)
+✔ quota wait rechecks claim lease after 29999ms (126.202209ms)
+✔ quota wait rechecks claim lease after 30000ms (112.496083ms)
+✔ quota wait rechecks claim lease after 30001ms (111.799167ms)
+✔ recipient discovers incident from frozen alerts and can read and respond after arrival without stopping SOS channels (507.43175ms)
+✔ incident reads and acknowledgements recheck both consent grants and accepted incident scope (428.441583ms)
+✔ outbox rollback publishes nothing, lost publish acknowledgement retries only transport with bounded backoff (95.643541ms)
+✔ duplicate SQS and expired authorization leases never create a second external attempt (97.231375ms)
+✔ stale claim cannot authorize, stop-first denies and authorize-first survives resolve/revoke (99.120709ms)
+✔ authorization rechecks standing scope, trip scope, phone and incident; arrival keeps SOS without coordinates (131.013709ms)
+✔ scanner recovers expired transport and claims but keeps authorized work unknown; no blind DLQ replay (114.517333ms)
+✔ account and channel budgets persist and preserve emergency reserve across replicas (94.641958ms)
+✔ early callbacks persist unmatched, exact response ID correlates, duplicates and contradictory late HTTP cannot regress delivery (106.175542ms)
+✔ paused WhatsApp leaves later-batch SMS/voice and reads/close free; slots are bounded (122.354875ms)
+✔ rolled-back new intent is never published (73.348833ms)
+✔ publish acknowledgement loss creates duplicate transport but still only one provider send (90.471875ms)
+✔ old relay cannot acknowledge a newer lease (90.428875ms)
+✔ callback endpoint preserves raw bytes and needs no OIDC; failed SQL is not acknowledged (109.810625ms)
+✔ unknown read result cannot authorize a second send while original emitter remains paused (92.776709ms)
+✔ control publishes new outbox while provider reconciliation read is paused (136.9375ms)
+✔ global revoke-first blocks every authorization and no grant lock upgrades deadlock standing revoke (115.721958ms)
+✔ delivery facts never regress on late failed/queued/unknown callbacks and voice never implies human answer (125.111333ms)
+✔ daily quotas do not erase the sliding minute limit across UTC midnight (89.342416ms)
+✔ reconciliation GETs reserve account request budget before network (97.551042ms)
+✔ ordinary reservations stop at configured emergency margin (147.395084ms)
+✔ authorization independently rechecks current standing consent and per-trip consent (392.058834ms)
+✔ control reconciles known IDs with new sends off and denies new authorization (108.930542ms)
+✔ public TLS entry, private task/database boundaries and retained encrypted state (0.879209ms)
+✔ task IAM isolates each queue; execution secrets and administrator never become task access (0.378375ms)
+✔ exact process wiring, bootstrap/live gates and conservative rolling capacity (0.252666ms)
+✔ image contains migration SQL/CA and CI runs real PostgreSQL tests without live credentials (3.783875ms)
+✔ Zavu sends exact explicit channels without fallback and accepts 202/replay 409 (15.043583ms)
+✔ ambiguous HTTP never retries; definitive nested limits are rejected; reads use GET only (1.073667ms)
+✔ v2 signature authenticates exact bytes, signed project/sender and strict time window (0.75675ms)
+✔ provider configuration fails closed unless explicit live qualification is complete (0.183417ms)
+✔ SQS adapter sends only IDs/version, rejects secret-bearing envelopes, and defers saturated messages (55.458833ms)
+✔ sends-off configuration retains read-only provider but denies POST and delivery startup (18.607666ms)
+ℹ tests 56
+ℹ suites 0
+ℹ pass 56
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5556.304291
+
+> andes-backend@0.1.0 test:tooling
+> node scripts/test-tooling.mjs
+
+
+[tooling] recorder
+✔ nothing is attached, scheduled or queried before start() (4.261667ms)
+✔ start() records both clocks and the page state, then ticks at the configured interval (0.460583ms)
+✔ start and stop record the device time zone, so a cross-border zone change is visible (0.196958ms)
+✔ an unreadable time zone is recorded as null (0.096125ms)
+✔ start() twice throws and a stopped recorder cannot restart (0.198291ms)
+✔ stop() is idempotent, records once and freezes the trace (0.136166ms)
+✔ lifecycle and network events become observations with their own event timestamps (0.203333ms)
+✔ on-time timer ticks are counted without filling the buffer (0.115ms)
+✔ late ticks record monotonic and wall elapsed time separately (0.136709ms)
+✔ the timer gap threshold is inclusive on either clock (0.140833ms)
+✔ on a bare runtime the recorder starts, reports unknowns and releases its real timer (10.931291ms)
+✔ a missing navigator or document makes capabilities unknown rather than absent (0.187417ms)
+✔ capabilities are read passively and motion or notification permission is never requested (0.166042ms)
+✔ a capability getter that throws is unknown, and a location request through it is recorded (0.189667ms)
+✔ geolocation permission state is queried passively and later changes are recorded (2.015625ms)
+✔ a rejected permission query is recorded as unknown with the error name (0.357916ms)
+✔ a permission answer arriving after stop() is ignored and leaves no listener behind (0.4075ms)
+✔ samplePosition() is the only path to a location request and coordinates are omitted by default (0.361375ms)
+✔ raw coordinates are kept only when the tester opts in (0.101666ms)
+✔ position age is classified against staleAfterMs, and future or missing timestamps are unknown (0.152666ms)
+✔ geolocation errors keep the spec code and its name (0.127375ms)
+✔ location requests without the API are recorded instead of throwing (0.086541ms)
+✔ a position watch records each callback until it is cleared (0.146792ms)
+✔ marks and location requests need an active session (0.11975ms)
+✔ mark() labels are stored as bounded strings (0.060667ms)
+✔ the buffer keeps the newest observations and counts what it dropped (0.065417ms)
+✔ acquisition settings survive buffer eviction of the request observation (0.108459ms)
+✔ each retained fix carries the settings of its own request after settings change (0.114792ms)
+✔ invalid options are rejected before anything starts (0.665625ms)
+✔ exportTrace() returns detached JSON-safe data (0.136ms)
+✔ stop() removes every listener, timer, watch and permission subscription (2.022417ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 70.79775
+
+[tooling] channels
+
+[tooling] gates
+
+[tooling] checkins
+
+[tooling] contacts
+
+[tooling] check-in scenarios
+PASS stationary_candidate: stationary_candidate
+PASS bootstrap_is_explicit: stationary_candidate
+PASS planned_stop_after_stationary_observation: stationary_candidate
+PASS no_reply_remains_unknown: stationary_candidate
+PASS moving_visual_manual: suppress
+PASS moving_conflicts_with_parked: suppress
+PASS moving_curve: suppress
+PASS moving_intersection: suppress
+PASS moving_traffic_stop: suppress
+PASS stationary_in_traffic_is_not_parked: defer
+PASS stationary_conflicts_with_curve: defer
+PASS stationary_conflicts_with_driving: defer
+PASS stationary_conflicts_with_intersection: defer
+PASS motion_unknown: defer
+PASS road_unknown: defer
+PASS motion_and_road_unknown: defer
+PASS permission_lost: suppress
+PASS permission_unknown: defer
+PASS stationary_evidence_absent: defer
+PASS stationary_evidence_revoked: suppress
+PASS motion_expired: defer
+PASS road_expired: defer
+PASS permission_expired: defer
+PASS stationary_evidence_expired: defer
+PASS fresh_before_expiry_boundary: stationary_candidate
+PASS all_expire_at_boundary: defer
+PASS audio_stationary_unvalidated: suppress
+PASS audio_moving_unavailable: suppress
+PASS mode_unknown: suppress
+PASS no_eligible_opportunity: defer
+PASS planned_stop_does_not_override_motion: suppress
+PASS planned_stop_with_unknown_motion: defer
+PASS observation_from_future: defer
+PASS receipt_before_observation: defer
+PASS expiry_before_observation: defer
+PASS evaluation_clock_reversed: defer
+PASS clock_epoch_changed: defer
+PASS one_source_clock_mismatched: defer
+PASS sequence_out_of_order: defer
+PASS observation_time_reversed_despite_new_sequence: defer
+PASS receipt_time_reversed_despite_new_sequence: defer
+PASS same_sequence_changed_payload: defer
+PASS identical_replay_still_fresh: stationary_candidate
+PASS invalid_prior_clock_order: defer
+PASS old_expired_loss_needs_new_grant: stationary_candidate
+PASS report_cannot_replace_motion_observation: defer
+PASS production_input_rejected: defer
+PASS boolean_time_rejected: defer
+PASS negative_sequence_rejected: defer
+PASS missing_source_rejected: defer
+50/50 synthetic scenarios passed
+
+> andes-backend@0.1.0 test:client-api
+> node --test web/tests/api/*.test.mjs
+
+▶ every current operation uses its sourced route, method, payload and credentials
+  ✔ getIdentity  (2.491042ms)
+  ✔ createTruck  (0.435333ms)
+  ✔ inviteContact  (0.252375ms)
+  ✔ acceptContact  (0.705292ms)
+  ✔ revokeContact  (0.351167ms)
+  ✔ createDraft  (0.234625ms)
+  ✔ confirmTrip  (0.17575ms)
+  ✔ getTrip  (0.234125ms)
+  ✔ commandTrip arrived (0.208833ms)
+  ✔ commandTrip cancel (0.242208ms)
+  ✔ commandTrip pause (0.118542ms)
+  ✔ commandTrip resume (0.094417ms)
+  ✔ commandTrip checkin_ok (0.092416ms)
+  ✔ commandTrip rest_report (0.082042ms)
+  ✔ uploadLocations  (0.131458ms)
+  ✔ getSnapshot  (0.188541ms)
+  ✔ revokeTripContact  (0.092125ms)
+  ✔ reportSos  (0.093125ms)
+  ✔ getIncident  (0.095959ms)
+  ✔ acknowledgeIncident  (0.079ms)
+  ✔ reportAction  (0.068ms)
+  ✔ resolveIncident  (0.252875ms)
+✔ every current operation uses its sourced route, method, payload and credentials (8.338792ms)
+✔ configuration is explicit and rejects unsafe token destinations (0.375208ms)
+✔ invalid credential values fail with safe local errors (0.108292ms)
+✔ explicit proxy base path is preserved (0.119833ms)
+✔ missing, expired and cleared sessions send nothing and snapshots contain no token (0.169917ms)
+▶ HTTP distinctions remain actionable and server text never becomes an error
+  ✔ 400 (0.242916ms)
+  ✔ 401 (0.1245ms)
+  ✔ 403 (0.085958ms)
+  ✔ 404 (0.073042ms)
+  ✔ 409 (0.097042ms)
+  ✔ 422 (0.077542ms)
+  ✔ 500 (0.074083ms)
+  ✔ 503 (0.071083ms)
+✔ HTTP distinctions remain actionable and server text never becomes an error (1.02025ms)
+✔ safe backend codes are preserved without private error payloads (0.100542ms)
+✔ write requires a bounded visible-ASCII key and UUID resources cannot escape the route (0.518875ms)
+✔ payload is captured before async work and explicit retries preserve key and content (0.136667ms)
+✔ UUID case aliases preserve the same backend idempotency path scope (0.14825ms)
+✔ network failure never replays a write or exposes transport cause (0.124166ms)
+✔ caller cancellation before dispatch sends nothing; cancellation after dispatch stays unknown (0.236084ms)
+✔ local timeout aborts one attempt and does not imply server cancellation (10.51625ms)
+✔ session replacement aborts old work and a stale 401 cannot erase the new session (0.341417ms)
+✔ a request expiring in flight aborts without refreshing or replaying (25.517917ms)
+✔ invalid success, HTML and impossible snapshots remain protocol errors (0.944542ms)
+✔ stale location and attributed action facts are preserved (0.144625ms)
+✔ native fetch reaches a loopback HTTP server and refuses credential redirects (16.319833ms)
+ℹ tests 48
+ℹ suites 0
+ℹ pass 48
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 176.900166
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.362s
+
+OK
+.........................
+----------------------------------------------------------------------
+Ran 25 tests in 1.217s
+
+OK
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.059s
+
+OK
+...................................
+----------------------------------------------------------------------
+Ran 35 tests in 0.188s
+
+OK
