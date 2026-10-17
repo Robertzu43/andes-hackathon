@@ -20,7 +20,7 @@ export interface Invitation {
   id: string; driverId: string; contactId: string; requested: SharingScope;
   accepted: SharingScope | null; status: 'pending' | 'accepted' | 'revoked';
 }
-interface TripSelection { id: string; driverId: string }
+interface TripSelection { id: string; driverId: string | null }
 interface Location {
   capturedAt: string; receivedAt: string; latitude: number; longitude: number; accuracy: number;
 }
@@ -188,9 +188,15 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
       if (next && !['driver', 'contact'].includes(next.view)) throw new TypeError('Unknown view');
       invalidate(); state.session = next; state.trip = null; state.invitation = null; state.tripRevoked = false;
     },
-    selectTrip(value: TripSelection) {
+    selectTrip(value: { id: string; driverId: string }) {
       session();
       const next = { id: uuid(value.id), driverId: uuid(value.driverId) };
+      invalidate(); state.trip = next; state.tripRevoked = false;
+    },
+    /** A contact's route reference supplies no driver identity or permission. */
+    selectContactTrip(id: string) {
+      session('contact');
+      const next = { id: uuid(id), driverId: null };
       invalidate(); state.trip = next; state.tripRevoked = false;
     },
     inviteContact(value: SharingScope & { contactId: string; phone: string }) {

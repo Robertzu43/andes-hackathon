@@ -1,14 +1,87 @@
-# Trusted-contact journey state
+# Trusted-contact and privacy journeys
 
-This is headless browser application logic. It is based on Robert's backend at
+The headless controller and owned React route components use Robert's backend at
 `ebc8fb1d36f441ef012ca585201cefabf61383d6`, specifically
 `docs/contracts/runtime.md`, `src/contacts/routes.ts`, `src/location/routes.ts`
-and `src/incidents/routes.ts`. It has no UI, visual system, transport, tokens,
-storage, notification sends or optional research/data-pool implementation.
-Lane49's shared foundation gates rendering; lane45 owns authenticated HTTP/session
-transport. The small `ContactApi` interface is an injection seam. Its published
-adapter is pinned below; neither that adapter nor missing backend reads are imported
-into this feature branch.
+and `src/incidents/routes.ts`. Rendering consumes lane49's frozen shared foundation;
+lane45 owns authenticated HTTP/session transport. This branch authors only contact/
+privacy modules and their tests. No shared package/router, transport, token storage,
+notification sender or optional research/data-pool implementation is copied here.
+The small `ContactApi` interface remains the headless injection seam.
+
+## UI host handoff
+
+Use foundation PR56 `3283fe675ebeee04bb2be8a62f42ab5c475b4b0e` and API PR59
+`db7034fc9e1dba035b87368117376e9730d6b830`. Import `createContactRoutes` from
+`web/src/features/contacts/routes.tsx` and pass `{api, session, gateway}` from one
+shared API/session host. Supply the returned `contacts`, `invitation`, `contactTrip`
+and `privacy` components to `FoundationRoot.routes`; merge them with other owners'
+components there. The feature adds no router, shell, language provider or package.
+Its ES/PT-BR dictionary and CSS consume49's actual hooks, controls and tokens.
+
+The gateway must verify `/v1/me`, then every mounted feature separately activates
+45's identity binding before reading or writing. Session changes synchronously
+retire caches/receipts and pending catalog responses. Route teardown disposes the
+binding; actor/trip replacement also destroys the response draft. A contact trip
+reference selects `{id,driverId:null}` through `selectContactTrip`, which is valid
+only in the contact view. It fabricates neither an owner identity nor permission;
+the existing protected snapshot GET still decides access, and driver resolution
+checks are unchanged.
+
+Optional `incidentReference(tripId)` and `grantReference(tripId)` callbacks return
+only already-known UUID hints from the host. They are not discovery APIs or evidence
+of consent. An incident reference is re-read and checked against the selected trip
+before any response control becomes usable. A grant reference can request only a
+server-authorized trip revoke. There is no default UUID, source fact or fabricated
+lookup. Without references, incident actions/revocation show their actual limits.
+Incoming invitation metadata still has no published read contract, so its page
+cannot accept or display invented requested scopes; the known route grant ID can
+request participant-authorized withdrawal. Existing headless acceptance/narrowing
+remains tested for use once an actual retrieval contract is available.
+
+Management uses PR65's actual owner `listContacts` contract, keeping historical
+accepted scopes, revoked state and truncation visible. It supports explicit invitation
+inputs and inline standing revocation. Privacy reuses that catalog and distinguishes
+driver management from unavailable recipient consent management. Contact response
+keeps source/capture/receipt/read times, unknown response/deadline/delivery facts,
+acknowledgement, reported action and driver-only resolution separate. Revocation
+conceals before sending. Lost replies and refused same-key retries remain unknown;
+only the explicit unchanged-key retry is offered. Route disposal clears local
+operation/receipt state and its retry closure; it does not reconcile or cancel the
+server outcome. The UI says leaving does not cancel the request and claims no
+cross-route or persisted operation history. No optional visual is required.
+
+### Reproduce the composed UI
+
+```sh
+node web/tests/contacts/compose-ui.mjs
+# Use its printed target; the script archives immutable dependencies and copies
+# only this lane's source/tests. It records feature HEAD and any working changes.
+cd <target>/web
+npm ci --ignore-scripts --no-audit --no-fund
+npm run build
+node node_modules/typescript/bin/tsc -p tests/contacts/ui-tsconfig.json
+node --test tests/contacts/view.integration.mjs
+npm run dev
+```
+
+Open the printed loopback URL at `/tests/contacts/fixture.html?screen=trip`;
+`screen=contacts|privacy|invitation` and `locale=pt-BR` select other fixtures.
+These development-only pages instantiate the actual shared foundation/API/controller
+with explicitly synthetic memory-only HTTP/token fixtures. They do not mount new
+backend routes or prove browser OIDC, persisted UI data or production entry wiring.
+The normal production entry still requires integrator44 to supply this registry
+and trusted host; its hard reload is not claimed as a completed feature integration.
+
+`node tests/contacts/browser-check.mjs <loopback-origin> <evidence-dir>` uses an
+installed Chrome and the existing dependency-free Codus browser helper (override
+`CODUS_BROWSER_HELPER` if needed). It closes only its own temporary profile.
+Forty route/locale/viewport cases cover390/1440/1920/360/430px, plus13 focused
+keyboard, validation, duplicate-submit, receipt, session, permission/error/empty,
+truncation, unknown-revoke, missing-reference, reduced-motion and narrow-response
+checks. Viewport and full-page captures need human inspection and independent52
+acceptance. Source composition receipts distinguish working-tree builder evidence
+from a frozen revision. `ANDES_CONTACT_CONTROLS_ONLY=1` reruns just the focused cases.
 
 Run the standalone tests using the backend's supported Node24–26 runtime:
 
@@ -61,15 +134,15 @@ unmount or view replacement; every controller using the session needs its own
 binding. A real client401 clears the shared session and can supersede an outstanding
 journey result. Superseded never means the server mutation was cancelled.
 
-Lane45 publicly confirmed the retry repair at the feature logic/test freeze
+Lane45 publicly confirmed the retry repair at the earlier feature logic/test freeze
 `b95bdbaa3f106f33d30b3aa8b0127ca3b691ee0e` in
 [its scoped PR62 confirmation](https://github.com/Bimbi-Dev/andes-hackathon/pull/62#issuecomment-6243021647).
 It reports14 controller/client checks, including retry400/403/404/409/422 unknown
 retention, a first-attempt409 rejection control, shared-session401 invalidation and
 strict structural types. HTTP/token fixtures are synthetic; those checks do not
 establish real browser login or signed-JWT/PostgreSQL integration of the adapter.
-This source-reviewed handoff does not import another lane's files or extend its
-confirmation to broader privacy review or merge approval.
+That earlier confirmation is not extended to the new UI/observation bridge or
+gateway. Those changes require fresh43/52 review and actual host integration.
 
 `setSession({actorId,view})` consumes the registered identity from `/v1/me` and a
 local journey view. It is not authentication or authorization. The adapter must
@@ -102,7 +175,7 @@ again after confirmation. Protected reads are blocked during pending/uncertain
 revocation. An ambiguous write remains uncertain, does not create a receipt, and
 is never automatically replayed. `retryUncertainCommand()` is an explicit user
 action reusing the exact original key/body. It is unavailable after identity/trip
-changes. A refusal of that retry (including409) does not disprove the original
+changes. A refusal of that retry (including 409) does not disprove the original
 possible commit: the outcome remains uncertain and revocation keeps protected
 reads blocked. Authentication failure clears the session and prevents replay in
 another identity. Same-session protected-read denial also preserves a prior unknown
@@ -140,9 +213,9 @@ It has no acknowledgement/action history, participant availability, structured
 cannot-assist state or conflict-resolution interface. This journey retains only its
 own successful action receipts in memory. Rendering other people's reports or
 reconciling disputes requires an actual backend read contract. Lane45's published
-adapter now covers the semantic/session seam above; browser host wiring and real
-authentication remain unintegrated here. UI awaits49; auth/privacy review belongs43
-and functional UI review52.
+adapter covers the semantic/session seam above. The composed fixture renders the
+owned UI, while production host wiring and real authentication remain unintegrated
+here. Auth/privacy review belongs43 and functional UI review52.
 
 The standalone unit tests use synthetic transport receipts and failure/race probes.
 They do not prove backend authentication. The persisted scenarios below add real
@@ -191,7 +264,7 @@ the tested `ebc8fb1` feature base. Published, unmerged PR65 at
 `748d30c6e6c595fd1a2c2c648a045750de3dd9c8` supplies `docs/contracts/client-read.md`,
 `src/client-read/routes.ts` and its tests. Its additions are inventoried here,
 not imported or claimed integrated. Brain's contacts/invitation/contact-trip/privacy
-blueprints determine the UI tasks; rendering still waits for49's committed foundation.
+blueprints determine the UI tasks; the owned components now use49's committed foundation.
 
 Lane45 owns authenticated transport/session binding. A route UUID never grants
 access. Each write below uses the existing authenticated Idempotency-Key contract.
@@ -208,7 +281,7 @@ access. Each write below uses the existing authenticated Idempotency-Key contrac
 | `/contact/trips/:tripId`: location | Existing snapshot GET rechecks current map consent/map-active | Preserve capture/receipt/read times and age. Map403 does not deny a separately permitted incident. |
 | `/contact/trips/:tripId`: incident | Existing incident GET with known incident UUID | UUID discovery from a shared trip is missing. Read returns only ID/trip/status/createdAt/resolvedAt/group capability; open SOS survives arrival under incident consent. |
 | `/contact/trips/:tripId`: acknowledge | Read active incident; existing acknowledgement POST with empty body | Receipt is not action, delivery, help or resolution. |
-| `/contact/trips/:tripId`: action/cannot assist | Active incident plus explicit1–300-character report; existing actions POST | Free-text attributed reports only; other participants' history and structured inability/conflict reconciliation are absent. |
+| `/contact/trips/:tripId`: action/cannot assist | Active incident plus explicit 1–300-character report; existing actions POST | Free-text attributed reports only; other participants' history and structured inability/conflict reconciliation are absent. |
 | `/contact/trips/:tripId`: revoke trip | Known trip/grant IDs; existing trip revoke POST | Other trips may retain standing consent; ambiguous revoke keeps reads blocked; authorized prior work may complete. |
 | `/contact/trips/:tripId`: resolve | Existing resolve POST is driver-only | Contact UI must not offer it; arrival/ack/action never resolves. |
 | `/privacy`: inspect/revoke | Driver catalog supplies current standing state; existing standing/trip revokes accept known IDs | Recipient standing management and effective per-trip-revocation reload are missing reads. Local receipts remain historical. |

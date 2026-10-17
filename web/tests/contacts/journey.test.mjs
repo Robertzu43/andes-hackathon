@@ -12,6 +12,20 @@ function setup(view = 'contact', overrides) {
   return { journey, ...transport };
 }
 
+test('a contact route needs no invented driver identity and cannot acquire owner resolution', async () => {
+  const { journey, calls } = setup();
+  journey.selectContactTrip(ids.trip);
+  assert.equal(journey.getState().trip.driverId, null);
+  await journey.loadLocation();
+  await journey.loadIncident(ids.incident);
+  await journey.acknowledge();
+  assert.throws(() => journey.resolve());
+  assert.equal(calls.some(call => call.method === 'resolveIncident'), false);
+  journey.setSession({ actorId: ids.driver, view: 'driver' });
+  assert.throws(() => journey.selectContactTrip(ids.trip));
+  assert.equal(journey.getState().trip, null);
+});
+
 test('invitation is only pending after an API receipt and sends no participant notification', async () => {
   const { journey, calls } = setup('driver');
   assert.equal(await journey.inviteContact({ contactId: ids.contact, phone: '+5511000000000', map: true, incident: true }), 'recorded');

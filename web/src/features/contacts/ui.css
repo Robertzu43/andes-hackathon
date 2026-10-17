@@ -1,0 +1,12 @@
+.andes-contact-layout { display: grid; gap: 2.5rem; min-width: 0; }
+.andes-contact-layout > *, .andes-contact-layout section { min-width: 0; }
+.andes-contact-list { list-style: none; padding: 0; margin: 1.5rem 0; }
+.andes-contact-list > li { padding-block: 1.5rem 2rem; border-block-start: 1px solid var(--border); }
+.andes-contact-heading { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1.5rem; margin-block-end: 1rem; }
+.andes-contact-heading h3, .andes-contact-heading span { overflow-wrap: anywhere; }
+.andes-contact-heading span { color: var(--muted); }
+.andes-contact-revoke { margin-block-start: 1rem; max-width: 65ch; }
+.andes-contact-report { margin-block-start: 1.5rem; }
+.andes-contact-resolution { margin-block-start: 1rem; }
+.andes-contact-receipts { margin-block-start: 2rem; }
+@media (min-width: 60rem) { .andes-contact-layout { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 3rem; } }
