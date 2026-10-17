@@ -1,0 +1,35 @@
+{
+  "node": "v24.17.0",
+  "reviewedHead": "ebc8fb1d36f441ef012ca585201cefabf61383d6",
+  "checks": [
+    {
+      "name": "baseline",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "independent",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "review-probes/backend-races.test.mjs"
+      ],
+      "exit": 1
+    }
+  ],
+  "postgresql": "16.14 (Homebrew), isolated q48_synthetic cluster/database",
+  "typecheck": {
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exit": 0
+  },
+  "verdict": "FIX: stale expiry check across quota lock wait",
+  "expected_red": "1001ms elapsed of 1000ms remaining job lifetime; 999ms control passes"
+}

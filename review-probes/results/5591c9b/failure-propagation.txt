@@ -1,0 +1,47 @@
+
+> andes-backend@0.1.0 test:tooling
+> node scripts/test-tooling.mjs
+
+
+[tooling] recorder
+✔ nothing is attached, scheduled or queried before start() (3.11425ms)
+✔ start() records both clocks and the page state, then ticks at the configured interval (0.492709ms)
+✔ start and stop record the device time zone, so a cross-border zone change is visible (0.198792ms)
+✔ an unreadable time zone is recorded as null (0.094125ms)
+✔ start() twice throws and a stopped recorder cannot restart (0.209208ms)
+✔ stop() is idempotent, records once and freezes the trace (0.128292ms)
+✔ lifecycle and network events become observations with their own event timestamps (0.207125ms)
+✔ on-time timer ticks are counted without filling the buffer (0.113208ms)
+✔ late ticks record monotonic and wall elapsed time separately (0.123708ms)
+✔ the timer gap threshold is inclusive on either clock (0.137042ms)
+✔ on a bare runtime the recorder starts, reports unknowns and releases its real timer (9.892ms)
+✔ a missing navigator or document makes capabilities unknown rather than absent (0.141958ms)
+✔ capabilities are read passively and motion or notification permission is never requested (0.158791ms)
+✔ a capability getter that throws is unknown, and a location request through it is recorded (0.177375ms)
+✔ geolocation permission state is queried passively and later changes are recorded (1.570167ms)
+✔ a rejected permission query is recorded as unknown with the error name (0.271ms)
+✔ a permission answer arriving after stop() is ignored and leaves no listener behind (0.188875ms)
+✔ samplePosition() is the only path to a location request and coordinates are omitted by default (0.210625ms)
+✔ raw coordinates are kept only when the tester opts in (0.079042ms)
+✔ position age is classified against staleAfterMs, and future or missing timestamps are unknown (0.182792ms)
+✔ geolocation errors keep the spec code and its name (0.130583ms)
+✔ location requests without the API are recorded instead of throwing (0.087667ms)
+✔ a position watch records each callback until it is cleared (0.142584ms)
+✔ marks and location requests need an active session (0.108209ms)
+✔ mark() labels are stored as bounded strings (0.155791ms)
+✔ the buffer keeps the newest observations and counts what it dropped (0.120166ms)
+✔ acquisition settings survive buffer eviction of the request observation (0.118584ms)
+✔ each retained fix carries the settings of its own request after settings change (0.138ms)
+✔ invalid options are rejected before anything starts (0.226709ms)
+✔ exportTrace() returns detached JSON-safe data (0.07725ms)
+✔ stop() removes every listener, timer, watch and permission subscription (1.511416ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 60.670917
+
+[tooling] channels

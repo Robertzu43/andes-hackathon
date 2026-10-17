@@ -1,0 +1,199 @@
+
+> andes-backend@0.1.0 test:all
+> npm test && npm run test:tooling
+
+
+> andes-backend@0.1.0 test
+> npm run build && node --test tests/*.test.mjs
+
+
+> andes-backend@0.1.0 build
+> tsc
+
+✔ signed identity enforces issuer, audience, expiry, signature and driver/truck ownership (322.10725ms)
+✔ contacts accept their own explicit scopes with a trusted verified phone before selection (171.321125ms)
+✔ draft review and confirmation are explicit, complete and idempotent (121.369458ms)
+✔ location separates capture/receipt/read freshness, bounds history and honors revocation (194.493ms)
+✔ SOS rolls back all state on SQL failure and simultaneous taps create one incident and independent jobs (192.383917ms)
+✔ trip and incident closure are independent; contact receipt/action are attributed and revoke cancels work (113.538125ms)
+✔ unqualified channels stay unavailable and accepted incident scope never grants map access (90.327292ms)
+✔ migration is repeat-safe and transaction failures release clients without committing (118.09125ms)
+✔ driver incident resolution preserves active trip and authorized attempts (100.85675ms)
+✔ standing contact revoke serializes with confirmation and blocks every current/future trip grant (88.435209ms)
+✔ SOS and standing revoke complete when grant lock overlaps the SOS foreign-key insert (127.803291ms)
+✔ mixed-case grant UUID confirmations take one canonical lock order and reject case-alias duplicates (120.288791ms)
+✔ AWS database components survive pinned pg parsing with verified CA TLS (3.405959ms)
+✔ non-superuser database owner bootstraps twice with app DML but no DDL or migration writes (223.144208ms)
+✔ quota wait rechecks job lifetime after 999ms (314.341042ms)
+✔ quota wait rechecks job lifetime after 1000ms (156.480042ms)
+✔ quota wait rechecks job lifetime after 1001ms (118.129542ms)
+✔ quota wait rechecks claim lease after 29999ms (106.948958ms)
+✔ quota wait rechecks claim lease after 30000ms (152.908792ms)
+✔ quota wait rechecks claim lease after 30001ms (116.620416ms)
+✔ recipient discovers incident from frozen alerts and can read and respond after arrival without stopping SOS channels (392.603167ms)
+✔ incident reads and acknowledgements recheck both consent grants and accepted incident scope (442.033166ms)
+✔ outbox rollback publishes nothing, lost publish acknowledgement retries only transport with bounded backoff (85.92575ms)
+✔ duplicate SQS and expired authorization leases never create a second external attempt (139.901625ms)
+✔ stale claim cannot authorize, stop-first denies and authorize-first survives resolve/revoke (100.223375ms)
+✔ authorization rechecks standing scope, trip scope, phone and incident; arrival keeps SOS without coordinates (97.122875ms)
+✔ scanner recovers expired transport and claims but keeps authorized work unknown; no blind DLQ replay (88.045584ms)
+✔ account and channel budgets persist and preserve emergency reserve across replicas (106.546916ms)
+✔ early callbacks persist unmatched, exact response ID correlates, duplicates and contradictory late HTTP cannot regress delivery (89.445084ms)
+✔ paused WhatsApp leaves later-batch SMS/voice and reads/close free; slots are bounded (123.240792ms)
+✔ rolled-back new intent is never published (86.032542ms)
+✔ publish acknowledgement loss creates duplicate transport but still only one provider send (77.3405ms)
+✔ old relay cannot acknowledge a newer lease (70.929292ms)
+✔ callback endpoint preserves raw bytes and needs no OIDC; failed SQL is not acknowledged (64.618042ms)
+✔ unknown read result cannot authorize a second send while original emitter remains paused (102.748167ms)
+✔ control publishes new outbox while provider reconciliation read is paused (123.33025ms)
+✔ global revoke-first blocks every authorization and no grant lock upgrades deadlock standing revoke (101.630375ms)
+✔ delivery facts never regress on late failed/queued/unknown callbacks and voice never implies human answer (97.358291ms)
+✔ daily quotas do not erase the sliding minute limit across UTC midnight (100.39775ms)
+✔ reconciliation GETs reserve account request budget before network (104.302583ms)
+✔ ordinary reservations stop at configured emergency margin (102.022417ms)
+✔ authorization independently rechecks current standing consent and per-trip consent (368.012584ms)
+✔ control reconciles known IDs with new sends off and denies new authorization (86.507584ms)
+✔ public TLS entry, private task/database boundaries and retained encrypted state (0.722083ms)
+✔ task IAM isolates each queue; execution secrets and administrator never become task access (0.337417ms)
+✔ exact process wiring, bootstrap/live gates and conservative rolling capacity (0.146458ms)
+✔ image contains migration SQL/CA and CI runs real PostgreSQL tests without live credentials (0.82075ms)
+✔ Zavu sends exact explicit channels without fallback and accepts 202/replay 409 (20.742875ms)
+✔ ambiguous HTTP never retries; definitive nested limits are rejected; reads use GET only (0.862584ms)
+✔ v2 signature authenticates exact bytes, signed project/sender and strict time window (1.367916ms)
+✔ provider configuration fails closed unless explicit live qualification is complete (0.269125ms)
+✔ SQS adapter sends only IDs/version, rejects secret-bearing envelopes, and defers saturated messages (34.72425ms)
+✔ sends-off configuration retains read-only provider but denies POST and delivery startup (9.416375ms)
+ℹ tests 53
+ℹ suites 0
+ℹ pass 53
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5222.577416
+
+> andes-backend@0.1.0 test:tooling
+> node scripts/test-tooling.mjs
+
+
+[tooling] recorder
+✔ nothing is attached, scheduled or queried before start() (3.018833ms)
+✔ start() records both clocks and the page state, then ticks at the configured interval (0.432083ms)
+✔ start and stop record the device time zone, so a cross-border zone change is visible (0.189458ms)
+✔ an unreadable time zone is recorded as null (0.096333ms)
+✔ start() twice throws and a stopped recorder cannot restart (0.210334ms)
+✔ stop() is idempotent, records once and freezes the trace (0.136333ms)
+✔ lifecycle and network events become observations with their own event timestamps (0.285792ms)
+✔ on-time timer ticks are counted without filling the buffer (0.234167ms)
+✔ late ticks record monotonic and wall elapsed time separately (0.145291ms)
+✔ the timer gap threshold is inclusive on either clock (0.124667ms)
+✔ on a bare runtime the recorder starts, reports unknowns and releases its real timer (9.740125ms)
+✔ a missing navigator or document makes capabilities unknown rather than absent (0.161291ms)
+✔ capabilities are read passively and motion or notification permission is never requested (0.150917ms)
+✔ a capability getter that throws is unknown, and a location request through it is recorded (0.186875ms)
+✔ geolocation permission state is queried passively and later changes are recorded (1.618709ms)
+✔ a rejected permission query is recorded as unknown with the error name (0.217125ms)
+✔ a permission answer arriving after stop() is ignored and leaves no listener behind (0.211916ms)
+✔ samplePosition() is the only path to a location request and coordinates are omitted by default (0.310583ms)
+✔ raw coordinates are kept only when the tester opts in (0.106083ms)
+✔ position age is classified against staleAfterMs, and future or missing timestamps are unknown (0.142209ms)
+✔ geolocation errors keep the spec code and its name (0.121959ms)
+✔ location requests without the API are recorded instead of throwing (0.080917ms)
+✔ a position watch records each callback until it is cleared (0.200709ms)
+✔ marks and location requests need an active session (0.127042ms)
+✔ mark() labels are stored as bounded strings (0.06825ms)
+✔ the buffer keeps the newest observations and counts what it dropped (0.06175ms)
+✔ acquisition settings survive buffer eviction of the request observation (0.095292ms)
+✔ each retained fix carries the settings of its own request after settings change (0.121334ms)
+✔ invalid options are rejected before anything starts (0.187666ms)
+✔ exportTrace() returns detached JSON-safe data (0.076417ms)
+✔ stop() removes every listener, timer, watch and permission subscription (1.422583ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 59.720708
+
+[tooling] channels
+
+[tooling] gates
+
+[tooling] checkins
+
+[tooling] contacts
+
+[tooling] check-in scenarios
+PASS stationary_candidate: stationary_candidate
+PASS bootstrap_is_explicit: stationary_candidate
+PASS planned_stop_after_stationary_observation: stationary_candidate
+PASS no_reply_remains_unknown: stationary_candidate
+PASS moving_visual_manual: suppress
+PASS moving_conflicts_with_parked: suppress
+PASS moving_curve: suppress
+PASS moving_intersection: suppress
+PASS moving_traffic_stop: suppress
+PASS stationary_in_traffic_is_not_parked: defer
+PASS stationary_conflicts_with_curve: defer
+PASS stationary_conflicts_with_driving: defer
+PASS stationary_conflicts_with_intersection: defer
+PASS motion_unknown: defer
+PASS road_unknown: defer
+PASS motion_and_road_unknown: defer
+PASS permission_lost: suppress
+PASS permission_unknown: defer
+PASS stationary_evidence_absent: defer
+PASS stationary_evidence_revoked: suppress
+PASS motion_expired: defer
+PASS road_expired: defer
+PASS permission_expired: defer
+PASS stationary_evidence_expired: defer
+PASS fresh_before_expiry_boundary: stationary_candidate
+PASS all_expire_at_boundary: defer
+PASS audio_stationary_unvalidated: suppress
+PASS audio_moving_unavailable: suppress
+PASS mode_unknown: suppress
+PASS no_eligible_opportunity: defer
+PASS planned_stop_does_not_override_motion: suppress
+PASS planned_stop_with_unknown_motion: defer
+PASS observation_from_future: defer
+PASS receipt_before_observation: defer
+PASS expiry_before_observation: defer
+PASS evaluation_clock_reversed: defer
+PASS clock_epoch_changed: defer
+PASS one_source_clock_mismatched: defer
+PASS sequence_out_of_order: defer
+PASS observation_time_reversed_despite_new_sequence: defer
+PASS receipt_time_reversed_despite_new_sequence: defer
+PASS same_sequence_changed_payload: defer
+PASS identical_replay_still_fresh: stationary_candidate
+PASS invalid_prior_clock_order: defer
+PASS old_expired_loss_needs_new_grant: stationary_candidate
+PASS report_cannot_replace_motion_observation: defer
+PASS production_input_rejected: defer
+PASS boolean_time_rejected: defer
+PASS negative_sequence_rejected: defer
+PASS missing_source_rejected: defer
+50/50 synthetic scenarios passed
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.373s
+
+OK
+.........................
+----------------------------------------------------------------------
+Ran 25 tests in 1.499s
+
+OK
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.056s
+
+OK
+...................................
+----------------------------------------------------------------------
+Ran 35 tests in 0.191s
+
+OK

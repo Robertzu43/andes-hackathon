@@ -1,0 +1,43 @@
+{
+  "reviewedHead": "5591c9b55fe7f4505e36ccee96d27aa913e0debf",
+  "node": "v24.17.0",
+  "checks": [
+    {
+      "name": "typecheck",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "combined",
+      "command": [
+        "npm",
+        "run",
+        "test:all"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "independent",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "review-probes/backend-races.test.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "restart-demo",
+      "command": [
+        "npm",
+        "run",
+        "demo"
+      ],
+      "exit": 0
+    }
+  ]
+}

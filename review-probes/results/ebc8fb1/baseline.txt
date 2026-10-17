@@ -1,0 +1,63 @@
+
+> andes-backend@0.1.0 test
+> npm run build && node --test tests/*.test.mjs
+
+
+> andes-backend@0.1.0 build
+> tsc
+
+✔ signed identity enforces issuer, audience, expiry, signature and driver/truck ownership (342.8125ms)
+✔ contacts accept their own explicit scopes with a trusted verified phone before selection (98.32075ms)
+✔ draft review and confirmation are explicit, complete and idempotent (84.004583ms)
+✔ location separates capture/receipt/read freshness, bounds history and honors revocation (222.982458ms)
+✔ SOS rolls back all state on SQL failure and simultaneous taps create one incident and independent jobs (89.563875ms)
+✔ trip and incident closure are independent; contact receipt/action are attributed and revoke cancels work (88.119459ms)
+✔ unqualified channels stay unavailable and accepted incident scope never grants map access (89.792791ms)
+✔ migration is repeat-safe and transaction failures release clients without committing (84.922417ms)
+✔ driver incident resolution preserves active trip and authorized attempts (96.246875ms)
+✔ standing contact revoke serializes with confirmation and blocks every current/future trip grant (99.288875ms)
+✔ SOS and standing revoke complete when grant lock overlaps the SOS foreign-key insert (113.469209ms)
+✔ mixed-case grant UUID confirmations take one canonical lock order and reject case-alias duplicates (144.6595ms)
+✔ AWS database components survive pinned pg parsing with verified CA TLS (2.957667ms)
+✔ non-superuser database owner bootstraps twice with app DML but no DDL or migration writes (244.046542ms)
+✔ recipient discovers incident from frozen alerts and can read and respond after arrival without stopping SOS channels (371.715708ms)
+✔ incident reads and acknowledgements recheck both consent grants and accepted incident scope (385.228541ms)
+✔ outbox rollback publishes nothing, lost publish acknowledgement retries only transport with bounded backoff (84.594042ms)
+✔ duplicate SQS and expired authorization leases never create a second external attempt (111.54625ms)
+✔ stale claim cannot authorize, stop-first denies and authorize-first survives resolve/revoke (81.068458ms)
+✔ authorization rechecks standing scope, trip scope, phone and incident; arrival keeps SOS without coordinates (94.207125ms)
+✔ scanner recovers expired transport and claims but keeps authorized work unknown; no blind DLQ replay (87.35225ms)
+✔ account and channel budgets persist and preserve emergency reserve across replicas (91.8675ms)
+✔ early callbacks persist unmatched, exact response ID correlates, duplicates and contradictory late HTTP cannot regress delivery (95.554458ms)
+✔ paused WhatsApp leaves later-batch SMS/voice and reads/close free; slots are bounded (107.734833ms)
+✔ rolled-back new intent is never published (73.120625ms)
+✔ publish acknowledgement loss creates duplicate transport but still only one provider send (82.12425ms)
+✔ old relay cannot acknowledge a newer lease (76.807416ms)
+✔ callback endpoint preserves raw bytes and needs no OIDC; failed SQL is not acknowledged (63.864833ms)
+✔ unknown read result cannot authorize a second send while original emitter remains paused (113.394917ms)
+✔ control publishes new outbox while provider reconciliation read is paused (112.036625ms)
+✔ global revoke-first blocks every authorization and no grant lock upgrades deadlock standing revoke (84.940833ms)
+✔ delivery facts never regress on late failed/queued/unknown callbacks and voice never implies human answer (90.990792ms)
+✔ daily quotas do not erase the sliding minute limit across UTC midnight (93.638583ms)
+✔ reconciliation GETs reserve account request budget before network (88.713583ms)
+✔ ordinary reservations stop at configured emergency margin (119.954709ms)
+✔ authorization independently rechecks current standing consent and per-trip consent (394.505666ms)
+✔ control reconciles known IDs with new sends off and denies new authorization (110.183959ms)
+✔ public TLS entry, private task/database boundaries and retained encrypted state (0.794334ms)
+✔ task IAM isolates each queue; execution secrets and administrator never become task access (0.389375ms)
+✔ exact process wiring, bootstrap/live gates and conservative rolling capacity (0.150458ms)
+✔ image contains migration SQL/CA and CI runs real PostgreSQL tests without live credentials (1.132ms)
+✔ Zavu sends exact explicit channels without fallback and accepts 202/replay 409 (24.397667ms)
+✔ ambiguous HTTP never retries; definitive nested limits are rejected; reads use GET only (1.38ms)
+✔ v2 signature authenticates exact bytes, signed project/sender and strict time window (1.24375ms)
+✔ provider configuration fails closed unless explicit live qualification is complete (0.176ms)
+✔ SQS adapter sends only IDs/version, rejects secret-bearing envelopes, and defers saturated messages (48.952042ms)
+✔ sends-off configuration retains read-only provider but denies POST and delivery startup (9.4095ms)
+ℹ tests 47
+ℹ suites 0
+ℹ pass 47
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5101.675041

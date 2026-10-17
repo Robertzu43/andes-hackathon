@@ -1,0 +1,31 @@
+[
+  {
+    "name": "sensitivity-build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exit": 0
+  },
+  {
+    "name": "sensitivity-old-source",
+    "command": [
+      "node",
+      "--test",
+      "--test-reporter=tap",
+      "tests/dispatch-expiry.test.mjs"
+    ],
+    "exit": 1
+  },
+  {
+    "name": "failure-propagation",
+    "command": [
+      "npm",
+      "run",
+      "test:tooling"
+    ],
+    "PYTHON": "controlled local child exiting23",
+    "exit": 23
+  }
+]

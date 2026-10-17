@@ -1,0 +1,13 @@
+
+> andes-backend@0.1.0 demo
+> npm run build && node scripts/demo.mjs
+
+
+> andes-backend@0.1.0 build
+> tsc
+
+SYNTHETIC: signed test identities, confirmed trip; no external identity/provider/queue network.
+SYNTHETIC: fresh → stale is a simulated clock advance, not phone telemetry.
+SYNTHETIC: duplicate SOS taps persist one active incident and three independent channel jobs.
+SYNTHETIC: actual child-process exit/restart recovered an expired unattempted claim; committed ambiguous authorization stayed unknown with no resend. Lease passage uses simulated time.
+SYNTHETIC: revocation blocks contact map reads and cancels unattempted work. All checks passed; no live send.

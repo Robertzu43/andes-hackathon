@@ -1,0 +1,152 @@
+TAP version 13
+# Subtest: quota wait rechecks job lifetime after 999ms
+not ok 1 - quota wait rechecks job lifetime after 999ms
+  ---
+  duration_ms: 256.527833
+  type: 'test'
+  location: '<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:18:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+    + 2026-10-17T12:00:00.000Z
+    - 2026-10-17T12:00:00.999Z
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2026-10-17T12:00:00.999Z
+  actual: 2026-10-17T12:00:00.000Z
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:48:14)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: quota wait rechecks job lifetime after 1000ms
+not ok 2 - quota wait rechecks job lifetime after 1000ms
+  ---
+  duration_ms: 110.021125
+  type: 'test'
+  location: '<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:18:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:40:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: quota wait rechecks job lifetime after 1001ms
+not ok 3 - quota wait rechecks job lifetime after 1001ms
+  ---
+  duration_ms: 85.621542
+  type: 'test'
+  location: '<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:18:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:40:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: quota wait rechecks claim lease after 29999ms
+not ok 4 - quota wait rechecks claim lease after 29999ms
+  ---
+  duration_ms: 126.744708
+  type: 'test'
+  location: '<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:18:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+    + 2026-10-17T12:00:00.000Z
+    - 2026-10-17T12:00:29.999Z
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2026-10-17T12:00:29.999Z
+  actual: 2026-10-17T12:00:00.000Z
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:48:14)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: quota wait rechecks claim lease after 30000ms
+not ok 5 - quota wait rechecks claim lease after 30000ms
+  ---
+  duration_ms: 97.741834
+  type: 'test'
+  location: '<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:18:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:40:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: quota wait rechecks claim lease after 30001ms
+not ok 6 - quota wait rechecks claim lease after 30001ms
+  ---
+  duration_ms: 144.215333
+  type: 'test'
+  location: '<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:18:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<workspace>/.codus/backend-race-review/5591c9b/old-source-omxgmp_6/tests/dispatch-expiry.test.mjs:40:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 0
+# fail 6
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 904.571542
