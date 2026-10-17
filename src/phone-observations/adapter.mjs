@@ -4,8 +4,9 @@ export const QUALIFICATION_SCHEMA = 'andes.phone-observations.qualification/1';
 
 // Engineering guardrails only; #9/#11 have not accepted a capability/resource budget.
 export const PROVISIONAL_BUDGET = Object.freeze({
-  revision: 'engineering-only/3', bufferCapacity: 128, maxEvents: 200_000,
-  maxCallbacksPerStream: 10_000_000, maxRequests: 100, maxSessionMs: 86_400_000,
+  revision: 'engineering-only/4', bufferCapacity: 128, maxEvents: 200_000,
+  maxCallbacksPerStream: 10_000_000, maxRawCallbacksPerStream: 10_000_000,
+  maxRequests: 100, maxSessionMs: 86_400_000,
   minEmitIntervalMs: 1000, requestTimeoutMs: 10_000, permissionPromptTimeoutMs: 120_000, maximumAgeMs: 0,
   freshnessMs: null, clockToleranceMs: 100,
 });
@@ -306,9 +307,16 @@ export function createPhoneObservationAdapter({
     const at = requestTime(s, token, stream);
     if (!at) return null;
     s.callbacks[stream] += 1;
-    if (s.callbacks[stream] > limits.maxCallbacksPerStream) {
+    let reason = null;
+    if (s.callbacks[stream] > limits.maxRawCallbacksPerStream) reason = 'raw-callback-budget';
+    else if (stream === 'motion' && token.lastEmit !== null &&
+        at.monoMs - token.lastEmit < limits.minEmitIntervalMs) {
+      s.suppressedMotion += 1;
+      return null;
+    } else if (++s.processedCallbacks[stream] > limits.maxCallbacksPerStream) reason = 'callback-budget';
+    if (reason) {
       cancel(s, stream);
-      emit(s, 'stream-stopped', { stream: stream === 'geo' ? 'geolocation' : stream, reason: 'callback-budget' });
+      emit(s, 'stream-stopped', { stream: stream === 'geo' ? 'geolocation' : stream, reason });
       return null;
     }
     return at;
@@ -335,6 +343,7 @@ export function createPhoneObservationAdapter({
       geo: null, motion: null, cleanups: [], permissionQueries: new Set(), events: [], dropped: 0, emitted: 0,
       permissionEpoch: { geolocation: 0, motion: 0 }, permissionStatuses: new Map(),
       requests: 0, callbacks: { geo: 0, motion: 0 }, sinkErrors: 0, cleanupErrors: 0, suppressedErrors: 0,
+      processedCallbacks: { geo: 0, motion: 0 }, suppressedMotion: 0,
       blockedDiagnostics: new Set(), suppressedBlocked: 0,
       clockUncertain: false, stopReason: null, timer: null, permissionObserverErrors: 0,
       locationIntent: null, motionIntent: false, wakeIntent: false, wakeLock: null,
@@ -542,7 +551,6 @@ export function createPhoneObservationAdapter({
       token.handler = (event) => transition(() => {
         const at = callback(s, token, 'motion');
         if (!at) return;
-        if (token.lastEmit !== null && at.monoMs - token.lastEmit < limits.minEmitIntervalMs) return;
         token.lastEmit = at.monoMs;
         emit(s, 'motion', {
           requestId, acceleration: vector(event.acceleration),
@@ -693,6 +701,7 @@ export function createPhoneObservationAdapter({
       sessionId: s.context.sessionId, permission: s.permission, budget: limits,
       summary: { emitted: s.emitted, retained: s.events.length, dropped: s.dropped,
         requests: s.requests, callbacks: s.callbacks, sinkErrors: s.sinkErrors, cleanupErrors: s.cleanupErrors,
+        processedCallbacks: s.processedCallbacks, suppressedMotion: s.suppressedMotion,
         suppressedErrors: s.suppressedErrors, suppressedBlocked: s.suppressedBlocked,
         permissionObserverErrors: s.permissionObserverErrors },
       events: s.events,
@@ -719,6 +728,7 @@ function validateBudget(input) {
   const budget = Object.fromEntries(Object.keys(PROVISIONAL_BUDGET).map((key) => [key, input?.[key]]));
   if (!text(budget.revision)) throw new TypeError('A budget revision is required');
   const maxima = { bufferCapacity: 1000, maxEvents: 2_000_000, maxCallbacksPerStream: 100_000_000,
+    maxRawCallbacksPerStream: 100_000_000,
     maxRequests: 1000, maxSessionMs: 604_800_000, minEmitIntervalMs: 60_000, requestTimeoutMs: 60_000,
     permissionPromptTimeoutMs: 300_000 };
   for (const [key, max] of Object.entries(maxima)) {
