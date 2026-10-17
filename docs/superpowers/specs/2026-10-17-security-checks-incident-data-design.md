@@ -74,7 +74,7 @@ Zavu builds SMS/voice as `${entry.text} ${summary}` (`src/notifications/zavu.ts:
 - `reasonText`: `arrival_overdue` → `no llegó a la hora prevista`; `silence` → `sin señal desde {security_checks.signal_at in trip time zone, HH:MM}`; `sharing_stopped` → `dejó de compartir su ubicación`.
 - No location → `ubicación no disponible`. `{emergency}` comes from `EMERGENCY_NUMBERS` (JSON, e.g. `{"PE":"105","BR":"190"}`) by `trips.country`; missing → omit the sentence. `authorizeJob` runs in the emergency/ordinary delivery workers, so set it there.
 - Alerts are Spanish-only for the demo, including pt-BR trips. `ponytail:` add pt-BR summaries when a Brazilian corridor is tested.
-- Update `tests/dispatch.test.mjs` (lines ~14-15, 38-39) for the new summary; it must still assert `Incidente {id}`.
+- Update `tests/dispatch.test.mjs` (lines ~14-15, 38-39) for the new summary. The ID regex currently expects `Incidente <uuid>;`; the new template ends with a period. Line 39's `doesNotMatch(summary, /última ubicación/)` is case-sensitive and would silently pass against `Última ubicación`. Make it assert no `maps.google.com` link, so alerts after closure still prove they carry no new coordinates.
 
 ### New endpoints
 
