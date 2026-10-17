@@ -117,3 +117,19 @@ Fan-out (`createIncident`, shared by SOS and escalation): accepted incident-scop
 
 Alert-text settings for the delivery workers: `EMERGENCY_NUMBERS` (JSON by trip country, e.g. `{"PE":"105","BR":"190"}`; missing → the sentence is omitted) and `CONTACT_APP_URL` (adds `Ver: <url>/incidents/<id>`). Zavu prefixes SMS/voice with the qualification `text`, so set it to `ANDES:`.
 
+## Demo mode
+
+For the judges' demo only. `DEMO_MODE=true` replaces OIDC with an in-process RS256 demo issuer (`src/demo.ts`). Real identity tokens are rejected, and every other route keeps the same JWT, ownership and consent checks. The API refuses to start when `ZAVU_LIVE_SEND=true`, so synthetic phone numbers can never receive a message. Never enable it on a deployment with real users.
+
+`POST /v1/demo/session` with `{}` is unauthenticated and needs no Idempotency-Key (a deliberate exception: there is no actor yet). Each call creates an isolated synthetic world:
+- a driver, a `family` contact and a `colleague` contact, with synthetic `+519000001xx` numbers;
+- a truck labelled `ABC-123 (demo)`;
+- accepted map+incident grants.
+
+It returns `{synthetic:true, expiresInSeconds:7200, driver:{id,token,truckId}, family:{id,token,grantId}, colleague:{id,token,grantId}}`. Keep the tokens in memory and switch personas client-side.
+
+Limits:
+- At most 30 worlds per minute per instance (429 `demo_rate_limited`).
+- The signing key lives in memory, so tokens end on restart and the demo must run a single instance.
+- Demo rows stay in the database until it is dropped after the event.
+
