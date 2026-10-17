@@ -20,7 +20,7 @@ try {
     [{value: 'synthetic-do-not-reset'}]);
   assert.deepEqual((await control.query('SELECT datname FROM pg_database ORDER BY datname')).rows, before,
     'Nested run must remove only its own database');
-  console.log('CI seam passed: 61 checks; input database/control preserved; nested database cleaned');
+  console.log('CI seam passed: suite green; input database/control preserved; nested database cleaned');
 } catch {
   console.error('CI seam control failed (connection details redacted)');
   process.exitCode = 1;
