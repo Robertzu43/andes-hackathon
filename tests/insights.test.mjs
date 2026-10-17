@@ -124,3 +124,30 @@ test('public map page is served without auth and reads only the public hotspots 
   assert.match(page.body, /\/v1\/insights\/hotspots\?days=/); assert.match(page.body, /Incluye datos de demostración/);
   assert.doesNotMatch(page.body, /\/v1\/(trips|incidents|reports|insights\/advice)/);
 });
+
+// Advice must never reveal more than the public map: no hidden single report, no exact time.
+test('advice only sums published cells, so it cannot locate or time a hidden report', async t => {
+  const f = await fixture(t); const day = '2026-10-10T17:00:00Z'; // 12:00 in Lima
+  const advice = async (lat, lon) => (await f.req('GET', `/v1/insights/advice?lat=${lat}&lon=${lon}`)).body;
+  for (const jwt of [f.driver, f.stranger, f.contact]) await report(f, 'robo', -12.525, -76.725, day, jwt);
+  await report(f, 'robo', -12.525, -76.625, day, f.stranger); // a lone report two cells east stays hidden
+  assert.equal((await advice(-12.525, -76.725)).count, 3);
+  assert.equal((await advice(-12.525, -76.675)).count, 3);
+  assert.deepEqual(await advice(-12.525, -76.625), { level: 'none' });
+  f.advance(30 * 60000); // 12:30Z: reports from this hour stay invisible until it ends, as on the map
+  for (const jwt of [f.driver, f.stranger, f.contact]) await report(f, 'robo', -13.075, -76.375, '2026-10-17T12:10:00Z', jwt);
+  assert.deepEqual(await advice(-13.075, -76.375), { level: 'none' });
+  f.advance(31 * 60000);
+  assert.equal((await advice(-13.075, -76.375)).count, 3);
+  assert.match((await f.req('GET', '/v1/insights/advice?lat=-13.075&lon=-76.375&locale=es-PE')).body.text, /^3 reportes de robo/);
+});
+
+// Demo personas are free to mint, so in demo mode every report is demo data and every view must say so.
+test('demo mode stores reports as synthetic and flags every published cell as demo data', async t => {
+  process.env.DEMO_MODE = '1'; t.after(() => { delete process.env.DEMO_MODE; });
+  const f = await fixture(t); const night = '2026-10-16T04:30:00Z';
+  for (let i = 0; i < 3; i++) assert.equal((await report(f, 'robo', -12.325, -76.775, night)).status, 200);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int AS n FROM reports WHERE synthetic')).rows[0].n, 3);
+  const map = (await hotspots(f)).body;
+  assert.equal(map.includesSynthetic, true); assert.deepEqual(map.cells.map(c => [c.total, c.synthetic]), [[3, 3]]);
+});
