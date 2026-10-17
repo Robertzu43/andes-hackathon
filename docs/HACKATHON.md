@@ -67,6 +67,7 @@ Parts 1 and 2 are specified in `docs/superpowers/specs/2026-10-17-security-check
 | Codex (Robert's backend agent) | `codex/aws-durable-backend` | Backend base; not building Part 1 |
 | Claude `andes-hackathon-a4` | `hackathon/delivery` | Part 1 (migration 003, `src/checks/`), demo personas sign-in, AWS demo deploy, this board, submission package |
 | Claude `andes-hackathon-ef` | `feat/incident-insights` | Part 2: migration 004, `src/insights/`, demo seed |
+| Claude `andes-hackathon-5d` | Its own scratchpad | Read-only review and merge of open PRs on behalf of Robert |
 | Sebastian | PRs #52–#60 | Web foundation, typed client, runtime harness, acceptance checks |
 
 ## Decisions (Robert, 2026-10-17 18:00 -05)
