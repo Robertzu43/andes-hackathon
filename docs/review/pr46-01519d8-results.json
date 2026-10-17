@@ -1,0 +1,323 @@
+{
+  "candidate_sha": "01519d8275b28caf88091feca07247622eace973",
+  "review_id": 5560599283,
+  "reviewed_sha": "0bf0dc219113bf51e1ba3b16a5236cfee9dee6ca",
+  "reviewer_probe_commit": "e88bdf1705b03accfc1a46144d70501858c2a8ad",
+  "driver_sha256": "2206fc807c6237b5a6a27b4a22e7d824ba669301921620cb7d6983d0f5a53878",
+  "runtime": "3.9.6 (default, Aug 25 2026, 21:26:21) \n[Clang 21.0.0 (clang-2100.3.34.2)]",
+  "author_tests": 58,
+  "review_controls": 40,
+  "passed_expectations": 11,
+  "failed_expectations": [
+    "self-report-contact-nonmessage-account",
+    "metadata-unknown-dozed_off_report",
+    "metadata-unknown-rest_difficulty",
+    "metadata-unknown-rest_end",
+    "metadata-unknown-rest_start",
+    "metadata-unknown-robbery",
+    "metadata-unknown-robbery_attempt",
+    "metadata-unknown-security_concern",
+    "metadata-unknown-tiredness_report",
+    "consent-refusal-private",
+    "redaction-status-private",
+    "comma-coordinates",
+    "dms-coordinates",
+    "short-date",
+    "portuguese-date",
+    "lowercase-plate",
+    "argentine-plate",
+    "mexican-plate",
+    "bare-map-link",
+    "bare-short-link",
+    "id-plate",
+    "id-phone",
+    "id-date",
+    "invalid-id-diagnostic-private",
+    "complaint-filing-clock",
+    "exclusive-none-channel",
+    "oversized-csv-diagnostic",
+    "no-zone-database-export-warning",
+    "author-baseline-without-zone-database"
+  ],
+  "results": [
+    {
+      "case": "baseline",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "self-report-contact-interview",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false
+    },
+    {
+      "case": "self-report-contact-interview-plus-metadata",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false
+    },
+    {
+      "case": "self-report-own-interview",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "self-report-contact-supplied-message",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "self-report-contact-nonmessage-account",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "self-report-own-nonmessage-account-control",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "metadata-unknown-dozed_off_report",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "metadata-unknown-rest_difficulty",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "metadata-unknown-rest_end",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "metadata-unknown-rest_start",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "metadata-unknown-robbery",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "metadata-unknown-robbery_attempt",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "metadata-unknown-security_concern",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "metadata-unknown-tiredness_report",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "metadata-unknown-contact-control",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "consent-refusal-private",
+      "expected": "accept",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "redaction-status-private",
+      "expected": "accept",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "cp1252-diagnostic",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false
+    },
+    {
+      "case": "es-419-coverage",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "comma-coordinates",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "space-coordinates",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false
+    },
+    {
+      "case": "dms-coordinates",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "short-date",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "portuguese-date",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "lowercase-plate",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "argentine-plate",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "mexican-plate",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "bare-map-link",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "bare-short-link",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "https-link-control",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false
+    },
+    {
+      "case": "id-plate",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "id-phone",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "id-date",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "invalid-id-diagnostic-private",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 1,
+      "wrote_export": false
+    },
+    {
+      "case": "complaint-filing-clock",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "exclusive-none-channel",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "oversized-csv-diagnostic",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 1,
+      "wrote_export": false
+    },
+    {
+      "case": "no-zone-database-export-warning",
+      "expected": "accept",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true
+    },
+    {
+      "case": "author-baseline-without-zone-database",
+      "expected": "suite pass",
+      "passed": false,
+      "cli_exit": 1
+    }
+  ]
+}
