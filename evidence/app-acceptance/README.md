@@ -10,6 +10,9 @@ Both CLI entrypoints compare physical file paths, so macOS `/var`/`/private/var`
 aliases and symlinked worktree paths execute normally. Consumers must require
 nonempty parseable JSON as well as the exit status. Two alias regressions failed
 before this correction; the existing canonical CLI and receipt controls remain.
+Snapshot aging requires matching nonempty trip aliases, and both repeated SOS
+responses must remain active with unavailable group capability. Three additional
+reviewer counterexamples failed before these predicate repairs.
 
 Exact reference: Robert's `origin/codex/aws-durable-backend` at
 `ebc8fb1d36f441ef012ca585201cefabf61383d6`, refreshed 2026-10-17. Read

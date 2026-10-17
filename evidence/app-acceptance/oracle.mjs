@@ -73,7 +73,7 @@ export const CASES = [
     eq(stale.freshness, 'stale', 'stale fix silently refreshed');
     requireThat(stale.ageMs > 120000, 'stale control not actually stale');
     eq(stale.location.capturedAt, fresh.location.capturedAt, 'aging control replaced source fix');
-    eq(stale.tripId, fresh.tripId, 'aging control changed trip');
+    requireThat(same(stale.tripId, fresh.tripId), 'aging control needs the same nonempty trip identity');
   } },
   { id: 'unavailable-snapshot', issues: [21, 22], source: 'src/location/routes.ts', check(s) {
     const b = http(s, 0, 'GET', '/v1/trips/:id/snapshot', 'contact').response;
@@ -88,10 +88,10 @@ export const CASES = [
   { id: 'sos-acceptance', issues: [29, 31, 32], source: 'src/incidents/routes.ts', check(s) {
     const first = http(s, 0, 'POST', '/v1/trips/:id/sos', 'driver').response;
     const second = http(s, 1, 'POST', '/v1/trips/:id/sos', 'driver').response;
-    eq(first.status, 'active', 'server did not create active report');
-    eq(first.groupCapability, 'unavailable', 'unsupported group capability invented');
     requireThat(same(first.id, second.id), 'duplicate SOS created concurrent episode');
     for (const body of [first, second]) {
+      eq(body.status, 'active', 'server did not preserve active report');
+      eq(body.groupCapability, 'unavailable', 'unsupported group capability invented');
       requireThat(!('delivered' in body) && !('providerAccepted' in body), 'SOS HTTP acceptance was upgraded to provider outcome');
     }
   } },
