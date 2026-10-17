@@ -226,6 +226,11 @@ create truck, draft, explicit confirmation, trip/snapshot/incident reads, comman
 lost SOS response and rejected same-key retry. Synthetic selection evidence is
 clearly test-only; catalog evidence normalisation and real backend/browser proof remain open.
 
+**Open external driver finding at PR63/c256e75:** changing from active trip A to
+trip B can retain stale incident/location state. Passing adapter checks do not
+accept that controller. The feature owner must publish a repaired revision and its
+independent reviewer must clear it before the integration dependency is advanced.
+
 ## Published owner reads
 
 Read API source: PR65 at `748d30c6e6c595fd1a2c2c648a045750de3dd9c8`, including
@@ -262,8 +267,9 @@ do not establish backend isolation or browser reload behaviour.
 
 ## Foundation session gateway
 
-`createSessionGateway({session,api,mode,acquire?,release?})` implements Q49's supplied
-headless UI seam: `getSnapshot`, `subscribe`, optional `begin` and `end`. Its stable,
+`createSessionGateway({session,api,mode,acquire?,release?})` implements Q49's published
+headless UI seam at `3283fe675ebeee04bb2be8a62f42ab5c475b4b0e` (PR56):
+`getSnapshot`, `subscribe`, optional `begin` and `end`. Its stable,
 immutable snapshots contain only `state` and explicit `mode: external|demo`. The
 states are unconfigured/signed-out/connecting/authenticated/expired/error. No
 credential, backend UUID, provider exception or raw error is exposed in a snapshot.
@@ -289,7 +295,25 @@ trusted logout callback. Local clearing alone does not claim provider-token revo
 The gateway verifies session state, not feature loading. Once authenticated, the host
 still awaits each `bindJourneySession(...).activate()` before invoking its controller.
 Catalogs, protected views, permissions and feature state remain caller-owned. The
-published Q49 interface was supplied through lane coordination; structural checking
-against its exact frozen foundation file and actual browser rendering remain pending.
+separate compile-only integration reads the exact frozen foundation sources from
+Git and imports its real public `FoundationRoot`, `FoundationOptions`, `SessionGateway`
+and `SessionSnapshot` exports. It checks configured and unconfigured API gateways
+in both NodeNext and the foundation's ESNext/Bundler mode, without executing the
+generated binding, changing foundation files or installing dependencies:
+
+```sh
+git fetch origin sebasbimbi/feat/andes-web-foundation
+ANDES_TYPESCRIPT_TSC=/absolute/path/to/existing/typescript/bin/tsc \
+ANDES_FOUNDATION_NODE_MODULES=/absolute/path/to/existing/foundation/web/node_modules \
+  node --test web/tests/api/foundation.integration.mjs
+```
+
+The explicit existing dependency directory is used only for type resolution via
+a temporary symlink; the compiler emits nothing and temporary files are removed.
+This establishes structural compatibility with the actual foundation entry. It
+does not mount React or prove its subscription, login or rendered browser behavior.
+PR56's development-only `window.__ANDES_TEST_MOUNT__({session:gateway})` hook is the
+published runtime seam for the browser integration owner; production entries have
+no test hook. Actual browser rendering and server authorization remain to be tested.
 Current tests exercise the real gateway/client code with synthetic provider/HTTP
 fixtures; no production sign-in or configured external provider has been validated.
