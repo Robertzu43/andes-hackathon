@@ -1,0 +1,26 @@
+{
+  "name": "andes-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <27"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "start": "node dist/server.js",
+    "migrate": "node scripts/migrate.mjs"
+  },
+  "dependencies": {
+    "fastify": "5.12.7",
+    "jose": "6.1.0",
+    "pg": "8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.7.2",
+    "@types/pg": "8.15.5",
+    "typescript": "5.9.3"
+  }
+}
