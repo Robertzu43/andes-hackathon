@@ -1,5 +1,24 @@
 # Infraestructura y operación
 
+## Vista profesional con iconos oficiales
+
+[Imagen PNG](andes-infrastructure-professional.png) · [Fuente SVG vectorial para Figma](andes-infrastructure-professional.svg)
+
+![Arquitectura de ANDES con iconos oficiales AWS](andes-infrastructure-professional.png)
+
+Esta vista lógica muestra una sola base de estado y cinco pasos de operación. El contorno representa AWS, no una subred: ALB es público; ECS y RDS usan subredes privadas; SQS, S3 y los servicios de apoyo son regionales. El contacto que observa el mapa y quien recibe alertas pueden ser la misma persona, con permisos independientes. La conexión SQL de los consumidores se libera antes de llamar a Zavu.
+
+Los iconos conservan los vectores y colores del [paquete oficial AWS de julio de 2026](https://aws.amazon.com/architecture/icons/), descargado desde [AWS](https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip). Incluye Fargate, ELB, RDS, SQS, S3, Secrets Manager, CloudWatch y los recursos de usuario/cliente. Zavu aparece como texto; no se presenta un logotipo inventado.
+
+El SVG es autocontenido, sin imágenes remotas ni scripts, organizado en grupos identificados por componente. Se puede importar en un archivo Figma Design. La importación y persistencia en Figma aún no están verificadas: el inicio de sesión está pendiente. La fuente SVG sigue siendo editable independientemente de cómo Figma convierta el texto.
+
+```sh
+sips -s format png docs/architecture/diagrams/andes-infrastructure-professional.svg \
+  --out docs/architecture/diagrams/andes-infrastructure-professional.png
+```
+
+## Vista detallada original
+
 [Imagen PNG](andes-infrastructure.png) · [Fuente SVG editable](andes-infrastructure.svg)
 
 ![Infraestructura de ANDES y flujo de emergencia](andes-infrastructure.png)
