@@ -33,9 +33,9 @@ Tools for reconstructing real freight trips with independent truck drivers and t
 - Every participant has a consent reference, and both people consent to sharing before a case exports. The tool checks that the reference exists; it does not judge consent validity.
 - Robbery, security, fatigue and rest events are never treated as recorded by phone, location or contact metadata alone. Reports need a cited attributed account. No reply alone stays unknown, with contact status separate from incident verification. A suspicion needs the participant's cited account and stated basis; corroboration needs a specific independent observation supporting the claim. A filed complaint that repeats an allegation is still an attributed account.
 - Contradicting accounts stay as linked rows, and unknown times stay unknown.
-- Text that leaves the private folder holds no calendar dates, email addresses, links, coordinates, phone numbers or vehicle plates.
+- Common calendar dates, email addresses, links, coordinates, phone numbers and vehicle plates in exported text or IDs are rejected. Every handoff still needs human redaction review; automated scanning is incomplete.
 
-It checks the declared source classifications and required basis, but cannot verify the truth of a source or whether its observations actually support a claim. The independent trace reviewer does that. It cannot find names, places or cargo details in free text. The redaction review does that.
+It checks the declared source classifications and required basis, but cannot verify the truth of a source or whether its observations actually support a claim. The independent trace reviewer does that. It cannot guarantee complete identifier detection or find names, places or cargo details in free text. The redaction review covers those limits. Exclusion reasons use generic `consent`/`redaction` codes; detailed refusal and review diagnostics remain in the private `check` output. Read export warnings on stderr, including when zone/offset validation was unavailable.
 
 ## Handoff to Robert
 
