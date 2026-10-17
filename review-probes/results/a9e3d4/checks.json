@@ -1,0 +1,24 @@
+{
+  "candidate": "a9e3d404d029062bbe159cca11f69020b12fb072",
+  "archive": "/tmp/andes-q48-a9e3d4-ivpn_25e",
+  "checks": [
+    {
+      "name": "author",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "evidence/app-acceptance/oracle.test.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "unchanged-independent",
+      "command": [
+        "node",
+        "review-probes/receipt-checker-probes.mjs"
+      ],
+      "exit": 0
+    }
+  ]
+}

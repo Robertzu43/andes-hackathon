@@ -1,0 +1,25 @@
+{
+  "candidate": "7a7d28cbd711cfd6a1a86ec6d8a94ab6e044d366",
+  "archive": "/tmp/andes-q48-7a7d28c-fsi94g3l",
+  "checks": [
+    {
+      "name": "author",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "evidence/app-acceptance/oracle.test.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "rebind-independent",
+      "command": [
+        "node",
+        "<workspace>/review-probes/receipt-checker-rebind.mjs",
+        "/tmp/andes-q48-7a7d28c-fsi94g3l"
+      ],
+      "exit": 0
+    }
+  ]
+}

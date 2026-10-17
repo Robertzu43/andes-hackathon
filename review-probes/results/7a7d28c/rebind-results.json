@@ -1,0 +1,40 @@
+{
+  "driver": "q48-rebind/1",
+  "approvedBackend": "5591c9b55fe7f4505e36ccee96d27aa913e0debf",
+  "originalProbeSha256": "d3714238dbf65668f739f6da0b63dc40b1ad284215fa69ffb90e7f1c38670d9b",
+  "boundProbeSha256": "633f84a2ca885c285b9fcef2a1593476e08c2908c8567a4d880bb726cf365a9b",
+  "onlyBinding": {
+    "from": "5591c9b55fe7f4505e36ccee96d27aa913e0debf",
+    "to": "ebc8fb1d36f441ef012ca585201cefabf61383d6",
+    "meaning": "revision-negative input"
+  },
+  "pinChecks": [
+    {
+      "name": "reviewed backend is accepted only as backend evidence",
+      "expected": "backend-receipt-checks-pass",
+      "actual": "backend-receipt-checks-pass",
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "old EBC backend is rejected",
+      "expected": "fix",
+      "actual": "fix",
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "foreign backend is rejected",
+      "expected": "fix",
+      "actual": "fix",
+      "wholeAppAccepted": false,
+      "passed": true
+    }
+  ],
+  "originalControlCount": 20,
+  "originalUnexpected": [],
+  "originalControlExit": 0,
+  "allTwentyExpected": true,
+  "passed": true,
+  "wholeAppAccepted": false
+}
