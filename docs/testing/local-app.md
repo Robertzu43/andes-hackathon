@@ -137,3 +137,60 @@ evidence is collected. The original evidence gates remain open.
 The next integration step belongs to component44's reviewed CI seam. UI-driven
 browser coverage follows the runnable frontend foundation and its documented
 authentication/API boundary; these HTTP tests do not count as UI/device proof.
+
+## Redacted acceptance receipts
+
+The adapter targets Q52's independently authored schema
+`andes.app-acceptance.receipt/1` at frozen commit
+`5f43ebbc4c711dde68e436ae34510f357fc9f4ac` (draft PR60). Its implementation is
+not copied into this lane. To export receipts from an actual isolated run, select
+a **new**, absolute local directory outside Git:
+
+```sh
+APP_INTEGRATION_EVIDENCE_DIR=/tmp/andes-q46-receipts-unique node scripts/app-integration/run.mjs
+```
+
+The directory must not already exist. It is created privately and survives cluster
+cleanup. `http-records.json` contains selected redacted HTTP observations and case
+bindings; `acceptance-receipt.json` groups those observations into the twelve
+ordered cases consumed by the independent checker. Both files have mode 0600 and
+a 512 KiB bound. Do not commit or paste them into a PR. Give an authorised local
+reviewer their path plus the producer commit, exact command and raw test output.
+
+Receipt export checks that `src/`, `db/`, manifests and compiler config still match
+backend `ebc8fb1d36f441ef012ca585201cefabf61383d6`, including unstaged and untracked
+runtime changes. Export requires a Git checkout containing that commit. A changed
+backend needs source review and coordinated oracle rebinding before receipt reuse;
+setting a revision label cannot bypass the source check.
+
+Capture happens only after real HTTP response JSON is read. Named slots bind an
+observed request to a case; duplicate slots or a case order differing from actual
+observation order are rejected. Partial/absent cases are omitted, so Q52 reports
+them as pending (`exit 2`). There is no fallback to its synthetic examples.
+Unexpected observed status/results remain unchanged for the checker to reject.
+Caller-supplied JSON alone cannot authenticate that HTTP happened.
+
+The adapter derives registered route patterns from actual request paths. Opaque ID,
+place/action-text and key aliases preserve equality and distinctness across request
+and response records; original UUIDs and idempotency keys are excluded. Tokens,
+headers, phone values, coordinates and raw trip text are not captured. Source
+`capturedAt`, server `receivedAt`/`readAt` and `ageMs` remain unchanged. Producer
+`observedAt` is a separate wall-clock field in the selected HTTP records; the
+server clock advances are still synthetic engineering controls.
+
+Against an independently checked-out PR60 at its exact frozen head:
+
+```sh
+node "$(realpath /path/to/pr60/evidence/app-acceptance/check.mjs)" /tmp/andes-q46-receipts-unique/acceptance-receipt.json
+```
+
+Exit 0 means `backend-receipt-checks-pass` only. `wholeAppAccepted` remains false.
+Missing-case and altered-source-time controls must yield exits 2 and 1,
+respectively. Require nonempty, parseable JSON with that disposition as well as the
+exit code. At the frozen PR60 version, macOS `/var` versus `/private/var` aliases
+can bypass the CLI entrypoint and return empty output; canonical paths avoid it.
+This reproducible issue has been reported to its owning lane. The actual journey
+includes confirmation replay/new-key conflict,
+stranger SOS rejection, and a separate still-active trip for revocation (so denial
+cannot be explained by prior arrival). No browser, provider or physical evidence
+is added by normalizing these backend observations.
