@@ -14,14 +14,19 @@ Snapshot aging requires matching nonempty trip aliases, and both repeated SOS
 responses must remain active with unavailable group capability. Three additional
 reviewer counterexamples failed before these predicate repairs.
 
-Exact reference: Robert's `origin/codex/aws-durable-backend` at
-`ebc8fb1d36f441ef012ca585201cefabf61383d6`, refreshed 2026-10-17. Read
+Current coordinated reference: reviewed backend
+`5591c9b55fe7f4505e36ccee96d27aa913e0debf`. The earlier source/evidence at
+`ebc8fb1d36f441ef012ca585201cefabf61383d6` remains historical and its receipts
+are rejected by this current checker; they must never be relabelled. Read
 `docs/contracts/runtime.md`, `package.json`, `docs/evidence/backend-progress.md`,
 `src/api/app.ts`, `src/trips/routes.ts`, `src/contacts/routes.ts`,
 `src/location/routes.ts`, `src/incidents/routes.ts`, and existing test helpers.
 The freshness value of 120 seconds is that implementation's engineering bound,
 not an accepted safety cadence. A new backend SHA requires source review and
 explicit rebinding; changing a receipt's revision is not sufficient.
+See [rebindings.md](rebindings.md) for the exact reviewed source delta, original
+predicate-repair proof and fresh-producer requirements. This PR changes the
+checker only; root backend integration stays with44.
 
 Run with the backend's supported Node 24–26, no dependency install:
 

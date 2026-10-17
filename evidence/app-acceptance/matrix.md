@@ -1,6 +1,9 @@
 # Route and state acceptance matrix
 
-Backend reference: `ebc8fb1d36f441ef012ca585201cefabf61383d6`.
+Backend reference: `5591c9b55fe7f4505e36ccee96d27aa913e0debf`.
+All API route/payload/schema bindings below are unchanged from the prior source;
+the exact dispatch/package delta is recorded in rebindings.md. Historical ebc
+receipts remain separate and cannot be promoted to this binding.
 UI path patterns: bound to Brain's validated foundation packet below. The actual
 production-preview origin and UI states remain pending49; every browser row is
 **not run**. API receipt assertions are implemented. Lane46's original isolated

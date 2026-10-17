@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { evaluate, CASES } from './oracle.mjs';
+import { evaluate, CASES, BACKEND_SHA } from './oracle.mjs';
 import { syntheticControl } from './synthetic.mjs';
 import { isMain } from './entrypoint.mjs';
 
@@ -26,6 +26,16 @@ test('absent cases are pending; no response is never counted as success', () => 
   const data = syntheticControl(); data.cases = [];
   const r = evaluate(data); assert.equal(r.disposition, 'inconclusive');
   assert.ok(r.cases.every(c => c.status === 'pending'));
+});
+test('only the reviewed559 backend binding is current; legacy receipts stay rejected', () => {
+  assert.equal(BACKEND_SHA, '5591c9b55fe7f4505e36ccee96d27aa913e0debf');
+  const data = syntheticControl();
+  assert.equal(data.backendSha, BACKEND_SHA);
+  data.backendSha = 'ebc8fb1d36f441ef012ca585201cefabf61383d6';
+  const old = evaluate(data);
+  assert.equal(old.disposition, 'fix');
+  assert.ok(old.errors.includes('backend revision differs; rebind and review oracle before reuse'));
+  assert.equal(old.wholeAppAccepted, false);
 });
 
 const adverse = [

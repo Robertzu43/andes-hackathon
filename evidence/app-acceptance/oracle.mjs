@@ -1,5 +1,5 @@
 // Independent receipt checks. No network, database, device or provider access.
-export const BACKEND_SHA = 'ebc8fb1d36f441ef012ca585201cefabf61383d6';
+export const BACKEND_SHA = '5591c9b55fe7f4505e36ccee96d27aa913e0debf';
 export const SCHEMA = 'andes.app-acceptance.receipt/1';
 const object = x => x !== null && typeof x === 'object' && !Array.isArray(x);
 const id = x => typeof x === 'string' && x.length > 0 && x.length <= 160;
