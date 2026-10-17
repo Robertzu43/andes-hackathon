@@ -50,7 +50,8 @@ Not done: live sends, deployment, phone capture, voice/free-text trip extraction
 `codex/aws-durable-backend` is the integration branch: Sebastian's client and web PRs (#55–#65) target it. Open PRs:
 - **#74** `hackathon/delivery` → `codex/aws-durable-backend`: Part 1, demo personas, one-phone live allowlist, deploy script, submission draft. Under review by Robert's gatekeeper; needs Sebastian's approval on the exact head.
 - **#76** `hackathon/insights` → `codex/aws-durable-backend`, merge after #74 (it contains #74): Part 2 merged in. On hold until ef's privacy and SOS-safety fixes land in a PR into `hackathon/insights`. 80/80 tests pass, and the linux/amd64 image was run locally end to end (`/mapa`, seeded hotspots, check → escalation).
-- After these, the integration branch goes to `main` through #61 for judging.
+- **Reconciliation** (owner: `andes-hackathon-a4`, reviewed by the gatekeeper): after #74, #76 and #77 merge into `codex/aws-durable-backend`, one PR brings the backend branch and #61 (`main`) together. A dry run (combined branch + #61 head `5591c9b`) merged with **no conflicts**; 86/86 backend tests, typecheck, demo, `test:tooling`, cfn-lint, compose config and the linux/amd64 Docker build all passed.
+- `main` is what judges see, so the reconciliation must land before the submission snapshot.
 
 Expected merge conflicts are trivial:
 - `src/api/app.ts`: Part 2 edits the auth-exemption line next to the demo exemption line.
