@@ -1,0 +1,8 @@
+PASS Default does not load or mount the animation engine
+PASS Both locales at five exact sizes: loaded images, zero overflow and 44px controls
+PASS Interactive states pass axe in both locales, have no hidden focus target and settle to zero RAF/mutations
+PASS Home/End/Arrow keyboard controls change static poses without engine
+PASS Live reduced motion and real IntersectionObserver unmount/restore with zero offscreen RAF
+PASS Four real bridge mount/abort/destroy cycles preserve sibling text and leave zero RAF/mutations
+PASS No-JS fixture contains both factual captions and a loaded still
+PASS Clean source-bound runtime/network and local-only requests

@@ -1,0 +1,365 @@
+{
+  "candidate": "186fd4eb4688961de183af9283154b14da933ce9",
+  "sourceByteMatchesCommit": true,
+  "sourceFingerprint": "7c1d10228cb5ecf0696a17a80044b61795ca4bab3b753da294616d905125be17",
+  "verifiedAt": "2026-10-17T23:40:12.069Z",
+  "source": [
+    {
+      "path": "docs/visuals/anatomy.md",
+      "sha256": "02e8707d5dbf1d82af470ec3ea271a0654ed291014649c1b7c449e2eb7095ee4",
+      "bytes": 9045
+    },
+    {
+      "path": "web/src/visuals/anatomy/AnatomyRelay.tsx",
+      "sha256": "52766426c10ef2c9c2e6c916882ac32e5c89c7e5280c4d9c5cb11758496af8ce",
+      "bytes": 954
+    },
+    {
+      "path": "web/src/visuals/anatomy/art.mjs",
+      "sha256": "9222bfd67cd17041f463fb033d332455db6d26d4cd657a77149a4ab0c6d15b25",
+      "bytes": 145311
+    },
+    {
+      "path": "web/src/visuals/anatomy/geometry.mjs",
+      "sha256": "2d666057eee460a8147e3df0153376a0067e04af333e1ac7b8c3e73ce2c77756",
+      "bytes": 6283
+    },
+    {
+      "path": "web/src/visuals/anatomy/index.d.mts",
+      "sha256": "66a081fe3e1e6bd3637cef0665c7be7e1d7d508dc8b7f6438162b1f038555b3a",
+      "bytes": 342
+    },
+    {
+      "path": "web/src/visuals/anatomy/index.mjs",
+      "sha256": "f31be8cf7d7345a71143865a3a22a294d93241171208c33360fe9827fd44e9cb",
+      "bytes": 5642
+    },
+    {
+      "path": "web/src/visuals/anatomy/model.mjs",
+      "sha256": "1dd9c4f8ec4fee780b2ecec72d6f2504ffb2573cc2cfa94fc748e00e01ad039a",
+      "bytes": 4725
+    },
+    {
+      "path": "web/src/visuals/anatomy/render.mjs",
+      "sha256": "e99f05c510e7dc20a35da797fbf7e5c4491d7b7a7124aadf5eec14633f05364b",
+      "bytes": 2402
+    },
+    {
+      "path": "web/src/visuals/anatomy/styles.mjs",
+      "sha256": "0fb01ff8286a3f9f1afc0fd271a065306e7779fe19cb437fb96d2e98390a2dcb",
+      "bytes": 4031
+    },
+    {
+      "path": "web/src/visuals/anatomy/vendor/LICENSE",
+      "sha256": "87c078ab9d90a3044f359e6b563d4e6afea7aa060897cf4f21618687b3856796",
+      "bytes": 1061
+    },
+    {
+      "path": "web/src/visuals/anatomy/vendor/audit.mjs",
+      "sha256": "74e605b5d549c1f31c8a1104db7560057105cf86809bf6ced00e4ac79194c8e2",
+      "bytes": 92618
+    },
+    {
+      "path": "web/src/visuals/anatomy/vendor/iso-kit.mjs",
+      "sha256": "6d3ecc725d30c3b0346da309cf61dfa5a65017c23620bbd4093009d4fb104018",
+      "bytes": 35175
+    },
+    {
+      "path": "web/src/visuals/anatomy/vendor/lathe.mjs",
+      "sha256": "a4e7e974b1a37e603ad2b76363b6f9815cc101dfff0ad277a5d4e8f1dc56fccb",
+      "bytes": 48028
+    },
+    {
+      "path": "web/src/visuals/anatomy/vendor/tube.mjs",
+      "sha256": "bcb3cc360f6d83e6a5753f4c464b4587ab7965028b05a5d58e285abce58667c9",
+      "bytes": 14230
+    },
+    {
+      "path": "web/tests/visuals/anatomy/browser.mjs",
+      "sha256": "4a56d016bbf7e349eee3093658a3872ed2f3eda6993df1556ff96b632bd4f16b",
+      "bytes": 5655
+    },
+    {
+      "path": "web/tests/visuals/anatomy/build.mjs",
+      "sha256": "794ae3e6c76fdcb5e06075e7158063679447a4747dedc304bdae20c216da9c03",
+      "bytes": 2106
+    },
+    {
+      "path": "web/tests/visuals/anatomy/legibility.mjs",
+      "sha256": "7b32eb822798f8e8a200f0c397c9fdddc403c6874db536616abccf0c5cfa7377",
+      "bytes": 1869
+    },
+    {
+      "path": "web/tests/visuals/anatomy/lifecycle.mjs",
+      "sha256": "66be4793a98a2fc14c601d1e6cb434ac933670929676bd585d8305341b584a2d",
+      "bytes": 8758
+    },
+    {
+      "path": "web/tests/visuals/anatomy/model.test.mjs",
+      "sha256": "b28fab18b7257f222c0d8a96ce34ea67ad922f99b50e4c191f588e3d76bc00c3",
+      "bytes": 2454
+    },
+    {
+      "path": "web/tests/visuals/anatomy/preview-es.html",
+      "sha256": "3f99e2c05ef6d3fe6012ac10b78dfecc715c00b0b23e8aa88186b51298e44ec0",
+      "bytes": 144397
+    },
+    {
+      "path": "web/tests/visuals/anatomy/preview-pt-BR.html",
+      "sha256": "093898c739a84726e5ac19d240e6db5303f33aa6c794cb038b3b6a483e3ad857",
+      "bytes": 144343
+    },
+    {
+      "path": "web/tests/visuals/anatomy/preview-static-es.html",
+      "sha256": "7b915ef31da8ff9e11e4c6a785a8b3c3d270e2417d76b5af9d0d29ef30e25d99",
+      "bytes": 144207
+    },
+    {
+      "path": "web/tests/visuals/anatomy/preview-static-pt-BR.html",
+      "sha256": "e21609b0d7e99a6d97461e0b659f631f439f387f94d6d6def8bae37f3848156f",
+      "bytes": 144150
+    },
+    {
+      "path": "web/tests/visuals/anatomy/serve.mjs",
+      "sha256": "18ce1f18e65e66ba9d6fa4db58e52c86fccda8a31750fdf89a3802a7966c7560",
+      "bytes": 1295
+    },
+    {
+      "path": "web/tests/visuals/anatomy/typecheck.mjs",
+      "sha256": "e0eb239d077a61e56543f64a955b353a84d498e6785668a771b16e5cd7fc9996",
+      "bytes": 1238
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "embedded-acknowledged.png",
+      "sha256": "cec1a0758c832ae540b4bee5ebd6a66dc570796e4925e71bfc283593f2c2e023",
+      "bytes": 66224,
+      "pngWidth": 346,
+      "pngHeight": 752
+    },
+    {
+      "path": "embedded-default.png",
+      "sha256": "d1f6e3bd7f6da90f17a1427a59922fb182133116d162417f0d04d7608dea2802",
+      "bytes": 64864,
+      "pngWidth": 346,
+      "pngHeight": 752
+    },
+    {
+      "path": "independent.mjs",
+      "sha256": "9d2b8edd3e9bf45160c4857dde9eeae004aa74ebe847201154b05f2cb4d3f212",
+      "bytes": 7003
+    },
+    {
+      "path": "raw/axe-acknowledged.json",
+      "sha256": "b81c04c3ca8218be217ee567df3381abd5d37d47dd3327d2cd629cc76cab5f3d",
+      "bytes": 128123
+    },
+    {
+      "path": "raw/axe-local.json",
+      "sha256": "374869e3f8015e74cc9ffdb278dcb99c783f76397f70893736c4b64cdb3c56d2",
+      "bytes": 129049
+    },
+    {
+      "path": "raw/detail-4x.png",
+      "sha256": "cbd7db6ca134dd955f98dc0e2f87b1e5f58328c341334d38c35ad09f1a5cf4cf",
+      "bytes": 84724,
+      "pngWidth": 1400,
+      "pngHeight": 1104
+    },
+    {
+      "path": "raw/es-1440x900-sections.png",
+      "sha256": "6dadf11aedcf29a462508dca7dc83d5c4ef75645e1c3e9767996c00d91b0fc56",
+      "bytes": 140735,
+      "pngWidth": 1440,
+      "pngHeight": 1493
+    },
+    {
+      "path": "raw/es-1440x900-viewport.png",
+      "sha256": "223e3421041ab4cb75035509e9578182ff306c5c79a6b3228144d6bbe7e32be6",
+      "bytes": 78630,
+      "pngWidth": 1440,
+      "pngHeight": 900
+    },
+    {
+      "path": "raw/es-1920x1080-sections.png",
+      "sha256": "42704a6906be13318de5aafbb5de5187221cfd7c414f5c2bd5dcf0e632b54ab0",
+      "bytes": 146674,
+      "pngWidth": 1920,
+      "pngHeight": 1493
+    },
+    {
+      "path": "raw/es-1920x1080-viewport.png",
+      "sha256": "912b87714de1ffda939664c8bd2a72c6ae821fcc8df6ca150f261144c18cf6e3",
+      "bytes": 100544,
+      "pngWidth": 1920,
+      "pngHeight": 1080
+    },
+    {
+      "path": "raw/es-360x800-sections.png",
+      "sha256": "906a79f8567e942a5d3d6f507696955b83f1aa98bda5b028b3924d5b564330ea",
+      "bytes": 102784,
+      "pngWidth": 360,
+      "pngHeight": 1494
+    },
+    {
+      "path": "raw/es-360x800-viewport.png",
+      "sha256": "0d5c6f5095da1bea6dc63d4ef8b4052d7487f2784db4513ec54080a37b9b3e67",
+      "bytes": 57889,
+      "pngWidth": 360,
+      "pngHeight": 800
+    },
+    {
+      "path": "raw/es-390x844-sections.png",
+      "sha256": "e9f7930fc2cefd16d53ecf644d9f00f0cedd273f45cb9743e69b1f21d903af0d",
+      "bytes": 105012,
+      "pngWidth": 390,
+      "pngHeight": 1487
+    },
+    {
+      "path": "raw/es-390x844-viewport.png",
+      "sha256": "d231173d8418a06d14ea6526781676edf55de00397beb6018950079d36557686",
+      "bytes": 61031,
+      "pngWidth": 390,
+      "pngHeight": 844
+    },
+    {
+      "path": "raw/es-430x932-sections.png",
+      "sha256": "b0bebd6bd271097286f0bf3bc55908e045f89f3bc63cf272f5c9e99753c72488",
+      "bytes": 106544,
+      "pngWidth": 430,
+      "pngHeight": 1472
+    },
+    {
+      "path": "raw/es-430x932-viewport.png",
+      "sha256": "a8c29a66879711e3d07e54bf022ce74cc7477a0712f4ff8dc53242e761d8a37d",
+      "bytes": 71281,
+      "pngWidth": 430,
+      "pngHeight": 932
+    },
+    {
+      "path": "raw/geometry.log",
+      "sha256": "72b9a17feaadfca46d261001053a26601c359d297cdda4c66046cf1c6dac1ef0",
+      "bytes": 657
+    },
+    {
+      "path": "raw/independent-results.json",
+      "sha256": "2d6d053a1ea0c8eeae52cb46454bd0c5de34ef5afeedc6245dfb57d77bba38b4",
+      "bytes": 6989
+    },
+    {
+      "path": "raw/independent.log",
+      "sha256": "778382b3dae5fdb3b08ca02bdcc94126dddf501b60f9d698d1ec49c25ab1295c",
+      "bytes": 161
+    },
+    {
+      "path": "raw/no-js.png",
+      "sha256": "df945a319fe9bb075b66f74b3a0178e4f80046479746372805d4e44c6fe1ff2c",
+      "bytes": 135171,
+      "pngWidth": 390,
+      "pngHeight": 1685
+    },
+    {
+      "path": "raw/pt-BR-1440x900-sections.png",
+      "sha256": "15176778ad2b0d077eb08cf6c93b192824fa859b6698090a42eb96c7be0fae80",
+      "bytes": 139674,
+      "pngWidth": 1440,
+      "pngHeight": 1493
+    },
+    {
+      "path": "raw/pt-BR-1440x900-viewport.png",
+      "sha256": "ec295124f005e94a06a51b0a532ee303cdc9f23e028b737a708e16c58e4e1d3e",
+      "bytes": 77406,
+      "pngWidth": 1440,
+      "pngHeight": 900
+    },
+    {
+      "path": "raw/pt-BR-1920x1080-sections.png",
+      "sha256": "09f14a29ce1f962be81d865f83cae700b920082aa04cb7de7046a432c73ae22d",
+      "bytes": 145676,
+      "pngWidth": 1920,
+      "pngHeight": 1493
+    },
+    {
+      "path": "raw/pt-BR-1920x1080-viewport.png",
+      "sha256": "4a051487dab946291cba1060255f70991d1a6e3c74455dd29a58023eab2ea796",
+      "bytes": 98705,
+      "pngWidth": 1920,
+      "pngHeight": 1080
+    },
+    {
+      "path": "raw/pt-BR-360x800-sections.png",
+      "sha256": "1d0496dce660badf2f5a0bd53cb82cb293c24aed92bc5d115307e6ace5136dad",
+      "bytes": 104129,
+      "pngWidth": 360,
+      "pngHeight": 1515
+    },
+    {
+      "path": "raw/pt-BR-360x800-viewport.png",
+      "sha256": "c1af3e00f65ee739300b555505d890fd7b7739328ef0a12d09a19088582addd1",
+      "bytes": 53759,
+      "pngWidth": 360,
+      "pngHeight": 800
+    },
+    {
+      "path": "raw/pt-BR-390x844-sections.png",
+      "sha256": "92a3fa58db3c4b1defbd3e6200ba928c2371f93a906335a8c25320834ee143ee",
+      "bytes": 104808,
+      "pngWidth": 390,
+      "pngHeight": 1487
+    },
+    {
+      "path": "raw/pt-BR-390x844-viewport.png",
+      "sha256": "da79a2a335ac9e5237e5feee626312f19c3b11e32ae4f64baf28d190de255263",
+      "bytes": 60012,
+      "pngWidth": 390,
+      "pngHeight": 844
+    },
+    {
+      "path": "raw/pt-BR-430x932-sections.png",
+      "sha256": "c0c37935c919238320572e81c515d9295f62dcb1eab6a77ba90801fa3108407b",
+      "bytes": 105897,
+      "pngWidth": 430,
+      "pngHeight": 1472
+    },
+    {
+      "path": "raw/pt-BR-430x932-viewport.png",
+      "sha256": "0875872cf71c06a6ac789d96d5a7baecf487951741ea9c0e95d68cbd8b8b4e22",
+      "bytes": 69968,
+      "pngWidth": 430,
+      "pngHeight": 932
+    },
+    {
+      "path": "raw/reduced.png",
+      "sha256": "c6528ca8dabca9255a4444e45f765938f1907ef4b2b49e6239273eb9dc4b2bb8",
+      "bytes": 107810,
+      "pngWidth": 390,
+      "pngHeight": 1511
+    },
+    {
+      "path": "raw/sheet-es.png",
+      "sha256": "f09f99a5371fa1a03337c4094d8ee3d2b8a5a54f4ab149a19c7b8d58dd871c2f",
+      "bytes": 1042624,
+      "pngWidth": 2100,
+      "pngHeight": 2651
+    },
+    {
+      "path": "raw/sheet-pt-BR.png",
+      "sha256": "a00de32cac46d8ee4a0af9b1ae3ec4f34a7fb3f61eedcceaba3b9e9ed2b7b438",
+      "bytes": 1032511,
+      "pngWidth": 2100,
+      "pngHeight": 2674
+    },
+    {
+      "path": "review-server.mjs",
+      "sha256": "ba8d7d31c03440c4f7d35df2438dd208a15cf6df4229c93f7727585e9a5695c8",
+      "bytes": 949
+    }
+  ],
+  "runtimeSourceCompression": {
+    "rawBytes": 162111,
+    "gzipBytes": 27521,
+    "productionBundle": false
+  },
+  "limits": "Content-addressed review evidence index; not a replacement UI Evidence Manifest, hardware qualification or whole-app acceptance"
+}

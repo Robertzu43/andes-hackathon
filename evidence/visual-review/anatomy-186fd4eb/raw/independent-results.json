@@ -1,0 +1,296 @@
+{
+  "candidate": "186fd4eb4688961de183af9283154b14da933ce9",
+  "rows": [
+    {
+      "locale": "es",
+      "width": 360,
+      "height": 800,
+      "states": [
+        {
+          "state": "local",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "accepted",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "unconfirmed",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "acknowledged",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        }
+      ]
+    },
+    {
+      "locale": "es",
+      "width": 390,
+      "height": 844,
+      "states": [
+        {
+          "state": "local",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "accepted",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "unconfirmed",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "acknowledged",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        }
+      ]
+    },
+    {
+      "locale": "es",
+      "width": 430,
+      "height": 932,
+      "states": [
+        {
+          "state": "local",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "accepted",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "unconfirmed",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "acknowledged",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        }
+      ]
+    },
+    {
+      "locale": "es",
+      "width": 1440,
+      "height": 900,
+      "states": [
+        {
+          "state": "local",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "accepted",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "unconfirmed",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "acknowledged",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        }
+      ]
+    },
+    {
+      "locale": "es",
+      "width": 1920,
+      "height": 1080,
+      "states": [
+        {
+          "state": "local",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "accepted",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "unconfirmed",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        },
+        {
+          "state": "acknowledged",
+          "delivery": "Sin confirmar",
+          "help": "Sin confirmar"
+        }
+      ]
+    },
+    {
+      "locale": "pt-BR",
+      "width": 360,
+      "height": 800,
+      "states": [
+        {
+          "state": "local",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "accepted",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "unconfirmed",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "acknowledged",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        }
+      ]
+    },
+    {
+      "locale": "pt-BR",
+      "width": 390,
+      "height": 844,
+      "states": [
+        {
+          "state": "local",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "accepted",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "unconfirmed",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "acknowledged",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        }
+      ]
+    },
+    {
+      "locale": "pt-BR",
+      "width": 430,
+      "height": 932,
+      "states": [
+        {
+          "state": "local",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "accepted",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "unconfirmed",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "acknowledged",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        }
+      ]
+    },
+    {
+      "locale": "pt-BR",
+      "width": 1440,
+      "height": 900,
+      "states": [
+        {
+          "state": "local",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "accepted",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "unconfirmed",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "acknowledged",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        }
+      ]
+    },
+    {
+      "locale": "pt-BR",
+      "width": 1920,
+      "height": 1080,
+      "states": [
+        {
+          "state": "local",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "accepted",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "unconfirmed",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        },
+        {
+          "state": "acknowledged",
+          "delivery": "Não confirmada",
+          "help": "Não confirmada"
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "checks": [
+    "40 exact state/locale/viewport cases: source-attributed delivery/help remain unknown, accepted/unconfirmed poses identical, 44px controls, zero overflow",
+    {
+      "axeState": "local",
+      "violations": []
+    },
+    {
+      "axeState": "acknowledged",
+      "violations": []
+    },
+    "Native End/Home and reduced-motion example selection preserve semantic state"
+  ],
+  "capabilityFinding": {
+    "error": "IntersectionObserver is not a constructor",
+    "visibilityCallbacksAfterExternalAbort": 1,
+    "before": "local",
+    "after": "acknowledged",
+    "returnedInstance": false
+  },
+  "verdict": "changes-requested: missing IntersectionObserver throws after listeners and leaves resources alive after outer abort"
+}

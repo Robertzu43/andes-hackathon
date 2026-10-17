@@ -1,0 +1,32 @@
+[
+  {
+    "selector": "h1",
+    "foreground": "rgb(23, 49, 57)",
+    "background": "rgb(252, 253, 253)",
+    "ratio": 13.4265419742091
+  },
+  {
+    "selector": "figcaption",
+    "foreground": "rgb(23, 49, 57)",
+    "background": "rgb(252, 253, 253)",
+    "ratio": 13.4265419742091
+  },
+  {
+    "selector": ".preview-detail",
+    "foreground": "rgb(77, 98, 104)",
+    "background": "rgb(252, 253, 253)",
+    "ratio": 6.3164497413481575
+  },
+  {
+    "selector": "button",
+    "foreground": "rgb(22, 102, 117)",
+    "background": "rgb(252, 253, 253)",
+    "ratio": 6.456948694511935
+  },
+  {
+    "selector": "select",
+    "foreground": "rgb(23, 49, 57)",
+    "background": "rgb(252, 253, 253)",
+    "ratio": 13.4265419742091
+  }
+]

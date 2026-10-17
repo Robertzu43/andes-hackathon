@@ -1,0 +1,914 @@
+{
+  "candidate": "d8eea894d90af249ec2d81689f629fabc5c476f0",
+  "checks": [
+    {
+      "name": "Default does not load or mount the animation engine",
+      "detail": [
+        "http://127.0.0.1:3056/",
+        "http://127.0.0.1:3056/@vite/client",
+        "http://127.0.0.1:3056/@fs//private/tmp/andes56-d8eea894/web/src/visuals/hairline/phone-rest.svg",
+        "http://127.0.0.1:3056/main.tsx",
+        "http://127.0.0.1:3056/@fs/tmp/andes56-d8eea894-vite-cache/deps/react.js?v=d40c1d59",
+        "http://127.0.0.1:3056/@fs/tmp/andes56-d8eea894-vite-cache/deps/react-dom_client.js?v=06526331",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/PhoneIllustration.tsx",
+        "http://127.0.0.1:3056/preview.css",
+        "http://127.0.0.1:3056/@fs/tmp/andes56-d8eea894-vite-cache/deps/react_jsx-dev-runtime.js?v=bfe79eee",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes53-tools/node_modules/vite/dist/client/env.mjs",
+        "http://127.0.0.1:3056/@fs/tmp/andes56-d8eea894-vite-cache/deps/react-CZCQ3sl1.js?v=e04dddc9",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/phone.css",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/phone-rest.svg",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/PhoneCanvas.tsx",
+        "http://127.0.0.1:3056/@fs/tmp/andes56-d8eea894-vite-cache/deps/@lucasmarkes_hairline_react.js?v=b90c8234",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/phone-rest-open.svg",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/phone-rest-compact.svg",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/index.mjs",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/mountVisual.tsx"
+      ]
+    },
+    {
+      "name": "Both locales at five exact sizes: loaded images, zero overflow and 44px controls",
+      "detail": [
+        [
+          360,
+          800
+        ],
+        [
+          390,
+          844
+        ],
+        [
+          430,
+          932
+        ],
+        [
+          1440,
+          900
+        ],
+        [
+          1920,
+          1080
+        ]
+      ]
+    },
+    {
+      "name": "Interactive states pass axe in both locales, have no hidden focus target and settle to zero RAF/mutations",
+      "detail": "Actual native Enter and pointer input"
+    },
+    {
+      "name": "Home/End/Arrow keyboard controls change static poses without engine",
+      "detail": "0 / 0.5 / 1"
+    },
+    {
+      "name": "Live reduced motion and real IntersectionObserver unmount/restore with zero offscreen RAF",
+      "detail": "Static range still works"
+    },
+    {
+      "name": "Four real bridge mount/abort/destroy cycles preserve sibling text and leave zero RAF/mutations",
+      "detail": "No claim of heap/listener leak proof"
+    },
+    {
+      "name": "No-JS fixture contains both factual captions and a loaded still",
+      "detail": "Host integration remains55 responsibility"
+    },
+    {
+      "name": "Clean source-bound runtime/network and local-only requests",
+      "detail": [
+        "http://127.0.0.1:3056/",
+        "http://127.0.0.1:3056/@vite/client",
+        "http://127.0.0.1:3056/@fs//private/tmp/andes56-d8eea894/web/src/visuals/hairline/phone-rest.svg",
+        "http://127.0.0.1:3056/main.tsx",
+        "http://127.0.0.1:3056/@fs/tmp/andes56-d8eea894-vite-cache/deps/react.js?v=d40c1d59",
+        "http://127.0.0.1:3056/@fs/tmp/andes56-d8eea894-vite-cache/deps/react-dom_client.js?v=06526331",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/PhoneIllustration.tsx",
+        "http://127.0.0.1:3056/preview.css",
+        "http://127.0.0.1:3056/@fs/tmp/andes56-d8eea894-vite-cache/deps/react_jsx-dev-runtime.js?v=bfe79eee",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes53-tools/node_modules/vite/dist/client/env.mjs",
+        "http://127.0.0.1:3056/@fs/tmp/andes56-d8eea894-vite-cache/deps/react-CZCQ3sl1.js?v=e04dddc9",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/phone.css",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/phone-rest.svg",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/PhoneCanvas.tsx",
+        "http://127.0.0.1:3056/@fs/tmp/andes56-d8eea894-vite-cache/deps/@lucasmarkes_hairline_react.js?v=b90c8234",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/phone-rest-open.svg",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/phone-rest-compact.svg",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/index.mjs",
+        "http://127.0.0.1:3056/@fs/private/tmp/andes56-d8eea894/web/src/visuals/hairline/mountVisual.tsx"
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "locale": "es",
+      "width": 360,
+      "height": 800,
+      "overflow": 0,
+      "lang": "es",
+      "targets": [
+        {
+          "width": 155,
+          "height": 44
+        },
+        {
+          "width": 197.53125,
+          "height": 46
+        },
+        {
+          "width": 312,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "locale": "es",
+      "width": 390,
+      "height": 844,
+      "overflow": 0,
+      "lang": "es",
+      "targets": [
+        {
+          "width": 155,
+          "height": 44
+        },
+        {
+          "width": 197.53125,
+          "height": 46
+        },
+        {
+          "width": 342,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "locale": "es",
+      "width": 430,
+      "height": 932,
+      "overflow": 0,
+      "lang": "es",
+      "targets": [
+        {
+          "width": 155,
+          "height": 44
+        },
+        {
+          "width": 197.53125,
+          "height": 46
+        },
+        {
+          "width": 382,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "locale": "es",
+      "width": 1440,
+      "height": 900,
+      "overflow": 0,
+      "lang": "es",
+      "targets": [
+        {
+          "width": 155,
+          "height": 44
+        },
+        {
+          "width": 197.53125,
+          "height": 46
+        },
+        {
+          "width": 592,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "locale": "es",
+      "width": 1920,
+      "height": 1080,
+      "overflow": 0,
+      "lang": "es",
+      "targets": [
+        {
+          "width": 155,
+          "height": 44
+        },
+        {
+          "width": 197.53125,
+          "height": 46
+        },
+        {
+          "width": 592,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "locale": "pt-BR",
+      "width": 360,
+      "height": 800,
+      "overflow": 0,
+      "lang": "pt-BR",
+      "targets": [
+        {
+          "width": 155,
+          "height": 44
+        },
+        {
+          "width": 188.703125,
+          "height": 46
+        },
+        {
+          "width": 312,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "locale": "pt-BR",
+      "width": 390,
+      "height": 844,
+      "overflow": 0,
+      "lang": "pt-BR",
+      "targets": [
+        {
+          "width": 155,
+          "height": 44
+        },
+        {
+          "width": 188.703125,
+          "height": 46
+        },
+        {
+          "width": 342,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "locale": "pt-BR",
+      "width": 430,
+      "height": 932,
+      "overflow": 0,
+      "lang": "pt-BR",
+      "targets": [
+        {
+          "width": 155,
+          "height": 44
+        },
+        {
+          "width": 188.703125,
+          "height": 46
+        },
+        {
+          "width": 382,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "locale": "pt-BR",
+      "width": 1440,
+      "height": 900,
+      "overflow": 0,
+      "lang": "pt-BR",
+      "targets": [
+        {
+          "width": 155,
+          "height": 44
+        },
+        {
+          "width": 188.703125,
+          "height": 46
+        },
+        {
+          "width": 592,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "locale": "pt-BR",
+      "width": 1920,
+      "height": 1080,
+      "overflow": 0,
+      "lang": "pt-BR",
+      "targets": [
+        {
+          "width": 155,
+          "height": 44
+        },
+        {
+          "width": 188.703125,
+          "height": 46
+        },
+        {
+          "width": 592,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "locale": "es",
+      "interactiveIdle": {
+        "before": {
+          "schemaVersion": 1,
+          "observedAt": "2026-10-17T23:29:24.593Z",
+          "scope": ".andes-phone",
+          "viewport": {
+            "width": 390,
+            "height": 844,
+            "dpr": 1
+          },
+          "layoutViewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "scale": 1
+          },
+          "geometryMeasurable": true,
+          "lang": "es",
+          "reducedMotion": false,
+          "visibility": "visible",
+          "pageOverflowPx": 0,
+          "scopeBox": {
+            "x": 24,
+            "y": 230,
+            "width": 342,
+            "height": 337.59,
+            "top": 230,
+            "right": 366,
+            "bottom": 567.59,
+            "left": 24
+          },
+          "scopeRendered": true,
+          "scopeInViewport": true,
+          "scopeOverflowPx": 0,
+          "controls": [],
+          "primary": null,
+          "primaryMissing": false,
+          "runningAnimations": [],
+          "frames": {
+            "callbacks": 43,
+            "callbackMs": 10.7,
+            "pending": 0
+          },
+          "mutations": 0,
+          "limitations": [
+            "RAF counters are page-wide and only include calls made after installation; pre-bound schedulers can escape them",
+            "Zero callbacks/mutations does not prove zero CPU, timers, listeners, memory leaks or GPU work",
+            "Name hints and focus CSS require accessibility-tree and visual inspection; hit points are samples",
+            "CSS clipping, content truth, source provenance and keyboard/touch outcomes require independent review"
+          ]
+        },
+        "after": {
+          "schemaVersion": 1,
+          "observedAt": "2026-10-17T23:29:25.395Z",
+          "scope": ".andes-phone",
+          "viewport": {
+            "width": 390,
+            "height": 844,
+            "dpr": 1
+          },
+          "layoutViewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "scale": 1
+          },
+          "geometryMeasurable": true,
+          "lang": "es",
+          "reducedMotion": false,
+          "visibility": "visible",
+          "pageOverflowPx": 0,
+          "scopeBox": {
+            "x": 24,
+            "y": 230,
+            "width": 342,
+            "height": 337.59,
+            "top": 230,
+            "right": 366,
+            "bottom": 567.59,
+            "left": 24
+          },
+          "scopeRendered": true,
+          "scopeInViewport": true,
+          "scopeOverflowPx": 0,
+          "controls": [],
+          "primary": null,
+          "primaryMissing": false,
+          "runningAnimations": [],
+          "frames": {
+            "callbacks": 43,
+            "callbackMs": 10.7,
+            "pending": 0
+          },
+          "mutations": 0,
+          "limitations": [
+            "RAF counters are page-wide and only include calls made after installation; pre-bound schedulers can escape them",
+            "Zero callbacks/mutations does not prove zero CPU, timers, listeners, memory leaks or GPU work",
+            "Name hints and focus CSS require accessibility-tree and visual inspection; hit points are samples",
+            "CSS clipping, content truth, source provenance and keyboard/touch outcomes require independent review"
+          ]
+        },
+        "delta": {
+          "elapsedMs": 802,
+          "callbacks": 0,
+          "callbackMs": 0,
+          "mutations": 0
+        }
+      }
+    },
+    {
+      "locale": "pt-BR",
+      "interactiveIdle": {
+        "before": {
+          "schemaVersion": 1,
+          "observedAt": "2026-10-17T23:29:27.492Z",
+          "scope": ".andes-phone",
+          "viewport": {
+            "width": 390,
+            "height": 844,
+            "dpr": 1
+          },
+          "layoutViewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "scale": 1
+          },
+          "geometryMeasurable": true,
+          "lang": "pt-BR",
+          "reducedMotion": false,
+          "visibility": "visible",
+          "pageOverflowPx": 0,
+          "scopeBox": {
+            "x": 24,
+            "y": 230,
+            "width": 342,
+            "height": 337.59,
+            "top": 230,
+            "right": 366,
+            "bottom": 567.59,
+            "left": 24
+          },
+          "scopeRendered": true,
+          "scopeInViewport": true,
+          "scopeOverflowPx": 0,
+          "controls": [],
+          "primary": null,
+          "primaryMissing": false,
+          "runningAnimations": [],
+          "frames": {
+            "callbacks": 85,
+            "callbackMs": 21,
+            "pending": 0
+          },
+          "mutations": 0,
+          "limitations": [
+            "RAF counters are page-wide and only include calls made after installation; pre-bound schedulers can escape them",
+            "Zero callbacks/mutations does not prove zero CPU, timers, listeners, memory leaks or GPU work",
+            "Name hints and focus CSS require accessibility-tree and visual inspection; hit points are samples",
+            "CSS clipping, content truth, source provenance and keyboard/touch outcomes require independent review"
+          ]
+        },
+        "after": {
+          "schemaVersion": 1,
+          "observedAt": "2026-10-17T23:29:28.294Z",
+          "scope": ".andes-phone",
+          "viewport": {
+            "width": 390,
+            "height": 844,
+            "dpr": 1
+          },
+          "layoutViewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "scale": 1
+          },
+          "geometryMeasurable": true,
+          "lang": "pt-BR",
+          "reducedMotion": false,
+          "visibility": "visible",
+          "pageOverflowPx": 0,
+          "scopeBox": {
+            "x": 24,
+            "y": 230,
+            "width": 342,
+            "height": 337.59,
+            "top": 230,
+            "right": 366,
+            "bottom": 567.59,
+            "left": 24
+          },
+          "scopeRendered": true,
+          "scopeInViewport": true,
+          "scopeOverflowPx": 0,
+          "controls": [],
+          "primary": null,
+          "primaryMissing": false,
+          "runningAnimations": [],
+          "frames": {
+            "callbacks": 85,
+            "callbackMs": 21,
+            "pending": 0
+          },
+          "mutations": 0,
+          "limitations": [
+            "RAF counters are page-wide and only include calls made after installation; pre-bound schedulers can escape them",
+            "Zero callbacks/mutations does not prove zero CPU, timers, listeners, memory leaks or GPU work",
+            "Name hints and focus CSS require accessibility-tree and visual inspection; hit points are samples",
+            "CSS clipping, content truth, source provenance and keyboard/touch outcomes require independent review"
+          ]
+        },
+        "delta": {
+          "elapsedMs": 802,
+          "callbacks": 0,
+          "callbackMs": 0,
+          "mutations": 0
+        }
+      }
+    },
+    {
+      "offscreen": {
+        "before": {
+          "schemaVersion": 1,
+          "observedAt": "2026-10-17T23:29:28.831Z",
+          "scope": ".andes-phone",
+          "viewport": {
+            "width": 390,
+            "height": 844,
+            "dpr": 1
+          },
+          "layoutViewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "scale": 1
+          },
+          "geometryMeasurable": true,
+          "lang": "es",
+          "reducedMotion": false,
+          "visibility": "visible",
+          "pageOverflowPx": 0,
+          "scopeBox": {
+            "x": 24,
+            "y": 2214,
+            "width": 342,
+            "height": 337.59,
+            "top": 2214,
+            "right": 366,
+            "bottom": 2551.59,
+            "left": 24
+          },
+          "scopeRendered": true,
+          "scopeInViewport": false,
+          "scopeOverflowPx": 0,
+          "controls": [],
+          "primary": null,
+          "primaryMissing": false,
+          "runningAnimations": [],
+          "frames": {
+            "callbacks": 89,
+            "callbackMs": 21.1,
+            "pending": 0
+          },
+          "mutations": 442,
+          "limitations": [
+            "RAF counters are page-wide and only include calls made after installation; pre-bound schedulers can escape them",
+            "Zero callbacks/mutations does not prove zero CPU, timers, listeners, memory leaks or GPU work",
+            "Name hints and focus CSS require accessibility-tree and visual inspection; hit points are samples",
+            "CSS clipping, content truth, source provenance and keyboard/touch outcomes require independent review"
+          ]
+        },
+        "after": {
+          "schemaVersion": 1,
+          "observedAt": "2026-10-17T23:29:29.632Z",
+          "scope": ".andes-phone",
+          "viewport": {
+            "width": 390,
+            "height": 844,
+            "dpr": 1
+          },
+          "layoutViewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "scale": 1
+          },
+          "geometryMeasurable": true,
+          "lang": "es",
+          "reducedMotion": false,
+          "visibility": "visible",
+          "pageOverflowPx": 0,
+          "scopeBox": {
+            "x": 24,
+            "y": 2214,
+            "width": 342,
+            "height": 337.59,
+            "top": 2214,
+            "right": 366,
+            "bottom": 2551.59,
+            "left": 24
+          },
+          "scopeRendered": true,
+          "scopeInViewport": false,
+          "scopeOverflowPx": 0,
+          "controls": [],
+          "primary": null,
+          "primaryMissing": false,
+          "runningAnimations": [],
+          "frames": {
+            "callbacks": 89,
+            "callbackMs": 21.1,
+            "pending": 0
+          },
+          "mutations": 442,
+          "limitations": [
+            "RAF counters are page-wide and only include calls made after installation; pre-bound schedulers can escape them",
+            "Zero callbacks/mutations does not prove zero CPU, timers, listeners, memory leaks or GPU work",
+            "Name hints and focus CSS require accessibility-tree and visual inspection; hit points are samples",
+            "CSS clipping, content truth, source provenance and keyboard/touch outcomes require independent review"
+          ]
+        },
+        "delta": {
+          "elapsedMs": 801,
+          "callbacks": 0,
+          "callbackMs": 0,
+          "mutations": 0
+        }
+      }
+    },
+    {
+      "nativeHidden": {
+        "state": "visible",
+        "hidden": false,
+        "engines": 1
+      }
+    },
+    {
+      "limitation": "Headless Chrome kept both tabs visible; native hidden-tab proof unavailable, no physical-device claim"
+    },
+    {
+      "afterUnmount": {
+        "before": {
+          "schemaVersion": 1,
+          "observedAt": "2026-10-17T23:29:30.308Z",
+          "scope": "main",
+          "viewport": {
+            "width": 390,
+            "height": 844,
+            "dpr": 1
+          },
+          "layoutViewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "scale": 1
+          },
+          "geometryMeasurable": true,
+          "lang": "es",
+          "reducedMotion": false,
+          "visibility": "visible",
+          "pageOverflowPx": 0,
+          "scopeBox": {
+            "x": 0,
+            "y": 118,
+            "width": 390,
+            "height": 820.59,
+            "top": 118,
+            "right": 390,
+            "bottom": 938.59,
+            "left": 0
+          },
+          "scopeRendered": true,
+          "scopeInViewport": true,
+          "scopeOverflowPx": 0,
+          "controls": [
+            {
+              "element": "button",
+              "nameHint": "Explorar la ilustración",
+              "box": {
+                "x": 24,
+                "y": 700.59,
+                "width": 197.53,
+                "height": 46,
+                "top": 700.59,
+                "right": 221.53,
+                "bottom": 746.59,
+                "left": 24
+              },
+              "rendered": true,
+              "fullyInViewport": true,
+              "hitPoints": [
+                true,
+                true,
+                true,
+                true,
+                true
+              ],
+              "target44": true,
+              "target56": false,
+              "disabled": false,
+              "tabIndex": 0,
+              "touchAction": "auto",
+              "focused": true,
+              "focusStyle": {
+                "outline": "rgb(22, 102, 117) none 3px",
+                "outlineOffset": "0px",
+                "boxShadow": "none"
+              }
+            },
+            {
+              "element": "input",
+              "nameHint": "Separación de las capas",
+              "box": {
+                "x": 24,
+                "y": 870.59,
+                "width": 342,
+                "height": 44,
+                "top": 870.59,
+                "right": 366,
+                "bottom": 914.59,
+                "left": 24
+              },
+              "rendered": true,
+              "fullyInViewport": false,
+              "hitPoints": [],
+              "target44": true,
+              "target56": false,
+              "disabled": false,
+              "tabIndex": 0,
+              "touchAction": "auto",
+              "focused": false,
+              "focusStyle": {
+                "outline": "rgb(16, 16, 16) none 3px",
+                "outlineOffset": "0px",
+                "boxShadow": "none"
+              }
+            }
+          ],
+          "primary": null,
+          "primaryMissing": false,
+          "runningAnimations": [],
+          "frames": {
+            "callbacks": 95,
+            "callbackMs": 21.1,
+            "pending": 0
+          },
+          "mutations": 0,
+          "limitations": [
+            "RAF counters are page-wide and only include calls made after installation; pre-bound schedulers can escape them",
+            "Zero callbacks/mutations does not prove zero CPU, timers, listeners, memory leaks or GPU work",
+            "Name hints and focus CSS require accessibility-tree and visual inspection; hit points are samples",
+            "CSS clipping, content truth, source provenance and keyboard/touch outcomes require independent review"
+          ]
+        },
+        "after": {
+          "schemaVersion": 1,
+          "observedAt": "2026-10-17T23:29:31.112Z",
+          "scope": "main",
+          "viewport": {
+            "width": 390,
+            "height": 844,
+            "dpr": 1
+          },
+          "layoutViewport": {
+            "width": 390,
+            "height": 844
+          },
+          "visualViewport": {
+            "width": 390,
+            "height": 844,
+            "scale": 1
+          },
+          "geometryMeasurable": true,
+          "lang": "es",
+          "reducedMotion": false,
+          "visibility": "visible",
+          "pageOverflowPx": 0,
+          "scopeBox": {
+            "x": 0,
+            "y": 118,
+            "width": 390,
+            "height": 820.59,
+            "top": 118,
+            "right": 390,
+            "bottom": 938.59,
+            "left": 0
+          },
+          "scopeRendered": true,
+          "scopeInViewport": true,
+          "scopeOverflowPx": 0,
+          "controls": [
+            {
+              "element": "button",
+              "nameHint": "Explorar la ilustración",
+              "box": {
+                "x": 24,
+                "y": 700.59,
+                "width": 197.53,
+                "height": 46,
+                "top": 700.59,
+                "right": 221.53,
+                "bottom": 746.59,
+                "left": 24
+              },
+              "rendered": true,
+              "fullyInViewport": true,
+              "hitPoints": [
+                true,
+                true,
+                true,
+                true,
+                true
+              ],
+              "target44": true,
+              "target56": false,
+              "disabled": false,
+              "tabIndex": 0,
+              "touchAction": "auto",
+              "focused": true,
+              "focusStyle": {
+                "outline": "rgb(22, 102, 117) none 3px",
+                "outlineOffset": "0px",
+                "boxShadow": "none"
+              }
+            },
+            {
+              "element": "input",
+              "nameHint": "Separación de las capas",
+              "box": {
+                "x": 24,
+                "y": 870.59,
+                "width": 342,
+                "height": 44,
+                "top": 870.59,
+                "right": 366,
+                "bottom": 914.59,
+                "left": 24
+              },
+              "rendered": true,
+              "fullyInViewport": false,
+              "hitPoints": [],
+              "target44": true,
+              "target56": false,
+              "disabled": false,
+              "tabIndex": 0,
+              "touchAction": "auto",
+              "focused": false,
+              "focusStyle": {
+                "outline": "rgb(16, 16, 16) none 3px",
+                "outlineOffset": "0px",
+                "boxShadow": "none"
+              }
+            }
+          ],
+          "primary": null,
+          "primaryMissing": false,
+          "runningAnimations": [],
+          "frames": {
+            "callbacks": 95,
+            "callbackMs": 21.1,
+            "pending": 0
+          },
+          "mutations": 0,
+          "limitations": [
+            "RAF counters are page-wide and only include calls made after installation; pre-bound schedulers can escape them",
+            "Zero callbacks/mutations does not prove zero CPU, timers, listeners, memory leaks or GPU work",
+            "Name hints and focus CSS require accessibility-tree and visual inspection; hit points are samples",
+            "CSS clipping, content truth, source provenance and keyboard/touch outcomes require independent review"
+          ]
+        },
+        "delta": {
+          "elapsedMs": 802,
+          "callbacks": 0,
+          "callbackMs": 0,
+          "mutations": 0
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "failures": []
+}

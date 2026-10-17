@@ -1,0 +1,12 @@
+{
+  "candidate": "d8eea894d90af249ec2d81689f629fabc5c476f0",
+  "fixture": "controlled batched IntersectionObserver entries, exact unmodified source",
+  "true,false": {
+    "latestVisible": false,
+    "engineMounted": true
+  },
+  "false,true": {
+    "latestVisible": true,
+    "engineMounted": false
+  }
+}

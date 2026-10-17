@@ -1,0 +1,867 @@
+{
+  "commit": "646daafc75ee16dd0a90ef7322ed4e9ba1045af8",
+  "sourceState": "",
+  "base": "http://127.0.0.1:3056",
+  "capturedAt": "2026-10-17T23:35:20.170Z",
+  "rows": [
+    {
+      "locale": "es",
+      "kind": "phone",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepara tu viaje",
+      "caption": "El teléfono puede dejar de aportar datos. Su silencio no confirma una emergencia ni que estés bien.\n      Los permisos pueden denegarse o revocarse.Otra app o la pantalla bloqueada pueden interrumpir la captura en el navegador.La última ubicación disponible puede ser antigua. Revisa su origen y su hora.\n      Usa esta explicación solo cuando estés detenido.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Prueba de una ilustración opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "es-phone-390x844.png",
+      "fullScreenshot": "es-phone-390x844-full.png",
+      "errors": []
+    },
+    {
+      "locale": "es",
+      "kind": "phone",
+      "width": 1440,
+      "height": 900,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepara tu viaje",
+      "caption": "El teléfono puede dejar de aportar datos. Su silencio no confirma una emergencia ni que estés bien.\n      Los permisos pueden denegarse o revocarse.Otra app o la pantalla bloqueada pueden interrumpir la captura en el navegador.La última ubicación disponible puede ser antigua. Revisa su origen y su hora.\n      Usa esta explicación solo cuando estés detenido.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Prueba de una ilustración opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "es-phone-1440x900.png",
+      "fullScreenshot": "es-phone-1440x900-full.png",
+      "errors": []
+    },
+    {
+      "locale": "es",
+      "kind": "phone",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepara tu viaje",
+      "caption": "El teléfono puede dejar de aportar datos. Su silencio no confirma una emergencia ni que estés bien.\n      Los permisos pueden denegarse o revocarse.Otra app o la pantalla bloqueada pueden interrumpir la captura en el navegador.La última ubicación disponible puede ser antigua. Revisa su origen y su hora.\n      Usa esta explicación solo cuando estés detenido.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Prueba de una ilustración opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "es-phone-1920x1080.png",
+      "fullScreenshot": "es-phone-1920x1080-full.png",
+      "errors": []
+    },
+    {
+      "locale": "es",
+      "kind": "phone",
+      "width": 360,
+      "height": 800,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepara tu viaje",
+      "caption": "El teléfono puede dejar de aportar datos. Su silencio no confirma una emergencia ni que estés bien.\n      Los permisos pueden denegarse o revocarse.Otra app o la pantalla bloqueada pueden interrumpir la captura en el navegador.La última ubicación disponible puede ser antigua. Revisa su origen y su hora.\n      Usa esta explicación solo cuando estés detenido.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Prueba de una ilustración opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "es-phone-360x800.png",
+      "fullScreenshot": "es-phone-360x800-full.png",
+      "errors": []
+    },
+    {
+      "locale": "es",
+      "kind": "phone",
+      "width": 430,
+      "height": 932,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepara tu viaje",
+      "caption": "El teléfono puede dejar de aportar datos. Su silencio no confirma una emergencia ni que estés bien.\n      Los permisos pueden denegarse o revocarse.Otra app o la pantalla bloqueada pueden interrumpir la captura en el navegador.La última ubicación disponible puede ser antigua. Revisa su origen y su hora.\n      Usa esta explicación solo cuando estés detenido.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Prueba de una ilustración opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "es-phone-430x932.png",
+      "fullScreenshot": "es-phone-430x932-full.png",
+      "errors": []
+    },
+    {
+      "locale": "es",
+      "kind": "relay",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepara tu viaje",
+      "caption": "El registro de una solicitud, su entrega y la respuesta de un contacto son hechos distintos. Ninguno confirma que la ayuda haya llegado.\n      Una solicitud pendiente en el teléfono aún puede no estar registrada en el servidor.La aceptación del servidor no confirma la entrega al contacto.La respuesta de un contacto se muestra por separado. No confirma asistencia.\n      Usa esta explicación solo cuando estés detenido.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Prueba de una ilustración opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "es-relay-390x844.png",
+      "fullScreenshot": "es-relay-390x844-full.png",
+      "errors": []
+    },
+    {
+      "locale": "es",
+      "kind": "relay",
+      "width": 1440,
+      "height": 900,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepara tu viaje",
+      "caption": "El registro de una solicitud, su entrega y la respuesta de un contacto son hechos distintos. Ninguno confirma que la ayuda haya llegado.\n      Una solicitud pendiente en el teléfono aún puede no estar registrada en el servidor.La aceptación del servidor no confirma la entrega al contacto.La respuesta de un contacto se muestra por separado. No confirma asistencia.\n      Usa esta explicación solo cuando estés detenido.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Prueba de una ilustración opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "es-relay-1440x900.png",
+      "fullScreenshot": "es-relay-1440x900-full.png",
+      "errors": []
+    },
+    {
+      "locale": "es",
+      "kind": "relay",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepara tu viaje",
+      "caption": "El registro de una solicitud, su entrega y la respuesta de un contacto son hechos distintos. Ninguno confirma que la ayuda haya llegado.\n      Una solicitud pendiente en el teléfono aún puede no estar registrada en el servidor.La aceptación del servidor no confirma la entrega al contacto.La respuesta de un contacto se muestra por separado. No confirma asistencia.\n      Usa esta explicación solo cuando estés detenido.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Prueba de una ilustración opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "es-relay-1920x1080.png",
+      "fullScreenshot": "es-relay-1920x1080-full.png",
+      "errors": []
+    },
+    {
+      "locale": "es",
+      "kind": "relay",
+      "width": 360,
+      "height": 800,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepara tu viaje",
+      "caption": "El registro de una solicitud, su entrega y la respuesta de un contacto son hechos distintos. Ninguno confirma que la ayuda haya llegado.\n      Una solicitud pendiente en el teléfono aún puede no estar registrada en el servidor.La aceptación del servidor no confirma la entrega al contacto.La respuesta de un contacto se muestra por separado. No confirma asistencia.\n      Usa esta explicación solo cuando estés detenido.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Prueba de una ilustración opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "es-relay-360x800.png",
+      "fullScreenshot": "es-relay-360x800-full.png",
+      "errors": []
+    },
+    {
+      "locale": "es",
+      "kind": "relay",
+      "width": 430,
+      "height": 932,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepara tu viaje",
+      "caption": "El registro de una solicitud, su entrega y la respuesta de un contacto son hechos distintos. Ninguno confirma que la ayuda haya llegado.\n      Una solicitud pendiente en el teléfono aún puede no estar registrada en el servidor.La aceptación del servidor no confirma la entrega al contacto.La respuesta de un contacto se muestra por separado. No confirma asistencia.\n      Usa esta explicación solo cuando estés detenido.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Prueba de una ilustración opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "es-relay-430x932.png",
+      "fullScreenshot": "es-relay-430x932-full.png",
+      "errors": []
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "phone",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepare sua viagem",
+      "caption": "O telefone pode deixar de fornecer dados. Seu silêncio não confirma uma emergência nem que você esteja bem.\n      As permissões podem ser negadas ou revogadas.Outro app ou a tela bloqueada podem interromper a captura no navegador.A última localização disponível pode ser antiga. Confira sua origem e seu horário.\n      Use esta explicação apenas quando estiver parado.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Teste de uma ilustração opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "pt-BR-phone-390x844.png",
+      "fullScreenshot": "pt-BR-phone-390x844-full.png",
+      "errors": []
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "phone",
+      "width": 1440,
+      "height": 900,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepare sua viagem",
+      "caption": "O telefone pode deixar de fornecer dados. Seu silêncio não confirma uma emergência nem que você esteja bem.\n      As permissões podem ser negadas ou revogadas.Outro app ou a tela bloqueada podem interromper a captura no navegador.A última localização disponível pode ser antiga. Confira sua origem e seu horário.\n      Use esta explicação apenas quando estiver parado.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Teste de uma ilustração opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "pt-BR-phone-1440x900.png",
+      "fullScreenshot": "pt-BR-phone-1440x900-full.png",
+      "errors": []
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "phone",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepare sua viagem",
+      "caption": "O telefone pode deixar de fornecer dados. Seu silêncio não confirma uma emergência nem que você esteja bem.\n      As permissões podem ser negadas ou revogadas.Outro app ou a tela bloqueada podem interromper a captura no navegador.A última localização disponível pode ser antiga. Confira sua origem e seu horário.\n      Use esta explicação apenas quando estiver parado.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Teste de uma ilustração opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "pt-BR-phone-1920x1080.png",
+      "fullScreenshot": "pt-BR-phone-1920x1080-full.png",
+      "errors": []
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "phone",
+      "width": 360,
+      "height": 800,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepare sua viagem",
+      "caption": "O telefone pode deixar de fornecer dados. Seu silêncio não confirma uma emergência nem que você esteja bem.\n      As permissões podem ser negadas ou revogadas.Outro app ou a tela bloqueada podem interromper a captura no navegador.A última localização disponível pode ser antiga. Confira sua origem e seu horário.\n      Use esta explicação apenas quando estiver parado.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Teste de uma ilustração opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "pt-BR-phone-360x800.png",
+      "fullScreenshot": "pt-BR-phone-360x800-full.png",
+      "errors": []
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "phone",
+      "width": 430,
+      "height": 932,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepare sua viagem",
+      "caption": "O telefone pode deixar de fornecer dados. Seu silêncio não confirma uma emergência nem que você esteja bem.\n      As permissões podem ser negadas ou revogadas.Outro app ou a tela bloqueada podem interromper a captura no navegador.A última localização disponível pode ser antiga. Confira sua origem e seu horário.\n      Use esta explicação apenas quando estiver parado.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Teste de uma ilustração opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "pt-BR-phone-430x932.png",
+      "fullScreenshot": "pt-BR-phone-430x932-full.png",
+      "errors": []
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "relay",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepare sua viagem",
+      "caption": "O registro de uma solicitação, sua entrega e a resposta de um contato são fatos distintos. Nenhum confirma que a ajuda tenha chegado.\n      Uma solicitação pendente no telefone ainda pode não estar registrada no servidor.A aceitação pelo servidor não confirma a entrega ao contato.A resposta de um contato aparece separadamente. Não confirma assistência.\n      Use esta explicação apenas quando estiver parado.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Teste de uma ilustração opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "pt-BR-relay-390x844.png",
+      "fullScreenshot": "pt-BR-relay-390x844-full.png",
+      "errors": []
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "relay",
+      "width": 1440,
+      "height": 900,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepare sua viagem",
+      "caption": "O registro de uma solicitação, sua entrega e a resposta de um contato são fatos distintos. Nenhum confirma que a ajuda tenha chegado.\n      Uma solicitação pendente no telefone ainda pode não estar registrada no servidor.A aceitação pelo servidor não confirma a entrega ao contato.A resposta de um contato aparece separadamente. Não confirma assistência.\n      Use esta explicação apenas quando estiver parado.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Teste de uma ilustração opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "pt-BR-relay-1440x900.png",
+      "fullScreenshot": "pt-BR-relay-1440x900-full.png",
+      "errors": []
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "relay",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepare sua viagem",
+      "caption": "O registro de uma solicitação, sua entrega e a resposta de um contato são fatos distintos. Nenhum confirma que a ajuda tenha chegado.\n      Uma solicitação pendente no telefone ainda pode não estar registrada no servidor.A aceitação pelo servidor não confirma a entrega ao contato.A resposta de um contato aparece separadamente. Não confirma assistência.\n      Use esta explicação apenas quando estiver parado.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Teste de uma ilustração opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "pt-BR-relay-1920x1080.png",
+      "fullScreenshot": "pt-BR-relay-1920x1080-full.png",
+      "errors": []
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "relay",
+      "width": 360,
+      "height": 800,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepare sua viagem",
+      "caption": "O registro de uma solicitação, sua entrega e a resposta de um contato são fatos distintos. Nenhum confirma que a ajuda tenha chegado.\n      Uma solicitação pendente no telefone ainda pode não estar registrada no servidor.A aceitação pelo servidor não confirma a entrega ao contato.A resposta de um contato aparece separadamente. Não confirma assistência.\n      Use esta explicação apenas quando estiver parado.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Teste de uma ilustração opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "pt-BR-relay-360x800.png",
+      "fullScreenshot": "pt-BR-relay-360x800-full.png",
+      "errors": []
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "relay",
+      "width": 430,
+      "height": 932,
+      "overflow": false,
+      "primaryInFold": true,
+      "title": "Prepare sua viagem",
+      "caption": "O registro de uma solicitação, sua entrega e a resposta de um contato são fatos distintos. Nenhum confirma que a ajuda tenha chegado.\n      Uma solicitação pendente no telefone ainda pode não estar registrada no servidor.A aceitação pelo servidor não confirma a entrega ao contato.A resposta de um contato aparece separadamente. Não confirma assistência.\n      Use esta explicação apenas quando estiver parado.",
+      "minButtonHeight": 44.390625,
+      "unnamedControls": 0,
+      "svgLabel": "Teste de uma ilustração opcional",
+      "noAutoplayFrames": "0",
+      "status": "still",
+      "headingOrder": [
+        "H1",
+        "H2",
+        "H3"
+      ],
+      "textColours": [
+        "rgb(23, 49, 57)",
+        "rgb(77, 98, 104)"
+      ],
+      "background": "rgb(252, 253, 253)",
+      "textContrast": [
+        {
+          "colour": "rgb(23, 49, 57)",
+          "ratio": 13.4265419742091
+        },
+        {
+          "colour": "rgb(77, 98, 104)",
+          "ratio": 6.3164497413481575
+        }
+      ],
+      "screenshot": "pt-BR-relay-430x932.png",
+      "fullScreenshot": "pt-BR-relay-430x932-full.png",
+      "errors": []
+    }
+  ],
+  "controls": [
+    "Trusted Enter enables motion; real intersection stops frames and return stays still; reduced motion retains trusted touch static-step input",
+    "Rejected import retains translated caption, facts and enabled retry without console errors",
+    "With JavaScript disabled, caption and evidence stages remain in the browser DOM"
+  ],
+  "limitations": [
+    "Synthetic adapter fixture, not an integrated app or finished Hairline/Anatomy figure",
+    "Browser viewport/touch emulation is not physical iPhone qualification",
+    "Automated accessibility checks and captures require independent visual and screen-reader review",
+    "Gzip sizes are stripped standalone module sizes, not the production application bundle"
+  ],
+  "lifecycle": {
+    "passed": true,
+    "cases": [
+      {
+        "name": "lazy import uses newest observer entry and never autoplays",
+        "passed": true
+      },
+      {
+        "name": "explicit motion stops offscreen and does not resume on return",
+        "passed": true
+      },
+      {
+        "name": "reduced-motion changes stop and discard animation intent",
+        "passed": true
+      },
+      {
+        "name": "hidden tab defers import and stops motion without automatic restart",
+        "passed": true
+      },
+      {
+        "name": "failed import preserves captions and supports an explicit retry",
+        "passed": true
+      },
+      {
+        "name": "unmount during import prevents a late mount",
+        "passed": true
+      },
+      {
+        "name": "unmount during async mount aborts immediately and destroys late result",
+        "passed": true
+      },
+      {
+        "name": "timeout disposes an eventual mount and leaves a retry",
+        "passed": true
+      },
+      {
+        "name": "async mount rejection aborts resources and removes partial markup",
+        "passed": true
+      },
+      {
+        "name": "remount while loading restores enabled controls and invalidates old callbacks",
+        "passed": true
+      },
+      {
+        "name": "missing observer keeps an explicit static-only path",
+        "passed": true
+      },
+      {
+        "name": "missing motion preference capability fails closed to stillness",
+        "passed": true
+      },
+      {
+        "name": "figure motion failures stay local and retain readable fallback",
+        "passed": true
+      },
+      {
+        "name": "a failed focused figure returns keyboard focus to retry",
+        "passed": true
+      },
+      {
+        "name": "destroy releases observation, listeners, signal and artwork",
+        "passed": true
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "host.ts",
+      "strippedBytes": 7239,
+      "gzipBytes": 2173
+    },
+    {
+      "name": "shell.ts",
+      "strippedBytes": 1551,
+      "gzipBytes": 689
+    },
+    {
+      "name": "copy.ts",
+      "strippedBytes": 3538,
+      "gzipBytes": 1204
+    },
+    {
+      "name": "index.ts",
+      "strippedBytes": 279,
+      "gzipBytes": 105
+    }
+  ],
+  "ok": true
+}

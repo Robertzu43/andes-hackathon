@@ -1,0 +1,34 @@
+(node:67158) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{
+  "ok": true,
+  "captures": 20,
+  "lifecycleCases": 15,
+  "controls": [
+    "Trusted Enter enables motion; real intersection stops frames and return stays still; reduced motion retains trusted touch static-step input",
+    "Rejected import retains translated caption, facts and enabled retry without console errors",
+    "With JavaScript disabled, caption and evidence stages remain in the browser DOM"
+  ],
+  "modules": [
+    {
+      "name": "host.ts",
+      "strippedBytes": 7239,
+      "gzipBytes": 2173
+    },
+    {
+      "name": "shell.ts",
+      "strippedBytes": 1551,
+      "gzipBytes": 689
+    },
+    {
+      "name": "copy.ts",
+      "strippedBytes": 3538,
+      "gzipBytes": 1204
+    },
+    {
+      "name": "index.ts",
+      "strippedBytes": 279,
+      "gzipBytes": 105
+    }
+  ]
+}

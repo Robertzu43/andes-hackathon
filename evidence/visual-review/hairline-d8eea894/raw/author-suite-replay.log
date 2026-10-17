@@ -1,0 +1,14 @@
+PASS Still default has no animation engine request
+PASS Ten bilingual still renders have captions and zero horizontal overflow
+PASS Keyboard range changes useful still geometry without an engine
+PASS Explicit keyboard enable, pointer response, settled geometry and no raw live readout
+PASS Offscreen unmount and visible remount
+PASS Simulated document-hidden cleanup
+PASS Reduced motion is still, range and caption stay useful
+PASS Stop and reload return to still with no autoplay persistence
+PASS WCAG 2.1 A/AA axe scan in both locales
+PASS No-JavaScript bilingual HTML caption and rest image
+PASS Emulated touch responds and preserves vertical pan
+PASS Public bridge language, keyboard, abort, idempotent destroy and sibling preservation
+PASS Blocked optional chunk preserves text and useful still
+PASS Clean primary runtime and network, no external requests
