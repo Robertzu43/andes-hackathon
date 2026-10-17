@@ -1,0 +1,291 @@
+{
+  "component": 54,
+  "sourceBase": "800205a4be2c94833234c852760b2eb09c6ed079",
+  "upstream": "e9488296a44211c42701ff71705b7901470ec78f",
+  "configuration": {
+    "model": "gpt-6.1-sol",
+    "reasoning": "xhigh"
+  },
+  "runtime": {
+    "files": [
+      {
+        "file": "index.mjs",
+        "sha256": "f31be8cf7d7345a71143865a3a22a294d93241171208c33360fe9827fd44e9cb"
+      },
+      {
+        "file": "render.mjs",
+        "sha256": "e99f05c510e7dc20a35da797fbf7e5c4491d7b7a7124aadf5eec14633f05364b"
+      },
+      {
+        "file": "model.mjs",
+        "sha256": "1dd9c4f8ec4fee780b2ecec72d6f2504ffb2573cc2cfa94fc748e00e01ad039a"
+      },
+      {
+        "file": "styles.mjs",
+        "sha256": "0fb01ff8286a3f9f1afc0fd271a065306e7779fe19cb437fb96d2e98390a2dcb"
+      },
+      {
+        "file": "art.mjs",
+        "sha256": "9222bfd67cd17041f463fb033d332455db6d26d4cd657a77149a4ab0c6d15b25"
+      }
+    ],
+    "rawBytes": 162111,
+    "gzipBytes": 27521,
+    "brotliBytes": 21255
+  },
+  "locales": [
+    "es",
+    "pt-BR"
+  ],
+  "viewports": [
+    [
+      360,
+      800
+    ],
+    [
+      390,
+      844
+    ],
+    [
+      430,
+      932
+    ],
+    [
+      1440,
+      900
+    ],
+    [
+      1920,
+      1080
+    ]
+  ],
+  "checks": {
+    "model": 5,
+    "geometry": "68 true solids, 33 sampled states; audit passed",
+    "lineEnds": "0/50 floating ends on 27 lines in four resting examples",
+    "browser": "ten locale/viewport combinations; keyboard, overflow, controls and contrast pass",
+    "reactAdapter": "strict TypeScript 5.9.3 with React 19 foundation declarations",
+    "lifecycle": {
+      "touch": "CDP touchStart/touchEnd selected acknowledged",
+      "idleFrames": 0,
+      "initialAutoplayFrames": 0,
+      "frameCost": {
+        "samples": 36,
+        "p95ms": 0.7000000476837158,
+        "maxMs": 1.0999999046325684
+      },
+      "offscreenFrames": 0,
+      "hiddenTab": "native document.hidden=true after Target.activateTarget; zero new frames",
+      "accessibilityTree": [
+        {
+          "role": "button",
+          "name": "En el teléfono",
+          "pressed": "false"
+        },
+        {
+          "role": "button",
+          "name": "Aceptada por el servidor",
+          "pressed": "false"
+        },
+        {
+          "role": "button",
+          "name": "Entrega sin confirmar",
+          "pressed": "false"
+        },
+        {
+          "role": "button",
+          "name": "Contacto confirma",
+          "pressed": "true"
+        }
+      ],
+      "abort": "restored all static explanations, listeners detached, no frames after abort",
+      "noJavaScript": "actual Chrome script execution disabled at navigation; all four explanations present",
+      "externalRequests": [],
+      "console": "clean"
+    }
+  },
+  "captures": [
+    {
+      "file": "es-1440x900-acknowledged.png",
+      "sha256": "692d3a9c7f3d6145acca98a93fb496a76abf684d063f3cd655f3594d9939e67c"
+    },
+    {
+      "file": "es-1440x900-module.png",
+      "sha256": "d2e0df8689e645bb89672ff957ee9995fc7490c493a0a8de2d7e032919ccb3e0"
+    },
+    {
+      "file": "es-1440x900-viewport.png",
+      "sha256": "c7222a3066b8f2bec5b1e37816292b094c5bb2019a80d2c4d99faefb4976de3b"
+    },
+    {
+      "file": "es-1920x1080-acknowledged.png",
+      "sha256": "e233bb2b82ad1263189dbc6e853c534738094e6aa5af99a11cbc261bdab2ed86"
+    },
+    {
+      "file": "es-1920x1080-module.png",
+      "sha256": "02e11884b486127495c07f238365867a0b56bb7bc85a8944987fb61989b29eee"
+    },
+    {
+      "file": "es-1920x1080-viewport.png",
+      "sha256": "4d9e8ca6e97cd75f03726f79b8a70ccadf2a9f40b63e902d62671a85f808a543"
+    },
+    {
+      "file": "es-360x800-acknowledged.png",
+      "sha256": "69580fe61b1b87336b8da499bf1aff8cd6659626c255a44eb04e2f44776c4664"
+    },
+    {
+      "file": "es-360x800-module.png",
+      "sha256": "703cedf5ce19d7e82eda555348ab9e5f9e083cfb41cafffb2a3ee94d06cbdc8d"
+    },
+    {
+      "file": "es-360x800-viewport.png",
+      "sha256": "39340c416d34bad69578e83439e3a7af9e7676311ea6742f4a58f91337188300"
+    },
+    {
+      "file": "es-390x844-acknowledged.png",
+      "sha256": "900b137f5117ce151908c92b4d30ae13b6b9cfffe76084f42a178f8161c7ac43"
+    },
+    {
+      "file": "es-390x844-module.png",
+      "sha256": "b2d003d8691aef1fc55e276d499080ee3fff7df90869b7eb2453159aa9b887d8"
+    },
+    {
+      "file": "es-390x844-viewport.png",
+      "sha256": "6d4a855c5b5b65b35144dd961a994c5fbbd739dbc9a3027a8ad553dae976c153"
+    },
+    {
+      "file": "es-430x932-acknowledged.png",
+      "sha256": "dcea865abf0d3cd99aeb475d59155d1d63c35d6d73e276b514fe28aa7c93cee3"
+    },
+    {
+      "file": "es-430x932-module.png",
+      "sha256": "9f35b2d1097e190986390ec921cb6b39c153d06df40ead8da6c5b4cf5270d359"
+    },
+    {
+      "file": "es-430x932-viewport.png",
+      "sha256": "08d965725d79621c20128d98e1b2bb3642be6cc29b2ae91f445dac1123b16287"
+    },
+    {
+      "file": "joints-acknowledged-4x.png",
+      "sha256": "88be66a6ad526d07b9fb1897519e59c7551a11e0cce96b626d1d25953eccb9f0"
+    },
+    {
+      "file": "joints-local-4x.png",
+      "sha256": "6c56984079686fbdd9781464f4dd547c8f08783781accf42c8186fb6016ae587"
+    },
+    {
+      "file": "lines-accepted.png",
+      "sha256": "11a27f2820f82ada5091f82cd7ba3c37cbade215437042202fe5a4dd8887c905"
+    },
+    {
+      "file": "lines-acknowledged.png",
+      "sha256": "3e55da50065c041141379b61c9f707c97bbacef88e0127fc26a9d7bb01e731c2"
+    },
+    {
+      "file": "lines-local.png",
+      "sha256": "2a43c233e1f87b3b1f6759d2d4d89f10f6bc26791fa55959c647d40d8ce91370"
+    },
+    {
+      "file": "lines-unconfirmed.png",
+      "sha256": "a53ebc068dbc3e8110c8e949c416fca02b12b46fbe83078377308c6c08968c44"
+    },
+    {
+      "file": "no-javascript-390.png",
+      "sha256": "df945a319fe9bb075b66f74b3a0178e4f80046479746372805d4e44c6fe1ff2c"
+    },
+    {
+      "file": "pt-BR-1440x900-acknowledged.png",
+      "sha256": "f79cf1b95f1a574f2d5fd9601a400a53b16fcb07b5e9b91e0cff50174b0e8561"
+    },
+    {
+      "file": "pt-BR-1440x900-module.png",
+      "sha256": "3c413533093fae4c7535097a650d8e8923c22ff1b284957dc39db545f33a2508"
+    },
+    {
+      "file": "pt-BR-1440x900-viewport.png",
+      "sha256": "8537de8eee0bc9c4030eca7e784f3b61f085596f91db5a7038673b05b277ad79"
+    },
+    {
+      "file": "pt-BR-1920x1080-acknowledged.png",
+      "sha256": "28c745b569e86011a395db5f3bbf02a49b759d2ac5d01e63dbba47bee2d1e577"
+    },
+    {
+      "file": "pt-BR-1920x1080-module.png",
+      "sha256": "f06ac2c170e1c084519fe25604eb8ffb2f470c56ac02d7c5f5cc2f99ef9d4701"
+    },
+    {
+      "file": "pt-BR-1920x1080-viewport.png",
+      "sha256": "8fba67363faf9224e357010080de8dc82614d97bf6ebdc76b37e98b87b34d6dd"
+    },
+    {
+      "file": "pt-BR-360x800-acknowledged.png",
+      "sha256": "5b9d38ffe4323150691a949caba3464941c781aa719e20d95d8b1af68a6f3241"
+    },
+    {
+      "file": "pt-BR-360x800-module.png",
+      "sha256": "b18772031355fe9d66cc0672387672cb3a9091c5f3da419072894f5e1f922e87"
+    },
+    {
+      "file": "pt-BR-360x800-viewport.png",
+      "sha256": "88b4514968e47dba323827deb72c385208ac075f1020bdf3cc15dfd447c980dc"
+    },
+    {
+      "file": "pt-BR-390x844-acknowledged.png",
+      "sha256": "ef937504ef806a7496b1b2368620b1983e7b1ac47adae94db1c2018cfb54da2c"
+    },
+    {
+      "file": "pt-BR-390x844-module.png",
+      "sha256": "54265d6288c23ca50ec754e25b94fda59f0da767fe58c11f9e905a0a3a5d13c8"
+    },
+    {
+      "file": "pt-BR-390x844-viewport.png",
+      "sha256": "5ba76ede0230590f348f84632c9a1cb19bce8655b6bdd1fe669afe839ea5eb90"
+    },
+    {
+      "file": "pt-BR-430x932-acknowledged.png",
+      "sha256": "b44d302ae027ecbf06ea9324cfa74bfa57761a1f68c6094fb3325d2ad955e6a4"
+    },
+    {
+      "file": "pt-BR-430x932-module.png",
+      "sha256": "0ba741c4fc381e0531a2a7937abda2bdeb541a3d237d46a49a7729656067f228"
+    },
+    {
+      "file": "pt-BR-430x932-viewport.png",
+      "sha256": "35363b6e768e87b5a7708847c35189246c7e996b06aede4681d76f7ac9704c73"
+    },
+    {
+      "file": "reduced-motion.png",
+      "sha256": "97d25e5683cc5b313e62a83d4a442d36fb4438ca6c7e51660ba7bf075b4b8bdb"
+    },
+    {
+      "file": "review-es-acknowledged.png",
+      "sha256": "05769fcaae1be82a2b4ca8ce56712c9fa0648d3ef6418ada58630afb396b2a24"
+    },
+    {
+      "file": "review-es-module.png",
+      "sha256": "56e5bd57fc08022a512c3d995ba5b9631c29429c728670aa64586e237ea7ca5b"
+    },
+    {
+      "file": "review-es-viewport.png",
+      "sha256": "2a59341bc4625915e8e522ffb1159a37790c59228fe1c065515d4b7a0221f34e"
+    },
+    {
+      "file": "review-pt-BR-acknowledged.png",
+      "sha256": "b43b37e6acb307d573f335438c32e165920fc0f9ff8167d40c439afbcfccc2a0"
+    },
+    {
+      "file": "review-pt-BR-module.png",
+      "sha256": "776e530f10679448cb5824066891be9992f72655edd1aefe28a26d87f34fd027"
+    },
+    {
+      "file": "review-pt-BR-viewport.png",
+      "sha256": "760eea310bd5c79b3144076ca029f95180bc25fd383dcc710ff095b8bc9c0cc6"
+    }
+  ],
+  "pending": [
+    "independent56 exact-revision review",
+    "55 integration with committed49 foundation",
+    "52 full-app acceptance",
+    "physical-device and human evidence"
+  ]
+}

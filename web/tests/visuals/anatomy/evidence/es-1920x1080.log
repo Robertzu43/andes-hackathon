@@ -1,0 +1,7 @@
+eval: {"viewport":[1920,1080],"buttons":4,"textContrast":12.567134921474366,"selectedContrast":6.37867686124693}
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/es-1920x1080-viewport.png · readout "En el teléfono"
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/es-1920x1080-module.png · readout "En el teléfono"
+eval: "keyboard + flag pass"
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/es-1920x1080-acknowledged.png · readout "Contacto confirma"
+eval: "Home pass"
+console: clean

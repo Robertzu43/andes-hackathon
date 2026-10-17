@@ -1,0 +1,3 @@
+eval: "reduced-motion pass"
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/reduced-motion.png · readout "Contato confirma"
+console: clean

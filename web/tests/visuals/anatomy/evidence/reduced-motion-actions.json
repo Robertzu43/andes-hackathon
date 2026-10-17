@@ -1,0 +1,20 @@
+[
+  [
+    "wait",
+    200
+  ],
+  [
+    "click",
+    "[data-example=acknowledged]"
+  ],
+  [
+    "eval",
+    "(()=>{if(!(matchMedia(\"(prefers-reduced-motion: reduce)\").matches))throw new Error(\"reduced-motion emulation\");if(!(document.querySelector('[data-relay-motion=flag]').getAttribute('transform')!=='translate(0 0)'))throw new Error(\"meaningful still flag\");return 'reduced-motion pass'})()"
+  ],
+  [
+    "shot",
+    "/Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/reduced-motion.png",
+    ".andes-relay",
+    1
+  ]
+]

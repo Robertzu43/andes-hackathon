@@ -1,0 +1,60 @@
+[
+  [
+    "wait",
+    200
+  ],
+  [
+    "eval",
+    "(()=>{\n  const root=document.querySelector('.andes-relay'),buttons=[...root.querySelectorAll('button')];\n  if(!(buttons.length===4 && buttons.every(b=>b.getBoundingClientRect().height>=44)))throw new Error(\"four visible touch controls\");\n  if(!(!root.querySelector('[data-relay-controls]').hidden))throw new Error(\"interactive module loaded\");\n  if(!(document.documentElement.scrollWidth<=innerWidth))throw new Error(\"horizontal overflow\");\n  if(!(root.querySelector('svg').getAttribute('aria-label').length>30))throw new Error(\"named illustration\");\n  if(!(root.querySelector('[data-relay-static]').hidden))throw new Error(\"progressive enhancement\");\n  const linear=v=>(v/=255)<=.04045?v/12.92:((v+.055)/1.055)**2.4;\n  const l=c=>{const rgb=c.match(/[\\d.]+/g).slice(0,3).map(Number).map(linear);return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]};\n  const ratio=(a,b)=>(Math.max(l(a),l(b))+.05)/(Math.min(l(a),l(b))+.05);\n  const ink=getComputedStyle(root).color,bg=getComputedStyle(document.body).backgroundColor;\n  const primary=getComputedStyle(buttons[0]);\n  const text=ratio(ink,bg),selected=ratio(primary.color,primary.backgroundColor);\n  if(!(text>=4.5 && selected>=4.5))throw new Error(\"runtime text contrast\");\n  return {viewport:[innerWidth,innerHeight],buttons:buttons.length,textContrast:text,selectedContrast:selected};\n})()"
+  ],
+  [
+    "shot",
+    "/Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/es-1440x900-viewport.png",
+    "body",
+    1,
+    [
+      0,
+      0,
+      1440,
+      900
+    ]
+  ],
+  [
+    "shot",
+    "/Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/es-1440x900-module.png",
+    ".andes-relay",
+    1
+  ],
+  [
+    "key",
+    "End",
+    "[data-example=\"local\"]"
+  ],
+  [
+    "wait",
+    450
+  ],
+  [
+    "eval",
+    "(()=>{if(!(document.activeElement.dataset.example==='acknowledged'))throw new Error(\"keyboard End focuses acknowledgement\");if(!(document.querySelector('.andes-relay').dataset.relayExample==='acknowledged'))throw new Error(\"keyboard selects example\");if(!(document.querySelector('[data-relay-motion=flag]').getAttribute('transform')!=='translate(0 0)'))throw new Error(\"acknowledgement raises flag\");return 'keyboard + flag pass'})()"
+  ],
+  [
+    "shot",
+    "/Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/es-1440x900-acknowledged.png",
+    ".andes-relay",
+    1
+  ],
+  [
+    "key",
+    "Home",
+    "[data-example=\"acknowledged\"]"
+  ],
+  [
+    "wait",
+    450
+  ],
+  [
+    "eval",
+    "(()=>{if(!(document.querySelector('[data-relay-motion=flag]').getAttribute('transform')==='translate(0 0)'))throw new Error(\"Home lowers flag\");return 'Home pass'})()"
+  ]
+]

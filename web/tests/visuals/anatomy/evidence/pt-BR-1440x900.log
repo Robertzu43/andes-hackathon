@@ -1,0 +1,7 @@
+eval: {"viewport":[1440,900],"buttons":4,"textContrast":12.567134921474366,"selectedContrast":6.37867686124693}
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/pt-BR-1440x900-viewport.png · readout "No telefone"
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/pt-BR-1440x900-module.png · readout "No telefone"
+eval: "keyboard + flag pass"
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/pt-BR-1440x900-acknowledged.png · readout "Contato confirma"
+eval: "Home pass"
+console: clean

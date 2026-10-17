@@ -1,0 +1,13 @@
+line ends: 0 of 50 ends on 27 lines float
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/lines-local.png
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/joints-local-4x.png · readout "En el teléfono"
+line ends: 0 of 50 ends on 27 lines float
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/lines-accepted.png
+eval: true
+line ends: 0 of 50 ends on 27 lines float
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/lines-unconfirmed.png
+eval: "no implied delivery pass"
+line ends: 0 of 50 ends on 27 lines float
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/lines-acknowledged.png
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/joints-acknowledged-4x.png · readout "Contacto confirma"
+console: clean

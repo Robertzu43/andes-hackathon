@@ -1,0 +1,62 @@
+[
+  [
+    "eval",
+    "(async()=>{const names=[\"es-1440x900-viewport.png\",\"es-1920x1080-viewport.png\",\"es-360x800-viewport.png\",\"es-390x844-viewport.png\",\"es-430x932-viewport.png\"];const images=await Promise.all(names.map(name=>new Promise((done,fail)=>{const image=new Image();image.onload=()=>done(image);image.onerror=fail;image.src='/web/tests/visuals/anatomy/evidence/'+name})));document.body.innerHTML='';document.body.style.margin='0';const canvas=document.createElement('canvas');canvas.width=1500;canvas.height=500;document.body.append(canvas);const c=canvas.getContext('2d');c.fillStyle='#F2F6F6';c.fillRect(0,0,canvas.width,canvas.height);for(let i=0;i<images.length;i++){const image=images[i],w=290,h=image.height*w/image.width;c.drawImage(image,i*300,30,w,h);c.fillStyle='#173139';c.font='14px system-ui';c.fillText(names[i],i*300+4,18);}return names;})()"
+  ],
+  [
+    "shot",
+    "web/tests/visuals/anatomy/evidence/review-es-viewport.png",
+    "canvas",
+    1
+  ],
+  [
+    "eval",
+    "(async()=>{const names=[\"es-1440x900-module.png\",\"es-1920x1080-module.png\",\"es-360x800-module.png\",\"es-390x844-module.png\",\"es-430x932-module.png\"];const images=await Promise.all(names.map(name=>new Promise((done,fail)=>{const image=new Image();image.onload=()=>done(image);image.onerror=fail;image.src='/web/tests/visuals/anatomy/evidence/'+name})));document.body.innerHTML='';document.body.style.margin='0';const canvas=document.createElement('canvas');canvas.width=1500;canvas.height=1250;document.body.append(canvas);const c=canvas.getContext('2d');c.fillStyle='#F2F6F6';c.fillRect(0,0,canvas.width,canvas.height);for(let i=0;i<images.length;i++){const image=images[i],w=290,h=image.height*w/image.width;c.drawImage(image,i*300,30,w,h);c.fillStyle='#173139';c.font='14px system-ui';c.fillText(names[i],i*300+4,18);}return names;})()"
+  ],
+  [
+    "shot",
+    "web/tests/visuals/anatomy/evidence/review-es-module.png",
+    "canvas",
+    1
+  ],
+  [
+    "eval",
+    "(async()=>{const names=[\"es-1440x900-acknowledged.png\",\"es-1920x1080-acknowledged.png\",\"es-360x800-acknowledged.png\",\"es-390x844-acknowledged.png\",\"es-430x932-acknowledged.png\"];const images=await Promise.all(names.map(name=>new Promise((done,fail)=>{const image=new Image();image.onload=()=>done(image);image.onerror=fail;image.src='/web/tests/visuals/anatomy/evidence/'+name})));document.body.innerHTML='';document.body.style.margin='0';const canvas=document.createElement('canvas');canvas.width=1500;canvas.height=1250;document.body.append(canvas);const c=canvas.getContext('2d');c.fillStyle='#F2F6F6';c.fillRect(0,0,canvas.width,canvas.height);for(let i=0;i<images.length;i++){const image=images[i],w=290,h=image.height*w/image.width;c.drawImage(image,i*300,30,w,h);c.fillStyle='#173139';c.font='14px system-ui';c.fillText(names[i],i*300+4,18);}return names;})()"
+  ],
+  [
+    "shot",
+    "web/tests/visuals/anatomy/evidence/review-es-acknowledged.png",
+    "canvas",
+    1
+  ],
+  [
+    "eval",
+    "(async()=>{const names=[\"pt-BR-1440x900-viewport.png\",\"pt-BR-1920x1080-viewport.png\",\"pt-BR-360x800-viewport.png\",\"pt-BR-390x844-viewport.png\",\"pt-BR-430x932-viewport.png\"];const images=await Promise.all(names.map(name=>new Promise((done,fail)=>{const image=new Image();image.onload=()=>done(image);image.onerror=fail;image.src='/web/tests/visuals/anatomy/evidence/'+name})));document.body.innerHTML='';document.body.style.margin='0';const canvas=document.createElement('canvas');canvas.width=1500;canvas.height=500;document.body.append(canvas);const c=canvas.getContext('2d');c.fillStyle='#F2F6F6';c.fillRect(0,0,canvas.width,canvas.height);for(let i=0;i<images.length;i++){const image=images[i],w=290,h=image.height*w/image.width;c.drawImage(image,i*300,30,w,h);c.fillStyle='#173139';c.font='14px system-ui';c.fillText(names[i],i*300+4,18);}return names;})()"
+  ],
+  [
+    "shot",
+    "web/tests/visuals/anatomy/evidence/review-pt-BR-viewport.png",
+    "canvas",
+    1
+  ],
+  [
+    "eval",
+    "(async()=>{const names=[\"pt-BR-1440x900-module.png\",\"pt-BR-1920x1080-module.png\",\"pt-BR-360x800-module.png\",\"pt-BR-390x844-module.png\",\"pt-BR-430x932-module.png\"];const images=await Promise.all(names.map(name=>new Promise((done,fail)=>{const image=new Image();image.onload=()=>done(image);image.onerror=fail;image.src='/web/tests/visuals/anatomy/evidence/'+name})));document.body.innerHTML='';document.body.style.margin='0';const canvas=document.createElement('canvas');canvas.width=1500;canvas.height=1250;document.body.append(canvas);const c=canvas.getContext('2d');c.fillStyle='#F2F6F6';c.fillRect(0,0,canvas.width,canvas.height);for(let i=0;i<images.length;i++){const image=images[i],w=290,h=image.height*w/image.width;c.drawImage(image,i*300,30,w,h);c.fillStyle='#173139';c.font='14px system-ui';c.fillText(names[i],i*300+4,18);}return names;})()"
+  ],
+  [
+    "shot",
+    "web/tests/visuals/anatomy/evidence/review-pt-BR-module.png",
+    "canvas",
+    1
+  ],
+  [
+    "eval",
+    "(async()=>{const names=[\"pt-BR-1440x900-acknowledged.png\",\"pt-BR-1920x1080-acknowledged.png\",\"pt-BR-360x800-acknowledged.png\",\"pt-BR-390x844-acknowledged.png\",\"pt-BR-430x932-acknowledged.png\"];const images=await Promise.all(names.map(name=>new Promise((done,fail)=>{const image=new Image();image.onload=()=>done(image);image.onerror=fail;image.src='/web/tests/visuals/anatomy/evidence/'+name})));document.body.innerHTML='';document.body.style.margin='0';const canvas=document.createElement('canvas');canvas.width=1500;canvas.height=1250;document.body.append(canvas);const c=canvas.getContext('2d');c.fillStyle='#F2F6F6';c.fillRect(0,0,canvas.width,canvas.height);for(let i=0;i<images.length;i++){const image=images[i],w=290,h=image.height*w/image.width;c.drawImage(image,i*300,30,w,h);c.fillStyle='#173139';c.font='14px system-ui';c.fillText(names[i],i*300+4,18);}return names;})()"
+  ],
+  [
+    "shot",
+    "web/tests/visuals/anatomy/evidence/review-pt-BR-acknowledged.png",
+    "canvas",
+    1
+  ]
+]

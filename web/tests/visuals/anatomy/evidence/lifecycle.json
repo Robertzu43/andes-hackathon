@@ -1,0 +1,38 @@
+{
+  "touch": "CDP touchStart/touchEnd selected acknowledged",
+  "idleFrames": 0,
+  "initialAutoplayFrames": 0,
+  "frameCost": {
+    "samples": 36,
+    "p95ms": 0.7000000476837158,
+    "maxMs": 1.0999999046325684
+  },
+  "offscreenFrames": 0,
+  "hiddenTab": "native document.hidden=true after Target.activateTarget; zero new frames",
+  "accessibilityTree": [
+    {
+      "role": "button",
+      "name": "En el teléfono",
+      "pressed": "false"
+    },
+    {
+      "role": "button",
+      "name": "Aceptada por el servidor",
+      "pressed": "false"
+    },
+    {
+      "role": "button",
+      "name": "Entrega sin confirmar",
+      "pressed": "false"
+    },
+    {
+      "role": "button",
+      "name": "Contacto confirma",
+      "pressed": "true"
+    }
+  ],
+  "abort": "restored all static explanations, listeners detached, no frames after abort",
+  "noJavaScript": "actual Chrome script execution disabled at navigation; all four explanations present",
+  "externalRequests": [],
+  "console": "clean"
+}
