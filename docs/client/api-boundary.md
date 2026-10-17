@@ -204,7 +204,7 @@ ANDES_TYPESCRIPT_TSC=/absolute/path/to/existing/typescript/bin/tsc \
 ```
 
 This probes the actual PR62 contact implementation plus PR63 driver controller at
-`c256e75a1b58168925a8e9f760c3759ee33bfa0a`, the real typed-client exports and a strict
+`80e9d45f9a234de54b1017e856e8349c097b8760`, the real typed-client exports and a strict
 structural `ContactApi` compile check. HTTP replies and tokens are synthetic fixtures;
 these tests do not replace Q44/Q46's signed-JWT/PostgreSQL/native-HTTP integration or
 actual browser rendering. The standard client suite remains runnable without Git
@@ -226,10 +226,18 @@ create truck, draft, explicit confirmation, trip/snapshot/incident reads, comman
 lost SOS response and rejected same-key retry. Synthetic selection evidence is
 clearly test-only; catalog evidence normalisation and real backend/browser proof remain open.
 
-**Open external driver finding at PR63/c256e75:** changing from active trip A to
-trip B can retain stale incident/location state. Passing adapter checks do not
-accept that controller. The feature owner must publish a repaired revision and its
-independent reviewer must clear it before the integration dependency is advanced.
+**Driver finding and candidate repair:** PR63/c256e75 allowed new draft work while
+bound to active trip A, with stale incident/location state crossing into another
+trip. The owner published a narrow repair at
+`80e9d45f9a234de54b1017e856e8349c097b8760`; this integration now pins that candidate.
+Two new actual-controller/typed-transport regressions fail against the old c256e75
+source and pass against the repair. They check that a bound context blocks form,
+draft, confirmation and other-trip intents without HTTP, cached help stays on A,
+and a fresh session-bound controller clears old incident/location before sending
+help for B. Pending, unknown and reconciled drafts also block other-trip opening;
+explicit unknown reconciliation keeps its exact key/body. HTTP remains synthetic.
+These are scoped adapter regressions, not independent acceptance of the driver
+repair or UI. Q47's exact-revision driver re-review remains a separate requirement.
 
 ## Published owner reads
 

@@ -10,7 +10,7 @@ import { MemorySession, createApiClient, createContactApi, createDriverTransport
 // Explicit dependency: these immutable controller objects must have been fetched.
 // No feature source is copied into the author branch and no missing dependency is silently skipped.
 const CONTACT = 'b95bdbaa3f106f33d30b3aa8b0127ca3b691ee0e';
-const DRIVER = 'c256e75a1b58168925a8e9f760c3759ee33bfa0a';
+const DRIVER = '80e9d45f9a234de54b1017e856e8349c097b8760';
 const repo = fileURLToPath(new URL('../../../', import.meta.url));
 const archive = mkdtempSync(join(tmpdir(), 'andes-api-feature-integration-'));
 after(() => rmSync(archive, { recursive: true, force: true }));
@@ -225,6 +225,87 @@ test('actual driver writes and readbacks flow through the typed client adapter w
     assert.equal((await driver.refreshIncident(INCIDENT)).kind, 'ok');
     assert.equal(driver.snapshot().incident.data.status, 'active');
   } finally { binding.dispose(); driver.dispose(); }
+});
+
+test('actual driver blocks cross-trip work and a fresh bound context cannot reuse old incident/location', async () => {
+  const nextTrip = '77777777-7777-4777-8777-777777777777';
+  const nextIncident = '88888888-8888-4888-8888-888888888888';
+  const calls = [];
+  const { session, api, binding: unused } = setup(async (url, init) => {
+    calls.push({ path: url.pathname, body: init.body, key: init.headers['Idempotency-Key'] });
+    if (url.pathname === '/v1/me') return Response.json({ id: DRIVER_ID });
+    if (url.pathname.endsWith('/snapshot') || url.pathname.startsWith('/v1/incidents/')) return defaultReply(url);
+    if (url.pathname.endsWith('/sos')) return Response.json({ id: nextIncident, tripId: nextTrip,
+      status: 'active', createdAt: stamp, resolvedAt: null, groupCapability: 'unavailable' });
+    const id = url.pathname.split('/').at(-1);
+    return Response.json({ id, driver_id: DRIVER_ID, truck_id: GRANT, origin: 'Synthetic origin',
+      destination: 'Synthetic destination', country: 'BR', locale: 'pt-BR', time_zone: 'America/Sao_Paulo',
+      status: 'active', map_active: true, checkins_active: true, paused: false, version: 1,
+      created_at: stamp, closed_at: null });
+  }); unused.dispose();
+  const driver = createDriverJourney({ transport: createDriverTransport(api), keyFactory: () => 'explicit-old-context' });
+  const binding = bindJourneySession(session, api, id => driver.setSession(id));
+  try {
+    await binding.activate(); driver.setInteractionMode('stationary');
+    await driver.openTrip(TRIP); await driver.refreshLocation(); await driver.refreshIncident(INCIDENT);
+    assert.equal(driver.snapshot().tripId, TRIP);
+    assert.equal(driver.snapshot().location.data.tripId, TRIP);
+    const before = calls.length;
+    assert.deepEqual(driver.editForm({ text: 'Synthetic new trip' }), { kind: 'blocked', code: 'form-locked' });
+    assert.deepEqual(driver.selectContacts([]), { kind: 'blocked', code: 'form-locked' });
+    assert.deepEqual(await driver.saveDraft(), { kind: 'blocked', code: 'journey-already-bound' });
+    assert.deepEqual(await driver.confirmTrip({ confirmed: true }), { kind: 'blocked', code: 'journey-already-bound' });
+    assert.deepEqual(await driver.openTrip(nextTrip), { kind: 'blocked', code: 'journey-already-bound' });
+    assert.equal((await driver.requestHelp()).data.tripId, TRIP);
+    assert.equal(calls.length, before, 'Blocked cross-trip intents and same-trip cached help must send nothing');
+  } finally { binding.dispose(); driver.dispose(); }
+  const next = createDriverJourney({ transport: createDriverTransport(api), keyFactory: () => 'explicit-new-context' });
+  const nextBinding = bindJourneySession(session, api, id => next.setSession(id));
+  try {
+    await nextBinding.activate(); next.setInteractionMode('stationary');
+    assert.equal(next.snapshot().location.data, null); assert.equal(next.snapshot().incident.data, null);
+    await next.openTrip(nextTrip);
+    const result = await next.requestHelp();
+    assert.equal(result.kind, 'ok'); assert.equal(result.data.id, nextIncident);
+    assert.equal(result.data.tripId, nextTrip); assert.equal(next.snapshot().tripId, nextTrip);
+    const sos = calls.filter(call => call.path.endsWith('/sos'));
+    assert.deepEqual(sos, [{ path: `/v1/trips/${nextTrip}/sos`, body: '{}', key: 'explicit-new-context' }]);
+  } finally { nextBinding.dispose(); next.dispose(); session.clear(); }
+});
+
+test('actual driver preserves a pending, unknown and reconciled draft when another trip is opened', async () => {
+  const calls = []; let loseFirstResponse;
+  const fields = { truckId: GRANT, origin: 'Synthetic origin', destination: 'Synthetic destination',
+    country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo' };
+  const { session, api, binding: unused } = setup(async (url, init) => {
+    if (url.pathname === '/v1/me') return Response.json({ id: DRIVER_ID });
+    calls.push({ path: url.pathname, body: init.body, key: init.headers['Idempotency-Key'] });
+    if (calls.length === 1) return new Promise((_, reject) => { loseFirstResponse = reject; });
+    return Response.json({ id: TRIP, rawText: 'Synthetic draft', fields, missingFields: [], status: 'draft' });
+  }); unused.dispose();
+  const driver = createDriverJourney({ transport: createDriverTransport(api), keyFactory: () => 'original-draft-intent' });
+  const binding = bindJourneySession(session, api, id => driver.setSession(id));
+  try {
+    await binding.activate(); driver.setInteractionMode('stationary');
+    driver.provideSelectionEvidence({ actorId: DRIVER_ID, source: 'authenticated-server-read', readAt: stamp,
+      trucks: [{ id: GRANT, label: 'Synthetic owned truck' }], contacts: [] });
+    driver.editForm({ text: 'Synthetic draft', fields });
+    const pending = driver.saveDraft(); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(driver.snapshot().operations.draft.state, 'pending');
+    assert.deepEqual(await driver.openTrip(INCIDENT), { kind: 'blocked', code: 'journey-already-bound' });
+    assert.equal(calls.length, 1);
+    loseFirstResponse(new Error('Synthetic response lost after dispatch'));
+    assert.equal((await pending).kind, 'unknown');
+    const original = driver.snapshot().operations.draft.request;
+    assert.deepEqual(await driver.openTrip(INCIDENT), { kind: 'blocked', code: 'journey-already-bound' });
+    assert.deepEqual(driver.snapshot().operations.draft.request, original);
+    assert.equal(calls.length, 1, 'Opening another trip must not read or retry the unknown draft');
+    assert.equal((await driver.retryUnknown('draft', { confirmed: true })).kind, 'ok');
+    assert.deepEqual(calls[1], calls[0], 'Explicit reconciliation must retain the exact original key and payload');
+    assert.equal(driver.snapshot().draft.id, TRIP);
+    assert.deepEqual(await driver.openTrip(INCIDENT), { kind: 'blocked', code: 'journey-already-bound' });
+    assert.equal(calls.length, 2);
+  } finally { binding.dispose(); driver.dispose(); session.clear(); }
 });
 
 test('actual ContactApi TypeScript seam accepts the facade without feature imports in production', () => {
