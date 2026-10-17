@@ -1,0 +1,217 @@
+TAP version 13
+# Subtest: every timing subset fails closed, all four are required, and production omits all four
+ok 1 - every timing subset fails closed, all four are required, and production omits all four
+  ---
+  duration_ms: 3.792167
+  type: 'test'
+  ...
+# Subtest: default control loop stays off while explicit SOS remains available
+ok 2 - default control loop stays off while explicit SOS remains available
+  ---
+  duration_ms: 202.911084
+  type: 'test'
+  ...
+# Subtest: concurrent opening sweeps commit one asking check
+ok 3 - concurrent opening sweeps commit one asking check
+  ---
+  duration_ms: 131.356333
+  type: 'test'
+  ...
+# Subtest: sharing mutation replays once, rejects changed content, and resumed sharing alone is no OK
+ok 4 - sharing mutation replays once, rejects changed content, and resumed sharing alone is no OK
+  ---
+  duration_ms: 98.783667
+  type: 'test'
+  ...
+# Subtest: check opening versus pause: pause commits first
+ok 5 - check opening versus pause: pause commits first
+  ---
+  duration_ms: 118.761875
+  type: 'test'
+  ...
+# Subtest: check opening versus pause: sweep commits first
+ok 6 - check opening versus pause: sweep commits first
+  ---
+  duration_ms: 119.496
+  type: 'test'
+  ...
+# Subtest: expired check versus arrived: command commits first
+ok 7 - expired check versus arrived: command commits first
+  ---
+  duration_ms: 100.167667
+  type: 'test'
+  ...
+# Subtest: expired check versus arrived: sweep commits first
+ok 8 - expired check versus arrived: sweep commits first
+  ---
+  duration_ms: 140.763125
+  type: 'test'
+  ...
+# Subtest: expired check versus cancel: command commits first
+ok 9 - expired check versus cancel: command commits first
+  ---
+  duration_ms: 92.9655
+  type: 'test'
+  ...
+# Subtest: expired check versus cancel: sweep commits first
+ok 10 - expired check versus cancel: sweep commits first
+  ---
+  duration_ms: 164.437125
+  type: 'test'
+  ...
+# Subtest: expired check versus pause: command commits first
+ok 11 - expired check versus pause: command commits first
+  ---
+  duration_ms: 90.622208
+  type: 'test'
+  ...
+# Subtest: expired check versus pause: sweep commits first
+ok 12 - expired check versus pause: sweep commits first
+  ---
+  duration_ms: 102.124375
+  type: 'test'
+  ...
+# Subtest: expired check versus checkin_ok: command commits first
+ok 13 - expired check versus checkin_ok: command commits first
+  ---
+  duration_ms: 112.169166
+  type: 'test'
+  ...
+# Subtest: expired check versus checkin_ok: sweep commits first
+ok 14 - expired check versus checkin_ok: sweep commits first
+  ---
+  duration_ms: 85.463542
+  type: 'test'
+  ...
+# Subtest: SOS versus escalation: sos commits first, one fanout and one send
+ok 15 - SOS versus escalation: sos commits first, one fanout and one send
+  ---
+  duration_ms: 115.487959
+  type: 'test'
+  ...
+# Subtest: SOS versus escalation: sweep commits first, one fanout and one send
+ok 16 - SOS versus escalation: sweep commits first, one fanout and one send
+  ---
+  duration_ms: 114.288166
+  type: 'test'
+  ...
+# Subtest: late OK does not resolve an incident; explicit resolve gives one grace window before re-alert
+ok 17 - late OK does not resolve an incident; explicit resolve gives one grace window before re-alert
+  ---
+  duration_ms: 83.045625
+  type: 'test'
+  ...
+# Subtest: pause/resume suspends checks, retains unknown location and never suspends SOS
+ok 18 - pause/resume suspends checks, retains unknown location and never suspends SOS
+  ---
+  duration_ms: 92.513334
+  type: 'test'
+  ...
+# Subtest: closed trip stops sharing and map disclosure while explicit SOS remains available
+ok 19 - closed trip stops sharing and map disclosure while explicit SOS remains available
+  ---
+  duration_ms: 94.327875
+  type: 'test'
+  ...
+# Subtest: SOS upgrades pending wording but neither rewrites nor resends a committed missed-check attempt
+ok 20 - SOS upgrades pending wording but neither rewrites nor resends a committed missed-check attempt
+  ---
+  duration_ms: 100.158875
+  type: 'test'
+  ...
+# Subtest: opening after a trip-lock wait retains the full ask grace: 0ms wait
+ok 21 - opening after a trip-lock wait retains the full ask grace: 0ms wait
+  ---
+  duration_ms: 89.521042
+  type: 'test'
+  ...
+# {"elapsed":0,"now":"2026-10-17T12:02:00.001Z","createdAt":"2026-10-17T12:02:00.001Z","askUntil":"2026-10-17T12:03:00.001Z","remainingGraceMs":60000,"incidentCount":0}
+# Subtest: opening after a trip-lock wait retains the full ask grace: 1001ms wait
+not ok 22 - opening after a trip-lock wait retains the full ask grace: 1001ms wait
+  ---
+  duration_ms: 147.359916
+  type: 'test'
+  location: '<review-worktree>/review-probes/security-check-lifecycle.test.mjs:255:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    the response window must start when the check can actually open, after locks
+
+    58999 !== 60000
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 60000
+  actual: 58999
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<review-worktree>/review-probes/security-check-lifecycle.test.mjs:266:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# {"elapsed":1001,"now":"2026-10-17T12:02:01.002Z","createdAt":"2026-10-17T12:02:00.001Z","askUntil":"2026-10-17T12:03:00.001Z","remainingGraceMs":58999,"incidentCount":0}
+# Subtest: opening after a trip-lock wait retains the full ask grace: 60001ms wait
+not ok 23 - opening after a trip-lock wait retains the full ask grace: 60001ms wait
+  ---
+  duration_ms: 151.809625
+  type: 'test'
+  location: '<review-worktree>/review-probes/security-check-lifecycle.test.mjs:255:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    the response window must start when the check can actually open, after locks
+
+    -1 !== 60000
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 60000
+  actual: -1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<review-worktree>/review-probes/security-check-lifecycle.test.mjs:266:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# {"elapsed":60001,"now":"2026-10-17T12:03:00.002Z","createdAt":"2026-10-17T12:02:00.001Z","askUntil":"2026-10-17T12:03:00.001Z","remainingGraceMs":-1,"incidentCount":1}
+# Subtest: native loopback HTTP exposes asking and unknown location without a fabricated safe state
+ok 24 - native loopback HTTP exposes asking and unknown location without a fabricated safe state
+  ---
+  duration_ms: 116.077
+  type: 'test'
+  ...
+# Subtest: policy observation: late receipt of stale GPS resets silence; replaying that capture does not
+ok 25 - policy observation: late receipt of stale GPS resets silence; replaying that capture does not
+  ---
+  duration_ms: 104.69525
+  type: 'test'
+  ...
+# {"policy":"GPS receipt vetoes silence although capture is stale; no driver OK","captureAgeMs":599000,"receivedAt":"2026-10-17T12:10:00.000Z","check":null}
+# Subtest: GPS does not veto independent arrival-overdue evaluation
+ok 26 - GPS does not veto independent arrival-overdue evaluation
+  ---
+  duration_ms: 83.214125
+  type: 'test'
+  ...
+# Subtest: policy observation: pause suppresses every automatic check indefinitely, with SOS still independent
+ok 27 - policy observation: pause suppresses every automatic check indefinitely, with SOS still independent
+  ---
+  duration_ms: 105.468542
+  type: 'test'
+  ...
+# {"policy":"No bounded pause expiry or independent overdue while paused","elapsedMs":604800000,"paused":true,"checkins_active":false}
+# Subtest: SIGKILL during escalation rolls back; a fresh process restarts and repeated sweep does not duplicate
+ok 28 - SIGKILL during escalation rolls back; a fresh process restarts and repeated sweep does not duplicate
+  ---
+  duration_ms: 215.256417
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 26
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3267.33875

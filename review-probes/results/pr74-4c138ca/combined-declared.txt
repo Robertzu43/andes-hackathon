@@ -1,0 +1,92 @@
+
+> andes-backend@0.1.0 test
+> npm run build && node --test tests/*.test.mjs
+
+
+> andes-backend@0.1.0 build
+> tsc
+
+✔ drafts keep an optional expected arrival; invitations take a family or colleague role (253.080917ms)
+✔ SOS alerts family on three channels, colleagues on two and records the group as unavailable (107.480625ms)
+✔ SOS while a check is asking closes it with the SOS incident; SOS upgrades a missed-check incident without new sends (404.516875ms)
+✔ check timings are all-or-nothing and positive (0.868542ms)
+✔ silence opens one check; OK closes it and the same reason does not reopen at once (160.494625ms)
+✔ a location upload, resume or incident resolution counts as a sign of life (159.279125ms)
+✔ an unanswered check escalates once to family (3 channels), colleague (2) and an unavailable group (130.493833ms)
+✔ arrival and pause cancel an open check; a paused trip gets no new check (98.584625ms)
+✔ escalation attaches to an already active incident instead of creating a second one (101.834833ms)
+✔ arrival overdue opens a check after the grace period (194.580375ms)
+Security check failed for one trip
+✔ one failing trip does not stop the sweep for the others (185.140875ms)
+✔ sharing stopped opens a check at once; resume clears it; both are audited (144.821416ms)
+✔ status drives both screens without phone numbers and follows grant scopes (142.389208ms)
+✔ alert wording names the truck, keeps the incident ID and never invents location (0.600375ms)
+✔ the control worker runs the sweeper only when check timings are configured (218.65075ms)
+✔ resolving an overdue alert or resuming after the expected arrival does not re-alert at once (106.386208ms)
+✔ a trip confirmed after its expected arrival gets the full grace period first (104.210042ms)
+✔ signed identity enforces issuer, audience, expiry, signature and driver/truck ownership (312.548375ms)
+✔ contacts accept their own explicit scopes with a trusted verified phone before selection (127.152917ms)
+✔ draft review and confirmation are explicit, complete and idempotent (154.60525ms)
+✔ location separates capture/receipt/read freshness, bounds history and honors revocation (249.643625ms)
+✔ SOS rolls back all state on SQL failure and simultaneous taps create one incident and independent jobs (195.465167ms)
+✔ trip and incident closure are independent; contact receipt/action are attributed and revoke cancels work (154.412792ms)
+✔ unqualified channels stay unavailable and accepted incident scope never grants map access (92.795416ms)
+✔ migration is repeat-safe and transaction failures release clients without committing (115.23525ms)
+✔ driver incident resolution preserves active trip and authorized attempts (189.192333ms)
+✔ standing contact revoke serializes with confirmation and blocks every current/future trip grant (192.777458ms)
+✔ SOS and standing revoke complete when grant lock overlaps the SOS foreign-key insert (162.872042ms)
+✔ mixed-case grant UUID confirmations take one canonical lock order and reject case-alias duplicates (121.745125ms)
+✔ AWS database components survive pinned pg parsing with verified CA TLS (3.591666ms)
+✔ non-superuser database owner bootstraps twice with app DML but no DDL or migration writes (513.736375ms)
+✔ a demo session creates an isolated synthetic world whose personas can run the whole journey (323.741084ms)
+✔ demo sessions are rate limited, and demo mode refuses live sends (255.422875ms)
+✔ without demo mode the session route does not exist and real tokens are unaffected (134.537958ms)
+✔ live demo sends reach only the consented phone: the family persona uses it, every other destination is refused (158.287708ms)
+✔ dispatch refuses any destination outside a configured allowlist without calling the provider (186.16875ms)
+✔ quota wait rechecks job lifetime after 999ms (362.277ms)
+✔ quota wait rechecks job lifetime after 1000ms (179.240542ms)
+✔ quota wait rechecks job lifetime after 1001ms (136.988458ms)
+✔ quota wait rechecks claim lease after 29999ms (157.420792ms)
+✔ quota wait rechecks claim lease after 30000ms (151.867ms)
+✔ quota wait rechecks claim lease after 30001ms (156.504708ms)
+✔ recipient discovers incident from frozen alerts and can read and respond after arrival without stopping SOS channels (291.881167ms)
+✔ incident reads and acknowledgements recheck both consent grants and accepted incident scope (641.305666ms)
+✔ outbox rollback publishes nothing, lost publish acknowledgement retries only transport with bounded backoff (171.878667ms)
+✔ duplicate SQS and expired authorization leases never create a second external attempt (132.794917ms)
+✔ stale claim cannot authorize, stop-first denies and authorize-first survives resolve/revoke (117.081541ms)
+✔ authorization rechecks standing scope, trip scope, phone and incident; arrival keeps SOS without coordinates (202.3395ms)
+✔ scanner recovers expired transport and claims but keeps authorized work unknown; no blind DLQ replay (154.391167ms)
+✔ account and channel budgets persist and preserve emergency reserve across replicas (158.142042ms)
+✔ early callbacks persist unmatched, exact response ID correlates, duplicates and contradictory late HTTP cannot regress delivery (117.260042ms)
+✔ paused WhatsApp leaves later-batch SMS/voice and reads/close free; slots are bounded (125.935209ms)
+✔ rolled-back new intent is never published (189.261334ms)
+✔ publish acknowledgement loss creates duplicate transport but still only one provider send (132.733125ms)
+✔ old relay cannot acknowledge a newer lease (153.6425ms)
+✔ callback endpoint preserves raw bytes and needs no OIDC; failed SQL is not acknowledged (91.117584ms)
+✔ unknown read result cannot authorize a second send while original emitter remains paused (117.755334ms)
+✔ control publishes new outbox while provider reconciliation read is paused (120.904333ms)
+✔ global revoke-first blocks every authorization and no grant lock upgrades deadlock standing revoke (134.48925ms)
+✔ delivery facts never regress on late failed/queued/unknown callbacks and voice never implies human answer (100.326458ms)
+✔ daily quotas do not erase the sliding minute limit across UTC midnight (100.177167ms)
+✔ reconciliation GETs reserve account request budget before network (130.142375ms)
+✔ ordinary reservations stop at configured emergency margin (86.478ms)
+✔ authorization independently rechecks current standing consent and per-trip consent (356.9725ms)
+✔ control reconciles known IDs with new sends off and denies new authorization (97.890708ms)
+✔ public TLS entry, private task/database boundaries and retained encrypted state (0.697542ms)
+✔ task IAM isolates each queue; execution secrets and administrator never become task access (0.326375ms)
+✔ exact process wiring, bootstrap/live gates and conservative rolling capacity (0.144666ms)
+✔ image contains migration SQL/CA and CI runs real PostgreSQL tests without live credentials (1.578583ms)
+✔ Zavu sends exact explicit channels without fallback and accepts 202/replay 409 (25.275333ms)
+✔ ambiguous HTTP never retries; definitive nested limits are rejected; reads use GET only (1.30875ms)
+✔ v2 signature authenticates exact bytes, signed project/sender and strict time window (1.110834ms)
+✔ provider configuration fails closed unless explicit live qualification is complete (0.230083ms)
+✔ SQS adapter sends only IDs/version, rejects secret-bearing envelopes, and defers saturated messages (22.383875ms)
+✔ sends-off configuration retains read-only provider but denies POST and delivery startup (10.760041ms)
+ℹ tests 75
+ℹ suites 0
+ℹ pass 75
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5991.029084

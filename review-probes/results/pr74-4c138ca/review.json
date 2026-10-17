@@ -1,0 +1,131 @@
+{
+  "reviewed_head": "4c138ca1d00742400a850cd72b0888cc59260a36",
+  "base": "c752de8a3b424bcbc086764dc11052348b27e320",
+  "combined_parents": [
+    "4c138ca1d00742400a850cd72b0888cc59260a36",
+    "5591c9b55fe7f4505e36ccee96d27aa913e0debf"
+  ],
+  "combined_tree": "52f0cc4c56e5e1caf631d14af504c78e2f73c63a",
+  "node": "24.17.0",
+  "postgresql": "16.14",
+  "database": "isolated synthetic loopback database; unique disposable schema per test",
+  "declared_tests": {
+    "pr74": {
+      "total": 69,
+      "passed": 69
+    },
+    "combined": {
+      "total": 75,
+      "passed": 75,
+      "includes_6_expiry_regressions": true
+    }
+  },
+  "typecheck": {
+    "pr74": 0,
+    "combined": 0
+  },
+  "lifecycle": [
+    {
+      "candidate": "pr74",
+      "check": "lifecycle28",
+      "exit": 1,
+      "failed": [
+        "not ok 22 - opening after a trip-lock wait retains the full ask grace: 1001ms wait",
+        "not ok 23 - opening after a trip-lock wait retains the full ask grace: 60001ms wait"
+      ],
+      "counts": {
+        "total": 28,
+        "pass": 26,
+        "fail": 2
+      },
+      "stderr": ""
+    },
+    {
+      "candidate": "combined",
+      "check": "lifecycle28",
+      "exit": 1,
+      "failed": [
+        "not ok 22 - opening after a trip-lock wait retains the full ask grace: 1001ms wait",
+        "not ok 23 - opening after a trip-lock wait retains the full ask grace: 60001ms wait"
+      ],
+      "counts": {
+        "total": 28,
+        "pass": 26,
+        "fail": 2
+      },
+      "stderr": ""
+    }
+  ],
+  "preserved15": {
+    "source_commit": "de9cea552a9742acbc236f3586331adab4983835",
+    "original_git_blobs": {
+      "review-probes/backend-races.test.mjs": "f5ec67ead3a42aac32b49260a5d7bfeec9c9bd4e",
+      "review-probes/helpers/crash-worker.mjs": "1cc6ae1f04d856ef2d9f328bc071e64efd7498d3"
+    },
+    "pr74": {
+      "pass": 14,
+      "fail": 1,
+      "failure": "Known inherited quota-wait expiry race"
+    },
+    "combined": {
+      "pass": 15,
+      "fail": 0
+    }
+  },
+  "candidate_file_blobs": {
+    "src/checks/sweep.ts": {
+      "pr74": "29e33b62015683758062a58befb89f3af9592621",
+      "combined": "29e33b62015683758062a58befb89f3af9592621"
+    },
+    "src/incidents/create.ts": {
+      "pr74": "57db868c4f3e6416d01ba49e097f7836d0db4e25",
+      "combined": "57db868c4f3e6416d01ba49e097f7836d0db4e25"
+    },
+    "src/incidents/routes.ts": {
+      "pr74": "94fb41dec87273bf2c4a709487ffce707b707dbd",
+      "combined": "94fb41dec87273bf2c4a709487ffce707b707dbd"
+    },
+    "src/trips/routes.ts": {
+      "pr74": "7b9185e7474c544c82a3928ee2d321273ad17107",
+      "combined": "7b9185e7474c544c82a3928ee2d321273ad17107"
+    },
+    "src/notifications/dispatch.ts": {
+      "pr74": "5ed2c6922e8a78aa5fb249aca9d5d958621eb732",
+      "combined": "635440de249521fe9111c079d9f69059fbcc6975"
+    },
+    "db/migrations/003-security-checks.sql": {
+      "pr74": "f5602a1664b33bb76a777cb285fa9712af5e60c2",
+      "combined": "f5602a1664b33bb76a777cb285fa9712af5e60c2"
+    }
+  },
+  "own_probes": {
+    "review-probes/security-check-lifecycle.test.mjs": "268e041ac4ffff1b752ff4d885eb523ca2ce387cc35e69f6f47812c740818485",
+    "review-probes/helpers/check-sweep-worker.mjs": "2421e8a026b535cc141fe5977c623075508ecfca92a01e99fb9b22843b17c839"
+  },
+  "whitespace": {
+    "exit": 2,
+    "files": [
+      "docs/contracts/runtime.md:135",
+      "tests/checks.test.mjs:230",
+      "tests/demo.test.mjs:77"
+    ],
+    "diagnostic": "new blank line at EOF"
+  },
+  "external_sends": 0,
+  "aws_deployments": 0,
+  "real_device_or_human_evidence": false,
+  "path_normalization": "Local archive/worktree prefixes replaced; indentation removed only from whitespace-only TAP separators. Assertions/outcomes unchanged.",
+  "policy_observations": {
+    "stale_newer_capture_late_upload": "receipt resets silence while map freshness remains stale",
+    "duplicate_capture": "does not update received_at or keep suppressing silence",
+    "arrival_overdue": "independent of GPS receipt, still opens",
+    "paused_trip": "all automatic checks suppressed after simulated7 days; SOS available",
+    "classification": "documented engineering behavior; unevaluated policy, not new safety acceptance"
+  },
+  "tap_sha256_before_separator_normalization": {
+    "combined-lifecycle.tap": "61064054459244961259ed9d3ea07aaee4dd4d84de179298b5cc528d7c47ed75",
+    "pr74-preserved15.tap": "847dbd682a565237e232fe17f6469e72aacb6520494bc495ed23d53b63deec42",
+    "pr74-lifecycle.tap": "02fe0758dba4de82a68ef40e456f0e16ad5c36d3b5e7038331d05e4fdb9fb9eb",
+    "combined-preserved15.tap": "dfec78d3678a0c0c383c74da2fddbc2cfb2d2623a89bcf3034bf3b1386e5c2c5"
+  }
+}
