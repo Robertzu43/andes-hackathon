@@ -176,9 +176,11 @@ Strict compile-only consumer checks also passed with the existing TypeScript
 or package was installed in this lane. They reject invented commands, unsupported
 permission/interaction states, audio form input and unknown write slots.
 
-Next: bind the published component45 transport and component41 catalog read
-contract, then run a real local persisted draft/confirm/command/SOS/read journey
-using an isolated synthetic backend database. UI rendering follows the verified
-component49 foundation plus Brain Design Contract. These are explicit dependency
-gaps, not substitute local-only successes. Physical/human evidence gates for #13
-stay open. No merge or issue closure is performed by this author lane.
+The next slice also passed **four actual PostgreSQL/API journey checks**, including
+a new API instance reading committed state after shutdown of the original API.
+See [persisted-evidence.md](persisted-evidence.md) for the exact runtime, commands,
+test-only catalog/transport seams and limits. This does not replace component45's
+browser client binding or component41's missing catalog read contract. UI rendering
+follows the verified component49 foundation plus Brain Design Contract. Those are
+remaining dependency gaps. Physical/human evidence gates for #13 stay open. No
+merge or issue closure is performed by this author lane.
