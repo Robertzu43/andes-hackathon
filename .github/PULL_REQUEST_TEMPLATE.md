@@ -1,7 +1,7 @@
-Describe the concrete problem and resulting behavior or change.
+<!-- Describe the concrete problem and resulting behavior or change. -->
 
-Reference the related issue(s), retaining their evidence gates.
+<!-- Reference related issues with Refs #N only. Do not use automatic issue-closing keywords such as Fixes, Closes or Resolves (including their variants) in the PR description or commits; each issue retains its own evidence gates. -->
 
-Give validation results and limits, including failed, unknown or missing evidence.
+<!-- Give validation results and limits: commands/runtime, exact reviewed SHA, and failed, unknown or missing evidence. State explicitly if no remote checks are configured. -->
 
-Record feedback disposition: original comment/thread link → fix SHA and regression/valid-input evidence → reviewer confirmation when required. Distinguish informational notes from actionable findings; hold unresolved questions/findings under CONTRIBUTING.md's mutual review rule.
+<!-- Follow [Review before merge](../CONTRIBUTING.md#review-before-merge). Keep each feedback disposition in its original review thread/discussion: fix SHA and regression/valid-input evidence, plus human reviewer confirmation when required. The author never merges their own PR; the non-author reviewer merges with --match-head-commit. -->
