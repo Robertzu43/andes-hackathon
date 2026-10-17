@@ -36,19 +36,41 @@ reference. Caller context is copied. Calling `start` while active throws.
 
 Only explicit `acquireLocation({ watch: false })`,
 `acquireLocation({ watch: true })` or `acquireMotion()` can initiate acquisition.
-Both require a secure context, visible page and browser-observed
-`navigator.userActivation.isActive === true`. Call directly within a supported
-trusted gesture handler. A boolean argument cannot substitute for activation.
-Missing activation support is blocked. Motion additionally requires the explicit
-`DeviceMotionEvent.requestPermission` route and a grant before subscription;
-browsers without that route remain unsupported. This is no Android support claim.
+Both require a secure context, visible page and qualification. Initial acquisition
+requires browser activation, or `withUserGesture(event, action)` called synchronously
+inside a trusted native click, pointerup, touchend or Enter/Space keydown dispatch.
+The bridge checks the native Event instance, `isTrusted`, currentTarget and eventPhase;
+a retained event, synthetic dispatch or boolean cannot substitute. It supports
+browsers without `navigator.userActivation` without creating background prompts.
+An already observed granted stream can be explicitly reacquired in the same session.
+When present, motion `requestPermission` is invoked synchronously and requires a
+grant. Otherwise an exposed DeviceMotionEvent can use browser-managed event delivery:
+permission stays unknown, and qualification/gesture/visibility gates still apply.
+This supplies no Android or Safari physical support claim.
 
 `stopLocation` and `stopMotion` invalidate their request tokens before cleanup.
 `stop` and `revokeConsent` stop both streams, timers and permission/lifecycle
 subscriptions. These operations are idempotent. A stopped session can be replaced
 with a new explicit `start`; callbacks retain their original session/request and
 cannot enter the replacement. One-shot requests settle once. Hidden pages,
-`pagehide` and `freeze` terminate the session with no automatic resume.
+`pagehide` and `freeze` terminate the session with no automatic resume. Each
+termination delivers exactly one `session-stop` with reason, `sharingState: 'stopped'`
+and resumable status, including budget exhaustion and reentrant sink withdrawal.
+One terminal slot is reserved beyond the ordinary event cap. It is a local signal,
+not server receipt; a killed process may never execute lifecycle handlers.
+
+`resume()` requires an explicit new gesture on a visible page after suspension or
+a normal duration/event budget stop. It creates a new generation for the same
+trip/session context and restores requested location/motion/wake-lock intents.
+Old callbacks remain inert. Consent withdrawal, explicit stop, denied/revoked
+permissions and clock failures cannot be bypassed by resume. Results retain each
+requested stream outcome; no location success is inferred from session start.
+
+`requestWakeLock()` optionally requests a screen wake lock with bounded waiting.
+Unsupported, rejected, timed-out and browser-released locks are explicit local
+events; late grants are released. Stop releases held locks. A held lock is only
+best effort while visible and cannot promise capture under lock, page kill or
+power policy. Resume requests another lock only after the new user action.
 
 The browser cannot cancel a `getCurrentPosition` callback or an outstanding
 motion permission promise. Tokens ignore their eventual answers. Timeouts bound
@@ -118,7 +140,8 @@ gesture and permission gates. Their accuracy/freshness remain unknown.
 The buffer retains only the current session. Snapshots and sink values are
 detached JSON-safe copies. Restart discards the previous buffer, and page kill
 loses all unexported memory. A local sink is not server acceptance or durable
-storage. Consumers must not wire it to live uploads under this preparatory scope.
+storage. Any approved uploader remains a separate consumer with its own server contract,
+consent, authentication, durable queue and receipt handling.
 Sinks must return synchronously; exceptions/thenables count as `sinkErrors`, with
 no retry, queue or delivery claim. Acquisitions/start from within the sink are
 blocked; synchronous stop/consent withdrawal is supported.
@@ -131,25 +154,60 @@ No battery/data efficiency is claimed; the browser still controls sensor rate.
 
 | Input | Default | Meaning |
 | --- | --- | --- |
-| `revision` | `engineering-only/1` | Must match explicit qualification |
+| `revision` | `engineering-only/2` | Must match explicit qualification |
 | `bufferCapacity` | 128 | Retained local events; evictions counted |
-| `maxEvents` | 256 | All emissions per session; cap terminates resources |
-| `maxCallbacksPerStream` | 1024 | Callback processing before retiring each stream |
-| `maxRequests` | 8 | All acquisition attempts past the gates per session |
-| `maxSessionMs` | 300000 | Local deadline; checked against monotonic elapsed time too |
+| `maxEvents` | 200000 | Ordinary emissions; one additional reserved stop event |
+| `maxCallbacksPerStream` | 10000000 | Callback processing before retiring each stream |
+| `maxRequests` | 100 | All acquisition attempts past the gates per session |
+| `maxSessionMs` | 86400000 | Local deadline; checked against monotonic elapsed time too |
 | `minEmitIntervalMs` | 1000 | Per-request observation emission spacing; no queued samples |
 | `requestTimeoutMs` | 10000 | One-shot and motion-prompt local timeout |
 | `maximumAgeMs` | 0 | Browser position cache request; callback age is still retained |
 | `freshnessMs` | `null` | Unset means unknown, never fresh |
 | `clockToleranceMs` | 100 | Wall/monotonic divergence flag; not accuracy certification |
 
-All inputs are validated with finite upper bounds in `validateBudget`. Position
-high-accuracy acquisition is disabled. A callback flood is discarded after its
-cap; rate suppression retains no backlog. Counts include callback-budget overflow
-once, then ignore that token. Permission and control events also consume the event
-budget. At the event cap, cleanup proceeds even if no terminal event fits; read
-`snapshot().stopReason`. Events evicted from the buffer still reached the sink
-once, subject to its diagnostic failures.
+All inputs have finite upper bounds in `validateBudget`, including a seven-day
+maximum configurable session. Default duration is 24 hours, rather than five
+minutes. This is a software ceiling, not a measured capability/resource budget.
+Location requests default to `enableHighAccuracy: true`; an explicit boolean
+override and the original options remain observable on results and errors. The
+browser treats this as a hint: underlying source and achieved accuracy remain
+unknown/measured per callback, never inferred from the option. A callback flood
+is discarded after its cap; rate suppression retains no backlog. Nonterminal GPS
+errors have a separate one-second throttle and suppressed-error count; permission
+denial bypasses it, cancels the watch and remains observable. Successful fixes
+retain their own throttle. Permission/control events consume the ordinary budget;
+the final stop event always has its reserved slot. Buffer evictions still reached
+the sink once, subject to diagnostic failures.
+
+## Trip integration
+
+[`trip-sharing.mjs`](../../src/phone-observations/trip-sharing.mjs) exports
+`createTripPhoneObservations({ trip, reviewedContext, locationConsent, sink })`.
+The host selects an actual reviewed context packet `{ key, qualification, budget }`
+and records `locationConsent: { granted: true, tripId, reference }`. The factory
+binds that consent to the exact trip and supplies the fixed purpose, context,
+watch/high-accuracy options and wake-lock request. `startSharing(event)` and
+`resumeSharing(event)` accept the currently dispatched native button event;
+`stopSharing()`, `revokeConsent()` and `snapshot()` complete the host seam.
+Missing consent, another trip's consent, missing review or synthetic review in
+device mode cannot enable acquisition. Withdrawal clears factory consent.
+
+The host's **Compartir ubicación**, **Reanudar** and **Dejar de compartir** button
+handlers can call those methods directly with their event. Resume is always an
+explicit action; expose each method's result and each local stop event in UI.
+This PR supplies the controller seam, not the shared app screen. Actual driver UI
+binding awaits the committed Q49 foundation and is tracked separately in PR63.
+No qualifying physical packet exists yet; a host must not manufacture one.
+
+Only location events with explicit qualified coordinates, finite accuracy no
+greater than 100000 and a valid original source epoch can map to the existing
+backend `/v1/trips/:id/locations` contract. Preserve `position.timestamp`; never
+substitute client receipt time. Batch only the four accepted fields, within server
+time/size limits, with a stable idempotency key across retries. The separate Q42
+queue owns this mapping. At inspected backend `c752de8a3b424bcbc086764dc11052348b27e320`,
+no `/sharing` route exists: stop events remain local until its owner publishes an
+authoritative contract. This adapter adds no HTTP, server sharing fact or alert.
 
 ## Reproduce and remaining evidence
 
@@ -177,3 +235,7 @@ cache/accuracy/permission semantics;
 for transient activation, express permission and visible-document events;
 [W3C High Resolution Time](https://www.w3.org/TR/hr-time-3/)
 for the distinction between monotonic measurement and adjustable wall time.
+
+Additional platform references for the review corrections:
+[W3C Screen Wake Lock](https://www.w3.org/TR/screen-wake-lock/) and
+[WHATWG DOM trusted events](https://dom.spec.whatwg.org/#dom-event-istrusted).

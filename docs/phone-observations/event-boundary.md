@@ -53,3 +53,20 @@ provenance, consent references/access control, policy versions and resource
 budgets. The backend must keep observer ground truth and attributed reports
 separate from any rule output. The synthetic fixtures supply no qualified
 phone stream, incident denominator, independently observed event or replay claim.
+
+## Lifecycle handoff after Robert's review
+
+`session-stop` now carries `data: { reason, sharingState: 'stopped', resumable }`
+for every executable terminal path. It retains the same trip/session/revision
+envelope and null source/server times. One extra terminal slot survives an
+exhausted ordinary budget; sink-triggered stop is delivered after that sink returns.
+This is not an acknowledged server sharing transition. Q42 owns queue mapping;
+Robert owns any new `/sharing` endpoint, its idempotency and state semantics.
+No such route existed at inspected backend c752de8a3b424bcbc086764dc11052348b27e320.
+
+`resume()` creates another adapter generation in the same trip/session context
+only after an explicit gesture, and never consumes old callback tokens. Wake-lock
+requested/held/released/unavailable events are local capability observations.
+Browser-managed motion retains unknown permission rather than inventing a grant.
+Default high accuracy is a request hint; emitted request options and measured
+accuracy remain independent. See [Robert disposition](robert-review-fixes.md).
