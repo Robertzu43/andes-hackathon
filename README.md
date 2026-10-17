@@ -30,7 +30,9 @@ Each issue has one accountable owner. Sebastian (`sebasbimbi`, 20 issues) owns d
 
 Project: ANDES (hackathon). Team: GOAT. This project has its own workspace and GitHub repository, separate from SurcoCheck.
 
-Working cohort, not validated demand: independent Peruvian owner-drivers with one or two cars who make regular interurban work trips and already rely on a trusted contact. Spanish first; choose one route corridor from their original journey records. Other Latin American markets remain outside this first validation.
+Product scope: drivers across Latin America, including Brazil, who own or use one or two cars and want a trusted contact to know when an agreed trip check-in or arrival is missed. Personal and work journeys are eligible use cases; Peruvian nationality, residence or routes are not product requirements. Interurban journeys are a candidate research scenario, not an eligibility restriction. Regional demand and effectiveness remain unvalidated.
+
+Design for Spanish and Brazilian Portuguese, configurable country/locale, international phone numbers and local time zones. Additional language coverage must be stated explicitly. Validation may start with a small evidence-selected cohort and corridor in any Latin American country. Record the countries, languages and conditions actually tested; a local sample does not validate the whole region. Each enabled country/channel/language combination needs its own support evidence, with unsupported conditions shown honestly.
 
 Critical scenario: a driver misses an agreed trip check-in or arrival, and the contact cannot tell whether to act. Intended benefit: reduce avoidable delay to an appropriate contact action without increasing driving distraction or overwhelming contacts. Phone signal -> qualified observation -> bounded check-in -> uncertain-status alert -> contact acknowledgement -> recorded action is the causal chain to test. No claim of preventing crashes or detecting sleep, robbery or weapons.
 
@@ -40,7 +42,7 @@ Heartbeat means an “I’m OK” check-in, not cardiac pulse. Device liveness, 
 
 ## Working agreement
 
-Authorised now: publish this existing Codus plan as open GitHub issues in the separate private Bimbi-Dev/andes-hackathon repository, team GOAT, and invite Robertzu43 with write access. The seven sections, 63 nodes and 44 task nodes retain their scope. App implementation, provider activation, participant recruitment, trip collection and live pilots have not started.
+Authorised now: publish this existing Codus plan as open GitHub issues in the separate private Bimbi-Dev/andes-hackathon repository, team GOAT, and invite Robertzu43 with write access. The geographic scope now covers drivers across Latin America, including Brazil, in the existing one-or-two-car segment. The seven sections, 63 nodes and 44 task nodes are retained; the regional requirements are incorporated into existing tasks. App implementation, provider activation, participant recruitment, trip collection and live pilots have not started.
 
 ANDES is separate from SurcoCheck, with independent code, configuration, data and delivery ownership. Before starting a section, satisfy its evidence gate. Missing or inconclusive evidence is not a pass. Use issue closure only for completed work supported by evidence. Invitation acceptance must be reported separately from sending the invitation. Hosting deployment, spending and live pilots remain separately scoped.
 

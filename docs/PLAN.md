@@ -9,7 +9,9 @@ All 63 original nodes are retained below. The 44 task nodes map to GitHub issues
 
 Project: ANDES (hackathon). Team: GOAT. This project has its own workspace and GitHub repository, separate from SurcoCheck.
 
-Working cohort, not validated demand: independent Peruvian owner-drivers with one or two cars who make regular interurban work trips and already rely on a trusted contact. Spanish first; choose one route corridor from their original journey records. Other Latin American markets remain outside this first validation.
+Product scope: drivers across Latin America, including Brazil, who own or use one or two cars and want a trusted contact to know when an agreed trip check-in or arrival is missed. Personal and work journeys are eligible use cases; Peruvian nationality, residence or routes are not product requirements. Interurban journeys are a candidate research scenario, not an eligibility restriction. Regional demand and effectiveness remain unvalidated.
+
+Design for Spanish and Brazilian Portuguese, configurable country/locale, international phone numbers and local time zones. Additional language coverage must be stated explicitly. Validation may start with a small evidence-selected cohort and corridor in any Latin American country. Record the countries, languages and conditions actually tested; a local sample does not validate the whole region. Each enabled country/channel/language combination needs its own support evidence, with unsupported conditions shown honestly.
 
 Critical scenario: a driver misses an agreed trip check-in or arrival, and the contact cannot tell whether to act. Intended benefit: reduce avoidable delay to an appropriate contact action without increasing driving distraction or overwhelming contacts. Phone signal -> qualified observation -> bounded check-in -> uncertain-status alert -> contact acknowledgement -> recorded action is the causal chain to test. No claim of preventing crashes or detecting sleep, robbery or weapons.
 
@@ -19,17 +21,23 @@ Incoming flow: Entry/context.
 
 Define the initial harm, inventory original evidence and challenge the three claims before choosing the MVP promise. Exit: traceable incident timelines, real-device/provider limits and a preregistered evidence contract; missing evidence remains a gate.
 
+The target market is Latin America. Record the countries, languages, devices and routes represented by evidence; a local validation cohort must not become a Peru-only product requirement.
+
 Incoming flow: entry.
 
 ### Prepare a safe trip
 
 Make the monitoring limits, driver choices and contact responsibilities understandable before departure. Gate the journey on observed comprehension and safe interaction, with a clear server registration and cancellation contract.
 
+Support country and language selection for Latin American drivers and contacts. Verify localised comprehension, international phone entry and time-zone handling without a hard-coded Peruvian default.
+
 Incoming flow: validate [Evidence passes].
 
 ### Track available signals
 
 Capture only supported observations with provenance, freshness and missingness. An independent observer must be able to reproduce what the app knew without mistaking device telemetry for driver wellbeing.
+
+Retain country, locale and time-zone provenance so route context and observed coverage remain interpretable across Latin America.
 
 Incoming flow: prepare.
 
@@ -43,11 +51,15 @@ Incoming flow: track.
 
 Test H2: persist deadlines, qualify uncertainty and progress from delivery to human action. Gate each promised channel on observed receipts and contact behaviour, including ambiguous failures and unavailable recipients.
 
+Enable each country/channel/language combination only with evidence for the actual driver and recipient destinations; do not infer regional delivery from one country test.
+
 Incoming flow: checkins.
 
 ### Verify and pilot
 
 Use predefined scenarios, an independent reviewer and baseline comparisons. The five existing verification axes gate a bounded future pilot; pilot feasibility never establishes reduced crashes or robberies.
+
+Choose a bounded cohort in any Latin American country and state its limits. Keep a country/channel/language support matrix; a successful local pilot does not establish region-wide efficacy or availability.
 
 Incoming flow: escalate.
 
@@ -63,17 +75,19 @@ Incoming flow: verify.
 
 Later conditional phase for H3. Separate operational observations, self-reports and independently corroborated outcomes; require exposure, missingness, policy-bias and privacy checks before any aggregate release.
 
+Label results by country, language, route and measured exposure; any regional aggregate must disclose which populations and conditions are represented.
+
 Incoming flow: candidate [Data gates pass].
 
 ### Evidence review complete
 
-Record supported claims, rejected assumptions and unresolved questions. Additional markets, platforms and institutional reporting remain later decisions requiring their own evidence and authorisation; they are not new workstreams in this upgrade. Preserve adverse results and the unchanged scope.
+Record supported claims, rejected assumptions and unresolved questions. Latin America is the product scope. Enabling an additional country or language within it requires applicable evidence and an explicit support statement; it is not excluded from the product vision. Additional platforms and institutional reporting remain later decisions requiring their own evidence and authorisation. Preserve adverse results and the existing seven-section task structure.
 
 Incoming flow: insights.
 
 ### GOAT project and delivery
 
-Authorised now: publish this existing Codus plan as open GitHub issues in the separate private Bimbi-Dev/andes-hackathon repository, team GOAT, and invite Robertzu43 with write access. The seven sections, 63 nodes and 44 task nodes retain their scope. App implementation, provider activation, participant recruitment, trip collection and live pilots have not started.
+Authorised now: publish this existing Codus plan as open GitHub issues in the separate private Bimbi-Dev/andes-hackathon repository, team GOAT, and invite Robertzu43 with write access. The geographic scope now covers drivers across Latin America, including Brazil, in the existing one-or-two-car segment. The seven sections, 63 nodes and 44 task nodes are retained; the regional requirements are incorporated into existing tasks. App implementation, provider activation, participant recruitment, trip collection and live pilots have not started.
 
 ANDES is separate from SurcoCheck, with independent code, configuration, data and delivery ownership. Before starting a section, satisfy its evidence gate. Missing or inconclusive evidence is not a pass. Use issue closure only for completed work supported by evidence. Invitation acceptance must be reported separately from sending the invitation. Hosting deployment, spending and live pilots remain separately scoped.
 
@@ -98,6 +112,8 @@ Smallest proposed collection after separate authorisation: five driver-contact p
 
 Tools: recorded interview/transcript with consent and a spreadsheet timeline with source IDs, observed versus recalled timestamps, contradictions and uncertainty. Compare with their actual WhatsApp/call arrangements and include harmless late replies. Independent criterion: both participants review their own account; a reviewer outside implementation can trace the claimed intervention window to source records. Change/stop: if records show no actionable window, nobody available to act, or no unmet problem, revise the scenario before building. Output: cohort brief, evidence inventory and baseline timelines.
 
+Recruitment eligibility, when authorised, may include drivers from any Latin American country in the one-or-two-car segment; do not require Peru or work-only journeys. Record country, preferred language, journey purpose, route, connectivity and contact arrangement. Select the exploratory cohort from accessible original evidence and report its coverage gaps; five pairs cannot establish regional demand. Preserve Spanish/Portuguese language needs in the handoff even if the first sample covers only one language.
+
 Entry in this section.
 
 Codus node: `pn_mvcq4kwy_8aaba1`
@@ -110,17 +126,21 @@ Method/tools: Chrome remote debugging or Safari Web Inspector, a separate timest
 
 Accept: each promised state has reproducible device evidence, and every unavailable state is explicitly degraded/unsupported. No supported state may imply continuous monitoring after evidence becomes stale. Change: if the critical scenario needs continuous locked-screen capture the web app cannot establish, narrow the promise or record a later native-platform decision; do not add that build now. Outcome: capability matrix with raw logs, limits and repeatable cases.
 
+Tie the capability matrix to the devices, carriers, connectivity and languages represented in the selected Latin American cohort. Device evidence from one setup is not country-wide coverage evidence; keep untested combinations explicit.
+
 Incoming flow: Reconstruct real trip incidents.
 
 Codus node: `pn_mvcq4l8x_bee2e7`
 
 ### Verify channel evidence · #10
 
-Claim: opted-in contacts in the initial country can receive the promised channels and respond. Use current official WhatsApp/SMS/voice documentation and later designated sandbox/test-recipient receipts; document country coverage, account eligibility, templates, consent, costs and callback meanings.
+Claim: opted-in contacts in each proposed launch country can receive the promised channels and respond. The product targets Latin America; assess actual driver and recipient destinations separately, including contacts with an international number. Use current official WhatsApp/SMS/voice documentation and later designated sandbox/test-recipient receipts; document country coverage, account eligibility, templates, consent, costs and callback meanings.
 
 For colleague groups, verify official account eligibility and support for the actual existing-group use case. An API mention alone is not proof our account or group works. Tools: provider dashboard/sandbox, signed webhook logs and a separate recipient observation record. A mock establishes only internal logic.
 
 Accept: every promised channel has traceable message/call IDs, observed recipient arrival and an explicit acknowledgement path. If blocked, preserve the requirement as conditional and plan opted-in individual delivery or stationary manual sharing; no unofficial automation. Freeze fallback order/deadlines only after observed timing and the incident window are known. No live provider activation or outbound contact is authorised by this planning update.
+
+Deliver a country/channel/language matrix with supported, conditional, unavailable and untested states. Include Spanish and Brazilian Portuguese template/voice comprehension, international number formats, delivery evidence and dated provider terms. A working Peru account or sandbox must not be presented as proof of regional availability; keep unverified combinations conditional without removing those drivers from the product vision.
 
 Incoming flow: Test phone capability limits.
 
@@ -136,6 +156,8 @@ Operational burden uses all registered active trip-hours, including sensor/netwo
 
 Zero-tolerance deterministic gates: no forced screen interaction to prevent an alarm while moving; no stale post-resolution escalation; no unsupported wellbeing assertion; no unauthorised route disclosure. Passing scripted cases proves those cases only. Accept the web-first MVP only with these gates and traceable capability limits. If core harm cannot be mitigated within them, simplify the policy or stop the promise.
 
+Freeze the country, language, route and device conditions to which each acceptance threshold applies. Record what must be retested before enabling another combination; do not silently transfer local timings or tolerances to all Latin American drivers.
+
 Incoming flow: Verify channel evidence.
 
 Codus node: `pn_mvcq4lwg_71ec5d`
@@ -145,6 +167,8 @@ Codus node: `pn_mvcq4lwg_71ec5d`
 Use the separate ANDES (hackathon) workspace for team GOAT; select stack and supervised queue after the capability/claim gate. Record which observation, deadline, contact action and consent state each component owns, and attach each architecture choice to a failure scenario. Do not use SurcoCheck as the project, repository or deployment target. No automatic reuse of its municipal code, configuration, data or the obsolete camera hypothesis; no assumed existing routes/files. The Andes repository is Bimbi-Dev/andes-hackathon; Robertzu43 is the authorised write collaborator.
 
 Deliver a small architecture decision record, the check-in/escalation state machine and versioned event contracts. Server-owned timers plus a transactional outbox are required where browser loss must not discard agreed deadlines; external sends run through supervised jobs with reconciliation and observable status. Testability must include deterministic clock/event replay, raw evidence export and exact policy/revision provenance. Independent review must trace every safety constraint to an owner and test. If a constraint has no implementable owner, keep it unresolved before feature build.
+
+Keep country, locale, message templates, channel eligibility and verified emergency guidance configurable. Support international phone identities and explicit time zones; do not hard-code Peru, a single dialling prefix, national document or plate format. Unknown or changed country/channel coverage must use the existing degraded/unavailable states rather than an unsupported safety promise. This extends the existing contracts, not the number of workstreams.
 
 Incoming flow: Set evidence and stop gates.
 
@@ -156,7 +180,7 @@ Available now: the user's original product description; the existing native plan
 
 Not supplied/collected for this mobile hypothesis: original driver/contact interviews, consented real journey traces, communication logs, phone lifecycle measurements, provider receipts, independent incident labels or baseline response/burden measures. Their absence is an evidence gap, not evidence that the hypothesis passes. The smallest acquisition exercise is in Reconstruct real trip incidents; device and channel tasks specify their own missing measurements.
 
-Primary references checked 17 October 2026: MIT STPA methods https://psas.scripts.mit.edu/home/books-and-handbooks/ ; attention/distraction https://www.nhtsa.gov/book/countermeasures-that-work/distracted-driving ; geolocation https://www.w3.org/TR/geolocation/ ; Web Push https://webkit.org/blog/12945/meet-web-push/ . These support methods/platform constraints, not this product's efficacy or compliance in Peru. Previously reviewed device permission reference: https://developer.mozilla.org/en-US/docs/Web/API/DeviceMotionEvent/requestPermission_static . Meta Groups documentation was rate-limited in the earlier review; account/existing-group capability remains unverified. No new customer research has been performed by upgrading this plan.
+Primary references checked 17 October 2026: MIT STPA methods https://psas.scripts.mit.edu/home/books-and-handbooks/ ; attention/distraction https://www.nhtsa.gov/book/countermeasures-that-work/distracted-driving ; geolocation https://www.w3.org/TR/geolocation/ ; Web Push https://webkit.org/blog/12945/meet-web-push/ . These support methods/platform constraints, not this product's efficacy or country-specific compliance anywhere in Latin America. Previously reviewed device permission reference: https://developer.mozilla.org/en-US/docs/Web/API/DeviceMotionEvent/requestPermission_static . Meta Groups documentation was rate-limited in the earlier review; account/existing-group capability remains unverified. No new customer research has been performed by upgrading this plan.
 
 Entry in this section.
 
@@ -167,9 +191,11 @@ Codus node: `pn_mvcq4mpt_a00d76`
 
 ### Validate the mobile journey · #13
 
-Map Home, Cars, Trusted Contacts, Start Trip, Active Trip, Check-in, Alert Status, Contact Response, Trip Summary and Privacy. Use a low-bandwidth Spanish-first clickable flow, large targets, screen-reader labels and clear permission states. Setup takes place while stationary.
+Map Home, Cars, Trusted Contacts, Start Trip, Active Trip, Check-in, Alert Status, Contact Response, Trip Summary and Privacy. Use a low-bandwidth, localisable clickable flow with Spanish and Brazilian Portuguese variants, large targets, screen-reader labels and clear permission states. Include explicit country/language choice and local phone, date and time presentation; language must not be inferred solely from location. Setup takes place while stationary.
 
 Evidence gate: observed task walkthroughs with representative drivers/contacts, screen recordings and teach-back of what “unknown”, last location and alert acknowledgement mean. Every critical task must be completed and limits explained without facilitator rescue; record all confusion before revision. A stationary walkthrough establishes comprehension, not driving safety. Driving interaction requires the separate human-factors gate. Remove typing and any requirement to look/tap while moving to prevent an alarm. A visually polished screen cannot close this task without the observation record.
+
+Validate each enabled language with drivers and contacts who use it, including translated uncertainty and help messages. Preserve layout and accessibility with longer text. Any untested language remains labelled as such; a Spanish-only walkthrough cannot establish suitability for Brazil.
 
 Entry in this section.
 
@@ -181,6 +207,8 @@ Create driver-entered phone verification and one/two-car profiles with a nicknam
 
 Acceptance evidence: designated test-account verification/recovery logs, expired/reused-code cases and cross-driver access tests. The acting driver's explicit trip selection must determine which contacts and car are associated. A second tester must confirm number recycling or shared cars cannot expose another driver's history. Unresolved identity/permission ambiguity blocks trip sharing.
 
+Accept driver-entered international numbers with an explicit country selector and canonical international representation; test at least distinct Latin American numbering patterns including Brazil, plus number changes. Phone-number country, residence and trip country are separate facts. Keep car identification flexible across countries; do not require a Peruvian document or plate pattern. No number-validation fixture proves provider delivery.
+
 Incoming flow: Validate the mobile journey.
 
 Codus node: `pn_mvcq4rrf_96d642`
@@ -191,6 +219,8 @@ Capture accepted/pending/rejected/revoked contacts, channel preferences, escalat
 
 Claim: a named contact is willing and able to take a useful action, not merely reachable. Walk through an unconfirmed-trip scenario and a “cannot assist” response using the contact's current arrangements as baseline. Record comprehension, availability and their chosen safe next action. Accept only if the role and handoff are understood and unavailability has an honest terminal state; acknowledgement is not assumed to mean help. If no contact can act, revise the promise before enrolling that trip. No automated emergency-service dispatch is included.
 
+Store each contact's preferred language, phone-number country and verified reachable channels independently from the driver's country. Confirm mutual understanding of the localised message and agreed action; a foreign number does not imply nearby physical assistance.
+
 Incoming flow: Verify driver and cars.
 
 Codus node: `pn_mvcq4s7y_319dc6`
@@ -200,6 +230,8 @@ Codus node: `pn_mvcq4s7y_319dc6`
 Before departure select car, destination/expected arrival, optional route, planned stops and accepted contacts. Explain the tested capability limits and policy; check permissions while stationary. Server acknowledgement must confirm durable trip and deadline registration before showing monitoring configured.
 
 Test with dropped start responses, offline setup, denied sensors, unavailable channels, refresh and duplicate submit. Accept: the independent observer can reconcile the displayed state with one server trip and one valid deadline; an unknown registration never displays active coverage. A timed-check-in-only mode must name its limits, and lack of contact delivery capability must remain visible. Avoid an unqualified “protected” claim. Unregistered trips cannot be silently treated as covered.
+
+Make departure/destination country context and arrival time zone explicit where relevant; display local times and retain unambiguous instants for server deadlines. Test different device/destination time zones and changed or unknown country coverage. Preserve the existing unsupported/degraded flow when the route or recipient combination lacks evidence, including cross-border trips; do not silently assume home-country coverage.
 
 Incoming flow: Validate the trusted circle.
 
@@ -224,6 +256,8 @@ Schema: event/trip/session ID, sequence, source time, server receipt time, timez
 
 Tooling: versioned data dictionary, labelled JSON fixtures and SQL reconciliation queries. Observer ground truth is stored separately from model/rule outputs and preserves disagreement; do not let an alert label its own “incident”. Acceptance: another engineer reproduces the trip timeline and denominators from raw events, including duplicate, out-of-order and clock-skew cases. If source/receipt times cannot be reconciled, mark uncertain latency instead of inventing precision.
 
+Represent country context, user/contact locale and the provenance or uncertainty of each. Store event instants consistently with an explicit offset and IANA time-zone identifier for local-hour derivation where known. Test offset changes, device-zone mismatch and unknown country/zone without moving an already agreed deadline. Do not infer trip country from the phone prefix.
+
 Entry in this section.
 
 Codus node: `pn_mvcq4wd4_d71f24`
@@ -243,6 +277,8 @@ Codus node: `pn_mvcq4wu8_92366b`
 Attach local hour, elapsed trip time, time since reported break, road segment and mapped curves/rest stops to observations. Preserve map source/version and map-match confidence; cached/batched provider enrichment should not block urgent deadlines.
 
 Compare representative traces with independently reviewed locations, including parallel roads, poor GPS and passing a petrol station without stopping. Accept only matches supported by position uncertainty; otherwise retain unknown context. A nearby station cannot establish a safe stop, and a curve cannot justify pressuring a driver to respond. Geometry/time may inform conservative deferral; they do not establish sleep or crime risk. Reject context rules whose benefit depends on precise map knowledge the phone cannot supply.
+
+Qualify map coverage per country and route, and derive local hour from the observed location/time-zone evidence rather than a fixed Peru offset. Test cross-zone or cross-border context and unknown mappings; unsupported enrichment must not fabricate road risk or block the existing deadline path.
 
 Incoming flow: Qualify phone observations.
 
@@ -368,6 +404,8 @@ Send incident/stage/recipient/channel attempts with the observed status, last lo
 
 Evidence: sandbox/authorised-recipient logs plus recipient screenshots or observation, with IDs and timestamps. Test unavailable channels, expired links, wrong/revoked contacts and language comprehension. Accept: recipients understand what is uncertain and what action is requested; sending fits T_action and never discloses a full route unnecessarily. Unproven channels remain disabled/conditional. This plan edit sends nothing.
 
+Choose verified templates and voice content using the recipient's preferred language and the country/channel support matrix. Test Spanish and Brazilian Portuguese, international recipients and unsupported destinations. A channel proven in one country must remain conditional elsewhere until its delivery and comprehension checks pass.
+
 Incoming flow: Prove durable notification jobs.
 
 Codus node: `pn_mvcq58ts_414113`
@@ -406,7 +444,7 @@ Codus node: `pn_mvcq5a3m_491aa7`
 
 Contact view distinguishes “I’m contacting them”, “Help arranged”, “Cannot assist” and recorded resolution. Name the acting contact, avoid conflicting ownership, and hand off inability explicitly. Send scoped resolution updates only to already-alerted authorised recipients; preserve the event timeline.
 
-Acceptance evidence: independently observed scenario outcome and participant account, not just button clicks. Test unavailable first contact, conflicting reports, accidental acknowledgement and driver offline after help is arranged. Measure time to the predefined useful action and unresolved cases. A contact report is attributed self-report until corroborated. Country-specific emergency guidance requires verification; automated authority dispatch or a rescue guarantee is outside the initial promise.
+Acceptance evidence: independently observed scenario outcome and participant account, not just button clicks. Test unavailable first contact, conflicting reports, accidental acknowledgement and driver offline after help is arranged. Measure time to the predefined useful action and unresolved cases. A contact report is attributed self-report until corroborated. Emergency guidance must be verified for the trip location and shown in a language the recipient understands, with source/date and an explicit unknown-location fallback; never default every country to a Peruvian emergency number; automated authority dispatch or a rescue guarantee is outside the initial promise.
 
 Incoming flow: Gate colleague-group delivery.
 
@@ -417,6 +455,8 @@ Codus node: `pn_mvcq5alm_7d649c`
 Use designated test recipients and real provider sandbox evidence where available. Prelabel the expected result for WhatsApp failure/SMS fallback, unanswered voice/voicemail, explicit acknowledgement, opt-out, all contacts unavailable, ambiguous acceptance, duplicate callback, worker restart and cancellation races. No real emergency is induced.
 
 Tools: provider IDs/receipts, signed webhook log, fake clock for server timing and an independent contact observer. Acceptance: all critical state/privacy invariants hold, each promised route has actual delivery evidence, and action outcomes are reported separately. Capture cost and time by channel; no mock substitutes for physical delivery. Unsupported modes are excluded, failures reopened, and timing beyond T_action requires policy/channel revision.
+
+Execute the applicable cases for each country/channel/language combination proposed for enablement, including different driver/recipient countries. Record the tested carrier/provider/account conditions and exclude extrapolation from a single-country success.
 
 Incoming flow: Verify useful contact action.
 
@@ -537,11 +577,13 @@ Codus node: `pn_mvcq5pql_d275be`
 
 ### Compare a bounded pilot · #37
 
-Future execution after separate authorisation only. Use the initial Peruvian owner-driver cohort and one evidence-selected corridor with accepted contacts. Begin with stationary scenarios and shadow observation; moving interaction requires the human-factors gate. Keep existing safety arrangements available and never induce fatigue, crime or an emergency.
+Future execution after separate authorisation only. Choose a bounded owner-driver cohort and evidence-selected corridor in any Latin American country, with accepted contacts. The product remains region-wide; the pilot records the specific country, language, route, device and provider combinations it tests. Begin with stationary scenarios and shadow observation; moving interaction requires the human-factors gate. Keep existing safety arrangements available and never induce fatigue, crime or an emergency.
 
 Register baseline/current practice, fixed versus adaptive comparison, eligible cases, action ground truth, missing-outcome handling, budgets and stopping rules before looking at outcomes. Proposed 10-20 drivers is feasibility recruitment only; derive duration/sample/exposure from baseline variation and desired precision. Repeated trips are not independent people. Where safe and practical, counterbalance within-driver conditions; label observational comparisons and confounding honestly.
 
 Measure independently observed appropriate-action delay, missed actionable scenarios, unnecessary escalations per registered active trip-hour including coverage gaps, burden, battery/data, cost per monitored trip and trust. Report unresolved outcomes and intervals; do not withhold essential assistance for a control. Immediately pause the affected mode on observed app-induced distraction, a critical privacy error or stale/false reassurance. A small pilot can validate feasibility, not rare-event harm reduction.
+
+Do not inflate recruitment merely to claim regional coverage. Report unrepresented countries/languages and require the relevant capability, channel, comprehension and permission checks before enabling them. A local feasibility result is not evidence of benefit for all Latin American drivers.
 
 Incoming flow: Pilot eligibility reviewed.
 
@@ -554,6 +596,8 @@ Independent review compares H1/H2/H3 evidence to the preregistered contract and 
 Outcomes: proceed with a supported limited promise; simplify to the fixed/stationary policy; revise platform/target scenario; or abandon the failing claim. H3 stays descriptive until independent outcomes and sufficient exposure support more. Preserve negative results and exact exclusions. No automatic hosting launch, spending or scope expansion follows this decision. The GitHub source handover below is already authorised for the finished implementation.
 
 GitHub handover: the owner has authorised publishing this plan as open issues now in Bimbi-Dev/andes-hackathon and inviting Robertzu43 with write access. Keep completed implementation work in this same independent repository and publish it after its applicable checks pass. Check the actual repository owner, remote revision and invitation/access result. Record the repository URL and evidence; a pending invitation is not accepted access. Never publish credentials, participant data or SurcoCheck material. This GitHub handover does not authorise hosting deployment, participant recruitment, messaging-provider activation or new spending.
+
+Record proceed/revise/stop or inconclusive by tested country/channel/language combination, with explicit unsupported conditions. Preserve the Latin American product scope while separating it from the narrower availability and benefit claims established by evidence.
 
 Incoming flow: Compare a bounded pilot.
 
@@ -572,7 +616,7 @@ Codus node: `pn_mvcq5qw1_118b60`
 
 ### Gate voluntary data contribution · #39
 
-This later phase requires the driver-value gate and enough consented observations; it is not needed to judge the MVP. Separate emergency operational sharing from optional research contribution and any later company/authority release. Define purpose, access, retention, withdrawal/export and precise-route handling for the initial country before collection.
+This later phase requires the driver-value gate and enough consented observations; it is not needed to judge the MVP. Separate emergency operational sharing from optional research contribution and any later company/authority release. Define purpose, access, retention, withdrawal/export and precise-route handling for each country where collection is proposed, including relevant data-hosting and transfer arrangements. Review applicable country requirements before enabling collection; do not treat one country's permission as region-wide permission. Provide comprehensible Spanish/Brazilian Portuguese consent for the enabled audience.
 
 Test with consent-state fixtures and participant teach-back: declining contribution must not remove core trip assistance. Verify deletion/withdrawal reaches derived datasets where applicable, and explain any irreversibly aggregated outputs. A privacy reviewer independently checks access and re-identification risks. Missing lawful/understood permission or an unresolved precise-location exposure blocks collection/release. No country-specific compliance claim is established by this plan.
 
@@ -586,6 +630,8 @@ Separate operational records from a minimised pseudonymised contribution stream 
 
 Tools: versioned schema and SQL reconciliation against raw operational fixtures. Accept when another analyst can reconstruct each included/excluded event and trace consent and outcome labels. Avoid circular labels: a lost-contact alert cannot be the ground truth for crime/fatigue. Failure to distinguish source evidence or honour withdrawal blocks aggregation, not merely a chart refresh.
 
+Retain country, language, route coverage and source time-zone lineage with consent provenance. Keep unknown geography explicit; regional pooling must not erase which population supplied the observations.
+
 Incoming flow: Gate voluntary data contribution.
 
 Codus node: `pn_mvcq5fw1_d523dd`
@@ -595,6 +641,8 @@ Codus node: `pn_mvcq5fw1_d523dd`
 H3 claim: data can describe observed check-in patterns by local hour and road context, within measured coverage. Use nonresponse per delivered prompt with explicit unknown-delivery counts; report suppression/eligibility separately. Distinguish delivery-to-response from perception latency. Define tiredness as self-report per observed trip/driver-hour with reporting opportunities, not as proven sleep.
 
 Independently corroborated incidents may use trips or covered kilometres only when numerator/outcome linkage and exposure are adequate. SQL/Python analysis must show independent drivers, trips, coverage/missingness and uncertainty alongside every rate. A second analyst must reproduce a small hand-labelled fixture and then the analysis from raw events. If a denominator or outcome is absent, withhold the rate/ranking rather than fill gaps with inferred danger.
+
+Publish country/route/language coverage and denominators before any Latin America aggregate. Pool only comparable measures with an explicit rationale; expose uneven coverage and never present one country's observed rate as representative of the region.
 
 Incoming flow: Preserve analytical provenance.
 
@@ -608,6 +656,8 @@ Hold out whole drivers/journeys or route-time blocks to match the intended claim
 
 Accept: an independent analyst reproduces results and their sensitivity; unsupported or sparse cells remain unranked. If the signal disappears after policy/exposure accounting, report a measurement artefact and abandon the road-risk claim. No experiment may increase distracting prompts to obtain labels.
 
+Check country, language, carrier and route selection as possible sources of missingness or response differences. Keep unsupported or sparse country comparisons unranked; a larger pooled count does not repair absent country-level evidence.
+
 Incoming flow: Define honest rates and intervals.
 
 Codus node: `pn_mvcq5gx4_dcdd0b`
@@ -617,6 +667,8 @@ Codus node: `pn_mvcq5gx4_dcdd0b`
 Release tiers: (1) observed response/coverage patterns; (2) attributed tiredness reports; (3) separately corroborated incident associations. Each has source, denominator, uncertainty, coverage window, policy version and limits. Tier 1 cannot be titled “most dangerous hours/roads”; delays near a curve or station are not evidence of crime or sleep.
 
 Before a stronger claim, compare independent outcomes whose provenance and time/location linkage were assessed without using our alert as the label. Preserve disagreements and missing outcomes. Independent methodology/privacy review must reproduce the result and approve its wording. Small/sparse data or absent ground truth keeps the report descriptive or withheld. Authorities/companies receive only specifically approved aggregates; individual evidence export is a separate driver choice.
+
+State the countries, languages, routes and observation window actually represented. Regional wording requires justified coverage and comparability; local observations must remain local claims, with approved recipients and country-specific release conditions recorded.
 
 Incoming flow: Test policy bias and privacy.
 
