@@ -49,7 +49,7 @@ Not done: live sends, deployment, phone capture, voice/free-text trip extraction
 
 `codex/aws-durable-backend` is the integration branch: Sebastian's client and web PRs (#55–#65) target it. Open PRs:
 - **#74** `hackathon/delivery` → `codex/aws-durable-backend`: Part 1, demo personas, one-phone live allowlist, deploy script, submission draft. Under review by Robert's gatekeeper; needs Sebastian's approval on the exact head.
-- **#76** `hackathon/insights` → `hackathon/delivery` (stacked): Part 2 merged in. 80/80 tests pass, and the linux/amd64 image was run locally end to end (`/mapa`, seeded hotspots, check → escalation).
+- **#76** `hackathon/insights` → `codex/aws-durable-backend`, merge after #74 (it contains #74): Part 2 merged in. On hold until ef's privacy and SOS-safety fixes land in a PR into `hackathon/insights`. 80/80 tests pass, and the linux/amd64 image was run locally end to end (`/mapa`, seeded hotspots, check → escalation).
 - After these, the integration branch goes to `main` through #61 for judging.
 
 Expected merge conflicts are trivial:
