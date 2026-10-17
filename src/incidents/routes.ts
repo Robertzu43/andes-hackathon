@@ -4,27 +4,17 @@ import type pg from 'pg';
 import { owner, problem, type ChannelSupport, type Trip } from '../contracts.js';
 import { withTripTransaction, type Context } from '../db.js';
 import { idempotent } from '../api/mutations.js';
+import { createIncident } from './create.js';
 import { empty, idParams, object, text } from '../api/schemas.js';
 export function incidentRoutes(app: FastifyInstance, ctx: Context, support: ChannelSupport[]) {
   app.post('/v1/trips/:id/sos', { schema: { params: idParams, body: empty } }, request => withTripTransaction(ctx, (request.params as { id: string }).id, async (client, trip) => {
     owner(trip, request.actor);
     return idempotent(ctx, client, request, async () => {
-      let incident = (await client.query("SELECT id FROM incidents WHERE trip_id=$1 AND status='active'", [trip.id])).rows[0];
-      if (!incident) {
-        const now = ctx.clock(); const id = randomUUID();
-        await client.query('INSERT INTO incidents(id,trip_id,driver_id,created_at) VALUES($1,$2,$3,$4)', [id, trip.id, request.actor.id, now]); incident = { id };
-        const grants = (await client.query(`SELECT cg.id,cg.contact_id,cg.phone,i.phone AS verified_phone,i.phone_verified FROM trip_grants tg JOIN contact_grants cg ON cg.id=tg.grant_id JOIN identities i ON i.id=cg.contact_id WHERE tg.trip_id=$1 AND tg.revoked_at IS NULL AND cg.accepted_at IS NOT NULL AND cg.revoked_at IS NULL AND cg.incident_accepted`, [trip.id])).rows;
-        for (const grant of grants) for (const channel of ['sms', 'whatsapp', 'voice'] as const) {
-          const enabled = support.some(s => s.channel === channel && s.country === trip.country && s.locale === trip.locale);
-          const reason = !grant.phone_verified || grant.phone !== grant.verified_phone ? 'verified_phone_mismatch' : !enabled ? 'country_channel_locale_unqualified' : null;
-          const jobId = randomUUID();
-          // shortcut: 15-minute synthetic dispatch lifetime; qualify channel deadlines before live enablement.
-          await client.query(`INSERT INTO jobs(id,trip_id,incident_id,grant_id,recipient_id,channel,class,status,unavailable_reason,created_at,due_at,expires_at) VALUES($1,$2,$3,$4,$5,$6,'emergency',$7,$8,$9,$9,$10)`,
-            [jobId, trip.id, incident.id, grant.id, grant.contact_id, channel, reason ? 'unavailable' : 'pending', reason, now, new Date(now.getTime() + 900000)]);
-          if (!reason) await client.query('INSERT INTO outbox(id,job_id,job_version,class,created_at,next_publish_at) VALUES($1,$2,1,\'emergency\',$3,$3)', [randomUUID(), jobId, now]);
-        }
-        await client.query(`INSERT INTO jobs(id,trip_id,incident_id,channel,class,status,unavailable_reason,created_at,due_at) VALUES($1,$2,$3,'group','emergency','unavailable','group_support_unverified',$4,$4)`, [randomUUID(), trip.id, incident.id, now]);
-      }
+      let incident = (await client.query("SELECT id,trigger FROM incidents WHERE trip_id=$1 AND status='active'", [trip.id])).rows[0];
+      if (!incident) incident = { id: await createIncident(client, trip, 'sos', null, support, ctx.clock()) };
+      // ponytail: pending missed-check jobs pick up SOS wording at authorization; re-notify sent ones later.
+      else if (incident.trigger === 'missed_check') await client.query("UPDATE incidents SET trigger='sos' WHERE id=$1", [incident.id]);
+      await client.query("UPDATE security_checks SET status='escalated',incident_id=$2,closed_at=$3 WHERE trip_id=$1 AND status='asking'", [trip.id, incident.id, ctx.clock()]);
       await client.query("INSERT INTO incident_events VALUES($1,$2,$3,'sos_report',NULL,$4)", [randomUUID(), incident.id, request.actor.id, ctx.clock()]);
       return { id: incident.id, tripId: trip.id, status: 'active', groupCapability: 'unavailable' };
     });
