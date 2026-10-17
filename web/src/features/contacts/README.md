@@ -110,10 +110,42 @@ own successful action receipts in memory. Rendering other people's reports or
 reconciling disputes requires41's actual read contract. Real auth/session integration
 awaits45; UI awaits49; auth/privacy review belongs43 and functional UI review52.
 
-The tests are isolated synthetic transport receipts and failure/race probes. They
-are not signed-JWT/PostgreSQL integration, provider delivery, consent comprehension,
-physical-device, qualification or safety evidence. Real identity/session transport,
-data retention/deletion policy and human/device gates remain open. No live backend,
-participants, notifications, recruitment, spending, deployment or collection is used.
+The standalone unit tests use synthetic transport receipts and failure/race probes.
+They do not prove backend authentication. The persisted scenarios below add real
+signed-JWT and PostgreSQL integration with invented identities. Browser OIDC login,
+lane45's actual transport, data retention/deletion policy and human/device gates
+remain open. Neither suite proves provider delivery, consent comprehension,
+physical-device capability, qualification or safety. No participants, notifications,
+recruitment, spending, deployment or collection is used.
+
+## Persisted driver/contact role-switch scenarios
+
+With Node24–26 and local PostgreSQL15+ binaries, from the repository root:
+
+```sh
+npm ci --ignore-scripts --no-audit --no-fund
+node web/tests/contacts/run-persisted.mjs
+```
+
+The bounded runner builds the unchanged backend and creates a disposable cluster
+under a fresh private `/private/tmp/andes-l51-*` directory. PostgreSQL listens only
+on that private Unix socket, not TCP; it does not connect to an existing database.
+The runner supplies its own synthetic TEST_DATABASE_URL, forces live-send permission
+off, stops its child database and deletes the temporary cluster afterward. The
+default binaries are `/opt/homebrew/bin/postgres` and `/opt/homebrew/bin/initdb`;
+override `ANDES_TEST_POSTGRES` / `ANDES_TEST_INITDB` with local executable paths.
+Each scenario additionally uses the backend helper's unique disposable SQL schema.
+Without an explicit test DB, the normal test glob visibly skips these three cases.
+
+The three persisted cases use the actual Fastify routes, PostgreSQL transactions
+and signed synthetic JWT verification. They verify narrowed consent denies maps;
+unverified-phone acceptance fails; acknowledgement and contradictory reported
+actions persist separately while SOS remains active after arrival; trip-only
+revocation permits a different trip while standing revocation denies future trips;
+and fresh browser controllers cannot recover revoked protected data. Forging only
+the local view/identity never replaces the JWT: contact credentials cannot resolve,
+stranger credentials cannot read, and only the driver's credential resolves before
+fresh contact reads observe resolution. Calls use Fastify injection, not an external
+network server, OIDC login, AWS, a provider adapter or a production account.
 
 Refs #15, #35, #14. No issue completion is implied.
