@@ -28,6 +28,8 @@ Each issue has one accountable owner. Sebastian (`sebasbimbi`, 20 issues) owns d
 
 ## Product and evidence
 
+Robert’s [issue-by-issue backend roadmap](docs/superpowers/plans/2026-10-17-robert-issue-roadmap.md) links 24 proposed implementation plans, shared contracts, the integration order and subagent review workflow. These are planning artifacts; original evidence gates and open issue states remain unchanged. Robert delegated the architecture decision: [ADR-002](docs/architecture/ADR-002-aws-durable-dispatch.md) selects AWS ECS/Fargate, RDS PostgreSQL and SQS, with independent channel attempts and nonblocking trip/map closure. No runtime deployment or capacity is claimed.
+
 Project: ANDES (hackathon). Team: GOAT. This project has its own workspace and GitHub repository, separate from SurcoCheck.
 
 Product scope: independent freight truck drivers and owner-operators across Latin America, including Brazil, who typically own or operate one or two trucks (camiones/caminhões). The individual driver is the primary customer. Freight transport is the target use case, covering local and interurban haulage; a corporate fleet account or control centre is not required. The product is designed around the phone and trusted contacts the driver already has.

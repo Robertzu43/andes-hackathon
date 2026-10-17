@@ -1,5 +1,7 @@
 # Complete Andes plan
 
+Current local architecture decision: [ADR-002](architecture/ADR-002-aws-durable-dispatch.md), selected by Robert’s delegation, supersedes earlier implementation assumptions about global dispatch fencing, closure ordering and single-channel routing. The original issue text below remains a provenance snapshot; issue owners/blockers/evidence gates and remote issue states are not changed by the design decision.
+
 All 63 original nodes are retained below. The 44 task nodes map to GitHub issues; the 19 actions/notes remain explicit flow, gates and context.
 
 <a id="root"></a>
