@@ -1,0 +1,398 @@
+{
+  "runtime": "3.14.7 (main, Aug  5 2026, 10:29:49) [Clang 21.0.0 (clang-2100.1.1.101)]",
+  "archive": "git archive 01519d8275b28caf88091feca07247622eace973",
+  "total": 40,
+  "passed": 11,
+  "failed": [
+    "self-report-contact-nonmessage-account",
+    "metadata-unknown-dozed_off_report",
+    "metadata-unknown-rest_difficulty",
+    "metadata-unknown-rest_end",
+    "metadata-unknown-rest_start",
+    "metadata-unknown-robbery",
+    "metadata-unknown-robbery_attempt",
+    "metadata-unknown-security_concern",
+    "metadata-unknown-tiredness_report",
+    "consent-refusal-private",
+    "redaction-status-private",
+    "comma-coordinates",
+    "dms-coordinates",
+    "short-date",
+    "portuguese-date",
+    "lowercase-plate",
+    "argentine-plate",
+    "mexican-plate",
+    "bare-map-link",
+    "bare-short-link",
+    "id-plate",
+    "id-phone",
+    "id-date",
+    "invalid-id-diagnostic-private",
+    "complaint-filing-clock",
+    "exclusive-none-channel",
+    "oversized-csv-diagnostic",
+    "no-zone-database-export-warning",
+    "author-baseline-without-zone-database"
+  ],
+  "results": [
+    {
+      "case": "baseline",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/baseline/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "self-report-contact-interview",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): self_reported needs the participant's own attributed account (their interview or a message they wrote)\n"
+    },
+    {
+      "case": "self-report-contact-interview-plus-metadata",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 33 (SYN-A-W-E99): self_reported needs the participant's own attributed account (their interview or a message they wrote)\n"
+    },
+    {
+      "case": "self-report-own-interview",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/self-report-own-interview/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "self-report-contact-supplied-message",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/self-report-contact-supplied-message/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "self-report-contact-nonmessage-account",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/self-report-contact-nonmessage-account/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "self-report-own-nonmessage-account-control",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/self-report-own-nonmessage-account-control/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "metadata-unknown-dozed_off_report",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/metadata-unknown-dozed_off_report/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "metadata-unknown-rest_difficulty",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/metadata-unknown-rest_difficulty/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "metadata-unknown-rest_end",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/metadata-unknown-rest_end/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "metadata-unknown-rest_start",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/metadata-unknown-rest_start/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "metadata-unknown-robbery",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/metadata-unknown-robbery/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "metadata-unknown-robbery_attempt",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/metadata-unknown-robbery_attempt/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "metadata-unknown-security_concern",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/metadata-unknown-security_concern/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "metadata-unknown-tiredness_report",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/metadata-unknown-tiredness_report/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "metadata-unknown-contact-control",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/metadata-unknown-contact-control/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "consent-refusal-private",
+      "expected": "accept",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 1 case(s) to <review-output>/consent-refusal-private/actual-export.json; excluded 2.\n  excluded SYN-A-O: redaction_status is in_progress\n  excluded SYN-B-W: SYN-B-C consent_share_redacted is no\n",
+      "stderr": ""
+    },
+    {
+      "case": "redaction-status-private",
+      "expected": "accept",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/redaction-status-private/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "cp1252-diagnostic",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  participants.csv: is not valid UTF-8; save it again as CSV UTF-8 (Excel: Save As → CSV UTF-8 (delimitado por comas))\n  sources.csv line 2 (SYN-A-W-S1): provided_by SYN-A-D is not a participant in pair SYN-A\n  sources.csv line 3 (SYN-A-W-S2): provided_by SYN-A-C is not a participant in pair SYN-A\n  sources.csv line 4 (SYN-A-W-S3): provided_by SYN-A-C is not a participant in pair SYN-A\n  sources.csv line 5 (SYN-A-W-S4): provided_by SYN-A-C is not a participant in pair SYN-A\n  sources.csv line 6 (SYN-A-O-S1): provided_by SYN-A-D is not a participant in pair SYN-A\n  sources.csv line 7 (SYN-A-O-S2): provided_by SYN-A-C is not a participant in pair SYN-A\n  sources.csv line 8 (SYN-A-O-S3): provided_by SYN-A-C is not a participant in pair SYN-A\n  sources.csv line 9 (SYN-B-W-S1): provided_by SYN-B-D is not a participant in pair SYN-B\n  sources.csv line 10 (SYN-B-W-S2): provided_by SYN-B-C is not a participant in pair SYN-B\n  sources.csv line 11 (SYN-B-W-S3): provided_by SYN-B-C is not a participant in pair SYN-B\n  sources.csv line 12 (SYN-B-W-S4): provided_by SYN-B-D is not a participant in pair SYN-B\n  timeline.csv line 2 (SYN-A-W-E01): reported_by SYN-A-D is not a participant in pair SYN-A\n  timeline.csv line 2 (SYN-A-W-E01): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 4 (SYN-A-W-E03): reported_by SYN-A-D is not a participant in pair SYN-A\n  timeline.csv line 4 (SYN-A-W-E03): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 5 (SYN-A-W-E04): reported_by SYN-A-D is not a participant in pair SYN-A\n  timeline.csv line 5 (SYN-A-W-E04): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 6 (SYN-A-W-E05): reported_by SYN-A-D is not a participant in pair SYN-A\n  timeline.csv line 6 (SYN-A-W-E05): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 7 (SYN-A-W-E06): reported_by SYN-A-D is not a participant in pair SYN-A\n  timeline.csv line 7 (SYN-A-W-E06): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 8 (SYN-A-W-E07): reported_by SYN-A-C is not a participant in pair SYN-A\n  timeline.csv line 8 (SYN-A-W-E07): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 9 (SYN-A-W-E18): reported_by SYN-A-C is not a participant in pair SYN-A\n  timeline.csv line 10 (SYN-A-W-E08): reported_by SYN-A-C is not a participant in pair SYN-A\n  timeline.csv line 10 (SYN-A-W-E08): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 11 (SYN-A-W-E09): reported_by SYN-A-C is not a participant in pair SYN-A\n  timeline.csv line 11 (SYN-A-W-E09): a suspicion needs the participant who held it in reported_by\n  timeline.csv line 14 (SYN-A-W-E12): reported_by SYN-A-C is not a participant in pair SYN-A\n  timeline.csv line 14 (SYN-A-W-E12): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 15 (SYN-A-W-E13): reported_by SYN-A-C is not a participant in pair SYN-A\n  timeline.csv line 17 (SYN-A-W-E15): reported_by SYN-A-C is not a participant in pair SYN-A\n  timeline.csv line 17 (SYN-A-W-E15): reported_second_hand needs the participant repeating the account in reported_by\n  timeline.csv line 18 (SYN-A-W-E16): reported_by SYN-A-C is not a participant in pair SYN-A\n  timeline.csv line 18 (SYN-A-W-E16): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 19 (SYN-A-W-E17): reported_by SYN-A-D is not a participant in pair SYN-A\n  timeline.csv line 19 (SYN-A-W-E17): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 20 (SYN-A-O-E01): reported_by SYN-A-D is not a participant in pair SYN-A\n  timeline.csv line 20 (SYN-A-O-E01): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 21 (SYN-A-O-E02): reported_by SYN-A-C is not a participant in pair SYN-A\n  timeline.csv line 21 (SYN-A-O-E02): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 22 (SYN-A-O-E03): reported_by SYN-A-C is not a participant in pair SYN-A\n  timeline.csv line 22 (SYN-A-O-E03): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 24 (SYN-A-O-E05): reported_by SYN-A-D is not a participant in pair SYN-A\n  timeline.csv line 24 (SYN-A-O-E05): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 25 (SYN-B-W-E01): reported_by SYN-B-D is not a participant in pair SYN-B\n  timeline.csv line 25 (SYN-B-W-E01): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 26 (SYN-B-W-E02): reported_by SYN-B-D is not a participant in pair SYN-B\n  timeline.csv line 26 (SYN-B-W-E02): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 28 (SYN-B-W-E04): reported_by SYN-B-D is not a participant in pair SYN-B\n  timeline.csv line 30 (SYN-B-W-E06): reported_by SYN-B-C is not a participant in pair SYN-B\n  timeline.csv line 31 (SYN-B-W-E07): reported_by SYN-B-C is not a participant in pair SYN-B\n  timeline.csv line 31 (SYN-B-W-E07): self_reported needs the participant whose account it is in reported_by\n  timeline.csv line 32 (SYN-B-W-E08): reported_by SYN-B-D is not a participant in pair SYN-B\n  timeline.csv line 32 (SYN-B-W-E08): self_reported needs the participant whose account it is in reported_by\n  cases.csv line 2 (SYN-A-W): pair_id SYN-A has no enrolled participants\n  cases.csv line 3 (SYN-A-O): pair_id SYN-A has no enrolled participants\n  cases.csv line 4 (SYN-B-W): pair_id SYN-B has no enrolled participants\n"
+    },
+    {
+      "case": "es-419-coverage",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/es-419-coverage/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "comma-coordinates",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/comma-coordinates/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "space-coordinates",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain a phone number; redact it before export\n"
+    },
+    {
+      "case": "dms-coordinates",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/dms-coordinates/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "short-date",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/short-date/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "portuguese-date",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/portuguese-date/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "lowercase-plate",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/lowercase-plate/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "argentine-plate",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/argentine-plate/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "mexican-plate",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/mexican-plate/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "bare-map-link",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/bare-map-link/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "bare-short-link",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/bare-short-link/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "https-link-control",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain a link; redact it before export\n"
+    },
+    {
+      "case": "id-plate",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/id-plate/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "id-phone",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/id-phone/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "id-date",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/id-date/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "invalid-id-diagnostic-private",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  participants.csv line 5 (SYNTHETIC PRIVATE NAME): participant_id must use capital letters, digits and hyphens, with at least one letter (found 'SYNTHETIC PRIVATE NAME')\n  sources.csv line 10 (SYN-B-W-S2): provided_by must use capital letters, digits and hyphens, with at least one letter (found 'SYNTHETIC PRIVATE NAME')\n  sources.csv line 11 (SYN-B-W-S3): provided_by must use capital letters, digits and hyphens, with at least one letter (found 'SYNTHETIC PRIVATE NAME')\n  timeline.csv line 30 (SYN-B-W-E06): reported_by must use capital letters, digits and hyphens, with at least one letter (found 'SYNTHETIC PRIVATE NAME')\n  timeline.csv line 31 (SYN-B-W-E07): reported_by must use capital letters, digits and hyphens, with at least one letter (found 'SYNTHETIC PRIVATE NAME')\n"
+    },
+    {
+      "case": "complaint-filing-clock",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/complaint-filing-clock/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "exclusive-none-channel",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/exclusive-none-channel/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "oversized-csv-diagnostic",
+      "expected": "reject",
+      "passed": false,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"<candidate-archive>/evidence/incident_kit.py\", line 845, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"<candidate-archive>/evidence/incident_kit.py\", line 829, in main\n    result, report = export(args.folder)\n                     ~~~~~~^^^^^^^^^^^^^\n  File \"<candidate-archive>/evidence/incident_kit.py\", line 738, in export\n    data, report = check(folder)\n                   ~~~~~^^^^^^^^\n  File \"<candidate-archive>/evidence/incident_kit.py\", line 568, in check\n    tables = read_tables(Path(folder), report)\n  File \"<candidate-archive>/evidence/incident_kit.py\", line 277, in read_tables\n    for raw in reader:\n               ^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/csv.py\", line 177, in __next__\n    row = next(self.reader)\n_csv.Error: field larger than field limit (131072)\n"
+    },
+    {
+      "case": "no-zone-database-export-warning",
+      "expected": "accept",
+      "passed": false,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/no-zone-database-export-warning/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction_status is in_progress\n",
+      "stderr": ""
+    },
+    {
+      "case": "author-baseline-without-zone-database",
+      "expected": "suite pass",
+      "passed": false,
+      "cli_exit": 1,
+      "stdout": "",
+      "stderr": "F\n======================================================================\nFAIL: test_fixture_passes_with_only_the_expected_warning (test_incident_kit.SyntheticCohortTest.test_fixture_passes_with_only_the_expected_warning)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"<candidate-archive>/evidence/test_incident_kit.py\", line 37, in test_fixture_passes_with_only_the_expected_warning\n    self.assertEqual(report.warnings, [\"pair SYN-B: has no ordinary-trip case\"])\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Lists differ: ['time zones: no time-zone database found, [80 chars]ase'] != ['pair SYN-B: has no ordinary-trip case']\n\nFirst differing element 0:\n'time zones: no time-zone database found, [38 chars]cked'\n'pair SYN-B: has no ordinary-trip case'\n\nFirst list contains 1 additional elements.\nFirst extra element 1:\n'pair SYN-B: has no ordinary-trip case'\n\n- ['time zones: no time-zone database found, so zone names and offsets were not '\n-  'checked',\n-  'pair SYN-B: has no ordinary-trip case']\n? ^\n\n+ ['pair SYN-B: has no ordinary-trip case']\n? ^\n\n\n----------------------------------------------------------------------\nRan 1 test in 0.002s\n\nFAILED (failures=1)\n"
+    }
+  ]
+}

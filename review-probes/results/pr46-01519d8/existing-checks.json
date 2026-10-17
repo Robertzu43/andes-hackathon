@@ -1,0 +1,44 @@
+[
+  {
+    "runtime": "Python 3.14.7",
+    "check": "suite",
+    "exit": 0,
+    "stdout_tail": "",
+    "stderr_tail": "..........................................................\n----------------------------------------------------------------------\nRan 58 tests in 0.192s\n\nOK\n"
+  },
+  {
+    "runtime": "Python 3.14.7",
+    "check": "existing-13",
+    "exit": 0,
+    "stdout_tail": "ed the named participant's own attributed account (an untimestamped source)\"], \"cli_exit\": 1}\n{\"case\": \"driver_message_supplied_by_contact\", \"expected\": \"accept\", \"actual\": \"accept\", \"errors\": [], \"cli_exit\": 0}\n{\"case\": \"gps_stop_remains_observation\", \"expected\": \"accept\", \"actual\": \"accept\", \"errors\": [], \"cli_exit\": 0}\n{\"case\": \"pt_PT_does_not_cover_pt_BR\", \"expected\": \"accept\", \"actual\": \"accept\", \"errors\": [], \"cli_exit\": 0}\n{\"case\": \"pt_PT_does_not_cover_pt_BR\", \"expected_gap\": \"Brazilian Portuguese (pt-BR) not represented\", \"actual_gaps\": [\"Brazilian Portuguese (pt-BR) not represented\", \"Android not represented\"], \"coverage_check_passed\": true}\n{\"total\": 13, \"unexpected_results\": []}\n",
+    "stderr_tail": ""
+  },
+  {
+    "runtime": "Python 3.14.7",
+    "check": "recall-2",
+    "exit": 0,
+    "stdout_tail": "al-export.json; excluded 1.\\n  excluded SYN-A-O: redaction_status is in_progress\\n\", \"stderr\": \"\", \"event\": {\"event_id\": \"SYN-A-W-E07\", \"seq\": 7, \"event_type\": \"checkin_due\", \"actor\": \"contact\", \"reported_by\": \"SYN-A-C\", \"occurrence\": \"self_reported\", \"source_ids\": [\"SYN-A-W-S1\", \"SYN-A-W-S5\"], \"basis_source_id\": null, \"basis_note\": null, \"time_basis\": \"recalled\", \"time_zone\": \"America/Sao_Paulo\", \"observed_offset_min\": null, \"observed_source_id\": null, \"recalled_offset_min\": {\"earliest\": 420, \"latest\": 450}, \"recall_gap_min\": null, \"conflicts_with\": [], \"knew\": \"SYNTHETIC: expected a message once the driver was back on the road after about an hour\", \"note\": null}, \"expected_outcome\": true}\n",
+    "stderr_tail": ""
+  },
+  {
+    "runtime": "Python 3.9.6",
+    "check": "suite",
+    "exit": 0,
+    "stdout_tail": "",
+    "stderr_tail": "..........................................................\n----------------------------------------------------------------------\nRan 58 tests in 0.232s\n\nOK\n"
+  },
+  {
+    "runtime": "Python 3.9.6",
+    "check": "existing-13",
+    "exit": 0,
+    "stdout_tail": "ed the named participant's own attributed account (an untimestamped source)\"], \"cli_exit\": 1}\n{\"case\": \"driver_message_supplied_by_contact\", \"expected\": \"accept\", \"actual\": \"accept\", \"errors\": [], \"cli_exit\": 0}\n{\"case\": \"gps_stop_remains_observation\", \"expected\": \"accept\", \"actual\": \"accept\", \"errors\": [], \"cli_exit\": 0}\n{\"case\": \"pt_PT_does_not_cover_pt_BR\", \"expected\": \"accept\", \"actual\": \"accept\", \"errors\": [], \"cli_exit\": 0}\n{\"case\": \"pt_PT_does_not_cover_pt_BR\", \"expected_gap\": \"Brazilian Portuguese (pt-BR) not represented\", \"actual_gaps\": [\"Brazilian Portuguese (pt-BR) not represented\", \"Android not represented\"], \"coverage_check_passed\": true}\n{\"total\": 13, \"unexpected_results\": []}\n",
+    "stderr_tail": ""
+  },
+  {
+    "runtime": "Python 3.9.6",
+    "check": "recall-2",
+    "exit": 0,
+    "stdout_tail": "al-export.json; excluded 1.\\n  excluded SYN-A-O: redaction_status is in_progress\\n\", \"stderr\": \"\", \"event\": {\"event_id\": \"SYN-A-W-E07\", \"seq\": 7, \"event_type\": \"checkin_due\", \"actor\": \"contact\", \"reported_by\": \"SYN-A-C\", \"occurrence\": \"self_reported\", \"source_ids\": [\"SYN-A-W-S1\", \"SYN-A-W-S5\"], \"basis_source_id\": null, \"basis_note\": null, \"time_basis\": \"recalled\", \"time_zone\": \"America/Sao_Paulo\", \"observed_offset_min\": null, \"observed_source_id\": null, \"recalled_offset_min\": {\"earliest\": 420, \"latest\": 450}, \"recall_gap_min\": null, \"conflicts_with\": [], \"knew\": \"SYNTHETIC: expected a message once the driver was back on the road after about an hour\", \"note\": null}, \"expected_outcome\": true}\n",
+    "stderr_tail": ""
+  }
+]
