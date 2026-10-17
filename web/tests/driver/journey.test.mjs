@@ -1,0 +1,368 @@
+// Synthetic controller/contract tests. Not physical, provider or persisted-backend evidence.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createDriverJourney } from '../../src/features/driver/controller.mjs';
+import { FIELD_NAMES } from '../../src/features/driver/validation.mjs';
+
+const ids = Object.fromEntries(['actor', 'other', 'truck', 'truck2', 'truck3', 'draft', 'grant', 'pending', 'revoked', 'incident', 'elsewhere']
+  .map((name, n) => [name, `a0000000-0000-4000-8000-${String(n + 1).padStart(12, '0')}`]));
+const WALL = Date.parse('2026-10-17T12:00:00Z');
+const fields = { truckId: ids.truck, origin: 'Lima', destination: 'Cusco', country: 'PE', locale: 'es-PE', timeZone: 'America/Lima' };
+const ok = (data) => ({ kind: 'ok', data });
+const rejected = (status, code) => ({ kind: 'rejected', status, code });
+const deferred = () => { let resolve; let reject; const promise = new Promise((a, b) => { resolve = a; reject = b; }); return { promise, resolve, reject }; };
+const settle = () => new Promise((resolve) => setImmediate(resolve));
+
+function fixture(options = {}) {
+  let wall = WALL;
+  let nextTimer = 0;
+  let nextKey = 0;
+  const timers = new Map();
+  const calls = [];
+  const handlers = {};
+  const server = {
+    draft: null, trip: null, incident: null,
+    snapshot: { tripId: ids.draft, location: {
+      capturedAt: '2026-10-17T11:55:00Z', receivedAt: '2026-10-17T11:56:00Z',
+      latitude: -12, longitude: -77, accuracy: 40 },
+    freshness: 'stale', ageMs: 300_000, readAt: '2026-10-17T12:00:00Z' },
+  };
+  const defaultReply = (request) => {
+    const { operation, params, body } = request;
+    if (operation === 'createTruck') return ok({ id: ids.truck2 });
+    if (operation === 'createDraft') {
+      server.draft = { id: ids.draft, status: 'draft', rawText: body.text, fields: structuredClone(body.fields),
+        missingFields: FIELD_NAMES.filter((key) => !body.fields[key]) };
+      return ok(structuredClone(server.draft));
+    }
+    if (operation === 'confirmDraft') {
+      server.trip = { id: params.id, driver_id: ids.actor, truck_id: body.fields.truckId,
+        ...body.fields, time_zone: body.fields.timeZone, status: 'active', paused: false,
+        map_active: true, checkins_active: true, version: 1, created_at: '2026-10-17T12:00:00Z', closed_at: null };
+      return ok({ id: params.id, status: 'active', fields: structuredClone(body.fields) });
+    }
+    if (operation === 'command') {
+      if (body.type === 'arrived' || body.type === 'cancel') Object.assign(server.trip, {
+        status: body.type === 'arrived' ? 'arrived' : 'cancelled', map_active: false, checkins_active: false,
+        closed_at: '2026-10-17T12:30:00Z', version: server.trip.version + 1 });
+      if (body.type === 'pause' || body.type === 'resume') Object.assign(server.trip, {
+        paused: body.type === 'pause', checkins_active: body.type === 'resume', version: server.trip.version + 1 });
+      return ok({ id: params.id, command: body.type, automaticEscalation: false });
+    }
+    if (operation === 'sos') {
+      server.incident ??= { id: ids.incident, tripId: params.id, status: 'active', groupCapability: 'unavailable' };
+      return ok(structuredClone(server.incident));
+    }
+    if (operation === 'readTrip') return server.trip ? ok(structuredClone(server.trip)) : rejected(404, 'trip_not_found');
+    if (operation === 'readSnapshot') return server.trip?.map_active ? ok(structuredClone(server.snapshot)) : rejected(403, 'map_inactive');
+    if (operation === 'readIncident') return ok({ ...server.incident, createdAt: '2026-10-17T12:05:00Z', resolvedAt: null });
+    throw new Error('No synthetic response for operation');
+  };
+  const config = {
+    transport: async (request, { signal }) => {
+      calls.push({ request: structuredClone(request), signal });
+      return handlers[request.operation] ? handlers[request.operation](request, signal) : defaultReply(request);
+    }, clock: () => wall, keyFactory: () => `synthetic-intent-${++nextKey}`,
+    timers: { setTimeout(fn, ms) { const id = ++nextTimer; timers.set(id, { fn, ms }); return id; },
+      clearTimeout(id) { timers.delete(id); } }, ...options,
+  };
+  const journey = createDriverJourney(config);
+  function ready() {
+    journey.setSession(ids.actor); journey.setInteractionMode('stationary');
+    journey.provideSelectionEvidence({ actorId: ids.actor, source: 'authenticated-server-read', readAt: '2026-10-17T12:00:00Z',
+      trucks: [{ id: ids.truck, label: 'Camión 1' }], contacts: [
+        { id: ids.grant, status: 'accepted', map: true, incident: true },
+        { id: ids.pending, status: 'pending', map: true, incident: true },
+        { id: ids.revoked, status: 'revoked', map: true, incident: true },
+      ] });
+  }
+  return { journey, config, calls, handlers, server, timers, ready,
+    async draft(full = true) { ready(); journey.editForm({ text: 'Viaje de carga', fields: full ? fields : {} }); return journey.saveDraft(); },
+    async active() { await this.draft(); return journey.confirmTrip({ confirmed: true }); },
+    tick() { for (const [id, timer] of [...timers]) { timers.delete(id); timer.fn(); } },
+    advance(ms) { wall += ms; },
+  };
+}
+
+test('construction is inert; missing auth/transport and unknown/moving interaction never submit', async () => {
+  const b = fixture();
+  assert.equal(b.calls.length + b.timers.size, 0);
+  assert.equal(b.journey.snapshot().activation, null);
+  assert.equal((await b.journey.saveDraft()).code, 'authentication-required');
+  b.journey.setSession(ids.actor);
+  assert.equal(b.journey.editForm({ text: 'test' }).code, 'interaction-not-allowed');
+  b.journey.setInteractionMode('moving'); assert.equal((await b.journey.requestHelp()).code, 'interaction-not-allowed');
+  assert.equal(b.calls.length, 0);
+  const c = fixture({ transport: null }); c.ready(); c.journey.editForm({ text: 'offline planning' });
+  assert.equal((await c.journey.saveDraft()).code, 'transport-unavailable');
+  assert.equal(c.journey.snapshot().form.text, 'offline planning');
+});
+
+test('partial text draft does not extract fields, infer region or activate a trip', async () => {
+  const b = fixture(); assert.equal((await b.draft(false)).kind, 'ok');
+  const state = b.journey.snapshot();
+  assert.equal(state.draft.status, 'draft'); assert.equal(state.activation, null); assert.equal(state.tripId, null);
+  assert.deepEqual(state.draft.missingFields, FIELD_NAMES);
+  assert.deepEqual(b.calls[0].request.body, { text: 'Viaje de carga', fields: {} });
+  assert.equal((await b.journey.confirmTrip({ confirmed: true })).code, 'incomplete-or-invalid-fields');
+  assert.equal(b.calls.length, 1);
+});
+
+test('explicit country, supported language and zone remain independent; invalid input never sends', async () => {
+  for (const patch of [{ country: 'pe' }, { locale: 'en' }, { locale: 'pt-PT' }, { timeZone: 'Not/AZone' }, { truckId: ids.truck3 }]) {
+    const b = fixture(); b.ready(); b.journey.editForm({ text: 'carga', fields: { ...fields, ...patch } });
+    assert.equal((await b.journey.saveDraft()).kind, 'blocked'); assert.equal(b.calls.length, 0);
+  }
+  const b = fixture(); b.ready();
+  const explicit = { ...fields, country: 'BR', locale: 'pt-BR', timeZone: 'America/Lima' };
+  b.journey.editForm({ text: 'Viagem de carga', fields: explicit }); await b.journey.saveDraft();
+  assert.deepEqual(b.calls[0].request.body.fields, explicit);
+  await b.journey.confirmTrip({ confirmed: true });
+  assert.deepEqual(b.journey.snapshot().activation.data.fields, explicit);
+});
+
+test('one/two owned trucks require read evidence, bind current actor and never accept a fleet/foreign truck', async () => {
+  const b = fixture(); b.journey.setSession(ids.actor); b.journey.setInteractionMode('stationary');
+  assert.equal((await b.journey.registerTruck('Camión')).code, 'ownership-read-required');
+  b.ready(); assert.equal((await b.journey.registerTruck('Camión 2')).kind, 'ok');
+  assert.equal(b.journey.snapshot().selection.trucks.length, 2);
+  assert.equal((await b.journey.registerTruck('Camión 3')).code, 'two-truck-scope');
+  const evidence = b.journey.snapshot().selection;
+  evidence.actorId = ids.other;
+  assert.equal(b.journey.provideSelectionEvidence(evidence).code, 'invalid-selection-evidence');
+  assert.equal(b.calls.length, 1);
+});
+
+test('only accepted scoped unrevoked contacts can be selected; case-alias duplicates are blocked', async () => {
+  const b = fixture(); await b.draft();
+  for (const idsToSelect of [[ids.pending], [ids.revoked], [ids.other], [ids.grant, ids.grant.toUpperCase()]]) {
+    assert.equal(b.journey.selectContacts(idsToSelect).code, 'contacts-not-accepted');
+  }
+  assert.equal(b.journey.selectContacts([ids.grant.toUpperCase()]).kind, 'local-state');
+  assert.equal((await b.journey.confirmTrip()).code, 'explicit-confirm-required');
+  const evidence = b.journey.snapshot().selection; evidence.contacts[0].status = 'revoked';
+  b.journey.provideSelectionEvidence(evidence);
+  assert.equal((await b.journey.confirmTrip({ confirmed: true })).code, 'contacts-not-accepted');
+  b.journey.selectContacts([]); assert.equal((await b.journey.confirmTrip({ confirmed: true })).kind, 'ok');
+  assert.deepEqual(b.calls.at(-1).request.body.contactGrantIds, []);
+});
+
+test('field corrections are explicit; duplicate confirmation shares one immutable request/key', async () => {
+  const b = fixture(); await b.draft(false);
+  b.journey.editForm({ fields }); b.journey.selectContacts([ids.grant]);
+  const answer = deferred(); b.handlers.confirmDraft = () => answer.promise;
+  const first = b.journey.confirmTrip({ confirmed: true }); const second = b.journey.confirmTrip({ confirmed: true });
+  assert.equal(first, second); await settle();
+  assert.equal(b.calls.filter(({ request }) => request.operation === 'confirmDraft').length, 1);
+  assert.equal(b.journey.editForm({ fields: { destination: 'Arequipa' } }).code, 'form-locked');
+  const request = b.calls.at(-1).request;
+  answer.resolve(ok({ id: ids.draft, status: 'active', fields: request.body.fields }));
+  assert.equal((await first).kind, 'ok'); assert.equal((await second).kind, 'ok');
+  assert.equal((await b.journey.confirmTrip({ confirmed: true })).kind, 'ok');
+  assert.equal(b.calls.length, 2); assert.equal(b.journey.snapshot().trip.state, 'not-loaded');
+});
+
+test('unknown confirm cannot activate, edit or automatically replay; explicit retry reuses exact intent', async () => {
+  const b = fixture(); await b.draft(); let first = true;
+  b.handlers.confirmDraft = (request) => {
+    if (first) { first = false; throw new Error('lost response after a possible commit'); }
+    return ok({ id: ids.draft, status: 'active', fields: request.body.fields });
+  };
+  assert.equal((await b.journey.confirmTrip({ confirmed: true })).kind, 'unknown');
+  assert.equal(b.journey.snapshot().activation, null);
+  assert.equal(b.journey.editForm({ fields: { country: 'BR' } }).code, 'form-locked');
+  b.journey.setNetwork('offline'); b.journey.setNetwork('online'); await settle(); assert.equal(b.calls.length, 2);
+  assert.equal((await b.journey.confirmTrip({ confirmed: true })).code, 'unresolved-submission');
+  assert.equal((await b.journey.retryUnknown('confirm')).code, 'explicit-retry-required');
+  const request = b.calls[1].request;
+  assert.equal((await b.journey.retryUnknown('confirm', { confirmed: true })).kind, 'ok');
+  assert.deepEqual(b.calls[2].request, request);
+});
+
+test('timeout returns unknown promptly, aborts local wait and ignores late success', async () => {
+  const b = fixture(); await b.draft(); const answer = deferred(); b.handlers.confirmDraft = () => answer.promise;
+  const pending = b.journey.confirmTrip({ confirmed: true }); await settle(); b.tick();
+  assert.equal((await pending).kind, 'unknown'); assert.equal(b.calls.at(-1).signal.aborted, true);
+  answer.resolve(ok({ id: ids.draft, status: 'active', fields })); await settle();
+  assert.equal(b.journey.snapshot().activation, null); assert.equal(b.timers.size, 0);
+});
+
+test('HTTP validation/auth/consent/conflict/audio errors stay distinct and no raw exception is retained', async () => {
+  for (const [status, code] of [[400, 'validation_error'], [401, 'unauthorized'], [403, 'forbidden'],
+    [404, 'draft_not_found'], [409, 'contact_not_accepted'], [422, 'unsupported_audio']]) {
+    const b = fixture(); await b.draft(); b.handlers.confirmDraft = () => ({ ...rejected(status, code), detail: 'secret-body' });
+    const result = await b.journey.confirmTrip({ confirmed: true });
+    assert.deepEqual(result, rejected(status, code));
+    assert.equal(JSON.stringify(b.journey.snapshot()).includes('secret-body'), false);
+    assert.equal(b.journey.snapshot().activation, null);
+    assert.equal(b.journey.snapshot().auth.state, status === 401 ? 'expired' : 'authenticated');
+  }
+});
+
+test('5xx, malformed success or wrong-trip response never become a successful activation', async () => {
+  for (const result of [rejected(500, 'internal_error'), ok({ id: ids.other, status: 'active', fields }),
+    ok({ id: ids.draft, status: 'active' }), { arbitrary: 'success' }]) {
+    const b = fixture(); await b.draft(); b.handlers.confirmDraft = () => result;
+    assert.equal((await b.journey.confirmTrip({ confirmed: true })).kind, 'unknown');
+    assert.equal(b.journey.snapshot().activation, null);
+  }
+});
+
+test('local permission and network changes never prompt, capture, schedule alarms or autosubmit', async () => {
+  const b = fixture(); b.ready(); b.journey.setNetwork('offline');
+  assert.equal(b.journey.editForm({ text: 'Preparar sin conexión', fields }).kind, 'local-state');
+  for (const state of ['granted', 'denied', 'revoked', 'unknown']) b.journey.setPermission('geolocation', state);
+  assert.equal((await b.journey.saveDraft()).code, 'offline');
+  b.journey.setNetwork('online'); await settle(); assert.equal(b.calls.length + b.timers.size, 0);
+  assert.equal((await b.journey.saveDraft()).kind, 'ok');
+});
+
+test('command acknowledgements do not fabricate refreshed state, wellbeing or incident resolution', async () => {
+  const b = fixture(); await b.active(); await b.journey.openTrip(ids.draft);
+  await b.journey.requestHelp();
+  assert.equal((await b.journey.sendCommand('pause')).kind, 'ok');
+  assert.equal(b.journey.snapshot().trip.data.paused, false); assert.equal(b.journey.snapshot().trip.invalidated, true);
+  await b.journey.openTrip(ids.draft); assert.equal(b.journey.snapshot().trip.data.paused, true);
+  await b.journey.sendCommand('checkin_ok'); await b.journey.sendCommand('arrived');
+  assert.equal(b.journey.snapshot().trip.data.status, 'active');
+  assert.equal(b.journey.snapshot().incident.data.status, 'active');
+  await b.journey.openTrip(ids.draft); assert.equal(b.journey.snapshot().trip.data.status, 'arrived');
+  assert.equal(b.journey.snapshot().incident.data.status, 'active');
+  assert.equal((await b.journey.sendCommand('resume')).code, 'trip-closed');
+  assert.equal(JSON.stringify(b.journey.snapshot()).includes('wellbeing'), false);
+});
+
+test('an ambiguous ordinary command does not occupy SOS; repeated help has one active episode', async () => {
+  const b = fixture(); await b.active(); b.handlers.command = () => { throw new Error('lost'); };
+  assert.equal((await b.journey.sendCommand('pause')).kind, 'unknown');
+  assert.equal((await b.journey.requestHelp()).kind, 'ok');
+  assert.equal((await b.journey.requestHelp()).kind, 'ok');
+  assert.equal(b.calls.filter(({ request }) => request.operation === 'sos').length, 1);
+  assert.equal(b.journey.snapshot().incident.data.groupCapability, 'unavailable');
+  for (const invented of ['delivered', 'help-arrived', 'resolved', 'driver-safe']) assert.equal(JSON.stringify(b.journey.snapshot()).includes(invented), false);
+});
+
+test('pending commands coalesce only identical intents and never acknowledge a different command', async () => {
+  const b = fixture(); await b.active(); const answer = deferred(); b.handlers.command = () => answer.promise;
+  const first = b.journey.sendCommand('pause'); const duplicate = b.journey.sendCommand('pause');
+  assert.equal(first, duplicate);
+  assert.equal((await b.journey.sendCommand('arrived')).code, 'operation-in-progress');
+  await settle(); answer.resolve(ok({ id: ids.draft, command: 'pause', automaticEscalation: false })); await first;
+  assert.equal((await b.journey.sendCommand('pause')).kind, 'ok');
+  assert.equal(b.calls.filter(({ request }) => request.operation === 'command').length, 1);
+});
+
+test('SOS unknowns preserve intent and no arrival command silently resolves the episode', async () => {
+  const b = fixture(); await b.active(); b.handlers.sos = () => { throw new Error('lost'); };
+  assert.equal((await b.journey.requestHelp()).kind, 'unknown');
+  assert.equal(b.journey.snapshot().incident.data, null);
+  assert.equal((await b.journey.requestHelp()).code, 'unresolved-submission');
+  delete b.handlers.sos;
+  assert.equal((await b.journey.retryUnknown('sos', { confirmed: true })).kind, 'ok');
+  const attempts = b.calls.filter(({ request }) => request.operation === 'sos');
+  assert.deepEqual(attempts[0].request, attempts[1].request);
+  await b.journey.sendCommand('arrived'); assert.equal(b.journey.snapshot().incident.data.status, 'active');
+});
+
+test('snapshot capture, server receipt/read and client receipt stay separate and do not become live', async () => {
+  const b = fixture(); await b.active(); await b.journey.refreshLocation();
+  const fact = b.journey.snapshot().location;
+  assert.deepEqual(fact.data, b.server.snapshot); assert.equal(fact.clientReceivedAtMs, WALL);
+  b.advance(3600_000);
+  assert.deepEqual(b.journey.snapshot().location, fact);
+  assert.equal(b.journey.snapshot().monitoring.state, 'unavailable');
+  b.handlers.readSnapshot = () => rejected(403, 'forbidden'); await b.journey.refreshLocation();
+  assert.equal(b.journey.snapshot().location.data, null);
+  assert.equal(b.journey.snapshot().location.error.status, 403);
+});
+
+test('newer read wins and old late responses cannot overwrite it', async () => {
+  const b = fixture(); await b.active(); const old = deferred(); let count = 0;
+  b.handlers.readSnapshot = () => ++count === 1 ? old.promise : ok({ ...b.server.snapshot, ageMs: 301000 });
+  const first = b.journey.refreshLocation(); await settle();
+  const second = b.journey.refreshLocation(); assert.equal((await first).kind, 'unknown'); await second;
+  old.resolve(ok(b.server.snapshot)); await settle();
+  assert.equal(b.journey.snapshot().location.data.ageMs, 301000);
+});
+
+test('logout aborts waits, purges memory and ignores late facts from the original actor', async () => {
+  const b = fixture(); await b.draft(); const answer = deferred(); b.handlers.confirmDraft = () => answer.promise;
+  const pending = b.journey.confirmTrip({ confirmed: true }); await settle(); b.journey.setSession(ids.other);
+  assert.equal((await pending).kind, 'unknown'); assert.equal(b.calls.at(-1).signal.aborted, true);
+  answer.resolve(ok({ id: ids.draft, status: 'active', fields })); await settle();
+  const state = b.journey.snapshot(); assert.equal(state.auth.actorId, ids.other);
+  assert.equal(state.activation, null); assert.equal(state.draft, null); assert.equal(state.form.text, '');
+  assert.deepEqual(state.operations, {}); assert.equal(b.timers.size, 0);
+});
+
+test('401 on one read cancels other outstanding reads before their late private data can return', async () => {
+  const b = fixture(); await b.active(); const answer = deferred(); b.handlers.readSnapshot = () => answer.promise;
+  const pending = b.journey.refreshLocation(); await settle(); b.handlers.readTrip = () => rejected(401, 'unauthorized');
+  await b.journey.openTrip(ids.draft); assert.equal((await pending).kind, 'unknown');
+  answer.resolve(ok(b.server.snapshot)); await settle();
+  assert.equal(b.journey.snapshot().location.data, null); assert.equal(b.journey.snapshot().auth.state, 'expired');
+  assert.equal(b.timers.size, 0);
+});
+
+test('dispose and reentrant view stop are idempotent and never begin a native request after disposal', async () => {
+  const b = fixture(); b.ready(); b.journey.editForm({ text: 'carga', fields });
+  const unsubscribe = b.journey.subscribe(() => b.journey.dispose());
+  const pending = b.journey.saveDraft(); assert.equal((await pending).kind, 'unknown'); await settle();
+  unsubscribe(); unsubscribe(); b.journey.dispose();
+  assert.equal(b.calls.length + b.timers.size, 0); assert.equal(b.journey.snapshot().disposed, true);
+  assert.equal((await b.journey.saveDraft()).code, 'disposed');
+});
+
+test('data and requests are detached; model consumes an injected projection without copying its rules', async () => {
+  const received = [];
+  const b = fixture({ monitoringProjection(facts, at) { received.push({ facts, at }); return { state: 'synthetic-projection', receivedAt: at }; } });
+  await b.active(); await b.journey.openTrip(ids.draft); const state = b.journey.snapshot();
+  state.form.fields.country = 'XX'; state.operations.confirm.request.body.fields.country = 'XX';
+  received.at(-1).facts.trip.data.status = 'arrived';
+  assert.equal(b.journey.snapshot().form.fields.country, 'PE');
+  assert.equal(b.journey.snapshot().trip.data.status, 'active');
+  assert.equal(b.journey.snapshot().monitoring.state, 'synthetic-projection');
+});
+
+test('wrong actor/trip incident reads and unsupported commands cannot become current facts', async () => {
+  const b = fixture(); await b.active();
+  b.handlers.readTrip = () => ok({ ...b.server.trip, driver_id: ids.other });
+  assert.equal((await b.journey.openTrip(ids.draft)).kind, 'unknown');
+  assert.equal(b.journey.snapshot().trip.data, null);
+  await b.journey.requestHelp(); b.handlers.readIncident = () => ok({ ...b.server.incident, tripId: ids.elsewhere,
+    createdAt: '2026-10-17T12:00:00Z', resolvedAt: null });
+  assert.equal((await b.journey.refreshIncident()).kind, 'unknown');
+  assert.equal(b.journey.snapshot().incident.data.tripId, ids.draft);
+  assert.equal((await b.journey.sendCommand('confirm_safe')).code, 'unsupported-command');
+});
+
+test('invalid resource/key inputs fail closed without submission or hanging timers', async () => {
+  for (const requestTimeoutMs of [0, Infinity, 60001]) assert.throws(() => fixture({ requestTimeoutMs }), TypeError);
+  const b = fixture({ keyFactory: () => 'invalid key' }); b.ready(); b.journey.editForm({ text: 'carga' });
+  assert.equal((await b.journey.saveDraft()).code, 'idempotency-unavailable'); assert.equal(b.calls.length + b.timers.size, 0);
+});
+
+test('delayed timer execution does not allow an expired response to activate or overwrite a journey', async () => {
+  const b = fixture(); await b.draft(); const answer = deferred(); b.handlers.confirmDraft = () => answer.promise;
+  const pending = b.journey.confirmTrip({ confirmed: true }); await settle();
+  b.advance(15_000); answer.resolve(ok({ id: ids.draft, status: 'active', fields }));
+  assert.equal((await pending).kind, 'unknown');
+  assert.equal(b.journey.snapshot().activation, null); assert.equal(b.timers.size, 0);
+});
+
+test('response receipt is local evidence and never invented as command/report source time', async () => {
+  const b = fixture(); await b.active(); b.advance(1000); await b.journey.sendCommand('checkin_ok');
+  const operation = b.journey.snapshot().operations.command;
+  assert.equal(operation.clientReceivedAtMs, WALL + 1000); assert.equal(operation.sourceTime, null);
+  assert.deepEqual(operation.result, ok({ id: ids.draft, command: 'checkin_ok', automaticEscalation: false }));
+});
+
+test('rejection of an explicit retry cannot erase an earlier unknown submission or enable a new key', async () => {
+  const b = fixture(); await b.draft(); b.handlers.confirmDraft = () => { throw new Error('lost'); };
+  await b.journey.confirmTrip({ confirmed: true }); b.handlers.confirmDraft = () => rejected(409, 'contact_not_accepted');
+  const result = await b.journey.retryUnknown('confirm', { confirmed: true });
+  assert.equal(result.kind, 'unknown'); assert.equal(result.responseCode, 'contact_not_accepted');
+  assert.equal(b.journey.editForm({ fields: { country: 'BR' } }).code, 'form-locked');
+  assert.equal((await b.journey.confirmTrip({ confirmed: true })).code, 'unresolved-submission');
+  assert.deepEqual(b.calls[1].request, b.calls[2].request);
+});
