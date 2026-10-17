@@ -6,12 +6,12 @@ import { consume, recoverWork, reconcileOnce, relayOnce, type Transport, type Wo
 import { createSqsTransport } from './notifications/sqs.js';
 import { createZavuProvider, loadQualification, type Provider } from './notifications/zavu.js';
 import { loadCallbackConfig } from './notifications/callback.js';
-export function configuredProvider(env: NodeJS.ProcessEnv): Provider | null {
+export function configuredProvider(env: NodeJS.ProcessEnv, http: typeof fetch = fetch): Provider | null {
   const qualification = loadQualification(env);
   if (!qualification) return null;
   const callback = loadCallbackConfig(env);
   if (!env.ZAVU_API_KEY || !callback || callback.projectId !== qualification.accountId || callback.senderId !== qualification.senderId) throw new Error('Matching Zavu API and callback configuration required');
-  return createZavuProvider(qualification, env.ZAVU_API_KEY);
+  return createZavuProvider(qualification, env.ZAVU_API_KEY, http);
 }
 async function loop(operation: () => Promise<unknown>, interval: number, signal: AbortSignal) {
   while (!signal.aborted) {
@@ -30,7 +30,7 @@ export async function startWorker(role: string, env = process.env): Promise<void
   if (!['control', 'emergency', 'ordinary'].includes(role)) throw new Error('Worker role must be control, emergency or ordinary');
   if (!env.DATABASE_URL || !env.AWS_REGION || !env.SQS_EMERGENCY_URL || !env.SQS_ORDINARY_URL) throw new Error('Database, AWS region and SQS queue URLs required');
   const provider = configuredProvider(env);
-  if (role !== 'control' && !provider) throw new Error('Delivery disabled: complete evidenced live configuration required');
+  if (role !== 'control' && !provider?.qualification.live) throw new Error('Delivery disabled: complete evidenced live configuration required');
   const transport = createSqsTransport(env.AWS_REGION, { emergency: env.SQS_EMERGENCY_URL, ordinary: env.SQS_ORDINARY_URL });
   const ctx = createContext(env.DATABASE_URL, undefined, 2);
   const abort = new AbortController();

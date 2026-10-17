@@ -4,7 +4,7 @@ export interface QualifiedChannel extends ChannelSupport {
   evidence: string; text: string; templateId?: string; summaryVariable?: string; voiceLanguage?: 'es-ES' | 'pt-BR';
 }
 export interface Qualification {
-  live: true; accountId: string; senderId: string; evidence: string; entries: QualifiedChannel[];
+  live: boolean; accountId: string; senderId: string; evidence: string; entries: QualifiedChannel[];
   dailyLimit: number; channelDailyLimit: number; minuteLimit: number; emergencyReserve: number;
 }
 export interface SendInput { attemptId: string; to: string; channel: Channel; country: string; locale: string; summary: string }
@@ -22,7 +22,8 @@ export interface CallbackEvent { id: string; type: string; timestamp: number; se
 const channels = ['sms', 'whatsapp', 'voice'];
 function bounded(value: unknown, max = 256): value is string { return typeof value === 'string' && value.length > 0 && value.length <= max; }
 export function loadQualification(env: NodeJS.ProcessEnv): Qualification | null {
-  if (env.ZAVU_LIVE_SEND !== 'true') return null;
+  const live = env.ZAVU_LIVE_SEND === 'true';
+  if (!live && !env.ZAVU_QUALIFICATION_JSON) return null;
   try {
     const q = JSON.parse(env.ZAVU_QUALIFICATION_JSON ?? '{}') as Qualification;
     if (!bounded(q.accountId) || !bounded(q.senderId) || !bounded(q.evidence, 2000) || q.evidence.startsWith('syntheticfixture:') || !Array.isArray(q.entries) || !q.entries.length || q.entries.length > 100) throw Error();
@@ -38,11 +39,11 @@ export function loadQualification(env: NodeJS.ProcessEnv): Qualification | null 
       if (entry.channel === 'voice' && !['es-ES', 'pt-BR'].includes(entry.voiceLanguage ?? '')) throw Error();
       if (entry.channel === 'whatsapp' && (!bounded(entry.templateId) || !bounded(entry.summaryVariable, 64) || !/^(?:[1-9]\d*|[a-zA-Z][a-zA-Z0-9_]*)$/.test(entry.summaryVariable!))) throw Error();
     }
-    return { ...q, live: true };
+    return { ...q, live };
   } catch { throw new Error('Complete evidenced Zavu qualification required'); }
 }
 export function createZavuProvider(qualification: Qualification, apiKey: string, http: typeof fetch = fetch): Provider {
-  if (!qualification.live || !apiKey) throw new Error('Live provider configuration required');
+  if (!apiKey) throw new Error('Provider credentials required');
   const headers = { Authorization: `Bearer ${apiKey}`, 'Zavu-Sender': qualification.senderId, 'Content-Type': 'application/json' };
   function accepted(body: unknown, expected?: Payload): Outcome {
     const m = (body as { message?: Record<string, unknown> })?.message;
@@ -69,6 +70,7 @@ export function createZavuProvider(qualification: Qualification, apiKey: string,
       return { ...base, messageType: 'text', text: `${entry.text} ${input.summary}`, ...(input.channel === 'voice' ? { voiceLanguage: entry.voiceLanguage } : {}) };
     },
     async send(payload, signal) {
+      if (!qualification.live) return { state: 'rejected', code: 'live_send_disabled' };
       try {
         const response = await request('', { method: 'POST', body: JSON.stringify(payload), signal });
         const body = await response.json().catch(() => null);

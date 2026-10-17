@@ -177,3 +177,16 @@ test('authorization independently rechecks current standing consent and per-trip
     assert.equal(await d.authorizeJob(f.ctx,claim,provider()),null,mutate);
   }
 });
+test('control reconciles known IDs with new sends off and denies new authorization', async t => {
+  const d=await runtime();const {configuredProvider,control}=await import('../dist/worker.js');const f=await fixture(t);const {jobs}=await sos(f);
+  await d.runJob(f.ctx,jobs[0],provider(),'initial');f.advance(61000);
+  const retained={...qualification,evidence:'test-only syntheticfixture: retained qualification',entries:qualification.entries.map(e=>({...e,evidence:'test-only syntheticfixture: retained channel'}))};
+  const observed=deferred();const methods=[];
+  const p=configuredProvider({ZAVU_LIVE_SEND:'false',ZAVU_QUALIFICATION_JSON:JSON.stringify(retained),ZAVU_API_KEY:'syntheticfixture-not-a-key',ZAVU_PROJECT_ID:'prj_fixture',ZAVU_SENDER_ID:'snd_fixture',ZAVU_CALLBACK_SECRET:'syntheticfixture-secret'},async (_url,init)=>{methods.push(init.method);observed.resolve();return new Response('{}',{status:404});});
+  assert.ok(p,'control must retain read access when new sends are disabled');
+  assert.equal(await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,jobs[1],'disabled'),p),null);
+  const abort=new AbortController();const running=control(f.ctx,{async publish(){}},p,abort.signal);
+  try{await Promise.race([observed.promise,new Promise((_,reject)=>setTimeout(()=>reject(Error('read-only reconciliation disabled')),2000))]);}
+  finally{abort.abort();await running;}
+  assert.deepEqual(methods,['GET']);assert.equal((await f.ctx.pool.query('SELECT count(*) n FROM dispatch_attempts')).rows[0].n,'1');
+});

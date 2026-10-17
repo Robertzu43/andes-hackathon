@@ -61,3 +61,14 @@ test('SQS adapter sends only IDs/version, rejects secret-bearing envelopes, and 
   await transport.defer('emergency','valid');assert.equal(commands.at(-1).input.VisibilityTimeout,30);
   transport.close();
 });
+test('sends-off configuration retains read-only provider but denies POST and delivery startup', async () => {
+  const {configuredProvider,startWorker}=await import('../dist/worker.js');
+  const retained={...qualification,evidence:'test-only syntheticfixture: retained qualification',entries:qualification.entries.map(e=>({...e,evidence:'test-only syntheticfixture: retained channel'}))};
+  const env={ZAVU_LIVE_SEND:'false',ZAVU_QUALIFICATION_JSON:JSON.stringify(retained),ZAVU_API_KEY:'syntheticfixture-not-a-key',ZAVU_PROJECT_ID:'prj_fixture',ZAVU_SENDER_ID:'snd_fixture',ZAVU_CALLBACK_SECRET:'syntheticfixture-secret'};
+  const methods=[];const p=configuredProvider(env,async (_url,init)=>{methods.push(init.method);return new Response(JSON.stringify({message:{id:'msg_retained',channel:'sms',to:'+15555550101',direction:'outbound',status:'delivered'}}),{status:200});});
+  assert.ok(p,'retained credentials/qualification must allow read-only reconciliation');assert.equal(p.qualification.live,false);
+  assert.equal((await p.read('msg_retained')).state,'accepted');
+  assert.deepEqual(await p.send(p.payload(input)),{state:'rejected',code:'live_send_disabled'});assert.deepEqual(methods,['GET']);
+  assert.equal(configuredProvider({}),null);
+  for(const providerEnv of [{},env])await assert.rejects(startWorker('emergency',{DATABASE_URL:'postgresql://syntheticfixture/none',AWS_REGION:'us-east-1',SQS_EMERGENCY_URL:'https://sqs.fixture/emergency',SQS_ORDINARY_URL:'https://sqs.fixture/ordinary',...providerEnv}),/Delivery disabled/);
+});
