@@ -92,17 +92,7 @@
 
 <aside class="sign" aria-labelledby="title">
   <h1 id="title">Robos reportados en carretera</h1>
-  <p class="lede">Zonas de unos 5 km donde <span class="min">3</span> o más personas distintas reportaron un robo o un intento de robo a su camión.</p>
-
-  <fieldset>
-    <legend class="group">Periodo</legend>
-    <div class="segmented" id="days">
-      <button type="button" data-days="7">7 días</button>
-      <button type="button" data-days="30">30 días</button>
-      <button type="button" data-days="90" aria-pressed="true">90 días</button>
-      <button type="button" data-days="365">1 año</button>
-    </div>
-  </fieldset>
+  <p class="lede">Zonas de unos 5 km donde <span class="min">3</span> o más personas distintas reportaron un robo o un intento de robo a su camión en los últimos 90 días.</p>
 
   <fieldset>
     <legend class="group">Horario</legend>
@@ -142,7 +132,7 @@
   const bins = [{ min: 3, label: '3 a 4' }, { min: 5, label: '5 a 7' }, { min: 8, label: '8 a 11' }, { min: 12, label: '12 o más' }];
   const ramp = { dia: ['#f08a24', '#d0680c', '#a84d04', '#723000'], noche: ['#a84d04', '#d0680c', '#f08a24', '#ffb35c'] };
   const ring = { dia: '#ffffff', noche: '#1f2023' };
-  const state = { days: '90', band: 'noche', data: null, fitted: false };
+  const state = { band: 'noche', data: null, fitted: false };
   const $ = id => document.getElementById(id);
   const mobile = matchMedia('(max-width: 640px)').matches, still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   // If both Leaflet CDNs fail, the data stays usable through the table.
@@ -189,10 +179,10 @@
       || '<tr><td colspan="5">Sin zonas para mostrar.</td></tr>';
     $('demo').classList.toggle('visible', cells.some(c => c.synthetic > 0));
     const when = state.band === 'noche' ? 'de noche' : 'de día';
-    const period = state.data.days === 365 ? 'el último año' : `los últimos ${state.data.days} días`; // describe the data shown, even mid-reload
+    const period = `los últimos ${state.data.days} días`;
     $('status').textContent = cells.length
       ? `${plural(cells.length, 'zona', 'zonas')} con reportes ${when} en ${period}. Datos hasta las ${limaHour(state.data.generatedAt)}.`
-      : `No hay zonas con suficientes reportes ${when} en ${period}. ${state.data.days === 365 ? 'Prueba con el otro horario.' : 'Prueba con un periodo más largo o cambia el horario.'}`;
+      : `No hay zonas con suficientes reportes ${when} en ${period}. Prueba con el otro horario.`;
     if (map && cells.length && !state.fitted) {
       // Keep zones clear of the panel: beside it on desktop, above the bottom sheet on phones.
       const panel = document.querySelector('.sign');
@@ -204,16 +194,12 @@
   }
 
   async function load() {
-    const days = state.days; // a slower earlier request must not overwrite the period the user picked last
     $('status').textContent = 'Cargando reportes…';
     try {
-      const response = await fetch(`/v1/insights/hotspots?days=${days}`, { headers: { accept: 'application/json' } });
+      const response = await fetch('/v1/insights/hotspots', { headers: { accept: 'application/json' } });
       if (!response.ok) throw new Error(String(response.status));
-      const data = await response.json();
-      if (days !== state.days) return;
-      state.data = data; render();
+      state.data = await response.json(); render();
     } catch {
-      if (days !== state.days) return;
       state.data = null; layer?.clearLayers(); $('demo').classList.remove('visible'); $('rows').innerHTML = '';
       $('status').innerHTML = 'No se pudo cargar el mapa de reportes. Revisa la conexión e inténtalo de nuevo.<br><button type="button" id="retry">Reintentar</button>';
       $('retry').addEventListener('click', () => { load(); $('status').focus(); });
@@ -229,7 +215,6 @@
     });
   }
   for (const b of document.querySelectorAll('.segmented button:not([aria-pressed])')) b.setAttribute('aria-pressed', 'false');
-  wire('days', 'days', load);
   wire('band', 'band', render);
   drawScale();
   load();

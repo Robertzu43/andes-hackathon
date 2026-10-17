@@ -12,6 +12,7 @@ async function sosAt(f, latitude, longitude, jwt = f.driver) {
 }
 const report = (f, kind, latitude, longitude, occurredAt, jwt = f.driver) => f.req('POST', '/v1/reports', { kind, latitude, longitude, occurredAt }, jwt);
 const seeded = (f, kind, latitude, longitude, at) => f.ctx.pool.query('INSERT INTO reports VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$5,true)', [f.me.id, kind, latitude, longitude, at]);
+const nextHour = f => f.advance(3600000); // public cells are recomputed once per hour
 async function hotspots(f, query = '') { const r = await f.app.inject({ method: 'GET', url: `/v1/insights/hotspots${query}` }); return { status: r.statusCode, body: r.json() }; }
 
 // Without the snapshot an incident's place is lost once location history is pruned, so hotspots would be empty.
@@ -30,10 +31,12 @@ test('reports reject future, stale, unparseable, unknown-kind or unauthenticated
   assert.equal((await report(f, 'secuestro', 0, 0, '2026-10-17T11:00:00Z')).status, 400);
   assert.equal((await f.app.inject({ method: 'POST', url: '/v1/reports', payload: { kind: 'robo', latitude: 0, longitude: 0, occurredAt: '2026-10-17T11:00:00Z' } })).statusCode, 401);
   assert.equal((await report(f, 'robo', 0, 0, '2026-10-17T11:00:00Z')).status, 200);
+  for (let i = 0; i < 4; i++) assert.equal((await report(f, 'robo', 0, 0, '2026-10-17T11:00:00Z')).status, 200);
+  assert.equal((await report(f, 'robo', 0, 0, '2026-10-17T11:00:00Z')).status, 429); // five reports per identity per day
 });
 
 // Returning small cells, identifiers or arbitrary windows would expose individual drivers to anyone with the public link.
-test('hotspots are public aggregates over fixed windows: suppressed, synthetic counted, no identifiers', async t => {
+test('hotspots are public aggregates over one fixed window: suppressed, synthetic counted, no identifiers', async t => {
   const f = await fixture(t); const night = '2026-10-16T04:30:00Z'; // 23:30 in Lima
   const posted = [];
   for (const jwt of [f.driver, f.stranger, f.contact]) posted.push((await report(f, 'robo', -12.525, -76.725, night, jwt)).body.id);
@@ -45,8 +48,7 @@ test('hotspots are public aggregates over fixed windows: suppressed, synthetic c
   assert.equal(response.body.includesSynthetic, true); assert.equal(response.body.minCount, 3); assert.equal(response.body.days, 90);
   const text = JSON.stringify(response.body);
   for (const secret of [...posted, f.me.id, '2026-10-16T04:30']) assert.ok(!text.includes(secret), `leaked ${secret}`);
-  for (const days of ['0', '1', '45', 'abc']) assert.equal((await hotspots(f, `?days=${days}`)).status, 400, days);
-  assert.equal((await hotspots(f, '?days=7')).body.cells.length, 1);
+  for (const query of ['?days=7', '?days=1', '?_=1']) assert.equal((await hotspots(f, query)).body.days, 90, query); // no other window to subtract
 });
 
 // One account inventing a hotspot, or seeded rows lifting a single real report over the threshold, would mislead police or expose a driver.
@@ -56,6 +58,7 @@ test('suppression counts distinct contributors and seeded rows never expose a re
   assert.deepEqual((await hotspots(f)).body.cells, []);
   for (let i = 0; i < 3; i++) await seeded(f, 'robo', -12.525, -76.725, night);
   assert.equal((await report(f, 'intento_robo', -12.525, -76.725, night, f.stranger)).status, 200);
+  nextHour(f);
   assert.deepEqual((await hotspots(f)).body.cells, [{ lat: -12.525, lon: -76.725, band: 'noche', robo: 3, intentoRobo: 0, total: 3, synthetic: 3 }]);
 });
 
@@ -89,11 +92,13 @@ test('only the driver labels incidents and only robbery labels enter hotspots', 
   for (const i of [0, 1, 2]) assert.equal((await label(i, 'robo')).status, 200);
   assert.deepEqual((await hotspots(f)).body.cells.map(c => [c.lat, c.lon, c.band, c.robo, c.total]), [[-12.325, -76.775, 'dia', 3, 3]]);
   assert.equal((await label(2, 'sin_senal')).status, 200);
-  assert.deepEqual((await hotspots(f)).body.cells, []);
+  assert.equal((await hotspots(f)).body.cells.length, 1); // relabels surface only at the next hour, together with everything else
+  nextHour(f); assert.deepEqual((await hotspots(f)).body.cells, []);
   assert.equal((await label(2, 'falsa_alarma')).status, 200);
-  assert.deepEqual((await hotspots(f)).body.cells, []);
+  nextHour(f); assert.deepEqual((await hotspots(f)).body.cells, []);
   assert.equal((await f.req('POST', `/v1/incidents/${ids[2]}/resolve`, {}, owners[2])).status, 200);
   assert.equal((await label(2, 'intento_robo')).status, 200);
+  nextHour(f);
   assert.deepEqual((await hotspots(f)).body.cells.map(c => [c.robo, c.intentoRobo, c.total]), [[2, 1, 3]]);
 });
 
@@ -106,11 +111,14 @@ test('advice needs distinct contributors in the current band, flags demo data an
   for (const jwt of [f.driver, f.stranger, f.contact]) await report(f, 'robo', -12.525, -76.725, '2026-10-11T04:00:00Z', jwt); // 23:00 in Lima
   assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'none' });
   await report(f, 'intento_robo', -12.525, -76.725, day, f.contact);
+  nextHour(f);
   assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'caution', count: 3, includesSynthetic: false, band: 'dia', text });
   assert.match((await advice('?lat=-12.47&lon=-76.68&locale=pt-BR')).body.text, /^3 relatos de roubo nesta região durante o dia/);
   assert.deepEqual((await advice('?lat=-12.37&lon=-76.68')).body, { level: 'none' });
   for (let i = 0; i < 3; i++) await seeded(f, 'robo', -13.075, -76.375, day);
-  assert.deepEqual((await advice('?lat=-13.075&lon=-76.375')).body, { level: 'caution', count: 3, includesSynthetic: true, band: 'dia', text });
+  nextHour(f);
+  assert.deepEqual((await advice('?lat=-13.075&lon=-76.375')).body, { level: 'caution', count: 3, includesSynthetic: true, band: 'dia', text: `${text} Incluye datos de demostración.` });
+  assert.match((await advice('?lat=-13.075&lon=-76.375&locale=pt-BR')).body.text, /Inclui dados de demonstração\.$/);
   assert.equal((await advice('?lat=-12.046373100000001&lon=-77.042754')).status, 200);
   assert.equal((await advice('?lat=95&lon=0')).status, 400);
   assert.equal((await advice('?lat=abc&lon=0')).status, 400);
@@ -121,7 +129,7 @@ test('advice needs distinct contributors in the current band, flags demo data an
 test('public map page is served without auth and reads only the public hotspots endpoint', async t => {
   const f = await fixture(t); const page = await f.app.inject({ method: 'GET', url: '/mapa' });
   assert.equal(page.statusCode, 200); assert.match(page.headers['content-type'], /^text\/html/);
-  assert.match(page.body, /\/v1\/insights\/hotspots\?days=/); assert.match(page.body, /Incluye datos de demostración/);
+  assert.match(page.body, /\/v1\/insights\/hotspots/); assert.match(page.body, /Incluye datos de demostración/);
   assert.doesNotMatch(page.body, /\/v1\/(trips|incidents|reports|insights\/advice)/);
 });
 
@@ -172,4 +180,36 @@ test('trip status shows the latest incident label, also after resolution', async
   assert.equal((await f.req('POST', `/v1/incidents/${sos}/resolve`, {})).status, 200);
   assert.equal((await f.req('POST', `/v1/incidents/${sos}/label`, { label: 'falsa_alarma' })).status, 200);
   const shown = await incident(); assert.deepEqual([shown.id, shown.status, shown.label], [sos, 'resolved', 'falsa_alarma']);
+});
+
+// Unverified identities are cheap to create, so they must not count toward publishing a real cell.
+test('only phone-verified contributors count toward publishing a cell', async t => {
+  const f = await fixture(t); const night = '2026-10-16T04:30:00Z';
+  for (const name of ['u1', 'u2', 'u3']) assert.equal((await report(f, 'robo', -12.325, -76.775, night, await f.token(name, { phone_number_verified: false }))).status, 200);
+  assert.deepEqual((await hotspots(f)).body.cells, []);
+  for (const jwt of [f.driver, f.stranger, f.contact]) assert.equal((await report(f, 'robo', -12.325, -76.775, night, jwt)).status, 200);
+  nextHour(f); assert.deepEqual((await hotspots(f)).body.cells.map(c => c.total), [6]);
+});
+
+// An alert raised long after the last known position must not pin a robbery to the wrong place.
+test('incidents whose copied location is over an hour old never reach hotspots', async t => {
+  const f = await fixture(t);
+  for (const jwt of [f.driver, f.stranger, f.contact]) {
+    const draft = await f.draft({}, jwt);
+    const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, { confirmed: true, contactGrantIds: [] }, jwt)).body.id;
+    assert.equal((await f.req('POST', `/v1/trips/${trip}/locations`, { observations: [{ capturedAt: '2026-10-17T10:30:00Z', latitude: -12.325, longitude: -76.775, accuracy: 20 }] }, jwt)).status, 200);
+    const sos = (await f.req('POST', `/v1/trips/${trip}/sos`, {}, jwt)).body.id;
+    assert.equal((await f.req('POST', `/v1/incidents/${sos}/label`, { label: 'robo' }, jwt)).status, 200);
+  }
+  assert.deepEqual((await hotspots(f)).body.cells, []);
+});
+
+// Public traffic must not load the pool SOS uses: one aggregation per hour, shared by concurrent callers and advice.
+test('public cells are computed once per hour and shared by every caller', async t => {
+  const f = await fixture(t); let runs = 0; const query = f.ctx.pool.query.bind(f.ctx.pool);
+  f.ctx.pool.query = (text, ...rest) => { if (typeof text === 'string' && text.includes('security_events e')) runs++; return query(text, ...rest); };
+  await Promise.all(Array.from({ length: 20 }, () => hotspots(f)));
+  assert.equal((await f.req('GET', '/v1/insights/advice?lat=-12.3&lon=-76.7')).status, 200);
+  assert.equal(runs, 1);
+  nextHour(f); await hotspots(f); assert.equal(runs, 2);
 });
