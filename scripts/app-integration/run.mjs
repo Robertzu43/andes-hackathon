@@ -20,6 +20,10 @@ try {
   console.log(`SYNTHETIC integration: Node ${process.version}; PostgreSQL ${runtime.postgresVersion}; owned disposable database; stub transport only`);
   const env = testEnvironment({TEST_DATABASE_URL: runtime.url,
     APP_INTEGRATION_DATABASE_URL: runtime.url, APP_INTEGRATION_RUN_DIR: runtime.directory,
+    ...(process.env.APP_INTEGRATION_CLIENT_MODULE ? {
+      APP_INTEGRATION_CLIENT_MODULE: process.env.APP_INTEGRATION_CLIENT_MODULE,
+      APP_INTEGRATION_CLIENT_SHA: process.env.APP_INTEGRATION_CLIENT_SHA,
+    } : {}),
     ...(evidenceDirectory ? {APP_INTEGRATION_EVIDENCE_DIR: evidenceDirectory, APP_INTEGRATION_BACKEND_SHA: backendSha} : {})});
   await command('npm', ['run', 'typecheck'], {env});
   await command('npm', ['run', 'build'], {env});
@@ -27,6 +31,7 @@ try {
   for (const folder of ['tests', 'tests/app-integration']) {
     for (const name of (await readdir(folder)).sort()) if (name.endsWith('.test.mjs')) paths.push(`${folder}/${name}`);
   }
+  if (process.env.APP_INTEGRATION_CLIENT_MODULE) paths.push('tests/app-integration/client-seam.mjs');
   await command(process.execPath, ['--test', ...paths], {env});
   console.log('SYNTHETIC integration checks passed; no real notification delivery or product-evidence acceptance');
 } catch (error) {
