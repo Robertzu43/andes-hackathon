@@ -1,5 +1,7 @@
 # PR46 · Robert feedback disposition
 
+Historical baseline receipt. See [published corrections and current integration gates](pr46-corrections.md) for the subsequent exact-SHA candidate and newer Robert review.
+
 Current product head checked: `01519d8275b28caf88091feca07247622eace973`.
 Robert's [replacement review 5560599283](https://github.com/Bimbi-Dev/andes-hackathon/pull/46#pullrequestreview-5560599283) requests changes against `0bf0dc2` and replaces his earlier approval. The complete paginated formal reviews, inline comments and discussion were refreshed before this receipt; no inline comments were present. The author's response to the earlier approval does not close the replacement review.
 
