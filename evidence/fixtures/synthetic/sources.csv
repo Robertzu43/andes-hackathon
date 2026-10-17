@@ -1,12 +1,12 @@
-source_id,case_id,kind,provided_by,timestamped_record,source_time_zone,storage_ref,note_private
-SYN-A-W-S1,SYN-A-W,interview_driver,SYN-A-D,no,,SYNTHETIC no stored file,SYNTHETIC
-SYN-A-W-S2,SYN-A-W,interview_contact,SYN-A-C,no,,SYNTHETIC no stored file,SYNTHETIC
-SYN-A-W-S3,SYN-A-W,whatsapp_export,SYN-A-C,yes,America/Sao_Paulo,SYNTHETIC no stored file,SYNTHETIC
-SYN-A-W-S4,SYN-A-W,call_log,SYN-A-C,yes,America/Sao_Paulo,SYNTHETIC no stored file,SYNTHETIC
-SYN-A-O-S1,SYN-A-O,interview_driver,SYN-A-D,no,,SYNTHETIC no stored file,SYNTHETIC
-SYN-A-O-S2,SYN-A-O,interview_contact,SYN-A-C,no,,SYNTHETIC no stored file,SYNTHETIC
-SYN-A-O-S3,SYN-A-O,whatsapp_export,SYN-A-C,yes,America/Sao_Paulo,SYNTHETIC no stored file,SYNTHETIC
-SYN-B-W-S1,SYN-B-W,interview_driver,SYN-B-D,no,,SYNTHETIC no stored file,SYNTHETIC
-SYN-B-W-S2,SYN-B-W,interview_contact,SYN-B-C,no,,SYNTHETIC no stored file,SYNTHETIC
-SYN-B-W-S3,SYN-B-W,whatsapp_export,SYN-B-C,yes,America/Bogota,SYNTHETIC no stored file,SYNTHETIC
-SYN-B-W-S4,SYN-B-W,independent_record,SYN-B-D,yes,America/Bogota,SYNTHETIC no stored file,SYNTHETIC police report
+source_id,case_id,kind,provided_by,evidence_basis,timestamped_record,source_time_zone,storage_ref,note_private
+SYN-A-W-S1,SYN-A-W,interview_driver,SYN-A-D,attributed_account,no,,SYNTHETIC no stored file,SYNTHETIC
+SYN-A-W-S2,SYN-A-W,interview_contact,SYN-A-C,attributed_account,no,,SYNTHETIC no stored file,SYNTHETIC
+SYN-A-W-S3,SYN-A-W,whatsapp_export,SYN-A-C,attributed_account,yes,America/Sao_Paulo,SYNTHETIC no stored file,SYNTHETIC
+SYN-A-W-S4,SYN-A-W,call_log,SYN-A-C,contact_status_only,yes,America/Sao_Paulo,SYNTHETIC no stored file,SYNTHETIC
+SYN-A-O-S1,SYN-A-O,interview_driver,SYN-A-D,attributed_account,no,,SYNTHETIC no stored file,SYNTHETIC
+SYN-A-O-S2,SYN-A-O,interview_contact,SYN-A-C,attributed_account,no,,SYNTHETIC no stored file,SYNTHETIC
+SYN-A-O-S3,SYN-A-O,whatsapp_export,SYN-A-C,attributed_account,yes,America/Sao_Paulo,SYNTHETIC no stored file,SYNTHETIC
+SYN-B-W-S1,SYN-B-W,interview_driver,SYN-B-D,attributed_account,no,,SYNTHETIC no stored file,SYNTHETIC
+SYN-B-W-S2,SYN-B-W,interview_contact,SYN-B-C,attributed_account,no,,SYNTHETIC no stored file,SYNTHETIC
+SYN-B-W-S3,SYN-B-W,whatsapp_export,SYN-B-C,attributed_account,yes,America/Bogota,SYNTHETIC no stored file,SYNTHETIC
+SYN-B-W-S4,SYN-B-W,independent_record,SYN-B-D,independent_observation,yes,America/Bogota,SYNTHETIC no stored file,SYNTHETIC: wholly invented police review of roadside video; two people block the truck and try to force the cab door before it escapes. Video observations support the attempted robbery independently of the driver allegation; no actual record exists.

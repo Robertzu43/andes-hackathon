@@ -30,11 +30,11 @@ Tools for reconstructing real freight trips with independent truck drivers and t
 - Required columns and allowed values; IDs, country codes, language tags and IANA zones; times that carry an offset matching their zone.
 - Every source and event belongs to a known case and pair, and every event cites evidence from its own case.
 - Observed times come from timestamped records. Recalled times come from the participant's own account, as a range.
-- Robbery, security and fatigue events are never treated as recorded by phone data. Self-reports, second-hand reports, suspicions and independently corroborated outcomes stay separate, and corroboration needs an independent record.
+- Robbery, security and fatigue events are never treated as recorded by phone data. No reply alone stays unknown, with contact status separate from incident verification. A suspicion needs the participant's cited account and stated basis; corroboration needs a specific independent observation supporting the claim. A filed complaint that repeats an allegation is still an attributed account.
 - Contradicting accounts stay as linked rows, and unknown times stay unknown.
 - Text that leaves the private folder holds no calendar dates, email addresses, links, coordinates, phone numbers or vehicle plates.
 
-It cannot find names, places or cargo details in free text. The redaction review does that.
+It checks the declared source classifications and required basis, but cannot verify the truth of a source or whether its observations actually support a claim. The independent trace reviewer does that. It cannot find names, places or cargo details in free text. The redaction review does that.
 
 ## Handoff to Robert
 

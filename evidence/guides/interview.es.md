@@ -11,7 +11,7 @@ Duración: de 40 a 50 minutos, con una persona a la vez. El camionero y su conta
 - Este estudio mira hacia atrás. Nunca pida a nadie que maneje cansado, que aguante el sueño, que simule un robo ni que provoque una emergencia.
 - Use solo los códigos del estudio, por ejemplo `P03-D`. No anote nombres, teléfonos, placas, direcciones ni detalles de la carga que identifiquen a alguien.
 - Marque cada hora como **registrada** (sale de un mensaje, una llamada, un rastreador o un documento) o **recordada**. Si la persona da una hora aproximada, anote un rango, por ejemplo "entre las 20:30 y las 21:00". Un "más o menos" nunca se convierte en una hora exacta.
-- Separe lo que la persona vivió, lo que le contaron y lo que temió. "Pensé que habían asaltado el camión" es una sospecha. Un mensaje sin respuesta no prueba sueño ni robo.
+- Separe lo que la persona vivió, lo que le contaron y lo que temió. "Pensé que habían asaltado el camión" es una sospecha. La falta de respuesta por sí sola deja el estado desconocido; no crea una sospecha de cansancio, sueño ni robo. Si la persona expresó una preocupación, anote quién la tuvo, en qué fuente lo dijo y por qué. Mantenga esa preocupación separada del estado de contacto.
 - Si el camionero y el contacto cuentan algo distinto, anote las dos versiones. No decida durante la entrevista cuál es la correcta.
 - Hablar de un robo o de haberse quedado dormido al volante puede ser difícil. Recuerde que se puede saltar cualquier pregunta o parar. Si la persona se angustia, haga una pausa.
 - El estudio no presta ayuda de emergencia. Si hay una emergencia en curso, detenga la entrevista y pida a la persona que llame al número de emergencias del lugar donde está.
@@ -69,6 +69,7 @@ Para cerrar esta parte: "Mirando hacia atrás, ¿hubo un momento en que algo se 
 
 - "¿Tiene registros de ese viaje: mensajes, historial de llamadas, ubicación, datos del rastreador, una denuncia o un reporte a la aseguradora?"
 - Si la persona acepta, mírenlos juntos. Anote qué registro es, la hora que muestra y la zona horaria del teléfono o del sistema.
+- Una denuncia presentada solo acredita que se hizo una declaración. Si repite el relato del camionero, manténgala como relato atribuido. Para corroborar un incidente, identifique observaciones independientes que apoyen ese hecho específico y su fuente. La hora de presentación de la denuncia no es la hora observada del incidente.
 - No copie mensajes de otras personas. La persona puede ocultar lo que no quiera mostrar antes de enseñarlo.
 - No pida el chat completo. Si hace falta una copia, guárdela en el almacenamiento privado del estudio.
 

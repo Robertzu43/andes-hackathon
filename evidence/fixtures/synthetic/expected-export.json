@@ -2,7 +2,7 @@
   "format": "andes-incident-export",
   "format_version": 1,
   "issue": 8,
-  "caveat": "Exploratory reconstruction of a small cohort. It cannot show prevalence, regional demand or safety efficacy. Recalled times are memories; only observed times come from records. A missing reply or phone record never shows sleep or robbery.",
+  "caveat": "Exploratory reconstruction of a small cohort. It cannot show prevalence, regional demand or safety efficacy. Recalled times are memories; only observed times come from records. No reply alone leaves the incident unknown; it does not establish a suspicion of fatigue, sleep or robbery. A filed complaint alone does not corroborate its allegation.",
   "coverage": {
     "pairs": 2,
     "cases": 2,
@@ -126,6 +126,7 @@
           "source_id": "SYN-A-W-S1",
           "kind": "interview_driver",
           "provided_by": "SYN-A-D",
+          "evidence_basis": "attributed_account",
           "timestamped_record": false,
           "source_time_zone": null
         },
@@ -133,6 +134,7 @@
           "source_id": "SYN-A-W-S2",
           "kind": "interview_contact",
           "provided_by": "SYN-A-C",
+          "evidence_basis": "attributed_account",
           "timestamped_record": false,
           "source_time_zone": null
         },
@@ -140,6 +142,7 @@
           "source_id": "SYN-A-W-S3",
           "kind": "whatsapp_export",
           "provided_by": "SYN-A-C",
+          "evidence_basis": "attributed_account",
           "timestamped_record": true,
           "source_time_zone": "America/Sao_Paulo"
         },
@@ -147,6 +150,7 @@
           "source_id": "SYN-A-W-S4",
           "kind": "call_log",
           "provided_by": "SYN-A-C",
+          "evidence_basis": "contact_status_only",
           "timestamped_record": true,
           "source_time_zone": "America/Sao_Paulo"
         }
@@ -162,6 +166,8 @@
           "source_ids": [
             "SYN-A-W-S1"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "recalled",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": null,
@@ -185,6 +191,8 @@
           "source_ids": [
             "SYN-A-W-S3"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "observed",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": 12,
@@ -205,6 +213,8 @@
           "source_ids": [
             "SYN-A-W-S3"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "observed",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": 340,
@@ -225,6 +235,8 @@
           "source_ids": [
             "SYN-A-W-S1"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "recalled",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": null,
@@ -248,6 +260,8 @@
           "source_ids": [
             "SYN-A-W-S1"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "recalled",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": null,
@@ -271,6 +285,8 @@
           "source_ids": [
             "SYN-A-W-S1"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "recalled",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": null,
@@ -296,6 +312,8 @@
           "source_ids": [
             "SYN-A-W-S2"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "recalled",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": null,
@@ -310,8 +328,33 @@
           "note": null
         },
         {
-          "event_id": "SYN-A-W-E08",
+          "event_id": "SYN-A-W-E18",
           "seq": 8,
+          "event_type": "contact_unconfirmed",
+          "actor": "contact",
+          "reported_by": "SYN-A-C",
+          "occurrence": "unknown",
+          "source_ids": [
+            "SYN-A-W-S2"
+          ],
+          "basis_source_id": null,
+          "basis_note": null,
+          "time_basis": "recalled",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 435,
+            "latest": 465
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": null,
+          "note": "SYNTHETIC: no reply; driver status unknown, with no incident inferred"
+        },
+        {
+          "event_id": "SYN-A-W-E08",
+          "seq": 9,
           "event_type": "contact_concerned",
           "actor": "contact",
           "reported_by": "SYN-A-C",
@@ -319,6 +362,8 @@
           "source_ids": [
             "SYN-A-W-S2"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "recalled",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": null,
@@ -334,7 +379,7 @@
         },
         {
           "event_id": "SYN-A-W-E09",
-          "seq": 9,
+          "seq": 10,
           "event_type": "robbery",
           "actor": "driver",
           "reported_by": "SYN-A-C",
@@ -342,6 +387,8 @@
           "source_ids": [
             "SYN-A-W-S2"
           ],
+          "basis_source_id": "SYN-A-W-S2",
+          "basis_note": "SYNTHETIC: in their own interview the contact explicitly said they feared robbery because the loaded truck was unreachable. This records their attributed fear only; an unanswered message alone does not establish a suspicion or incident.",
           "time_basis": "recalled",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": null,
@@ -353,11 +400,11 @@
           "recall_gap_min": null,
           "conflicts_with": [],
           "knew": "SYNTHETIC: feared the loaded truck had been robbed because the driver's phone was off",
-          "note": "SYNTHETIC: suspicion only; the driver reported no robbery on this trip"
+          "note": "SYNTHETIC: attributed suspicion only; the driver reported no robbery on this trip"
         },
         {
           "event_id": "SYN-A-W-E10",
-          "seq": 10,
+          "seq": 11,
           "event_type": "call_attempt",
           "actor": "contact",
           "reported_by": "record",
@@ -365,6 +412,8 @@
           "source_ids": [
             "SYN-A-W-S4"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "observed",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": 460,
@@ -377,7 +426,7 @@
         },
         {
           "event_id": "SYN-A-W-E11",
-          "seq": 11,
+          "seq": 12,
           "event_type": "call_attempt",
           "actor": "contact",
           "reported_by": "record",
@@ -385,6 +434,8 @@
           "source_ids": [
             "SYN-A-W-S4"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "observed",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": 485,
@@ -397,7 +448,7 @@
         },
         {
           "event_id": "SYN-A-W-E12",
-          "seq": 12,
+          "seq": 13,
           "event_type": "decision",
           "actor": "contact",
           "reported_by": "SYN-A-C",
@@ -405,6 +456,8 @@
           "source_ids": [
             "SYN-A-W-S2"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "recalled",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": null,
@@ -420,7 +473,7 @@
         },
         {
           "event_id": "SYN-A-W-E13",
-          "seq": 13,
+          "seq": 14,
           "event_type": "third_party_contacted",
           "actor": "contact",
           "reported_by": "SYN-A-C",
@@ -429,6 +482,8 @@
             "SYN-A-W-S2",
             "SYN-A-W-S4"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "both",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": 494,
@@ -444,7 +499,7 @@
         },
         {
           "event_id": "SYN-A-W-E14",
-          "seq": 14,
+          "seq": 15,
           "event_type": "message_sent",
           "actor": "driver",
           "reported_by": "record",
@@ -452,6 +507,8 @@
           "source_ids": [
             "SYN-A-W-S3"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "observed",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": 511,
@@ -466,7 +523,7 @@
         },
         {
           "event_id": "SYN-A-W-E15",
-          "seq": 15,
+          "seq": 16,
           "event_type": "other",
           "actor": "third_party",
           "reported_by": "SYN-A-C",
@@ -474,6 +531,8 @@
           "source_ids": [
             "SYN-A-W-S2"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "unknown",
           "time_zone": null,
           "observed_offset_min": null,
@@ -486,7 +545,7 @@
         },
         {
           "event_id": "SYN-A-W-E16",
-          "seq": 16,
+          "seq": 17,
           "event_type": "resolution",
           "actor": "contact",
           "reported_by": "SYN-A-C",
@@ -495,6 +554,8 @@
             "SYN-A-W-S2",
             "SYN-A-W-S3"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "both",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": 511,
@@ -510,7 +571,7 @@
         },
         {
           "event_id": "SYN-A-W-E17",
-          "seq": 17,
+          "seq": 18,
           "event_type": "arrival",
           "actor": "driver",
           "reported_by": "SYN-A-D",
@@ -518,6 +579,8 @@
           "source_ids": [
             "SYN-A-W-S1"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "recalled",
           "time_zone": "America/Sao_Paulo",
           "observed_offset_min": null,
@@ -579,6 +642,7 @@
           "source_id": "SYN-B-W-S1",
           "kind": "interview_driver",
           "provided_by": "SYN-B-D",
+          "evidence_basis": "attributed_account",
           "timestamped_record": false,
           "source_time_zone": null
         },
@@ -586,6 +650,7 @@
           "source_id": "SYN-B-W-S2",
           "kind": "interview_contact",
           "provided_by": "SYN-B-C",
+          "evidence_basis": "attributed_account",
           "timestamped_record": false,
           "source_time_zone": null
         },
@@ -593,6 +658,7 @@
           "source_id": "SYN-B-W-S3",
           "kind": "whatsapp_export",
           "provided_by": "SYN-B-C",
+          "evidence_basis": "attributed_account",
           "timestamped_record": true,
           "source_time_zone": "America/Bogota"
         },
@@ -600,6 +666,7 @@
           "source_id": "SYN-B-W-S4",
           "kind": "independent_record",
           "provided_by": "SYN-B-D",
+          "evidence_basis": "independent_observation",
           "timestamped_record": true,
           "source_time_zone": "America/Bogota"
         }
@@ -615,6 +682,8 @@
           "source_ids": [
             "SYN-B-W-S1"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "recalled",
           "time_zone": "America/Bogota",
           "observed_offset_min": null,
@@ -638,6 +707,8 @@
           "source_ids": [
             "SYN-B-W-S1"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "recalled",
           "time_zone": "America/Bogota",
           "observed_offset_min": null,
@@ -661,6 +732,8 @@
           "source_ids": [
             "SYN-B-W-S3"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "observed",
           "time_zone": "America/Bogota",
           "observed_offset_min": 192,
@@ -682,6 +755,8 @@
             "SYN-B-W-S1",
             "SYN-B-W-S4"
           ],
+          "basis_source_id": "SYN-B-W-S4",
+          "basis_note": "SYNTHETIC: wholly invented roadside video reviewed by an officer shows two people blocking this truck and trying to force its cab door before it escapes. These independent observations support this attempted robbery; the record is not a repetition of the driver allegation.",
           "time_basis": "both",
           "time_zone": "America/Bogota",
           "observed_offset_min": 205,
@@ -693,7 +768,7 @@
           "recall_gap_min": 0,
           "conflicts_with": [],
           "knew": "SYNTHETIC: men tried to stop the truck and the driver kept going",
-          "note": "SYNTHETIC: the police report gives the same stretch and a time inside the recalled range"
+          "note": "SYNTHETIC: observed time is the invented video time of the attempt, not the complaint filing time"
         },
         {
           "event_id": "SYN-B-W-E05",
@@ -705,6 +780,8 @@
           "source_ids": [
             "SYN-B-W-S3"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "observed",
           "time_zone": "America/Bogota",
           "observed_offset_min": 211,
@@ -726,6 +803,8 @@
             "SYN-B-W-S2",
             "SYN-B-W-S3"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "both",
           "time_zone": "America/Bogota",
           "observed_offset_min": 218,
@@ -750,6 +829,8 @@
             "SYN-B-W-S2",
             "SYN-B-W-S3"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "both",
           "time_zone": "America/Bogota",
           "observed_offset_min": 232,
@@ -773,6 +854,8 @@
           "source_ids": [
             "SYN-B-W-S1"
           ],
+          "basis_source_id": null,
+          "basis_note": null,
           "time_basis": "recalled",
           "time_zone": "America/Bogota",
           "observed_offset_min": null,

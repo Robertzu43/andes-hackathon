@@ -68,8 +68,15 @@ class SyntheticCohortTest(unittest.TestCase):
     def test_export_keeps_reports_suspicions_and_corroboration_apart(self):
         events = events_of(kit.export(FIXTURE)[0])
         self.assertEqual(events["SYN-A-W-E03"]["occurrence"], "self_reported")  # tiredness message
-        self.assertEqual(events["SYN-A-W-E09"]["occurrence"], "suspected")  # feared robbery that did not happen
-        self.assertEqual(events["SYN-B-W-E04"]["occurrence"], "corroborated")  # synthetic police record
+        self.assertEqual(events["SYN-A-W-E09"]["occurrence"], "suspected")  # attributed fear, unverified
+        self.assertEqual(events["SYN-A-W-E09"]["basis_source_id"], "SYN-A-W-S2")
+        self.assertIn("explicitly said they feared robbery", events["SYN-A-W-E09"]["basis_note"])
+        self.assertEqual(events["SYN-A-W-E18"]["event_type"], "contact_unconfirmed")
+        self.assertEqual(events["SYN-A-W-E18"]["occurrence"], "unknown")
+        self.assertIsNone(events["SYN-A-W-E18"]["basis_source_id"])
+        self.assertEqual(events["SYN-B-W-E04"]["occurrence"], "corroborated")  # invented video observations
+        self.assertEqual(events["SYN-B-W-E04"]["basis_source_id"], "SYN-B-W-S4")
+        self.assertIn("wholly invented roadside video", events["SYN-B-W-E04"]["basis_note"])
         unknown = events["SYN-A-W-E15"]
         self.assertEqual(unknown["time_basis"], "unknown")
         self.assertIsNone(unknown["observed_offset_min"])
@@ -211,6 +218,78 @@ class RuleTest(unittest.TestCase):
     def test_a_suspicion_needs_the_person_who_held_it(self):
         self.edit("timeline", "SYN-A-W-E10", occurrence="suspected")  # reported_by is record
         self.assertRejected("a suspicion needs the participant who held it in reported_by")
+
+    def test_no_reply_alone_cannot_be_promoted_to_suspicion(self):
+        for event_type in ("tiredness_report", "dozed_off_report", "robbery_attempt", "robbery"):
+            with self.subTest(event_type=event_type):
+                self.edit("timeline", "SYN-A-W-E10", event_type=event_type,
+                          occurrence="suspected", reported_by="SYN-A-C",
+                          basis_source_id="SYN-A-W-S4", basis_note="SYNTHETIC: unanswered call only")
+                self.assertRejected("suspicion needs a cited account supplied by the participant")
+
+    def test_suspicion_requires_an_explicit_basis_and_source(self):
+        self.edit("timeline", "SYN-A-W-E09", basis_note="")
+        self.assertRejected("suspected needs basis_note")
+        self.edit("timeline", "SYN-A-W-E09", basis_note="SYNTHETIC: contact explicitly feared robbery",
+                  basis_source_id="")
+        self.assertRejected("suspected needs basis_source_id")
+
+    def test_suspicion_cannot_borrow_another_persons_account(self):
+        self.edit("timeline", "SYN-A-W-E09", source_ids="SYN-A-W-S1", basis_source_id="SYN-A-W-S1")
+        self.assertRejected("suspicion needs a cited account supplied by the participant")
+
+    def test_unanswered_contact_exports_as_unknown_without_an_incident_label(self):
+        self.edit("timeline", "SYN-A-W-E10", event_type="contact_unconfirmed", occurrence="unknown")
+        result, report = kit.export(self.folder)
+        self.assertEqual(report.errors, [])
+        event = events_of(result)["SYN-A-W-E10"]
+        self.assertEqual(event["event_type"], "contact_unconfirmed")
+        self.assertEqual(event["occurrence"], "unknown")
+
+    def test_contact_status_cannot_be_labeled_a_suspicion(self):
+        self.edit("timeline", "SYN-A-W-E09", event_type="contact_unconfirmed")
+        self.assertRejected("contact_unconfirmed must keep occurrence unknown")
+
+    def test_police_complaint_repeating_an_allegation_is_not_corroboration(self):
+        self.edit("sources", "SYN-B-W-S4", evidence_basis="attributed_account",
+                  note_private="SYNTHETIC: complaint only repeats the driver's allegation")
+        self.assertRejected("corroboration needs independent observations supporting this event")
+        self.edit("sources", "SYN-B-W-S4", evidence_basis="unknown")
+        self.assertRejected("corroboration needs independent observations supporting this event")
+
+    def test_corroboration_requires_its_specific_source_and_basis(self):
+        self.edit("timeline", "SYN-B-W-E04", basis_note="")
+        self.assertRejected("corroborated needs basis_note")
+        self.edit("timeline", "SYN-B-W-E04", basis_note="SYNTHETIC: independent witness account",
+                  basis_source_id="SYN-B-W-S1")
+        self.assertRejected("corroboration needs independent observations supporting this event")
+
+    def test_basis_source_must_be_cited_in_the_same_event(self):
+        self.edit("timeline", "SYN-A-W-E09", basis_source_id="SYN-B-W-S4")
+        self.assertRejected("basis_source_id must also be listed in source_ids")
+
+    def test_rerecorded_allegation_can_remain_attributed_self_report(self):
+        self.edit("sources", "SYN-B-W-S4", evidence_basis="attributed_account")
+        self.edit("timeline", "SYN-B-W-E04", occurrence="self_reported",
+                  basis_source_id="", basis_note="", time_basis="recalled",
+                  observed_time="", observed_source_id="")
+        result, report = kit.export(self.folder)
+        self.assertEqual(report.errors, [])
+        event = events_of(result)["SYN-B-W-E04"]
+        self.assertEqual(event["occurrence"], "self_reported")
+        self.assertIsNone(event["observed_offset_min"])
+
+    def test_basis_notes_are_scanned_for_identifiers(self):
+        self.edit("timeline", "SYN-A-W-E09", basis_note="SYNTHETIC: ask person@example.com")
+        self.assertRejected("basis_note seems to contain an email address")
+
+    def test_source_classification_does_not_upgrade_interviews_or_call_metadata(self):
+        self.edit("sources", "SYN-A-W-S2", evidence_basis="independent_observation")
+        self.assertRejected("an interview needs evidence_basis attributed_account")
+        self.assertRejected("independent_observation needs kind independent_record")
+        self.edit("sources", "SYN-A-W-S2", evidence_basis="attributed_account")
+        self.edit("sources", "SYN-A-W-S4", evidence_basis="attributed_account")
+        self.assertRejected("contact or location metadata alone is not an attributed account")
 
     def test_identifiers_in_exported_text_are_rejected_without_repeating_them(self):
         for text, label in (("SYNTHETIC call +55 00 00000-0000", "a phone number"),

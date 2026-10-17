@@ -1,1 +1,1 @@
-event_id,case_id,seq,event_type,actor,reported_by,occurrence,source_ids,time_basis,observed_time,observed_source_id,recalled_earliest,recalled_latest,time_zone,knew,conflicts_with,note_redacted,note_private
+event_id,case_id,seq,event_type,actor,reported_by,occurrence,source_ids,basis_source_id,basis_note,time_basis,observed_time,observed_source_id,recalled_earliest,recalled_latest,time_zone,knew,conflicts_with,note_redacted,note_private

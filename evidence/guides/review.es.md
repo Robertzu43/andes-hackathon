@@ -27,5 +27,7 @@ Puede corregir, agregar o pedir que se quite cualquier parte, también lo relaci
   - `corrected`: hizo correcciones. Agréguelas como filas o notas nuevas, sin borrar las anteriores.
   - `disputed`: no está de acuerdo con partes del relato y no se resolvió.
   - `declined`: prefirió no revisarlo.
+- Compruebe que una falta de respuesta siga como estado desconocido, sin deducir cansancio, sueño ni robo. Una sospecha requiere quién la expresó, su fuente y su motivo; va separada del estado de contacto.
+- Una denuncia que repite el relato no lo confirma de forma independiente. Mantenga la atribución y pida al revisor de fuentes que compruebe las observaciones independientes antes de marcar `corroborated`.
 - Una corrección no cambia una hora registrada. Si el recuerdo y el registro no coinciden, mantenga los dos y únalos con `conflicts_with`.
 - Si la persona pide quitar algo, bórrelo de las hojas y de cualquier copia. Anote solo que se quitó una parte a pedido, sin su contenido.

@@ -87,6 +87,7 @@ SCHEMA = {
             "location_history", "tracking_log", "screenshot", "independent_record", "other",
         },
         "provided_by": "id",
+        "evidence_basis": {"attributed_account", "independent_observation", "contact_status_only", "unknown"},
         "timestamped_record": {"yes", "no"},
         "source_time_zone": "zone?",
         "storage_ref": "private?",
@@ -98,15 +99,17 @@ SCHEMA = {
         "seq": "int",
         "event_type": {
             "trip_start", "rest_start", "rest_end", "rest_difficulty", "checkin_due",
-            "message_sent", "message_delivered", "message_read", "call_attempt", "call_connected",
+            "message_sent", "message_delivered", "message_read", "call_attempt", "call_connected", "contact_unconfirmed",
             "tiredness_report", "dozed_off_report", "security_concern", "robbery_attempt", "robbery",
             "help_request", "contact_concerned", "decision", "third_party_contacted",
             "assistance_arranged", "missed_opportunity", "arrival", "resolution", "other",
         },
         "actor": {"driver", "contact", "third_party", "system", "unknown"},
         "reported_by": "reporter",
-        "occurrence": {"recorded", "self_reported", "reported_second_hand", "suspected", "corroborated"},
+        "occurrence": {"recorded", "self_reported", "reported_second_hand", "suspected", "corroborated", "unknown"},
         "source_ids": "ids",
+        "basis_source_id": "id?",
+        "basis_note": "text?",
         "time_basis": {"observed", "recalled", "both", "unknown"},
         "observed_time": "time?",
         "observed_source_id": "id?",
@@ -145,7 +148,8 @@ ZONES = available_timezones()
 CAVEAT = (
     "Exploratory reconstruction of a small cohort. It cannot show prevalence, regional "
     "demand or safety efficacy. Recalled times are memories; only observed times come "
-    "from records. A missing reply or phone record never shows sleep or robbery."
+    "from records. No reply alone leaves the incident unknown; it does not establish "
+    "a suspicion of fatigue, sleep or robbery. A filed complaint alone does not corroborate its allegation."
 )
 
 
@@ -336,6 +340,12 @@ def check_sources(data: dict, report: Report) -> None:
             report.error(where, f"{source['kind']} must be provided by the pair's {interview_role}")
         if interview_role and source["timestamped_record"] == "yes":
             report.error(where, "an interview is an account; set timestamped_record to no")
+        if interview_role and source["evidence_basis"] != "attributed_account":
+            report.error(where, "an interview needs evidence_basis attributed_account")
+        if source["evidence_basis"] == "independent_observation" and source["kind"] != "independent_record":
+            report.error(where, "independent_observation needs kind independent_record")
+        if source["kind"] in {"call_log", "location_history", "tracking_log"} and source["evidence_basis"] == "attributed_account":
+            report.error(where, "contact or location metadata alone is not an attributed account")
         if source["timestamped_record"] == "yes" and not source["source_time_zone"]:
             report.error(where, "source_time_zone is required for a timestamped record (IANA name or unknown)")
 
@@ -377,6 +387,15 @@ def check_events(data: dict, report: Report) -> None:
 def check_occurrence(event: dict, reporter: dict | None, cited: list[dict], report: Report) -> None:
     """Keep records, accounts, suspicions and independent corroboration apart."""
     where, occurrence, event_type = event["_where"], event["occurrence"], event["event_type"]
+    basis = next((s for s in cited if s["source_id"] == event["basis_source_id"]), None)
+    if event["basis_source_id"] and basis is None:
+        report.error(where, "basis_source_id must also be listed in source_ids from this case")
+    if occurrence in {"suspected", "corroborated"}:
+        for column in ("basis_source_id", "basis_note"):
+            if not event[column]:
+                report.error(where, f"{occurrence} needs {column}")
+    if event_type == "contact_unconfirmed" and occurrence != "unknown":
+        report.error(where, "contact_unconfirmed must keep occurrence unknown; record any attributed concern separately")
     if occurrence == "recorded":
         if event_type in SENSITIVE:
             report.error(where, f"a phone or message record cannot show {event_type}; use self_reported, "
@@ -389,10 +408,17 @@ def check_occurrence(event: dict, reporter: dict | None, cited: list[dict], repo
         elif reporter and reporter["role"] != event["actor"]:
             report.error(where, f"{reporter['participant_id']} is reporting the {event['actor']}'s experience; "
                                 "use reported_second_hand")
-    elif occurrence == "suspected" and not reporter:
-        report.error(where, "a suspicion needs the participant who held it in reported_by")
-    elif occurrence == "corroborated" and not any(source["kind"] == "independent_record" for source in cited):
-        report.error(where, "occurrence corroborated needs a cited independent_record")
+    elif occurrence == "suspected":
+        if not reporter:
+            report.error(where, "a suspicion needs the participant who held it in reported_by")
+        if not basis or basis["evidence_basis"] != "attributed_account" or basis["provided_by"] != event["reported_by"]:
+            report.error(where, "suspicion needs a cited account supplied by the participant; no reply alone stays unknown")
+    elif occurrence == "corroborated":
+        if not any(source["kind"] == "independent_record" for source in cited):
+            report.error(where, "occurrence corroborated needs a cited independent_record")
+        if not basis or basis["kind"] != "independent_record" or basis["evidence_basis"] != "independent_observation":
+            report.error(where, "corroboration needs independent observations supporting this event; "
+                                "a filed complaint repeating an allegation is an attributed account")
 
 
 def check_times(event: dict, cited: list[dict], report: Report) -> None:
@@ -587,6 +613,8 @@ def case_export(case: dict, data: dict) -> dict:
             "reported_by": event["reported_by"],
             "occurrence": event["occurrence"],
             "source_ids": split(event["source_ids"]),
+            "basis_source_id": event["basis_source_id"] or None,
+            "basis_note": event["basis_note"] or None,
             "time_basis": event["time_basis"],
             "time_zone": event["time_zone"] or None,
             "observed_offset_min": offset(event["observed_time"]),
@@ -629,6 +657,7 @@ def case_export(case: dict, data: dict) -> dict:
             "source_id": source["source_id"],
             "kind": source["kind"],
             "provided_by": source["provided_by"],
+            "evidence_basis": source["evidence_basis"],
             "timestamped_record": source["timestamped_record"] == "yes",
             "source_time_zone": source["source_time_zone"] or None,
         } for source in sources],

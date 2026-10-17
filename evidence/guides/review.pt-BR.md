@@ -27,5 +27,7 @@ Você pode corrigir, acrescentar ou pedir para tirar qualquer parte, inclusive o
   - `corrected`: fez correções. Acrescente como linhas ou notas novas, sem apagar as anteriores.
   - `disputed`: discorda de partes do relato e não se resolveu.
   - `declined`: preferiu não revisar.
+- Confira se a falta de resposta continua como estado desconhecido, sem deduzir cansaço, sono ou roubo. Uma suspeita precisa de quem a expressou, sua fonte e seu motivo; fica separada do estado do contato.
+- Um boletim que repete o relato não o confirma de forma independente. Mantenha a atribuição e peça ao revisor das fontes que confira as observações independentes antes de marcar `corroborated`.
 - Uma correção não muda um horário registrado. Se a lembrança e o registro não baterem, mantenha os dois e ligue um ao outro com `conflicts_with`.
 - Se a pessoa pedir para tirar algo, apague das planilhas e de qualquer cópia. Anote só que uma parte foi retirada a pedido, sem o conteúdo.

@@ -58,8 +58,9 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 |---|---|---|---|
 | `source_id` | ID | yes | One piece of evidence. |
 | `case_id` | ID | yes | |
-| `kind` | `interview_driver`, `interview_contact`, `whatsapp_export`, `call_log`, `sms`, `location_history`, `tracking_log`, `screenshot`, `independent_record`, `other` | yes | `independent_record` is a record from outside the pair that can corroborate an outcome, such as a police report, an insurer record or a carrier or shipper record. |
+| `kind` | `interview_driver`, `interview_contact`, `whatsapp_export`, `call_log`, `sms`, `location_history`, `tracking_log`, `screenshot`, `independent_record`, `other` | yes | Source format or origin only. A police, insurer or carrier record can use `independent_record`, but that label does not establish corroboration. |
 | `provided_by` | participant ID | yes | Who supplied it. An interview comes from the person with the matching role. |
+| `evidence_basis` | `attributed_account`, `independent_observation`, `contact_status_only`, `unknown` | yes | What the source contains. Interviews and a complaint merely repeating a driver's allegation use `attributed_account`. Call status or location metadata alone uses `contact_status_only`. `independent_observation` requires `kind=independent_record` and actual observations independent of the allegation; describe what supports the specific event in its `basis_note`. If not established, use `unknown`. For mixed documents, make separate source rows for the relevant excerpts. |
 | `timestamped_record` | `yes`, `no` | yes | `yes` when the source carries its own clock times. Interviews are always `no`. |
 | `source_time_zone` | IANA zone or `unknown`; required when timestamped | yes | Zone of the clock that produced the source's times. |
 | `storage_ref` | free text, may be blank | private | Where the original is held in private storage. |
@@ -77,6 +78,8 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 | `reported_by` | participant ID or `record` | yes | Whose account the row is. `record` when it comes only from a record. |
 | `occurrence` | listed below | yes | How the team knows it happened. |
 | `source_ids` | list of source IDs from the same case, at least one | yes | The evidence behind the row. |
+| `basis_source_id` | source ID; required for `suspected` and `corroborated`, otherwise may be blank | yes | The specific source supporting the classification, also in this event's `source_ids`. A suspicion requires an attributed account supplied by the participant in `reported_by`. Confirm the account actually expresses that person's suspicion; supplying a document does not prove authorship. Corroboration requires an `independent_record` with `evidence_basis=independent_observation`. |
+| `basis_note` | free text; required for `suspected` and `corroborated`, otherwise may be blank | yes, scanned | For suspicion, state who expressed it and why, as supported by the cited account. For corroboration, state the independent observations and how they support this specific claim. A matching place/time, filing receipt or copied allegation alone is insufficient. The trace reviewer must check this; the tool cannot judge the truth of free text. |
 | `time_basis` | `observed`, `recalled`, `both`, `unknown` | yes | See the time rules. |
 | `observed_time` | time, may be blank | as minutes | Time taken from a record. |
 | `observed_source_id` | source ID, may be blank | yes | The timestamped record that gives `observed_time`. It must also be in `source_ids`. |
@@ -90,7 +93,7 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 ### Event types
 
 - Trip and rest: `trip_start`, `rest_start`, `rest_end`, `rest_difficulty` (no safe or suitable place to stop), `arrival`.
-- Messages and calls: `checkin_due`, `message_sent`, `message_delivered`, `message_read`, `call_attempt`, `call_connected`.
+- Messages and calls: `checkin_due`, `message_sent`, `message_delivered`, `message_read`, `call_attempt`, `call_connected`, `contact_unconfirmed` (status remains unknown; requires `occurrence=unknown`).
 - Fatigue: `tiredness_report` (felt tired or sleepy), `dozed_off_report` (dozed off or nearly fell asleep while driving).
 - Security: `security_concern` (followed, a suspicious stop, a threat), `robbery_attempt`, `robbery`.
 - Response: `help_request`, `contact_concerned`, `decision`, `third_party_contacted` (fellow drivers, the freight company, police or others), `assistance_arranged`, `missed_opportunity`, `resolution` (when someone learned how it ended), `other`.
@@ -104,8 +107,11 @@ The fatigue and security types are sensitive: they can never be `recorded`.
 | `recorded` | A timestamped record shows the act happened: a message was sent, a call was made. Needs a cited timestamped record. A record can show that someone wrote that they were tired or robbed. It cannot show that they were, so sensitive types never use this value. |
 | `self_reported` | The person who did or experienced it says so, in an interview or in their own message. When a participant reports it, their role must match the actor. |
 | `reported_second_hand` | Someone else says it happened. |
-| `suspected` | Someone feared or suspected it and nobody knows that it happened. A missed reply supports a suspicion at most. Needs the participant who held the suspicion in `reported_by`. |
-| `corroborated` | Confirmed by a source outside the pair. Needs a cited `independent_record`. |
+| `suspected` | A participant explicitly expressed a fear or suspicion, with their own cited account and stated basis in `basis_source_id` and `basis_note`. Requires that person in `reported_by`. An unanswered message alone does not create this classification. The suspicion is attributed, and the incident remains unverified. |
+| `corroborated` | Independent observations support this specific claim. Requires `basis_source_id` pointing to a cited `independent_record` with `evidence_basis=independent_observation`, and `basis_note` explaining the observations. A police complaint repeating the driver's allegation remains `self_reported` with attribution to the driver; a second-hand account remains `reported_second_hand`. |
+| `unknown` | Missing evidence leaves occurrence unverified. For no reply alone, use `contact_unconfirmed` with this value, without adding a fatigue, sleep or robbery label. A bounded follow-up under an agreed policy does not change that evidence status. |
+
+Keep contact status and incident verification in separate rows. An unanswered call can be a recorded `call_attempt`; it establishes neither a robbery nor someone's suspicion of one. A separately sourced participant concern can coexist with unknown contact status. `time_basis` describes when the record or recollection occurred, not whether the incident is verified. In particular, a complaint's filing time is not an observed time of the incident it alleges.
 
 ### Time rules
 
@@ -126,4 +132,4 @@ The fatigue and security types are sensitive: they can never be `recorded`.
 - **`window`:** the claimed window with the basis of each end. `duration_min` gives the shortest and longest possible window from the endpoint times, or null when an end has no time. `traceable_to_records` is true only when both ends have observed times.
 - **`conflicts_with`** lists both directions.
 - **`coverage`** counts countries, languages, phone platforms, drivers by trucks operated and case concerns, and lists gaps: Spanish, Brazilian Portuguese, iPhone, Android, security or robbery cases and fatigue cases.
-- **Scanned text:** `corridor_label`, `arrangement`, `knew` and `note_redacted` must not contain calendar dates, email addresses, links, coordinates, phone numbers or vehicle plates. A hit is an error, and the message never repeats the text. Clock times are allowed. Names, places and cargo details cannot be detected automatically, so the redaction review covers them.
+- **Scanned text:** `corridor_label`, `arrangement`, `knew`, `basis_note` and `note_redacted` must not contain calendar dates, email addresses, links, coordinates, phone numbers or vehicle plates. A hit is an error, and the message never repeats the text. Clock times are allowed. Names, places and cargo details cannot be detected automatically, so the redaction review covers them.

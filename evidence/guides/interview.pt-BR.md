@@ -11,7 +11,7 @@ Duração: de 40 a 50 minutos, com uma pessoa por vez. O caminhoneiro e o contat
 - Este estudo olha para trás. Nunca peça a ninguém que dirija cansado, que segure o sono, que simule um roubo ou que provoque uma emergência.
 - Use só os códigos do estudo, por exemplo `P03-D`. Não anote nomes, telefones, placas, endereços nem detalhes da carga que identifiquem alguém.
 - Marque cada horário como **registrado** (vem de uma mensagem, uma ligação, um rastreador ou um documento) ou **lembrado**. Se a pessoa der um horário aproximado, anote uma faixa, por exemplo "entre 20:30 e 21:00". Um "mais ou menos" nunca vira horário exato.
-- Separe o que a pessoa viveu, o que contaram para ela e o que ela temeu. "Achei que tinham assaltado o caminhão" é uma suspeita. Uma mensagem sem resposta não prova sono nem roubo.
+- Separe o que a pessoa viveu, o que contaram para ela e o que ela temeu. "Achei que tinham assaltado o caminhão" é uma suspeita. A falta de resposta, sozinha, deixa o estado desconhecido; não cria suspeita de cansaço, sono ou roubo. Se a pessoa expressou uma preocupação, anote quem a teve, em qual fonte disse isso e por quê. Mantenha essa preocupação separada do estado do contato.
 - Se o caminhoneiro e o contato contarem coisas diferentes, anote as duas versões. Não decida durante a entrevista qual está certa.
 - Falar de um roubo ou de ter cochilado ao volante pode ser difícil. Lembre que dá para pular qualquer pergunta ou parar. Se a pessoa ficar angustiada, faça uma pausa.
 - O estudo não presta socorro. Se houver uma emergência em andamento, pare a entrevista e peça que a pessoa ligue para o número de emergência do local onde está.
@@ -69,6 +69,7 @@ Para fechar esta parte: "Olhando para trás, houve um momento em que algo poderi
 
 - "Você tem registros daquela viagem: mensagens, histórico de ligações, localização, dados do rastreador, um boletim de ocorrência ou um aviso à seguradora?"
 - Se a pessoa concordar, vejam juntos. Anote qual é o registro, o horário que ele mostra e o fuso horário do celular ou do sistema.
+- Um boletim de ocorrência, por si só, registra uma declaração. Se repete o relato do caminhoneiro, mantenha como relato atribuído. Para corroborar um incidente, identifique observações independentes que sustentem aquele fato específico e a fonte. O horário de registro do boletim não é o horário observado do incidente.
 - Não copie mensagens de outras pessoas. A pessoa pode esconder o que não quiser mostrar antes de mostrar.
 - Não peça a conversa inteira. Se for preciso guardar uma cópia, use o armazenamento privado do estudo.
 
