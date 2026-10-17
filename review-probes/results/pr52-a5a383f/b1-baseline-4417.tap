@@ -1,0 +1,66 @@
+TAP version 13
+# Subtest: B1 motion work cap applies after throttle while raw callback accounting remains observable
+not ok 1 - B1 motion work cap applies after throttle while raw callback accounting remains observable
+  ---
+  duration_ms: 2.822833
+  type: 'test'
+  location: '/private/tmp/andes-q57-4417-baseline/tests/phone-observations/adapter.test.mjs:76:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    0 !== 1
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q57-4417-baseline/tests/phone-observations/adapter.test.mjs:84:10)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: B1 raw callback guard independently retires a motion flood without stopping GPS
+not ok 2 - B1 raw callback guard independently retires a motion flood without stopping GPS
+  ---
+  duration_ms: 0.418208
+  type: 'test'
+  location: '/private/tmp/andes-q57-4417-baseline/tests/phone-observations/adapter.test.mjs:96:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'data')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q57-4417-baseline/tests/phone-observations/adapter.test.mjs:101:44)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: B1 raw callback budget requires its own positive finite bounded value
+not ok 3 - B1 raw callback budget requires its own positive finite bounded value
+  ---
+  duration_ms: 0.177459
+  type: 'test'
+  location: '/private/tmp/andes-q57-4417-baseline/tests/phone-observations/adapter.test.mjs:109:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception (RangeError).'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q57-4417-baseline/tests/phone-observations/adapter.test.mjs:111:12)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 0
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 45.276709

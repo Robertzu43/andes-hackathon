@@ -1,0 +1,57 @@
+{
+  "sourceSha": "a5a383f2ec0979d4743bfd7355210c1ae03fac4a",
+  "preservedAuthorSha": "4417cf699aee0f25337c23754a1d2561b334bd7f",
+  "node": "24.17.0",
+  "sourceFiles": {
+    "src/phone-observations/adapter.mjs": "2efe463147eebd2ffbda4216cbfa9d9670f6e038960da77fd07ba93965ad021a",
+    "src/phone-observations/trip-sharing.mjs": "47c0003e1e37cd2a55d7268705dac399ae8137cbfdc98b2ed121e1924b5464d2",
+    "tests/phone-observations/adapter.test.mjs": "edcc4e046c1543151ed75fdb9e2e12a6be6475596c113573b5d34c2f39a1d942"
+  },
+  "checks": {
+    "current": {
+      "tests": 114,
+      "pass": 114,
+      "fail": 0,
+      "exit": 0
+    },
+    "B1Against4417": {
+      "tests": 3,
+      "pass": 0,
+      "fail": 3,
+      "exit": 1
+    },
+    "original": {
+      "tests": 22,
+      "pass": 17,
+      "fail": 5,
+      "exit": 1
+    },
+    "contractV2": {
+      "tests": 22,
+      "pass": 20,
+      "fail": 2,
+      "exit": 1
+    },
+    "lifecycle": {
+      "tests": 16,
+      "pass": 14,
+      "fail": 2,
+      "exit": 1
+    },
+    "originalReproduce": {
+      "tests": 4,
+      "pass": 2,
+      "fail": 2,
+      "exit": 1
+    }
+  },
+  "tapNormalization": "Trailing horizontal whitespace removed; assertions and outcomes unchanged",
+  "lifecycleNote": "Historical script prints a hardcoded4aca candidate; imported source is exact sourceSha",
+  "limits": [
+    "synthetic-only",
+    "no-queue-clearance",
+    "no-backend-composition-run",
+    "independent52-pending",
+    "Robert-confirmation-pending"
+  ]
+}

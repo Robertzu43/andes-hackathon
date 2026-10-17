@@ -1,0 +1,694 @@
+TAP version 13
+# Subtest: B1 throttled 60Hz motion does not spend the useful-work callback budget
+ok 1 - B1 throttled 60Hz motion does not spend the useful-work callback budget
+  ---
+  duration_ms: 2.494959
+  type: 'test'
+  ...
+# Subtest: B3 repeated blocked requests leave useful GPS alive under a small valid cap
+ok 2 - B3 repeated blocked requests leave useful GPS alive under a small valid cap
+  ---
+  duration_ms: 1.628917
+  type: 'test'
+  ...
+# Subtest: S2 code1 plus a fresh prompt status permits an explicit retry without inventing a grant
+ok 3 - S2 code1 plus a fresh prompt status permits an explicit retry without inventing a grant
+  ---
+  duration_ms: 2.100709
+  type: 'test'
+  ...
+# Subtest: S2 positive control: browser-confirmed denial remains blocked
+ok 4 - S2 positive control: browser-confirmed denial remains blocked
+  ---
+  duration_ms: 0.499875
+  type: 'test'
+  ...
+# Subtest: S3 GPS permission wait is excluded from the acquisition timeout
+ok 5 - S3 GPS permission wait is excluded from the acquisition timeout
+  ---
+  duration_ms: 0.317667
+  type: 'test'
+  ...
+# Subtest: S3 motion grant after the acquisition timeout still attaches within the session
+ok 6 - S3 motion grant after the acquisition timeout still attaches within the session
+  ---
+  duration_ms: 0.27975
+  type: 'test'
+  ...
+# Subtest: S3 positive control: session expiry still rejects a pending motion grant
+ok 7 - S3 positive control: session expiry still rejects a pending motion grant
+  ---
+  duration_ms: 0.194834
+  type: 'test'
+  ...
+# Subtest: S4 GPS budget-stop stream uses public geolocation spelling
+ok 8 - S4 GPS budget-stop stream uses public geolocation spelling
+  ---
+  duration_ms: 0.205208
+  type: 'test'
+  ...
+# Subtest: S5 synchronous denial returns failed acquisition
+ok 9 - S5 synchronous denial returns failed acquisition
+  ---
+  duration_ms: 0.289833
+  type: 'test'
+  ...
+# Subtest: S8 sink cancellation is attributed to cancellation rather than a stopped session
+ok 10 - S8 sink cancellation is attributed to cancellation rather than a stopped session
+  ---
+  duration_ms: 0.28175
+  type: 'test'
+  ...
+# Subtest: S8 a regressed request clock is attributed to clock uncertainty rather than timeout
+ok 11 - S8 a regressed request clock is attributed to clock uncertainty rather than timeout
+  ---
+  duration_ms: 0.1765
+  type: 'test'
+  ...
+# Subtest: S9 synchronous native callbacks flush the sink after native watch assignment settles
+ok 12 - S9 synchronous native callbacks flush the sink after native watch assignment settles
+  ---
+  duration_ms: 0.188083
+  type: 'test'
+  ...
+# Subtest: nothing is attached, scheduled or queried before start()
+ok 13 - nothing is attached, scheduled or queried before start()
+  ---
+  duration_ms: 3.34075
+  type: 'test'
+  ...
+# Subtest: start() records both clocks and the page state, then ticks at the configured interval
+ok 14 - start() records both clocks and the page state, then ticks at the configured interval
+  ---
+  duration_ms: 0.445084
+  type: 'test'
+  ...
+# Subtest: start and stop record the device time zone, so a cross-border zone change is visible
+ok 15 - start and stop record the device time zone, so a cross-border zone change is visible
+  ---
+  duration_ms: 0.203166
+  type: 'test'
+  ...
+# Subtest: an unreadable time zone is recorded as null
+ok 16 - an unreadable time zone is recorded as null
+  ---
+  duration_ms: 0.105625
+  type: 'test'
+  ...
+# Subtest: start() twice throws and a stopped recorder cannot restart
+ok 17 - start() twice throws and a stopped recorder cannot restart
+  ---
+  duration_ms: 0.210542
+  type: 'test'
+  ...
+# Subtest: stop() is idempotent, records once and freezes the trace
+ok 18 - stop() is idempotent, records once and freezes the trace
+  ---
+  duration_ms: 0.139584
+  type: 'test'
+  ...
+# Subtest: lifecycle and network events become observations with their own event timestamps
+ok 19 - lifecycle and network events become observations with their own event timestamps
+  ---
+  duration_ms: 0.209833
+  type: 'test'
+  ...
+# Subtest: on-time timer ticks are counted without filling the buffer
+ok 20 - on-time timer ticks are counted without filling the buffer
+  ---
+  duration_ms: 0.11725
+  type: 'test'
+  ...
+# Subtest: late ticks record monotonic and wall elapsed time separately
+ok 21 - late ticks record monotonic and wall elapsed time separately
+  ---
+  duration_ms: 0.1315
+  type: 'test'
+  ...
+# Subtest: the timer gap threshold is inclusive on either clock
+ok 22 - the timer gap threshold is inclusive on either clock
+  ---
+  duration_ms: 0.134292
+  type: 'test'
+  ...
+# Subtest: on a bare runtime the recorder starts, reports unknowns and releases its real timer
+ok 23 - on a bare runtime the recorder starts, reports unknowns and releases its real timer
+  ---
+  duration_ms: 10.547625
+  type: 'test'
+  ...
+# Subtest: a missing navigator or document makes capabilities unknown rather than absent
+ok 24 - a missing navigator or document makes capabilities unknown rather than absent
+  ---
+  duration_ms: 0.304792
+  type: 'test'
+  ...
+# Subtest: capabilities are read passively and motion or notification permission is never requested
+ok 25 - capabilities are read passively and motion or notification permission is never requested
+  ---
+  duration_ms: 0.172333
+  type: 'test'
+  ...
+# Subtest: a capability getter that throws is unknown, and a location request through it is recorded
+ok 26 - a capability getter that throws is unknown, and a location request through it is recorded
+  ---
+  duration_ms: 0.56625
+  type: 'test'
+  ...
+# Subtest: geolocation permission state is queried passively and later changes are recorded
+ok 27 - geolocation permission state is queried passively and later changes are recorded
+  ---
+  duration_ms: 1.948458
+  type: 'test'
+  ...
+# Subtest: a rejected permission query is recorded as unknown with the error name
+ok 28 - a rejected permission query is recorded as unknown with the error name
+  ---
+  duration_ms: 0.38225
+  type: 'test'
+  ...
+# Subtest: a permission answer arriving after stop() is ignored and leaves no listener behind
+ok 29 - a permission answer arriving after stop() is ignored and leaves no listener behind
+  ---
+  duration_ms: 0.252791
+  type: 'test'
+  ...
+# Subtest: samplePosition() is the only path to a location request and coordinates are omitted by default
+ok 30 - samplePosition() is the only path to a location request and coordinates are omitted by default
+  ---
+  duration_ms: 0.309292
+  type: 'test'
+  ...
+# Subtest: raw coordinates are kept only when the tester opts in
+ok 31 - raw coordinates are kept only when the tester opts in
+  ---
+  duration_ms: 0.118916
+  type: 'test'
+  ...
+# Subtest: position age is classified against staleAfterMs, and future or missing timestamps are unknown
+ok 32 - position age is classified against staleAfterMs, and future or missing timestamps are unknown
+  ---
+  duration_ms: 0.1535
+  type: 'test'
+  ...
+# Subtest: geolocation errors keep the spec code and its name
+ok 33 - geolocation errors keep the spec code and its name
+  ---
+  duration_ms: 0.252458
+  type: 'test'
+  ...
+# Subtest: location requests without the API are recorded instead of throwing
+ok 34 - location requests without the API are recorded instead of throwing
+  ---
+  duration_ms: 0.12775
+  type: 'test'
+  ...
+# Subtest: a position watch records each callback until it is cleared
+ok 35 - a position watch records each callback until it is cleared
+  ---
+  duration_ms: 0.161666
+  type: 'test'
+  ...
+# Subtest: marks and location requests need an active session
+ok 36 - marks and location requests need an active session
+  ---
+  duration_ms: 0.1415
+  type: 'test'
+  ...
+# Subtest: mark() labels are stored as bounded strings
+ok 37 - mark() labels are stored as bounded strings
+  ---
+  duration_ms: 0.071625
+  type: 'test'
+  ...
+# Subtest: the buffer keeps the newest observations and counts what it dropped
+ok 38 - the buffer keeps the newest observations and counts what it dropped
+  ---
+  duration_ms: 0.067542
+  type: 'test'
+  ...
+# Subtest: acquisition settings survive buffer eviction of the request observation
+ok 39 - acquisition settings survive buffer eviction of the request observation
+  ---
+  duration_ms: 0.09775
+  type: 'test'
+  ...
+# Subtest: each retained fix carries the settings of its own request after settings change
+ok 40 - each retained fix carries the settings of its own request after settings change
+  ---
+  duration_ms: 0.129917
+  type: 'test'
+  ...
+# Subtest: invalid options are rejected before anything starts
+ok 41 - invalid options are rejected before anything starts
+  ---
+  duration_ms: 0.196375
+  type: 'test'
+  ...
+# Subtest: exportTrace() returns detached JSON-safe data
+ok 42 - exportTrace() returns detached JSON-safe data
+  ---
+  duration_ms: 0.085125
+  type: 'test'
+  ...
+# Subtest: stop() removes every listener, timer, watch and permission subscription
+ok 43 - stop() removes every listener, timer, watch and permission subscription
+  ---
+  duration_ms: 1.725625
+  type: 'test'
+  ...
+# Subtest: B1 motion work cap applies after throttle while raw callback accounting remains observable
+ok 44 - B1 motion work cap applies after throttle while raw callback accounting remains observable
+  ---
+  duration_ms: 3.570792
+  type: 'test'
+  ...
+# Subtest: B1 raw callback guard independently retires a motion flood without stopping GPS
+ok 45 - B1 raw callback guard independently retires a motion flood without stopping GPS
+  ---
+  duration_ms: 0.829667
+  type: 'test'
+  ...
+# Subtest: B1 raw callback budget requires its own positive finite bounded value
+ok 46 - B1 raw callback budget requires its own positive finite bounded value
+  ---
+  duration_ms: 0.289042
+  type: 'test'
+  ...
+# Subtest: queued trip composes the supplied sink and upload API while acquiring GPS only
+ok 47 - queued trip composes the supplied sink and upload API while acquiring GPS only
+  ---
+  duration_ms: 0.592459
+  type: 'test'
+  ...
+# Subtest: queued withdrawal stops and purges synchronously before asynchronous trip deletion
+ok 48 - queued withdrawal stops and purges synchronously before asynchronous trip deletion
+  ---
+  duration_ms: 4.133917
+  type: 'test'
+  ...
+# Subtest: queued withdrawal exposes deletion failures and allows deletion retry without reopening consent
+ok 49 - queued withdrawal exposes deletion failures and allows deletion retry without reopening consent
+  ---
+  duration_ms: 0.492833
+  type: 'test'
+  ...
+# Subtest: queued status failure is explicit and a pipeline with missing capabilities is rejected
+ok 50 - queued status failure is explicit and a pipeline with missing capabilities is rejected
+  ---
+  duration_ms: 0.171583
+  type: 'test'
+  ...
+# Subtest: construction and start never acquire, query, prompt or upload
+ok 51 - construction and start never acquire, query, prompt or upload
+  ---
+  duration_ms: 0.215917
+  type: 'test'
+  ...
+# Subtest: device mode rejects synthetic qualification; no qualification or mismatched context/budget can acquire
+ok 52 - device mode rejects synthetic qualification; no qualification or mismatched context/budget can acquire
+  ---
+  duration_ms: 0.434125
+  type: 'test'
+  ...
+# Subtest: explicit physical review configuration must match stream, context and budget
+ok 53 - explicit physical review configuration must match stream, context and budget
+  ---
+  duration_ms: 0.171
+  type: 'test'
+  ...
+# Subtest: explicit acquisition requires secure visible context and supported active user gesture
+ok 54 - explicit acquisition requires secure visible context and supported active user gesture
+  ---
+  duration_ms: 0.34225
+  type: 'test'
+  ...
+# Subtest: location source/receipt time, unknowns, privacy and request attribution survive cached fixes
+ok 55 - location source/receipt time, unknowns, privacy and request attribution survive cached fixes
+  ---
+  duration_ms: 1.357292
+  type: 'test'
+  ...
+# Subtest: precise coordinates require consent plus bounded purpose and reference; withdrawal cancels streams
+ok 56 - precise coordinates require consent plus bounded purpose and reference; withdrawal cancels streams
+  ---
+  duration_ms: 0.397167
+  type: 'test'
+  ...
+# Subtest: watch cancellation and permission loss ignore callbacks before and after restart
+ok 57 - watch cancellation and permission loss ignore callbacks before and after restart
+  ---
+  duration_ms: 0.569583
+  type: 'test'
+  ...
+# Subtest: sample callbacks after stop and permission answers from old sessions are ignored
+ok 58 - sample callbacks after stop and permission answers from old sessions are ignored
+  ---
+  duration_ms: 0.371292
+  type: 'test'
+  ...
+# Subtest: one-shot callback settles once; stopped-watch callbacks cannot enter a replacement watch
+ok 59 - one-shot callback settles once; stopped-watch callbacks cannot enter a replacement watch
+  ---
+  duration_ms: 0.32025
+  type: 'test'
+  ...
+# Subtest: reordered fixes retain source order and negative/missing/uncertain ages remain unknown
+ok 60 - reordered fixes retain source order and negative/missing/uncertain ages remain unknown
+  ---
+  duration_ms: 0.187334
+  type: 'test'
+  ...
+# Subtest: unreconciled clocks and unset freshness never assert fresh
+ok 61 - unreconciled clocks and unset freshness never assert fresh
+  ---
+  duration_ms: 0.1045
+  type: 'test'
+  ...
+# Subtest: motion requests permission synchronously from the gesture and subscribes only after grant
+ok 62 - motion requests permission synchronously from the gesture and subscribes only after grant
+  ---
+  duration_ms: 0.331334
+  type: 'test'
+  ...
+# Subtest: motion denies missing API and retains denied/unknown/rejected explicit answers
+ok 63 - motion denies missing API and retains denied/unknown/rejected explicit answers
+  ---
+  duration_ms: 0.393875
+  type: 'test'
+  ...
+# Subtest: R1 every terminal path emits exactly one stop beyond an exhausted ordinary budget
+ok 64 - R1 every terminal path emits exactly one stop beyond an exhausted ordinary budget
+  ---
+  duration_ms: 1.201792
+  type: 'test'
+  ...
+# Subtest: R1 reentrant sink stop is delivered after the current event with no recursive sink
+ok 65 - R1 reentrant sink stop is delivered after the current event with no recursive sink
+  ---
+  duration_ms: 0.145
+  type: 'test'
+  ...
+# Subtest: R1 default bounded session supports ten foreground hours at one GPS fix per second
+ok 66 - R1 default bounded session supports ten foreground hours at one GPS fix per second
+  ---
+  duration_ms: 331.5165
+  type: 'test'
+  ...
+# Subtest: R2 an already granted GPS stream can be explicitly reacquired without prompting
+ok 67 - R2 an already granted GPS stream can be explicitly reacquired without prompting
+  ---
+  duration_ms: 0.90575
+  type: 'test'
+  ...
+# Subtest: R2 legacy gesture bridge accepts only synchronous trusted native dispatch
+ok 68 - R2 legacy gesture bridge accepts only synchronous trusted native dispatch
+  ---
+  duration_ms: 0.332084
+  type: 'test'
+  ...
+# Subtest: R2 explicit resume restores the watch under a new generation and ignores old callbacks
+ok 69 - R2 explicit resume restores the watch under a new generation and ignores old callbacks
+  ---
+  duration_ms: 0.575167
+  type: 'test'
+  ...
+# Subtest: R2 denied permission cannot be bypassed by suspension and resume
+ok 70 - R2 denied permission cannot be bypassed by suspension and resume
+  ---
+  duration_ms: 1.475917
+  type: 'test'
+  ...
+# Subtest: R2 wake lock is best effort, releases on stop, and late grants release without reviving a session
+ok 71 - R2 wake lock is best effort, releases on stop, and late grants release without reviving a session
+  ---
+  duration_ms: 0.716042
+  type: 'test'
+  ...
+# Subtest: R2 unsupported, rejected, timed-out and browser-released wake locks are explicit
+ok 72 - R2 unsupported, rejected, timed-out and browser-released wake locks are explicit
+  ---
+  duration_ms: 0.49825
+  type: 'test'
+  ...
+# Subtest: R2 delayed wake grant rechecks its deadline without timer execution
+ok 73 - R2 delayed wake grant rechecks its deadline without timer execution
+  ---
+  duration_ms: 0.131125
+  type: 'test'
+  ...
+# Subtest: R2 resume reacquires motion and wake lock only from the new explicit action
+ok 74 - R2 resume reacquires motion and wake lock only from the new explicit action
+  ---
+  duration_ms: 0.409167
+  type: 'test'
+  ...
+# Subtest: R3 high accuracy is a default hint with an explicit observable override
+ok 75 - R3 high accuracy is a default hint with an explicit observable override
+  ---
+  duration_ms: 0.18625
+  type: 'test'
+  ...
+# Subtest: R4 trip factory binds reviewed context and trip consent without enabling unqualified devices
+ok 76 - R4 trip factory binds reviewed context and trip consent without enabling unqualified devices
+  ---
+  duration_ms: 0.313459
+  type: 'test'
+  ...
+# Subtest: R5 browser-managed motion needs qualification and gesture and never fabricates a permission grant
+ok 77 - R5 browser-managed motion needs qualification and gesture and never fabricates a permission grant
+  ---
+  duration_ms: 0.180333
+  type: 'test'
+  ...
+# Subtest: R6 transient errors are throttled separately while denial and later valid fixes remain observable
+ok 78 - R6 transient errors are throttled separately while denial and later valid fixes remain observable
+  ---
+  duration_ms: 0.414584
+  type: 'test'
+  ...
+# Subtest: late motion grant cannot subscribe after stop, replacement request or timeout
+ok 79 - late motion grant cannot subscribe after stop, replacement request or timeout
+  ---
+  duration_ms: 0.221
+  type: 'test'
+  ...
+# Subtest: motion permission change revokes subscription and obsolete queued handler is inert
+ok 80 - motion permission change revokes subscription and obsolete queued handler is inert
+  ---
+  duration_ms: 0.726583
+  type: 'test'
+  ...
+# Subtest: stop is idempotent and removes every listener, watch and timer; hidden pages never auto-resume
+ok 81 - stop is idempotent and removes every listener, watch and timer; hidden pages never auto-resume
+  ---
+  duration_ms: 0.322042
+  type: 'test'
+  ...
+# Subtest: request, callback, rate, buffer, event and duration budgets bound work
+ok 82 - request, callback, rate, buffer, event and duration budgets bound work
+  ---
+  duration_ms: 0.455625
+  type: 'test'
+  ...
+# Subtest: timeouts retire one-shot tokens; raw API errors are redacted and verified denial is explicit
+ok 83 - timeouts retire one-shot tokens; raw API errors are redacted and verified denial is explicit
+  ---
+  duration_ms: 0.399334
+  type: 'test'
+  ...
+# Subtest: synchronous watch errors and stop during sink delivery clear the returned watch ID
+ok 84 - synchronous watch errors and stop during sink delivery clear the returned watch ID
+  ---
+  duration_ms: 0.249959
+  type: 'test'
+  ...
+# Subtest: throwing APIs and sink failures remain local, bounded and cleanable
+ok 85 - throwing APIs and sink failures remain local, bounded and cleanable
+  ---
+  duration_ms: 0.491375
+  type: 'test'
+  ...
+# Subtest: snapshot and sink data are detached, serializable and sequence is monotonic across sessions
+ok 86 - snapshot and sink data are detached, serializable and sequence is monotonic across sessions
+  ---
+  duration_ms: 0.275
+  type: 'test'
+  ...
+# Subtest: invalid budgets and contexts fail before resource use
+ok 87 - invalid budgets and contexts fail before resource use
+  ---
+  duration_ms: 0.258541
+  type: 'test'
+  ...
+# Subtest: a sensor grant cannot undo a different sensor revocation
+ok 88 - a sensor grant cannot undo a different sensor revocation
+  ---
+  duration_ms: 0.443792
+  type: 'test'
+  ...
+# Subtest: deadline is checked before new acquisition even when a browser has delayed its timer
+ok 89 - deadline is checked before new acquisition even when a browser has delayed its timer
+  ---
+  duration_ms: 0.128875
+  type: 'test'
+  ...
+# Subtest: consent metadata is snapshotted and synchronous sink withdrawal cannot recurse
+ok 90 - consent metadata is snapshotted and synchronous sink withdrawal cannot recurse
+  ---
+  duration_ms: 0.227791
+  type: 'test'
+  ...
+# Subtest: permission monitor count stays fixed across repeated requests
+ok 91 - permission monitor count stays fixed across repeated requests
+  ---
+  duration_ms: 0.796042
+  type: 'test'
+  ...
+# Subtest: phone handling, drop, pothole and passenger fixtures remain unclassified observations
+ok 92 - phone handling, drop, pothole and passenger fixtures remain unclassified observations
+  ---
+  duration_ms: 1.144375
+  type: 'test'
+  ...
+# Subtest: motion permission result keeps its original request ID and synchronous throws stay unknown
+ok 93 - motion permission result keeps its original request ID and synchronous throws stay unknown
+  ---
+  duration_ms: 0.216875
+  type: 'test'
+  ...
+# Subtest: missing clocks, backwards monotonic clock and missing GPS never imply usable streams
+ok 94 - missing clocks, backwards monotonic clock and missing GPS never imply usable streams
+  ---
+  duration_ms: 0.296166
+  type: 'test'
+  ...
+# Subtest: F1 stream cancellation during request delivery prevents GPS calls, permission queries and orphan timers
+ok 95 - F1 stream cancellation during request delivery prevents GPS calls, permission queries and orphan timers
+  ---
+  duration_ms: 0.307125
+  type: 'test'
+  ...
+# Subtest: F2 delayed motion grants recheck inclusive session and permission-prompt deadlines without timer execution
+ok 96 - F2 delayed motion grants recheck inclusive session and permission-prompt deadlines without timer execution
+  ---
+  duration_ms: 0.5255
+  type: 'test'
+  ...
+# Subtest: F2 motion grants recheck visibility and clocks before applying the answer
+ok 97 - F2 motion grants recheck visibility and clocks before applying the answer
+  ---
+  duration_ms: 0.238334
+  type: 'test'
+  ...
+# Subtest: F2 permission-event sink cannot delay or hide the page and then attach a motion listener
+ok 98 - F2 permission-event sink cannot delay or hide the page and then attach a motion listener
+  ---
+  duration_ms: 0.281291
+  type: 'test'
+  ...
+# Subtest: F3 conflicting passive grants and changes cannot reopen denied or revoked session permission
+ok 99 - F3 conflicting passive grants and changes cannot reopen denied or revoked session permission
+  ---
+  duration_ms: 1.570416
+  type: 'test'
+  ...
+# Subtest: F4 failed GPS events keep original per-request options after request eviction
+ok 100 - F4 failed GPS events keep original per-request options after request eviction
+  ---
+  duration_ms: 0.877209
+  type: 'test'
+  ...
+# Subtest: F4 local GPS timeout and platform failure also retain their request options
+ok 101 - F4 local GPS timeout and platform failure also retain their request options
+  ---
+  duration_ms: 0.948708
+  type: 'test'
+  ...
+# Subtest: N1 sixty-hertz motion remains subscribed for thirty seconds with default raw callback guard
+ok 102 - N1 sixty-hertz motion remains subscribed for thirty seconds with default raw callback guard
+  ---
+  duration_ms: 1.15375
+  type: 'test'
+  ...
+# Subtest: N3 repeated blocked GPS acquisition cannot terminate another active stream
+ok 103 - N3 repeated blocked GPS acquisition cannot terminate another active stream
+  ---
+  duration_ms: 0.820083
+  type: 'test'
+  ...
+# Subtest: N4 withdrawal purges buffered precise coordinates even after a prior stop
+ok 104 - N4 withdrawal purges buffered precise coordinates even after a prior stop
+  ---
+  duration_ms: 0.445333
+  type: 'test'
+  ...
+# Subtest: N5 synthetic mode rejects inherited globals/platform and the default real clock
+ok 105 - N5 synthetic mode rejects inherited globals/platform and the default real clock
+  ---
+  duration_ms: 0.101625
+  type: 'test'
+  ...
+# Subtest: N8 GPS callback budget stop uses the public geolocation stream name
+ok 106 - N8 GPS callback budget stop uses the public geolocation stream name
+  ---
+  duration_ms: 0.092708
+  type: 'test'
+  ...
+# Subtest: N6 code1 prompt dismissal remains explicit and retryable; verified denial stays terminal
+ok 107 - N6 code1 prompt dismissal remains explicit and retryable; verified denial stays terminal
+  ---
+  duration_ms: 0.761583
+  type: 'test'
+  ...
+# Subtest: N7 a thirty-second prompt does not discard the first GPS or motion grant
+ok 108 - N7 a thirty-second prompt does not discard the first GPS or motion grant
+  ---
+  duration_ms: 0.319416
+  type: 'test'
+  ...
+# Subtest: N7 permission-prompt deadline remains inclusive when browser timers are delayed
+ok 109 - N7 permission-prompt deadline remains inclusive when browser timers are delayed
+  ---
+  duration_ms: 0.249
+  type: 'test'
+  ...
+# Subtest: N9 synchronous GPS denial or sink stop cannot report a successful acquisition
+ok 110 - N9 synchronous GPS denial or sink stop cannot report a successful acquisition
+  ---
+  duration_ms: 0.228416
+  type: 'test'
+  ...
+# Subtest: N10 observer fulfil-path exceptions are caught and normal notifications follow listener setup
+ok 111 - N10 observer fulfil-path exceptions are caught and normal notifications follow listener setup
+  ---
+  duration_ms: 0.450542
+  type: 'test'
+  ...
+# Subtest: N11 a throwing motion timer settles explicitly, retires the token and handles its later rejected promise
+ok 112 - N11 a throwing motion timer settles explicitly, retires the token and handles its later rejected promise
+  ---
+  duration_ms: 0.399625
+  type: 'test'
+  ...
+# Subtest: N12 sink stream cancellation and backward motion clock retain distinct reasons
+ok 113 - N12 sink stream cancellation and backward motion clock retain distinct reasons
+  ---
+  duration_ms: 0.166042
+  type: 'test'
+  ...
+# Subtest: N13 queued location events are redacted on sink withdrawal before subsequent delivery
+ok 114 - N13 queued location events are redacted on sink withdrawal before subsequent delivery
+  ---
+  duration_ms: 0.211708
+  type: 'test'
+  ...
+1..114
+# tests 114
+# suites 0
+# pass 114
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 415.809125

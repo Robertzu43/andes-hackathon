@@ -1,0 +1,318 @@
+TAP version 13
+# Subtest: P01 import/construction/idle stop are inert; start is explicit and passive
+ok 1 - P01 import/construction/idle stop are inert; start is explicit and passive
+  ---
+  duration_ms: 1.251292
+  type: 'test'
+  ...
+# Subtest: P02 all APIs exposed cannot unlock missing/mismatched/unsupported qualification
+ok 2 - P02 all APIs exposed cannot unlock missing/mismatched/unsupported qualification
+  ---
+  duration_ms: 2.194417
+  type: 'test'
+  ...
+# Subtest: P03 positive GPS control retains source/receipt, safe options and useful quality
+ok 3 - P03 positive GPS control retains source/receipt, safe options and useful quality
+  ---
+  duration_ms: 3.549541
+  type: 'test'
+  ...
+# Subtest: P04 denial/revocation retires watch and queued callbacks; denied initial monitor stays explicit
+ok 4 - P04 denial/revocation retires watch and queued callbacks; denied initial monitor stays explicit
+  ---
+  duration_ms: 0.951125
+  type: 'test'
+  ...
+# Subtest: P05 unavailable/throwing platform and rejected permission query are attributed without secrets
+ok 5 - P05 unavailable/throwing platform and rejected permission query are attributed without secrets
+  ---
+  duration_ms: 0.726167
+  type: 'test'
+  ...
+# Subtest: P06 no automatic motion prompt; missing activation stays blocked; browser-managed permission stays unknown
+ok 6 - P06 no automatic motion prompt; missing activation stays blocked; browser-managed permission stays unknown
+  ---
+  duration_ms: 0.493084
+  type: 'test'
+  ...
+# Subtest: P07 positive motion control needs explicit grant and retains unresolved DOM clock
+ok 7 - P07 positive motion control needs explicit grant and retains unresolved DOM clock
+  ---
+  duration_ms: 0.393208
+  type: 'test'
+  ...
+# Subtest: P08 request IDs/options survive eviction; concurrent GPS request rejected; copies detached
+ok 8 - P08 request IDs/options survive eviction; concurrent GPS request rejected; copies detached
+  ---
+  duration_ms: 0.297625
+  type: 'test'
+  ...
+# Subtest: P09 replaced watch ignores previous success/error while replacement still works
+ok 9 - P09 replaced watch ignores previous success/error while replacement still works
+  ---
+  duration_ms: 0.350625
+  type: 'test'
+  ...
+# Subtest: P10 delayed old query/sample/motion answers cannot alter a replacement session
+ok 10 - P10 delayed old query/sample/motion answers cannot alter a replacement session
+  ---
+  duration_ms: 1.236125
+  type: 'test'
+  ...
+# Subtest: P11 local sink throw/stop is separate from sensor failure; reentrant acquisition blocked
+ok 11 - P11 local sink throw/stop is separate from sensor failure; reentrant acquisition blocked
+  ---
+  duration_ms: 0.801958
+  type: 'test'
+  ...
+# Subtest: P12 expiry boundary, stale, duplicate and reordered source timestamps stay explicit
+ok 12 - P12 expiry boundary, stale, duplicate and reordered source timestamps stay explicit
+  ---
+  duration_ms: 0.193042
+  type: 'test'
+  ...
+# Subtest: P13 unknown/future/nonfinite source times and diverged clocks never imply fresh
+ok 13 - P13 unknown/future/nonfinite source times and diverged clocks never imply fresh
+  ---
+  duration_ms: 0.390583
+  type: 'test'
+  ...
+# Subtest: P14 hidden page retires resources and cannot auto-resume or emit cached fix
+ok 14 - P14 hidden page retires resources and cannot auto-resume or emit cached fix
+  ---
+  duration_ms: 0.101042
+  type: 'test'
+  ...
+# Subtest: P15 burst callbacks, outstanding requests, buffers, event/deadline caps and invalid budgets are bounded
+not ok 15 - P15 burst callbacks, outstanding requests, buffers, event/deadline caps and invalid budgets are bounded
+  ---
+  duration_ms: 0.965375
+  type: 'test'
+  location: '/private/tmp/andes-q57-reviewer/review-probes/phone-contract-v2.test.mjs:210:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + {
+    +   budgetRevision: 'engineering-only/4',
+    +   category: 'phone-observation',
+    +   clientReceiptTime: {
+    +     monoMs: 100,
+    +     wallMs: 1800000000000
+    +   },
+    +   country: {
+    +     provenance: 'unknown',
+    +     value: null
+    +   },
+    +   data: {
+    +     accuracyM: 8,
+    +     ageMs: 0,
+    +     coordinates: null,
+    +     freshness: 'within-provisional-budget',
+    +     locationSource: 'browser-geolocation-underlying-source-unknown',
+    +     options: {
+    +       enableHighAccuracy: true,
+    +       maximumAge: 0,
+    +       timeout: 10000
+    +     },
+    +     redaction: 'omitted',
+    +     requestId: '1:geo:1',
+    +     routeProgress: 'unknown',
+    +     sourceOrder: 'nondecreasing',
+    +     watch: false
+    +   },
+    +   eventId: 'review-session:1:3',
+    +   interpretation: 'observation-only',
+    +   permission: {
+    +     geolocation: {
+    +       browserState: 'granted',
+    +       source: 'position-callback',
+    +       state: 'granted'
+    +     },
+    +     motion: {
+    +       browserState: 'unknown',
+    +       source: 'not-queried',
+    +       state: 'unknown'
+    +     }
+    +   },
+    +   policyVersion: null,
+    +   provenance: {
+    +     boundary: 'provisional-client-only',
+    +     clock: 'device-unreconciled',
+    +     clockUncertain: false,
+    +     contextKey: 'review-visible',
+    +     mode: 'synthetic-test',
+    +     qualificationEvidence: 'review-only:synthetic',
+    +     serverLatency: 'unknown'
+    +   },
+    +   revision: 'frozen-cc4dc5d2',
+    +   schema: 'andes.phone-observations.provisional/1',
+    +   sequence: 3,
+    +   serverReceiptTime: null,
+    +   sessionId: 'review-session',
+    +   sessionSequence: 3,
+    +   sourceTime: {
+    +     basis: 'unix-epoch-ms',
+    +     provenance: 'position.timestamp',
+    +     value: 1800000000000
+    +   },
+    +   timeZone: {
+    +     provenance: 'unknown',
+    +     value: null
+    +   },
+    +   tripId: 'review-trip',
+    +   truckId: null,
+    +   type: 'geolocation',
+    +   utcOffsetMinutes: null,
+    +   visibility: 'visible'
+    + }
+    - undefined
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  actual:
+    schema: 'andes.phone-observations.provisional/1'
+    category: 'phone-observation'
+    type: 'geolocation'
+    eventId: 'review-session:1:3'
+    sessionId: 'review-session'
+    tripId: 'review-trip'
+    revision: 'frozen-cc4dc5d2'
+    truckId: ~
+    country:
+      value: ~
+      provenance: 'unknown'
+    timeZone:
+      value: ~
+      provenance: 'unknown'
+    utcOffsetMinutes: ~
+    sequence: 3
+    sessionSequence: 3
+    sourceTime:
+      value: 1800000000000
+      basis: 'unix-epoch-ms'
+      provenance: 'position.timestamp'
+    clientReceiptTime:
+      wallMs: 1800000000000
+      monoMs: 100
+    serverReceiptTime: ~
+    policyVersion: ~
+    budgetRevision: 'engineering-only/4'
+    visibility: 'visible'
+    permission:
+      geolocation:
+        state: 'granted'
+        browserState: 'granted'
+        source: 'position-callback'
+      motion:
+        state: 'unknown'
+        browserState: 'unknown'
+        source: 'not-queried'
+    provenance:
+      mode: 'synthetic-test'
+      qualificationEvidence: 'review-only:synthetic'
+      contextKey: 'review-visible'
+      boundary: 'provisional-client-only'
+      clock: 'device-unreconciled'
+      clockUncertain: false
+      serverLatency: 'unknown'
+    interpretation: 'observation-only'
+    data:
+      requestId: '1:geo:1'
+      watch: false
+      options:
+        enableHighAccuracy: true
+        maximumAge: 0
+        timeout: 10000
+      accuracyM: 8
+      ageMs: 0
+      freshness: 'within-provisional-budget'
+      sourceOrder: 'nondecreasing'
+      locationSource: 'browser-geolocation-underlying-source-unknown'
+      coordinates: ~
+      redaction: 'omitted'
+      routeProgress: 'unknown'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q57-reviewer/review-probes/phone-contract-v2.test.mjs:219:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: P16 precise data absent by default/incomplete consent; explicit consent works and withdrawal suppresses late payload
+ok 16 - P16 precise data absent by default/incomplete consent; explicit consent works and withdrawal suppresses late payload
+  ---
+  duration_ms: 0.408333
+  type: 'test'
+  ...
+# F1 actual {"result":{"ok":false,"reason":"obsolete-request"},"nativeCalls":0,"timersBeforeStop":1,"timersAfterStop":0}
+# F2 actual {"result":{"ok":false,"reason":"session-stopped"},"state":"stopped","listeners":0}
+# Subtest: P17 handling/drop/pothole/passenger fixtures remain observations with unknown independent outcomes
+ok 17 - P17 handling/drop/pothole/passenger fixtures remain observations with unknown independent outcomes
+  ---
+  duration_ms: 2.543375
+  type: 'test'
+  ...
+# Subtest: P18 provisional local boundary retains unknowns and distinct sessions/sequences
+ok 18 - P18 provisional local boundary retains unknowns and distinct sessions/sequences
+  ---
+  duration_ms: 0.3125
+  type: 'test'
+  ...
+# Subtest: F1 P11 stopLocation from acquisition-request sink must prevent the native call and timeout
+ok 19 - F1 P11 stopLocation from acquisition-request sink must prevent the native call and timeout
+  ---
+  duration_ms: 0.176917
+  type: 'test'
+  ...
+# Subtest: F2 P10/P15 expired motion permission answer must not attach a listener when deadline timer is delayed
+ok 20 - F2 P10/P15 expired motion permission answer must not attach a listener when deadline timer is delayed
+  ---
+  duration_ms: 0.146334
+  type: 'test'
+  ...
+# F3 actual {"before":"unknown","after":"granted","retry":{"ok":true,"requestId":"1:geo:2"},"nativeCalls":2}
+# F4 actual {"requestId":"1:geo:1","watch":true,"options":{"enableHighAccuracy":true,"maximumAge":12345,"timeout":23456},"code":2}
+# Subtest: F3 P04 delayed passive grant must not overwrite a newer explicit permission denial
+not ok 21 - F3 P04 delayed passive grant must not overwrite a newer explicit permission denial
+  ---
+  duration_ms: 0.93475
+  type: 'test'
+  location: '/private/tmp/andes-q57-reviewer/review-probes/phone-contract-v2.test.mjs:275:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    older query must not reverse explicit denial
+    + actual - expected
+
+    + 'granted'
+    - 'denied'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'denied'
+  actual: 'granted'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q57-reviewer/review-probes/phone-contract-v2.test.mjs:283:10)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: F4 P08 failed location callback must retain original acquisition options after request-event eviction
+ok 22 - F4 P08 failed location callback must retain original acquisition options after request-event eviction
+  ---
+  duration_ms: 0.326958
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 20
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 67.873625
