@@ -90,3 +90,28 @@ candidate code never produces a skipped or passing review. The SHA is an explici
 claim: the runner does not attest module identity or archive provenance. Verify
 that separately and publish the exact binding, commands and limitations with a
 review. Reports omit candidate exception text to avoid reflecting sensitive data.
+
+### Reviewed API candidate
+
+`drivers/api-a20060b.mjs` binds the actual public `createApiClient`/`MemorySession`
+exports at `a20060b5b3a61e1d210febe77ccc62069afed364` to these probes. It only
+dispatches the reviewed method and projects the candidate's existing error kind,
+status, code and `outcome`; it adds no privacy, retry or session behavior. It does
+not inject a storage implementation because this candidate has no storage/cache.
+The store assertion therefore covers only the supplied seam; source inspection
+and the late-response/signout cases establish this module's memory-only boundary,
+not cleanup of a future UI or arbitrary browser storage.
+
+```sh
+git archive a20060b5b3a61e1d210febe77ccc62069afed364 | tar -x -C /ABS/EMPTY/ARCHIVE
+ANDES_REVIEW_API_ROOT=/ABS/EMPTY/ARCHIVE node tests/client-contract-review/run.mjs \
+  --driver tests/client-contract-review/drivers/api-a20060b.mjs \
+  --candidate a20060b5b3a61e1d210febe77ccc62069afed364
+```
+
+Independent disposition: **ACCEPT for the reviewed client module** at that SHA.
+Node 26.3.0: author suite 47 passed, reviewer probes 29 passed, oracle self-checks
+35 passed; TypeScript 5.9.3 strict/negative checks passed with an existing read-only
+compiler. No backend files were changed or dependencies installed. Actual backend
+identity/SQL, browser auth/CORS, UI cache cleanup and device/provider behavior remain
+unproved. New lane41 read routes or a later candidate need a separate delta review.
