@@ -259,3 +259,37 @@ read-time provenance. The client also makes no stronger transaction-snapshot gua
 than the reviewed backend contract/implementation. Q44/Q46 must test these additions
 against their actual signed-JWT/PostgreSQL integration revision; mock read fixtures
 do not establish backend isolation or browser reload behaviour.
+
+## Foundation session gateway
+
+`createSessionGateway({session,api,mode,acquire?,release?})` implements Q49's supplied
+headless UI seam: `getSnapshot`, `subscribe`, optional `begin` and `end`. Its stable,
+immutable snapshots contain only `state` and explicit `mode: external|demo`. The
+states are unconfigured/signed-out/connecting/authenticated/expired/error. No
+credential, backend UUID, provider exception or raw error is exposed in a snapshot.
+The adapter imports no React, foundation, provider SDK or browser storage.
+
+Without an explicit trusted acquisition callback the gateway is unconfigured and
+has no begin/end actions. It supplies no demo identity or production-login fallback.
+`acquire({signal})` must come from the separately configured trusted identity
+integration or an explicitly labelled synthetic test harness. Mode is a label and
+does not mint or validate tokens. Acquired credentials are stored only in the shared
+MemorySession; the gateway must also await the typed `/v1/me` response before it
+publishes authenticated. A provider success alone cannot do so.
+
+Concurrent begin calls share one pending verification, including calls made from
+subscribers. Clear/end, account changes and disposal retire old acquisition and
+verification replies. A cancelled flow cannot later install credentials. Provider
+exceptions become only a fixed error state, with explicit retry possible; no silent
+refresh/retry occurs. Expiry changes the observed gateway to expired without another
+acquisition. `end()` immediately clears locally and optionally invokes the caller's
+trusted logout callback. Local clearing alone does not claim provider-token revocation.
+`dispose()` is for application teardown and never invokes external logout.
+
+The gateway verifies session state, not feature loading. Once authenticated, the host
+still awaits each `bindJourneySession(...).activate()` before invoking its controller.
+Catalogs, protected views, permissions and feature state remain caller-owned. The
+published Q49 interface was supplied through lane coordination; structural checking
+against its exact frozen foundation file and actual browser rendering remain pending.
+Current tests exercise the real gateway/client code with synthetic provider/HTTP
+fixtures; no production sign-in or configured external provider has been validated.

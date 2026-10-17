@@ -8,4 +8,6 @@ export { createContactApi, bindJourneySession } from './journeys.ts';
 export type { ContactJourneyApi } from './journeys.ts';
 export { createDriverTransport } from './driver.ts';
 export type { DriverRequest, DriverTransportResult } from './driver.ts';
+export { createSessionGateway } from './gateway.ts';
+export type { GatewaySnapshot, SessionGatewayConfig, SessionGateway } from './gateway.ts';
 export type * from './types.ts';

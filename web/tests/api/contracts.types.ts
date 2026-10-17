@@ -30,3 +30,11 @@ const readAt: string = loaded.readAt;
 // @ts-expect-error summaries never include raw draft text
 const rawText: string = loaded.trips.active[0]?.rawText;
 void readAt; void rawText;
+
+import { createSessionGateway } from '../../src/lib/api/index.ts';
+const gateway = createSessionGateway({ session: new MemorySession(), api, mode: 'external' });
+const mode: 'external' | 'demo' = gateway.getSnapshot().mode;
+void mode;
+// @ts-expect-error the UI gateway cannot expose a credential
+const gatewayToken: string = gateway.getSnapshot().accessToken;
+void gatewayToken;
