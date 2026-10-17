@@ -131,6 +131,37 @@ The two focused controls check both nested path UUIDs share a lowercase replay
 scope and that credential injection never reads an unrelated getter. Earlier
 accepted evidence remains pinned to its original SHA rather than silently moved.
 
+### Owner reads and journey session bindings
+
+`7da6dbbd629eb996a0493f750d20e1845fa8f907` was separately exercised against the
+source contract and routes in PR65 `748d30c6e6c595fd1a2c2c648a045750de3dd9c8`.
+Five actual owner reads are added without owner selectors or invented timestamps.
+The candidate also adds contact/driver facades and session invalidation bindings.
+
+```sh
+ANDES_REVIEW_API_ROOT=/ABS/7DA6DBB/ARCHIVE \
+  node tests/client-contract-review/run.mjs \
+  --driver tests/client-contract-review/drivers/api-7da6dbb.mjs \
+  --candidate 7da6dbbd629eb996a0493f750d20e1845fa8f907
+ANDES_REVIEW_API_ROOT=/ABS/7DA6DBB/ARCHIVE \
+  node tests/client-contract-review/api-read-lifecycle.probes.mjs
+```
+
+Node26.3.0 results: author tests **67 passed**; declared integration using actual
+contact `b95bdba` and driver `c256e75` source with synthetic HTTP **14 passed**;
+strict TypeScript5.9.3 NodeNext and ESNext/Bundler checks passed. Independent baseline
+**29**, prior focused controls **2**, and new read/lifecycle/adapter probes **23**
+all passed. New cases cover exact wire routes/limits/truncation, retained revoked
+history, private-field projection, invalid read schemas, concurrent activation,
+account rotation, shared401 clearing, idle expiry and driver error/key semantics.
+
+The integration test's read-only `git show` uses this lane's existing object store
+to load its exact pinned feature files into a temporary directory. No feature files
+are edited. Results are pinned to this revision; later gateway additions need their
+own delta review. The new read routes were **not** executed against actual SQL here.
+There is no claim that typed bindings repair the independently held driver finding,
+establish contact feature acceptance, or prove the pending frontend/browser seam.
+
 ## Durable observation queue oracle
 
 `queue-probes.mjs` defines ten scenarios before a lane42 candidate is supplied:
