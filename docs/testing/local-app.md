@@ -142,7 +142,7 @@ authentication/API boundary; these HTTP tests do not count as UI/device proof.
 
 The adapter targets Q52's independently authored schema
 `andes.app-acceptance.receipt/1` at frozen commit
-`5f43ebbc4c711dde68e436ae34510f357fc9f4ac` (draft PR60). Its implementation is
+`e3ed9720ad1490a1797adbb3ed1a8c76eadffe50` (draft PR60). Its implementation is
 not copied into this lane. To export receipts from an actual isolated run, select
 a **new**, absolute local directory outside Git:
 
@@ -187,10 +187,57 @@ node "$(realpath /path/to/pr60/evidence/app-acceptance/check.mjs)" /tmp/andes-q4
 Exit 0 means `backend-receipt-checks-pass` only. `wholeAppAccepted` remains false.
 Missing-case and altered-source-time controls must yield exits 2 and 1,
 respectively. Require nonempty, parseable JSON with that disposition as well as the
-exit code. At the frozen PR60 version, macOS `/var` versus `/private/var` aliases
-can bypass the CLI entrypoint and return empty output; canonical paths avoid it.
-This reproducible issue has been reported to its owning lane. The actual journey
+exit code. The original PR60 CLI path-alias defect was corrected at this preferred
+checker revision; Q46 independently reran the actual receipt, missing/falsified
+controls and symlinked/noncanonical entrypoints with nonempty JSON. The actual journey
 includes confirmation replay/new-key conflict,
 stranger SOS rejection, and a separate still-active trip for revocation (so denial
 cannot be explained by prior arrival). No browser, provider or physical evidence
 is added by normalizing these backend observations.
+
+## Accepted client against real PostgreSQL/HTTP
+
+The explicit client seam extracts the six native TypeScript API/session files from
+Q45's accepted commit `78efad0a207e98cc44336a03ba6af9fc0c1d2901` (PR59) into a
+private temporary module directory. It does not copy or edit client implementation
+inside this branch. Node 24's native TypeScript support runs the unchanged client:
+
+```sh
+git fetch origin pull/59/head
+node scripts/app-integration/check-client-seam.mjs
+```
+
+The frozen object must be available locally, and backend source must still match
+the pinned revision. The command runs the existing integration suite plus the
+explicit `tests/app-integration/client-seam.mjs` test. That file deliberately has
+no `.test.mjs` suffix: default backend runs do not silently claim client coverage
+when the accepted client source is unavailable. Only the explicit seam supplies
+its module path/revision and includes the test. No new dependencies are installed.
+
+Client tests create a second uniquely named database on the owned server, isolated
+from the concurrently running direct-HTTP journey. They use the existing API test
+process and actual signed driver/contact/stranger identities, with distinct
+memory sessions. No token/signing key is logged, persisted or passed in a URL.
+API children receive only the ephemeral public verification key; the signing key
+and credentials remain in the test process's memory. Database and module-directory
+cleanup are owned by the test/runner that created them.
+
+Coverage includes typed identity/consent/draft/confirmation/location/SOS APIs,
+canonical same-key paths, source-age preservation, actual API restart, arrival
+preserving SOS, explicit driver resolution and recipient revocation without a
+cached snapshot. The loss control makes one **real committed** truck request,
+discards its actual response in the injected transport, verifies an unknown
+outcome with no automatic retry, and explicitly reconciles with the same key/body.
+The same key under another signed actor returns that actor's distinct object.
+
+Response gates buffer bytes from real HTTP before signout/account replacement;
+they do not invent server JSON. They verify rejection of old-account responses,
+local unauthenticated blocking without another HTTP request, and a late real401
+that cannot invalidate replacement credentials. Local missing-session failures
+report `unauthenticated/not_sent` from the session boundary; in-flight read
+invalidation reports `session_changed/not_applicable`. These are distinct cases.
+
+This proves the native client/backend boundary, with synthetic identities and
+controlled transport faults. It does not exercise browser storage/rendering,
+same-origin Vite proxy/CORS, remote OIDC login, physical capture or real delivery.
+Q49's runnable foundation and proxy hooks remain necessary for UI-driven coverage.
