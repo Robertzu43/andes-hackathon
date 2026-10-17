@@ -60,7 +60,7 @@ async function invalidate(client: pg.PoolClient, job: Job, now: Date, reason: st
 export async function authorizeJob(ctx: Context, claim: Claim | null, provider: Provider): Promise<Attempt | null> {
   if (!claim) return null;
   return withTripTransaction(ctx, claim.tripId, async (client, trip) => {
-    const now = ctx.clock();
+    let now = ctx.clock();
     const job = (await client.query('SELECT * FROM jobs WHERE id=$1 FOR UPDATE', [claim.jobId])).rows[0];
     if (!job || job.version !== claim.version || job.status !== 'claimed' || job.claim_token !== claim.token || job.claim_owner !== claim.owner || job.claim_until <= now) return null;
     const q = provider.qualification;
@@ -78,6 +78,13 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     // Account-row locking serializes reservations across channels and worker replicas.
     await client.query('INSERT INTO quota_accounts VALUES($1) ON CONFLICT DO NOTHING', [q.accountId]);
     await client.query('SELECT project_id FROM quota_accounts WHERE project_id=$1 FOR UPDATE', [q.accountId]);
+    // Both lifetimes can end while this transaction waits for account capacity.
+    // Derive authorization and quota timestamps from the refreshed clock too.
+    now = ctx.clock();
+    if (job.claim_until <= now) return null;
+    if (job.expires_at && job.expires_at <= now) {
+      await invalidate(client, job, now, 'authorization_no_longer_valid'); return null;
+    }
     const day = new Date(now); day.setUTCHours(0, 0, 0, 0);
     const counts = (await client.query(`SELECT count(*)::int AS daily,count(*) FILTER(WHERE channel=$3)::int AS channel FROM quota_reservations WHERE project_id=$1 AND reserved_at>=$2`, [q.accountId, day, job.channel])).rows[0];
     const requests = (await client.query('SELECT count(*)::int AS n FROM provider_requests WHERE project_id=$1 AND reserved_at>$2', [q.accountId, after(now, -60000)])).rows[0].n;

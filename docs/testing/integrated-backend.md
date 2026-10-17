@@ -66,3 +66,20 @@ physical help, or product efficacy. Deployment, live providers, actual OIDC,
 physical phones, retention qualification and human evidence retain their gates.
 The existing CI workflow now also runs the offline toolkit checks after setting
 up Python; local results do not establish that remote CI or AWS deployment ran.
+
+## Quota-lock expiry correction
+
+Independent [race review PR57](https://github.com/Bimbi-Dev/andes-hackathon/pull/57)
+reproduced authorization after expiry at the frozen backend: its unchanged suite
+passed 14/15, with the 1001 ms wait failing and the 999 ms control passing. The
+correction refreshes authorization time after the account lock and rechecks both
+job lifetime and claim lease before creating an attempt. Reservation facts use
+that fresh time too; no lock order, migration or resend policy changes.
+
+`tests/dispatch-expiry.test.mjs` adds six boundary cases, including equality,
+claim expiry and fresh authorization/reservation timestamps. They failed on the
+old production code and pass after the fix. The unchanged reviewer suite now
+passes 15/15, and the combined local command passes 53 backend tests plus 130
+offline toolkit tests and 50 scenarios on Node 24.17.0, Python 3.14.7 and
+PostgreSQL 16.14. These are author reruns; Q48 and Robert must review the new
+frozen correction before merge.
