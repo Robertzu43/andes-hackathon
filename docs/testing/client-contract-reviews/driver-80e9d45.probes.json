@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "id": "positive:explicit-draft-confirm-help",
+      "passed": true
+    },
+    {
+      "id": "ambiguity:rejected-replay-cannot-clear-earlier-unknown",
+      "passed": true
+    },
+    {
+      "id": "intent:duplicate-pending-confirm-makes-one-request",
+      "passed": true
+    },
+    {
+      "id": "session:retired-response-cannot-repopulate-memory",
+      "passed": true
+    },
+    {
+      "id": "evidence:foreign-owner-and-revoked-contact-not-selectable",
+      "passed": true
+    },
+    {
+      "id": "source:receipt-and-local-tick-do-not-refresh-old-fix",
+      "passed": true
+    },
+    {
+      "id": "scope:new-draft-cannot-reuse-an-opened-trip-incident",
+      "passed": true
+    }
+  ],
+  "limitation": "Frozen controller source with independent synthetic transport; no UI/device/provider qualification."
+}

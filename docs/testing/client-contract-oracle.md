@@ -191,8 +191,40 @@ attest source identity. Actual frozen foundation type compatibility, browser log
 and protected view rendering, new read-route SQL/auth isolation and production
 provider behavior remain unproved. Source read-time metadata needed by driver
 selection evidence is still absent from PR65's contract and is not fabricated.
-The independent PR63/PR66 findings remain separate holds; this module acceptance
-does not approve those features or the complete application.
+The independent PR63/PR66 findings are separate from this module acceptance;
+their dispositions are recorded below. This does not approve the complete app.
+
+### Foundation type compatibility delta
+
+Scoped independent disposition: **ACCEPT** at
+`292d3c4e6ebe6831c3aec5d9db3824e17ee64be7` for the two-file test/documentation
+delta from `db7034f`. The API runtime tree is byte-for-byte identical, Git tree
+`0ad380efe9f1dd535107e0e896e244a222cc78e3`; the existing runtime acceptance remains
+pinned to its reviewed source.
+
+The added compile-only test reads foundation PR56
+`3283fe675ebeee04bb2be8a62f42ab5c475b4b0e` from Git, imports the actual public
+`FoundationRoot`, `FoundationOptions`, `SessionGateway` and `SessionSnapshot`, and
+checks both configured/unconfigured gateways in NodeNext and ESNext/Bundler.
+Its generated binding is never executed. Source inspection confirmed the actual
+foundation entry and session/useSyncExternalStore boundary rather than relying
+on an invented interface. Existing dependencies are resolved through a temporary
+symlink, no code is emitted, and the owned temporary directory is removed.
+
+```sh
+ANDES_TYPESCRIPT_TSC=/ABS/EXISTING/typescript/bin/tsc \
+ANDES_FOUNDATION_NODE_MODULES=/ABS/EXISTING/foundation/web/node_modules \
+  node --test web/tests/api/foundation.integration.mjs
+```
+
+Independently executed from the frozen archive with Node26.3.0/TypeScript5.9.3:
+**3 passed** (parent plus both compiler configurations). The unchanged 77-test
+runtime suite was not repeated for this test/documentation-only delta. This closes
+the structural compatibility gap for those exact sources, while actual React
+mounting, browser subscription/login/rendering, current feature integration and
+provider/server authorization remain separate. The test still pins old driver
+`c256e75` in its other feature suite; that dependency needs an owned lane45 update
+before its evidence can claim corrected driver `80e9d45`.
 
 ## Durable observation queue oracle
 
@@ -337,7 +369,7 @@ ANDES_REVIEW_DRIVER_ROOT=/ABS/C256E75/ARCHIVE \
   node tests/client-contract-review/driver.probes.mjs
 ```
 
-Current result: **FIX**, six independent probes pass and one fails. After opening
+Historical result at `c256e75`: **FIX**, six independent probes pass and one fails. After opening
 trip A and reading its location/active incident, the same instance accepts a new
 draft/confirmation for trip B without clearing A's cached facts. `requestHelp()`
 returns A's incident and makes no SOS request for B. The one-journey restriction
@@ -353,3 +385,32 @@ four declared persisted tests, with no shared database or implementation edit.
 Those four persisted tests were independently executed against the frozen source:
 **4 passed, 0 failed**, PostgreSQL16.14 on this lane's owned cluster/port56447.
 The passing existing journeys do not exercise the newly reproduced overlap case.
+
+### Corrected driver candidate
+
+Scoped independent disposition: **ACCEPT** at
+`80e9d45f9a234de54b1017e856e8349c097b8760`. The original cross-trip finding is
+resolved for this nonvisual controller. Source review confirms bound-trip guards
+across form/contact edits, save and new confirmation; pending/unknown/saved draft
+intents block `openTrip` from crossing into another journey. Same-confirmation
+receipts remain usable, confirmation initializes all read facts, and cached help
+requires the current trip ID. Original unresolved intents are retained.
+
+The exact original `driver.probes.mjs` was not changed. SHA-256 remains
+`2f780e0073396fc59d43a325194845aa53b953eed34a452b51e36a9ba0dad3c4`.
+Against the corrected archive it reports **7 passed, 0 failed**, compared with
+the preserved 6/1 failure on `c256e75`. The sanitized result is
+`client-contract-reviews/driver-80e9d45.probes.json`.
+
+Fresh independent execution on Node26.3.0: author unit checks **28 passed**, strict
+TypeScript5.9.3 consumer checks passed, and all **4 declared signed API/PostgreSQL
+journeys passed** using the unchanged reviewer-owned cluster wrapper with lane46
+`df05aeb`/backend `ebc8fb1` on owned port56447. The strengthened persisted journey
+opens a fresh controller over a real saved trip, reads its location/incident,
+blocks overlapping draft/confirmation and checks one persisted draft/incident
+and same-trip help. Cleanup completed; no listener remained on this lane's port.
+
+This resolves the original reviewer request, not browser/device/provider or
+whole-app acceptance. The separate typed-client controller test still references
+the old driver and is not silently reattributed to this corrected head. Queue
+PR66's four reproduced defects remain open pending a repaired frozen candidate.
