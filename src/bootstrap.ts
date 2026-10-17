@@ -7,9 +7,16 @@ export async function bootstrap(pool: pg.Pool, username: string, password: strin
   const lock = await pool.connect();
   try {
     await lock.query('SELECT pg_advisory_lock(48173423)');
-    const exists = (await lock.query('SELECT 1 FROM pg_roles WHERE rolname=$1', [username])).rowCount;
-    // Identifiers and credentials cannot be bind parameters in role DDL.
-    await lock.query(`${exists ? 'ALTER' : 'CREATE'} ROLE ${role} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD ${pg.escapeLiteral(password)}`);
+    const existing = (await lock.query(`SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls
+      OR EXISTS (SELECT 1 FROM pg_auth_members WHERE member=r.oid)
+      OR EXISTS (SELECT 1 FROM pg_database WHERE datdba=r.oid)
+      OR EXISTS (SELECT 1 FROM pg_namespace WHERE nspowner=r.oid)
+      OR EXISTS (SELECT 1 FROM pg_class WHERE relowner=r.oid) AS unsafe
+      FROM pg_roles r WHERE rolname=$1`, [username])).rows[0];
+    if (existing?.unsafe) throw new Error('Unsafe existing application role');
+    // Non-superuser migration owners cannot ALTER SUPERUSER/REPLICATION, even to false.
+    const attributes = existing ? 'LOGIN' : 'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS';
+    await lock.query(`${existing ? 'ALTER' : 'CREATE'} ROLE ${role} ${attributes} PASSWORD ${pg.escapeLiteral(password)}`);
     await migrate(pool);
     await transaction(pool, async client => {
       const database = (await client.query('SELECT current_database() AS name')).rows[0].name as string;

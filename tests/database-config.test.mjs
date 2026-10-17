@@ -19,28 +19,53 @@ test('AWS database components survive pinned pg parsing with verified CA TLS', a
   assert.deepEqual(databaseConfig({DATABASE_URL:'postgres://localhost/test'}), {connectionString:'postgres://localhost/test'});
 });
 
-test('retryable admin bootstrap grants app DML, never DDL or migration-bookkeeping writes', async t => {
+test('non-superuser database owner bootstraps twice with app DML but no DDL or migration writes', async t => {
   const {bootstrap} = await import('../dist/bootstrap.js');
-  assert.ok(process.env.TEST_DATABASE_URL);
-  const schema = `bootstrap_${randomUUID().replaceAll('-','')}`;
-  const username = `app_\"'/%@_${randomUUID().replaceAll('-','')}`;
-  const role = pg.escapeIdentifier(username);
-  const password = `quotes'" and @/%? ${randomUUID()}`;
-  const admin = new pg.Pool({connectionString:process.env.TEST_DATABASE_URL,max:2});
-  await admin.query(`CREATE SCHEMA ${schema}`);
-  const url = new URL(process.env.TEST_DATABASE_URL);url.searchParams.set('options',`-c search_path=${schema}`);
-  const migration = new pg.Pool({connectionString:url.toString(),max:2});
-  t.after(async()=> {await migration.end();await admin.query(`DROP SCHEMA ${schema} CASCADE`);await admin.query(`DROP OWNED BY ${role}`);await admin.query(`DROP ROLE ${role}`);await admin.end();});
-  await bootstrap(migration,username,password,schema);await bootstrap(migration,username,password,schema);
   const {databaseConfig} = await import('../dist/db.js');
-  const app = new pg.Pool({...databaseConfig({PGHOST:url.hostname,PGPORT:url.port,PGDATABASE:decodeURIComponent(url.pathname.slice(1)),PGUSER:username,PGPASSWORD:password}),options:`-c search_path=${schema}`,max:1});
+  assert.ok(process.env.TEST_DATABASE_URL);
+  const suffix=randomUUID().replaceAll('-','');
+  const database=`bootstrap_${suffix}`, owner=`migration_${suffix}`;
+  const username = `app_\"'/%@_${suffix}`;
+  const role = pg.escapeIdentifier(username), namespace='public';
+  const password = `quotes'" and @/%? ${randomUUID()}`, ownerPassword=randomUUID();
+  const admin = new pg.Pool({connectionString:process.env.TEST_DATABASE_URL,max:1});
+  let maintenance, migration;
+  t.after(async()=> {
+    await migration?.end();await maintenance?.end();
+    await admin.query(`DROP DATABASE IF EXISTS ${pg.escapeIdentifier(database)} WITH (FORCE)`);
+    await admin.query(`DROP ROLE IF EXISTS ${role}`);
+    await admin.query(`DROP ROLE IF EXISTS ${pg.escapeIdentifier(owner)}`);await admin.end();
+  });
+  await admin.query(`CREATE ROLE ${pg.escapeIdentifier(owner)} LOGIN NOSUPERUSER CREATEDB CREATEROLE NOREPLICATION PASSWORD ${pg.escapeLiteral(ownerPassword)}`);
+  const url=new URL(process.env.TEST_DATABASE_URL);
+  const credentials={PGHOST:url.hostname,PGPORT:url.port,PGDATABASE:decodeURIComponent(url.pathname.slice(1)),PGUSER:owner,PGPASSWORD:ownerPassword};
+  maintenance=new pg.Pool({...databaseConfig(credentials),max:1});
+  await maintenance.query(`CREATE DATABASE ${pg.escapeIdentifier(database)}`);
+  migration=new pg.Pool({...databaseConfig({...credentials,PGDATABASE:database}),max:2});
+  const attributes=(await migration.query('SELECT rolsuper,rolcreatedb,rolcreaterole FROM pg_roles WHERE rolname=current_user')).rows[0];
+  assert.deepEqual(attributes,{rolsuper:false,rolcreatedb:true,rolcreaterole:true});
+  assert.equal((await migration.query('SELECT pg_get_userbyid(datdba)=current_user AS owned FROM pg_database WHERE datname=current_database()')).rows[0].owned,true);
+  assert.equal((await migration.query("SELECT has_schema_privilege(current_user,'public','CREATE') AS create")).rows[0].create,true);
+  await bootstrap(migration,username,password,namespace);await bootstrap(migration,username,password,namespace);
+  const app = new pg.Pool({...databaseConfig({...credentials,PGDATABASE:database,PGUSER:username,PGPASSWORD:password}),max:1});
   try {
-    await app.query(`INSERT INTO ${schema}.identities(id,issuer,subject) VALUES (gen_random_uuid(),'synthetic','bootstrap')`);
-    assert.equal((await app.query(`SELECT count(*)::int AS n FROM ${schema}.identities`)).rows[0].n,1);
-    await assert.rejects(app.query(`CREATE TABLE ${schema}.forbidden(id int)`),/permission denied/);
-    await assert.rejects(app.query(`DELETE FROM ${schema}.schema_migrations`),/permission denied/);
+    await app.query("INSERT INTO identities(id,issuer,subject) VALUES (gen_random_uuid(),'synthetic','bootstrap')");
+    assert.equal((await app.query('SELECT count(*)::int AS n FROM identities')).rows[0].n,1);
+    await assert.rejects(app.query('CREATE TABLE forbidden(id int)'),/permission denied/);
+    await assert.rejects(app.query('DELETE FROM schema_migrations'),/permission denied/);
   } finally {await app.end();}
-  await migration.query(`CREATE TABLE ${schema}.future_table(id serial primary key)`);
-  const permissions = await admin.query('SELECT has_table_privilege($1,$2,\'INSERT\') AS insert, has_sequence_privilege($1,$3,\'USAGE\') AS sequence',[username,`${schema}.future_table`,`${schema}.future_table_id_seq`]);
+  await migration.query('CREATE TABLE future_table(id serial primary key)');
+  const permissions = await migration.query('SELECT has_table_privilege($1,$2,\'INSERT\') AS insert, has_sequence_privilege($1,$3,\'USAGE\') AS sequence',[username,'public.future_table','public.future_table_id_seq']);
   assert.deepEqual(permissions.rows[0],{insert:true,sequence:true});
+  for(const attribute of ['SUPERUSER','CREATEDB','CREATEROLE','REPLICATION','BYPASSRLS']) {
+    await admin.query(`ALTER ROLE ${role} ${attribute}`);
+    try {await assert.rejects(bootstrap(migration,username,password,namespace),/Unsafe existing application role/);}
+    finally {await admin.query(`ALTER ROLE ${role} NO${attribute}`);}
+  }
+  await admin.query(`GRANT pg_read_all_data TO ${role}`);
+  try {await assert.rejects(bootstrap(migration,username,password,namespace),/Unsafe existing application role/);}
+  finally {await admin.query(`REVOKE pg_read_all_data FROM ${role}`);}
+  await admin.query(`ALTER DATABASE ${pg.escapeIdentifier(database)} OWNER TO ${role}`);
+  try {await assert.rejects(bootstrap(migration,username,password,namespace),/Unsafe existing application role/);}
+  finally {await admin.query(`ALTER DATABASE ${pg.escapeIdentifier(database)} OWNER TO ${pg.escapeIdentifier(owner)}`);}
 });

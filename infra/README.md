@@ -18,7 +18,7 @@ Reserved S3 is private, encrypted, versioned and retained, with incomplete multi
 
 ## Build and offline checks
 
-Requirements: Node 24, npm, Python with cfn-lint **1.57.2**, and Docker Engine/Compose for container checks. Local database tests require PostgreSQL 15+ and a disposable database whose test owner can create schemas/roles. The bootstrap privilege test needs `CREATEROLE` and permission to `SET ROLE`/grant the created role (CI uses its disposable PostgreSQL administrator). Never point `TEST_DATABASE_URL` at live data.
+Requirements: Node 24, npm, Python with cfn-lint **1.57.2**, and Docker Engine/Compose for container checks. Local database tests require PostgreSQL 15+ and a disposable database whose test owner can create schemas/roles. The bootstrap regression fixture needs a disposable cluster administrator to create adversarial elevated roles (CI uses its disposable PostgreSQL superuser); bootstrap itself runs twice through a separate actual non-superuser `CREATEDB CREATEROLE` login owning its disposable database/schema. Never point `TEST_DATABASE_URL` at live data.
 
 ```sh
 npm ci
