@@ -69,10 +69,17 @@ arrival-as-resolution, cross-user access and automatic policy from self-report.
 ## Browser handoff and current result
 
 See [matrix.md](matrix.md) for the actual API bindings, required UI states,
-Spanish/pt-BR and mobile checks. App route URLs are **unassigned** until the
-Brain/49 shared route map is frozen. No UI screenshot, contrast measurement,
+Spanish/pt-BR and mobile checks. App route patterns are now bound to Brain's
+validated `andes-operate-v1` packet, with its exact hashes in the matrix.
+The actual production-preview origin and rendered state inventory are pending49.
+No UI screenshot, contrast measurement,
 keyboard interaction, production build or signed database journey has been
-performed by this harness author. Runtime/browser evidence is pending, not pass.
+performed by the receipt checker. A separate unchanged lane46 runtime was
+independently executed at `b5d96a5eb4ae39babf5b91318c5c65a08ac1c66f`: typecheck,
+build and61 tests passed on Node24.17.0/PostgreSQL16.14 with an owned database
+and port56452; [scoped published evidence](https://github.com/Bimbi-Dev/andes-hackathon/pull/58#pullrequestreview-5560497484).
+This does not supply normalized receipts or browser evidence, nor cover that
+runner's later CI-service entry point. Those dependent checks remain pending.
 
 Lane46 owns real API integration/DB isolation. Lane49 owns the shared frontend
 foundation and Design Contract; lanes50/51 own driver/contact screens. Lane52

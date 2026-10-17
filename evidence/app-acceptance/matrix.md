@@ -1,9 +1,41 @@
 # Route and state acceptance matrix
 
 Backend reference: `ebc8fb1d36f441ef012ca585201cefabf61383d6`.
-UI paths: pending Brain/49's shared route map; module names below are tasks, not
-invented browser URLs. Every browser row is currently **not run**. API receipt
-assertions are implemented; live isolated execution belongs46 and is pending.
+UI path patterns: bound to Brain's validated foundation packet below. The actual
+production-preview origin and UI states remain pending49; every browser row is
+**not run**. API receipt assertions are implemented. Lane46's original isolated
+runner was independently verified by52 (61 checks); normalized receipts still
+await46's adapter, so that does not mark every oracle case measured.
+
+Contract `andes-operate-v1`, schema1.0.0, independently passed the shared
+`ui-proof.cjs verify-contract` validator. Packet read: 2026-10-17,
+`andes-app-build/foundation` under the coordinating Brain.
+Design Contract SHA-256: `2148eba873c75ba5714247259bc37a25f2e542bb7a978ce11a803e5cbc2660cf`.
+Route map SHA-256: `e576c4db008837f993b6826281058297d4ee36ecb2bd8e0ad3c075224b370ea2`.
+PRODUCT, DIRECTION, CONTENT-BIBLE, brand identity/contrast and all twelve route
+blueprints were read. A validator pass proves contract structure, not rendered
+UI, measured contrast, brand assets or successful actions.
+
+| Approved browser route pattern | Owner | Required sections | Primary action hook / local event |
+| --- | --- | --- | --- |
+| `/` |50| Estado del viaje; Siguiente acción | home-primary / home_action |
+| `/session` |49| Acceso; Modo de prueba | session-primary / session_action |
+| `/trucks` |50| Camiones; Datos del camión | trucks-primary / trucks_action |
+| `/contacts` |51| Contactos; Permisos | contacts-primary / contacts_action |
+| `/trips/new` |50| Ruta y camión; Contactos del viaje; Confirmación | trip-new-primary / trip_new_action |
+| `/trips/:tripId` |50| Última respuesta; Última ubicación; Avisos; Acciones del viaje | active-trip-primary / active_trip_action |
+| `/trips/:tripId/check-in` |50| Estado de la respuesta; Acciones disponibles | check-in-primary / check_in_action |
+| `/trips/:tripId/alerts` |50| Solicitud; Canales; Respuesta de contactos | alerts-primary / alerts_action |
+| `/contact/trips/:tripId` |51| Ubicación compartida; Incidente; Tu respuesta | contact-trip-primary / contact_trip_action |
+| `/contact/invitations/:grantId` |51| Invitación; Permisos | invitation-primary / invitation_action |
+| `/trips/:tripId/summary` |50| Viaje; Hechos registrados; Pendientes | summary-primary / summary_action |
+| `/privacy` |51| Datos compartidos; Revocar permisos; Uso opcional | privacy-primary / privacy_action |
+
+Hooks are `[data-action="<hook>"]` from the route map. Events are bounded local
+test observations, not external analytics or proof of server/provider acceptance.
+Route parameters need real authorized synthetic IDs from the isolated run, not
+literal colon placeholders. The origin `127.0.0.1:0` in the packet is a placeholder,
+not a running preview URL.
 
 | Module/task | Actual backend route(s) | States and observable acceptance | Oracle case |
 | --- | --- | --- | --- |
@@ -22,8 +54,9 @@ assertions are implemented; live isolated execution belongs46 and is pending.
 
 ## Browser receipt inventory
 
-Use every implemented module's full states at 390×844, 1440×900 and 1920×1080;
-add the user's actual viewport when supplied. Test Spanish and Brazilian
+Use every implemented module's full states at 390×844, 1440×900, 1920×1080,
+360×800 and 430×932, as the route blueprints require; 390×844 is the supplied
+user viewport. Test Spanish and Brazilian
 Portuguese, including long labels/errors and localized timestamps. Use each
 builder's approved Design Contract and exact immutable production build. Do not
 invent typography, accent or brand policy in this reviewer lane.
@@ -52,11 +85,22 @@ must pass its versioned validator; missing/stale proof cannot be called pass.
   contact invitations/grants, trips or incidents. Known-ID reads do not supply
   reload/discovery lists. Reported to41/Brain; bind the eventual reviewed reads
   before accepting the corresponding navigation/reload journey.
-- No frontend route map, Design Contract/manifest or production preview is yet
-  supplied to52. Sent49 a concrete handoff request; preparation continues.
+- The approved route map and Design Contract are now read/validated. An actual
+  built foundation, Git-bound UI Evidence Manifest and production preview remain
+  pending49. Planned routes do not count as rendered screenshots or completed
+  controls. Rendered colors,44px touch targets (56px driver primary actions),
+  keyboard focus and privacy-safe generic noindex metadata require measurement.
 - Coordinate46's own disposable database/ports and signed identities. Do not
   connect to another lane's DB, start workers with live transports, collect real
   location data or call a provider to fill an evidence gap.
 - Backend accepts free-text attributed actions but has no verified emergency
   directory or corroboration service. UI must preserve unknown country guidance
   and reported-vs-observed outcomes instead of inventing rescue support.
+- Robert PR52 CHANGES_REQUESTED5560453602 supersedes any assumption that its
+  prior technical acceptance clears integration. Re-review explicit stop events
+  on budgets/lifecycle, long-trip resource boundaries, wake-lock/resume/unsupported
+  activation paths, high-accuracy request mapping, explicit demo qualification/
+  precise consent, platform motion routes and error floods after50's next freeze.
+  Stop-sharing and `/status` APIs are proposed/forthcoming in this packet, not
+  present in the pinned backend. Bind actual reviewed source before using them;
+  do not wire provisional PR53 clock/deadline inputs over unresolved Robert feedback.
