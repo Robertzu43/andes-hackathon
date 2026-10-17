@@ -224,7 +224,28 @@ the structural compatibility gap for those exact sources, while actual React
 mounting, browser subscription/login/rendering, current feature integration and
 provider/server authorization remain separate. The test still pins old driver
 `c256e75` in its other feature suite; that dependency needs an owned lane45 update
-before its evidence can claim corrected driver `80e9d45`.
+before its evidence can claim corrected driver `80e9d45`. That update was reviewed
+separately at the following head.
+
+Follow-up disposition: **ACCEPT** at
+`7e241c39a31d4eaba5f8028fd977e06f6ca72d4d` for the current test/documentation
+delta. The API runtime tree remains exactly `0ad380efe9f1dd535107e0e896e244a222cc78e3`.
+The feature integration now pins corrected driver
+`80e9d45f9a234de54b1017e856e8349c097b8760` and adds two meaningful regressions
+through the real typed transport/session binding. They check that bound-trip
+form/draft/confirm/open operations send nothing, cached help stays on that trip,
+a fresh controller cannot reuse its predecessor's incident/location, and pending,
+unknown or reconciled drafts cannot be crossed while original retry keys/bodies
+remain intact. The complete changed tests/documentation were reviewed.
+
+Fresh independent execution at this exact head on Node26.3.0: **16 feature fixture
+integration checks passed**, including the strict structural consumer check, and
+**3 foundation compile-only checks passed** in NodeNext/ESNext-Bundler. The 77-test
+runtime evidence stays pinned to unchanged `db7034f`; it was not rerun for this
+test/documentation delta. HTTP/provider values are synthetic and no React runtime
+is executed. These tests now establish the corrected driver/client fixture seam;
+the four real signed API/PostgreSQL driver journeys are separately pinned to
+`80e9d45` below. Browser/device/provider and whole-app acceptance remain open.
 
 ## Durable observation queue oracle
 
@@ -411,6 +432,7 @@ blocks overlapping draft/confirmation and checks one persisted draft/incident
 and same-trip help. Cleanup completed; no listener remained on this lane's port.
 
 This resolves the original reviewer request, not browser/device/provider or
-whole-app acceptance. The separate typed-client controller test still references
-the old driver and is not silently reattributed to this corrected head. Queue
-PR66's four reproduced defects remain open pending a repaired frozen candidate.
+whole-app acceptance. The separate typed-client controller test was subsequently
+advanced to this driver and reviewed at `7e241c3` above; older fixture evidence is
+not silently reattributed. Queue PR66's four reproduced defects remain open
+pending a repaired frozen candidate.
