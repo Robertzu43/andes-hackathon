@@ -79,6 +79,9 @@ frontend foundation exists. Concurrent-tab writers are out of scope here.
 - **Failed is a retained state**: records that exhaust upload attempts stay in
   the queue as `failed` for inspection (`failedRetained`). Nothing is silently
   discarded.
+- **Sign-out is deletion**: `wipeUser(userId)` deletes every retained record
+  for the subject, counts `wipedBySignout`, and revokes all of their scopes so
+  nothing of theirs can re-enter. Used by `pipeline.signOut()`.
 
 ## Upload bridge (`upload.mjs`)
 
@@ -98,12 +101,37 @@ Written directly against the runtime contract (see above for its location):
   substituted. Samples lacking a source time, coordinates or a finite accuracy
   never reach the wire (the server schema requires all four fields).
 
-Response handling:
+Receipt handling — a batch is deleted only when the response **proves** it:
+
+- **2xx is not enough on its own.** The body must decode as JSON, `body.id`
+  must equal the target trip id and `body.received` must equal the number of
+  samples sent. Anything else is a `receipt-mismatch`: nothing is deleted,
+  records return to `pending` without burning attempts, `receiptMismatches`
+  is counted, `lastError` is set and the pump halts for operator attention.
+  A blind 200 can never silently delete evidence.
+- **Ambiguous outcomes are sticky.** On a network error or 5xx the server may
+  already hold the batch, so the records stay `uploading` and the bridge
+  remembers the exact `(samples, idempotency key)` pair per scope. The next
+  flush retries that identical payload BEFORE any new batch is taken; newer
+  samples always follow as their own batch with their own key. A retry never
+  regrows, so a re-POST can never produce an `idempotency_conflict` and the
+  server's first-commit-wins rule resolves which copy landed. If the records
+  were wiped while sticky (revocation), the intent is abandoned and never
+  re-POSTed. Sticky retries consume attempts and can exhaust `maxAttempts`
+  into the retained `failed` state like any other failure.
+- **Retirement gate.** The token is resolved before the gate, so a paused
+  `getAccessToken` cannot hide retirement: after the token arrives the bridge
+  re-checks `stopped` and re-reads the batch records. If the uploader was
+  stopped or the scope wiped mid-flight, no request is ever sent and the
+  records return to `pending` (or are already gone).
+- `unacknowledgedBatches` in `state()` counts sticky batches awaiting a valid
+  receipt.
+
+Other responses:
 
 | Server response | Bridge behaviour |
 | --- | --- |
-| 2xx `{ id, received }` | Records deleted, `uploaded` counted, receipt stored as a fact |
-| network error / 5xx | Back to `pending`, attempt counted, exponential backoff retry (1 s → 60 s cap); attempts exhausted → `failed`, retained |
+| valid 2xx receipt | Records deleted, `uploaded` counted, receipt stored as a fact |
 | 401 / 403 / token unavailable | `auth-blocked`; records stay pending, attempts NOT burned (host problem, not retry budget) |
 | 400 `capture_time_out_of_bounds` | Permanent; `rejectedBounds` (should be unreachable given client-side window checks) |
 | 400 / 422 other | Permanent; `rejectedValidation` |
@@ -152,21 +180,24 @@ else {
   const adapter = createPhoneObservationAdapter({ sink: pipeline.sink /* + qualification, contextKey */ });
   // adapter.start(...) / acquireLocation(...) remain explicit, gated, host-driven
   // on trip close: await pipeline.revokeTrip(tripId); adapter.stop();
+  // on owner sign-out: await pipeline.signOut();  // wipes all owner records, revokes scopes
 }
 ```
 
 ## Verify
 
-Node 22.22.3, no install, no server, no device:
+Node 24.17 (app-supported runtime), no install, no server, no device:
 
 ```sh
 node --test web/tests/observations/*.test.mjs
 ```
 
-42 tests covering the queue (bounds, dedupe, overflow, FIFO, recovery,
+49 tests covering the queue (bounds, dedupe, overflow, FIFO, recovery,
 revocation, persistence across reopen, per-scope unsent exposure), the bridge
 (contract shape, batching, idempotent reconnect retry, every response class,
-owner scoping, stop) and the pipeline boundary (source-time preservation,
-redaction honored, no-route counts, lifecycle intent, synchronous sink
-contract). Real-browser IndexedDB storage tests are follow-up evidence after
-the shared frontend foundation lands.
+owner scoping, stop, sticky ambiguous-batch retries, receipt validation,
+retirement gates for stop and revocation, network exhaustion) and the pipeline
+boundary (source-time preservation, redaction honored, no-route counts,
+lifecycle intent, synchronous sink contract, sign-out wipe). Real-browser
+IndexedDB storage tests are follow-up evidence after the shared frontend
+foundation lands.

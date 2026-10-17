@@ -160,6 +160,17 @@ export function createObservationPipeline({ queue, uploader, ownerSubject, onErr
     uploader.stop();
   }
 
+  // Owner sign-out: stop the pump, then delete every queued record for the
+  // subject and revoke all of their scopes. Nothing uploadable and no
+  // lifecycle residue survives the session. Returns the wiped record count.
+  async function signOut() {
+    stopped = true;
+    await drain().catch(() => {});
+    uploader.stop();
+    lifecycle.clear();
+    return queue.wipeUser(ownerSubject);
+  }
+
   async function counts() {
     return { boundary: { ...counters }, queue: await queue.counts(), lifecycle: Object.fromEntries(lifecycle) };
   }
@@ -173,5 +184,5 @@ export function createObservationPipeline({ queue, uploader, ownerSubject, onErr
     };
   }
 
-  return { sink, drain, flush, revokeTrip, stop, counts, tripStatus };
+  return { sink, drain, flush, revokeTrip, stop, signOut, counts, tripStatus };
 }

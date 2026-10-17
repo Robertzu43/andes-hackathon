@@ -189,3 +189,29 @@ test('stop drains staging best-effort and stops the uploader', async () => {
   assert.equal(counts.pending, 1, 'persisted locally; upload after stop is the host’s next-session concern');
   assert.equal(calls.length, 0);
 });
+
+test('signOut wipes every record for the owner, revokes scopes, stops the pump and clears intent', async () => {
+  const { pipeline, queue, uploader } = await setup();
+  pipeline.sink(geoEvent({ type: 'session-start', data: {} }));
+  pipeline.sink(geoEvent());
+  pipeline.sink(geoEvent({
+    eventId: 'session-1:1:4',
+    tripId: 'trip-2',
+    sourceTime: { value: SOURCE_MS + 1000, basis: 'unix-epoch-ms', provenance: 'position.timestamp' },
+    data: { requestId: '1:geo:1', accuracyM: 9, coordinates: { latitude: -33.44, longitude: -70.65 } },
+  }));
+  await pipeline.drain();
+  assert.equal((await queue.counts()).retained, 2);
+  const wiped = await pipeline.signOut();
+  assert.equal(wiped, 2);
+  const counts = await queue.counts();
+  assert.equal(counts.retained, 0);
+  assert.equal(counts.wipedBySignout, 2);
+  assert.equal(queue.isScopeRevoked({ tripId: 'trip-1', userId: 'user-1' }), true);
+  assert.equal(queue.isScopeRevoked({ tripId: 'trip-2', userId: 'user-1' }), true);
+  assert.equal((await uploader.state()).pumpState, 'stopped');
+  assert.deepEqual((await pipeline.counts()).lifecycle, {});
+  pipeline.sink(geoEvent({ eventId: 'session-2:1:1' }));
+  await pipeline.drain();
+  assert.equal((await queue.counts()).retained, 0, 'nothing re-enters after sign-out');
+});

@@ -13,8 +13,12 @@
 //     409 idempotency_conflict, 401/403 auth/ownership
 //   - success: { id, received }
 //
-// Upload acceptance is a server receipt fact. It is never a freshness,
-// liveness or trip-health signal, and this module never fabricates one.
+// Upload acceptance is a server receipt fact, validated against the request
+// (trip id + sample count) before anything is deleted locally. It is never a
+// freshness, liveness or trip-health signal, and this module never fabricates
+// one. Once a request may have reached the server (network failure or 5xx),
+// the SAME batch content retries under the SAME idempotency key until
+// acknowledged — it is never silently regrouped into a different request.
 
 import { QUEUE_LIMITS } from './queue.mjs';
 
@@ -66,9 +70,17 @@ export function createLocationUploader({
   let pumpState = 'idle'; // idle | uploading | auth-blocked | stopped
   let consecutiveFailures = 0;
   let lastError = null;
-  let lastReceipt = null; // { tripId, received } — a receipt fact, nothing more
+  let lastReceipt = null; // { tripId, received } — a validated receipt fact, nothing more
   let retryTimer = null;
   let lastUserId = null;
+
+  // Sticky retry intent per scope: once a request's outcome is ambiguous
+  // (network failure / 5xx), the identical content retries under the
+  // identical key until acknowledged. Records stay 'uploading' between
+  // flushes; a page restart recovers them to pending and the server's
+  // first-commit-wins rule per capture timestamp is the durable guard.
+  const sticky = new Map(); // skey -> { queueIds, samples, key }
+  const skeyOf = (scope) => `${scope.userId} ${scope.tripId}`;
 
   // Same batch content -> same key, so a reconnect retry replays the server's
   // persisted response instead of double-inserting. 74 visible ASCII chars.
@@ -86,15 +98,54 @@ export function createLocationUploader({
     }, backoffMs);
   }
 
+  // Ambiguous outcome (network error or 5xx): count attempts, retain the
+  // sticky intent for the survivors, and fail out records that exhausted
+  // their budget. If any record exhausted, the batch composition can no
+  // longer be preserved — the sticky key is discarded and the survivors
+  // regroup under a new key next flush; the server's per-capture-timestamp
+  // dedupe keeps that safe.
+  async function noteAmbiguousFailure(skey, records, samples, key, errorCode, userId) {
+    const updated = await queue.noteAttempt(records.map((r) => r.queueId), errorCode);
+    const exhausted = updated.filter((record) => record.attempts >= maxAttempts);
+    if (exhausted.length > 0) {
+      await queue.markFailed(exhausted, errorCode);
+      const survivors = updated.filter((record) => record.attempts < maxAttempts);
+      await queue.releaseBatch(survivors, errorCode, { countAttempt: false });
+      sticky.delete(skey);
+    } else {
+      sticky.set(skey, { tripId: records[0].tripId, userId: records[0].userId, queueIds: records.map((r) => r.queueId), samples, key });
+    }
+    consecutiveFailures += 1;
+    scheduleRetry(userId);
+  }
+
   async function uploadScope(scope, userId) {
     const scopeOutcome = { batches: 0, skipped: false };
+    const skey = skeyOf(scope);
     for (;;) {
       if (stopped || pumpState === 'auth-blocked' || scopeOutcome.batches >= maxBatchesPerFlush) return scopeOutcome;
-      const batch = await queue.takeBatch({ ...scope, limit: batchSize });
-      if (batch.length === 0) return scopeOutcome;
+
+      let records;
+      let samples;
+      let key;
+      const stuck = sticky.get(skey);
+      if (stuck) {
+        records = await queue.getRecords(stuck.queueIds);
+        if (records.length !== stuck.queueIds.length) {
+          // Wiped (revocation / sign-out) while unacknowledged: never send
+          // partial content under the old key. The intent is discarded;
+          // takeBatch will find nothing for the wiped scope.
+          sticky.delete(skey);
+          continue;
+        }
+        ({ samples, key } = stuck);
+      } else {
+        records = await queue.takeBatch({ ...scope, limit: batchSize });
+        if (records.length === 0) return scopeOutcome;
+        samples = records.map((record) => record.sample);
+        key = await idempotencyKey(scope.tripId, samples);
+      }
       scopeOutcome.batches += 1;
-      const samples = batch.map((record) => record.sample);
-      const key = await idempotencyKey(scope.tripId, samples);
 
       let token;
       try {
@@ -102,8 +153,23 @@ export function createLocationUploader({
       } catch {
         token = null;
       }
+      // Retirement gate: the token may resolve after stop()/revokeTrip() ran
+      // while it was pending. A request that has not started yet MUST NOT
+      // start for a retired pump or a wiped scope.
+      if (stopped) {
+        await queue.releaseBatch(records, 'stopped', { countAttempt: false });
+        sticky.delete(skey);
+        return scopeOutcome;
+      }
+      const present = await queue.getRecords(records.map((r) => r.queueId));
+      if (present.length !== records.length) {
+        sticky.delete(skey);
+        continue;
+      }
       if (typeof token !== 'string' || token.length === 0) {
-        await queue.releaseBatch(batch, 'auth-unavailable', { countAttempt: false });
+        // No request was sent, so no intent is ambiguous; safe to regroup.
+        await queue.releaseBatch(records, 'auth-unavailable', { countAttempt: false });
+        sticky.delete(skey);
         pumpState = 'auth-blocked';
         lastError = 'auth-unavailable';
         return scopeOutcome;
@@ -124,10 +190,8 @@ export function createLocationUploader({
           signal: controller.signal,
         });
       } catch {
-        await queue.releaseBatch(batch, 'network-error');
         lastError = 'network-error';
-        consecutiveFailures += 1;
-        scheduleRetry(userId);
+        await noteAmbiguousFailure(skey, records, samples, key, 'network-error', userId);
         return scopeOutcome;
       } finally {
         timers.clearTimeout(timeout);
@@ -135,16 +199,28 @@ export function createLocationUploader({
 
       if (response.status >= 200 && response.status < 300) {
         const body = await response.json().catch(() => null);
-        await queue.confirmUploaded(batch);
-        consecutiveFailures = 0;
-        lastReceipt = { tripId: scope.tripId, received: Number.isSafeInteger(body?.received) ? body.received : null };
-        continue;
+        if (body && body.id === scope.tripId && body.received === samples.length) {
+          await queue.confirmUploaded(records);
+          sticky.delete(skey);
+          consecutiveFailures = 0;
+          lastReceipt = { tripId: scope.tripId, received: body.received };
+          continue;
+        }
+        // A 2xx that does not echo the requested trip and exact sample count
+        // is not a receipt. Nothing is deleted; the defect is counted and the
+        // pump halts for this scope instead of confirming a lie.
+        await queue.noteReceiptMismatch(records.length);
+        await queue.releaseBatch(records, 'receipt-mismatch', { countAttempt: false });
+        sticky.delete(skey);
+        lastError = 'receipt-mismatch';
+        return scopeOutcome;
       }
 
       const code = await bodyCode(response);
       lastError = code;
       if (response.status === 401 || response.status === 403) {
-        await queue.releaseBatch(batch, code, { countAttempt: false });
+        await queue.releaseBatch(records, code, { countAttempt: false });
+        sticky.delete(skey);
         pumpState = 'auth-blocked';
         return scopeOutcome;
       }
@@ -152,43 +228,44 @@ export function createLocationUploader({
         // Map/trip inactive: server rejects new uploads, but a map can be
         // reactivated. Records stay pending without burning retry budget;
         // this scope is skipped for the rest of the flush.
-        await queue.releaseBatch(batch, code, { countAttempt: false });
-        await queue.noteTripStopped(batch.length);
+        await queue.releaseBatch(records, code, { countAttempt: false });
+        sticky.delete(skey);
+        await queue.noteTripStopped(records.length);
         scopeOutcome.skipped = true;
         return scopeOutcome;
       }
       if (response.status === 404) {
-        await queue.failBatchPermanent(batch, 'rejectedMissing');
+        await queue.failBatchPermanent(records, 'rejectedMissing');
+        sticky.delete(skey);
         continue;
       }
       if (response.status === 400 && code === 'capture_time_out_of_bounds') {
-        await queue.failBatchPermanent(batch, 'rejectedBounds');
+        await queue.failBatchPermanent(records, 'rejectedBounds');
+        sticky.delete(skey);
         continue;
       }
       if (response.status === 409 && code === 'idempotency_conflict') {
         // Same key, different content: deterministic keys make this a client
         // defect signal, not a retryable condition.
-        await queue.failBatchPermanent(batch, 'conflictErrors');
+        await queue.failBatchPermanent(records, 'conflictErrors');
+        sticky.delete(skey);
         continue;
       }
       if (response.status >= 400 && response.status < 500) {
-        await queue.failBatchPermanent(batch, 'rejectedValidation');
+        await queue.failBatchPermanent(records, 'rejectedValidation');
+        sticky.delete(skey);
         continue;
       }
-      // 5xx or anything unexpected: transient.
-      const exhausted = batch.filter((record) => record.attempts + 1 >= maxAttempts);
-      const retryable = batch.filter((record) => record.attempts + 1 < maxAttempts);
-      if (retryable.length > 0) await queue.releaseBatch(retryable, code);
-      if (exhausted.length > 0) await queue.markFailed(exhausted, code);
-      consecutiveFailures += 1;
-      scheduleRetry(userId);
+      // 5xx or anything unexpected: ambiguous, retry the identical intent.
+      await noteAmbiguousFailure(skey, records, samples, key, code, userId);
       return scopeOutcome;
     }
   }
 
-  // Drains pending scopes. Idempotent: a concurrent flush returns the same
-  // in-flight promise. userId scopes the drain to the signed-in owner; a
-  // flush never uploads another subject's records.
+  // Drains pending scopes plus any scopes holding an unacknowledged sticky
+  // batch. Idempotent: a concurrent flush returns the same in-flight
+  // promise. userId scopes the drain to the signed-in owner; a flush never
+  // uploads another subject's records.
   function flush({ userId } = {}) {
     if (stopped) return Promise.resolve({ ok: false, reason: 'stopped' });
     if (inFlight) return inFlight;
@@ -197,7 +274,11 @@ export function createLocationUploader({
       pumpState = 'uploading';
       try {
         const scopes = await queue.pendingScopes();
-        for (const scope of scopes) {
+        const byKey = new Map(scopes.map((scope) => [skeyOf(scope), scope]));
+        for (const [stuckKey, stuck] of sticky) {
+          if (!byKey.has(stuckKey)) byKey.set(stuckKey, { tripId: stuck.tripId, userId: stuck.userId });
+        }
+        for (const scope of byKey.values()) {
           if (lastUserId && scope.userId !== lastUserId) continue;
           await uploadScope(scope, lastUserId);
           if (stopped || pumpState === 'auth-blocked') break;
@@ -232,6 +313,7 @@ export function createLocationUploader({
       consecutiveFailures,
       lastError,
       lastReceipt,
+      unacknowledgedBatches: sticky.size,
       counts: await queue.counts(),
     };
   }

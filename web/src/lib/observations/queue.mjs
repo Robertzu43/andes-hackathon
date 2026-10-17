@@ -25,7 +25,9 @@ const INITIAL_COUNTS = Object.freeze({
   rejectedMissing: 0, // server 404: trip missing
   tripStoppedRejections: 0, // server 409 location_stopped; records stay pending (map may reactivate)
   conflictErrors: 0, // server 409 idempotency_conflict: client-side defect signal
+  receiptMismatches: 0, // 2xx receipt that does not match the requested trip/count: defect, not confirmed
   wipedByRevocation: 0, // consent withdrawal / explicit scope wipe
+  wipedBySignout: 0, // owner sign-out: every record for the subject deleted
   failedRetained: 0, // attempts exhausted; retained for inspection
   recoveredAfterInterruption: 0, // 'uploading' records reset to pending on open
 });
@@ -58,6 +60,9 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
   }
   const stored = await meta.get('meta');
   const state = stored ?? { id: 'meta', seq: 0, counts: { ...INITIAL_COUNTS }, revokedScopes: [] };
+  // Counters added in later revisions default to 0 for existing databases.
+  state.counts = { ...INITIAL_COUNTS, ...state.counts };
+  state.revokedScopes ??= [];
   const persist = () => meta.put('meta', state);
 
   const interrupted = (await records.getAll()).filter((record) => record.state === 'uploading');
@@ -170,6 +175,33 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
     await persist();
   }
 
+  // Fetch current records by id. Missing records (wiped while in flight) are
+  // simply absent from the result — callers treat absence as "do not send".
+  async function getRecords(queueIds) {
+    const found = [];
+    for (const queueId of queueIds) {
+      const record = await records.get(queueId);
+      if (record) found.push(record);
+    }
+    return found;
+  }
+
+  // Count an upload attempt without changing state (sticky retries keep the
+  // records in 'uploading'). Returns the updated records so the caller can
+  // apply its own exhaustion policy.
+  async function noteAttempt(queueIds, errorCode) {
+    const updated = [];
+    for (const queueId of queueIds) {
+      const record = await records.get(queueId);
+      if (!record) continue;
+      record.attempts += 1;
+      record.lastError = text(errorCode) ? errorCode : 'unknown';
+      await records.put(record.queueId, record);
+      updated.push(record);
+    }
+    return updated;
+  }
+
   // Transient failure: back to pending with an attempt counted.
   // countAttempt is false for auth blocks (a host problem, not retry budget).
   async function releaseBatch(batch, errorCode, { countAttempt = true } = {}) {
@@ -220,6 +252,23 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
     return scoped.length;
   }
 
+  // Owner sign-out: every retained record for the subject is deleted and all
+  // of their scopes are revoked, so nothing uploadable survives the session
+  // and late events cannot re-enter. Distinct from wipeScope (one trip).
+  async function wipeUser(userId) {
+    if (!text(userId)) return 0;
+    const mine = (await allRecords()).filter((r) => r.userId === userId);
+    for (const record of mine) await records.delete(record.queueId);
+    for (const record of mine) {
+      const key = scopeKey(record);
+      if (!state.revokedScopes.includes(key)) state.revokedScopes.push(key);
+    }
+    while (state.revokedScopes.length > QUEUE_LIMITS.revokedScopeRetention) state.revokedScopes.shift();
+    state.counts.wipedBySignout += mine.length;
+    await persist();
+    return mine.length;
+  }
+
   async function counts() {
     const live = { pending: 0, uploading: 0, failed: 0 };
     for (const record of await allRecords()) live[record.state] += 1;
@@ -242,8 +291,10 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
 
   return {
     enqueue, pendingScopes, takeBatch, confirmUploaded, releaseBatch,
-    markFailed, failBatchPermanent, wipeScope, counts, scopeCounts,
+    markFailed, failBatchPermanent, wipeScope, wipeUser, counts, scopeCounts,
+    getRecords, noteAttempt,
     noteTripStopped: async (n) => { state.counts.tripStoppedRejections += n; await persist(); },
+    noteReceiptMismatch: async (n) => { state.counts.receiptMismatches += n; await persist(); },
     isScopeRevoked: (scope) => state.revokedScopes.includes(scopeKey(scope)),
   };
 }
