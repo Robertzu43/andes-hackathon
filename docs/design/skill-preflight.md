@@ -31,3 +31,9 @@ This is **OPERATE / private utility UI**. Brain explicitly excludes marketing SE
 - Frontend design: `sha256:404fa218d2bceee72b50221c08cd30987242420d81f9528582e4cbaa2210b7f1`.
 
 Source-status classification records validator output; it does not establish how the installation changed. A verified contract, approved product/routes/brand inputs and Git-bound independent UI evidence are still pending. No user-specific viewport was supplied; obtain the declared capture set from the released contract instead of inventing dimensions.
+
+## Released foundation inputs
+
+Brain subsequently released `andes-operate-v1` and the utility map. The copied PRODUCT context passed the actual loader; local `verify-contract docs/design-contract.json` and `site-gates.mjs map docs/seo/site.config.json` both passed before UI implementation. The approved packet supplies 390×844, 1440×900, 1920×1080, 360×800 and 430×932 contexts. Its Brain read receipt is preserved separately as `brain-skill-preflight.md`.
+
+The product register explicitly chooses one platform system UI family, ordinary controls and restrained state motion. No image generation is required for identity assets. The later visual addendum allows optional separately owned Hairline/Anatomy setup/help illustrations and does not block this shared foundation or authorize additional routes. Independent UI evidence/review remains a separate pending gate; an author build/test pass does not discharge it.

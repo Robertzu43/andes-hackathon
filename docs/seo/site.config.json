@@ -1,0 +1,339 @@
+{
+  "schemaVersion": 1,
+  "origin": "http://127.0.0.1:59060",
+  "brand": "ANDES",
+  "primaryOwner": "/",
+  "userViewport": {
+    "width": 390,
+    "height": 844
+  },
+  "seedKey": "87851eab",
+  "scaffoldFavicon": {
+    "sha256": [],
+    "absentEvidence": "Robert backend file-tree at ebc8fb1 contains no web frontend or favicon; foundation executor must recheck scaffold before replacement."
+  },
+  "routes": [
+    {
+      "path": "/",
+      "kind": "utility",
+      "intent": "home task",
+      "job": "See current trip or prepare the next freight trip",
+      "primary": "",
+      "title": "Tu viaje | ANDES",
+      "blueprint": "docs/seo/blueprints/home.md",
+      "sections": [
+        "Estado del viaje",
+        "Siguiente acción"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/trips/new",
+        "/contacts"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"home-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "home_action"
+        ]
+      }
+    },
+    {
+      "path": "/session",
+      "kind": "utility",
+      "intent": "session task",
+      "job": "Enter an actually supported authenticated or explicitly synthetic local session",
+      "primary": "",
+      "title": "Entrar a ANDES | ANDES",
+      "blueprint": "docs/seo/blueprints/session.md",
+      "sections": [
+        "Acceso",
+        "Modo de prueba"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"session-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "session_action"
+        ]
+      }
+    },
+    {
+      "path": "/trucks",
+      "kind": "utility",
+      "intent": "trucks task",
+      "job": "Read and register owned freight trucks",
+      "primary": "",
+      "title": "Mis camiones | ANDES",
+      "blueprint": "docs/seo/blueprints/trucks.md",
+      "sections": [
+        "Camiones",
+        "Datos del camión"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"trucks-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "trucks_action"
+        ]
+      }
+    },
+    {
+      "path": "/contacts",
+      "kind": "utility",
+      "intent": "contacts task",
+      "job": "Invite accepted trusted contacts and control scoped sharing",
+      "primary": "",
+      "title": "Mis contactos | ANDES",
+      "blueprint": "docs/seo/blueprints/contacts.md",
+      "sections": [
+        "Contactos",
+        "Permisos"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"contacts-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "contacts_action"
+        ]
+      }
+    },
+    {
+      "path": "/trips/new",
+      "kind": "utility",
+      "intent": "trip-new task",
+      "job": "Correct a text draft and explicitly confirm truck, route and accepted contacts",
+      "primary": "",
+      "title": "Preparar viaje | ANDES",
+      "blueprint": "docs/seo/blueprints/trip-new.md",
+      "sections": [
+        "Ruta y camión",
+        "Contactos del viaje",
+        "Confirmación"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"trip-new-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "trip_new_action"
+        ]
+      }
+    },
+    {
+      "path": "/trips/:tripId",
+      "kind": "utility",
+      "intent": "active-trip task",
+      "job": "See source-aged facts and use explicit permitted trip commands",
+      "primary": "",
+      "title": "Viaje en curso | ANDES",
+      "blueprint": "docs/seo/blueprints/active-trip.md",
+      "sections": [
+        "Última respuesta",
+        "Última ubicación",
+        "Avisos",
+        "Acciones del viaje"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"active-trip-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "active_trip_action"
+        ]
+      }
+    },
+    {
+      "path": "/trips/:tripId/check-in",
+      "kind": "utility",
+      "intent": "check-in task",
+      "job": "Report OK or rest only in an available interaction mode",
+      "primary": "",
+      "title": "Tu respuesta | ANDES",
+      "blueprint": "docs/seo/blueprints/check-in.md",
+      "sections": [
+        "Estado de la respuesta",
+        "Acciones disponibles"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"check-in-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "check_in_action"
+        ]
+      }
+    },
+    {
+      "path": "/trips/:tripId/alerts",
+      "kind": "utility",
+      "intent": "alerts task",
+      "job": "Separate local intent, server acceptance, channel facts and contact response",
+      "primary": "",
+      "title": "Estado de la alerta | ANDES",
+      "blueprint": "docs/seo/blueprints/alerts.md",
+      "sections": [
+        "Solicitud",
+        "Canales",
+        "Respuesta de contactos"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"alerts-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "alerts_action"
+        ]
+      }
+    },
+    {
+      "path": "/contact/trips/:tripId",
+      "kind": "utility",
+      "intent": "contact-trip task",
+      "job": "Read only current authorised facts and report contact action without claiming rescue",
+      "primary": "",
+      "title": "Viaje compartido | ANDES",
+      "blueprint": "docs/seo/blueprints/contact-trip.md",
+      "sections": [
+        "Ubicación compartida",
+        "Incidente",
+        "Tu respuesta"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"contact-trip-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "contact_trip_action"
+        ]
+      }
+    },
+    {
+      "path": "/contact/invitations/:grantId",
+      "kind": "utility",
+      "intent": "invitation task",
+      "job": "Accept or narrow scopes for this authenticated invitation",
+      "primary": "",
+      "title": "Invitación de contacto | ANDES",
+      "blueprint": "docs/seo/blueprints/invitation.md",
+      "sections": [
+        "Invitación",
+        "Permisos"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"invitation-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "invitation_action"
+        ]
+      }
+    },
+    {
+      "path": "/trips/:tripId/summary",
+      "kind": "utility",
+      "intent": "summary task",
+      "job": "Read persisted trip events and unresolved incident facts separately",
+      "primary": "",
+      "title": "Resumen del viaje | ANDES",
+      "blueprint": "docs/seo/blueprints/summary.md",
+      "sections": [
+        "Viaje",
+        "Hechos registrados",
+        "Pendientes"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"summary-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "summary_action"
+        ]
+      }
+    },
+    {
+      "path": "/privacy",
+      "kind": "utility",
+      "intent": "privacy task",
+      "job": "Inspect and revoke operational sharing and understand separate optional reuse",
+      "primary": "",
+      "title": "Privacidad | ANDES",
+      "blueprint": "docs/seo/blueprints/privacy.md",
+      "sections": [
+        "Datos compartidos",
+        "Revocar permisos",
+        "Uso opcional"
+      ],
+      "schemaTypes": [],
+      "internalLinks": [
+        "/"
+      ],
+      "conversion": {
+        "primarySelector": "[data-action=\"privacy-primary\"]",
+        "secondary": "Return or cancel safely",
+        "events": [
+          "privacy_action"
+        ]
+      }
+    }
+  ],
+  "upstream": {
+    "brainReads": {
+      "status": "complete",
+      "evidence": "docs/design/brain-skill-preflight.md"
+    },
+    "product": {
+      "status": "complete",
+      "evidence": "PRODUCT.md"
+    },
+    "research": {
+      "status": "complete",
+      "evidence": "docs/seo/keyword-map.md"
+    },
+    "blueprints": {
+      "status": "complete",
+      "evidence": "docs/seo/keyword-map.md"
+    },
+    "contract": {
+      "status": "complete",
+      "evidence": "docs/design/contract-verification.json"
+    },
+    "foundation": {
+      "status": "pending",
+      "evidence": ""
+    }
+  }
+}

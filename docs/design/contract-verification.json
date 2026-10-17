@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-17T22:51:54.078865+00:00",
+  "contract": "docs/design-contract.json",
+  "sha256": "2148eba873c75ba5714247259bc37a25f2e542bb7a978ce11a803e5cbc2660cf",
+  "validator": "/Users/sebasbimbi/.claude/skills/codus-ui-proof/scripts/ui-proof.cjs verify-contract",
+  "result": "PASS",
+  "route_map_result": "PASS: map",
+  "foundation": "not built; release to single executor49 only",
+  "rendered_ui_acceptance": "pending",
+  "preflight": "IMPECCABLE_PREFLIGHT: context=pass product=pass command_reference=pass shape=not_required image_gate=skipped:operate task surface without illustrative imagery mutation=open"
+}
