@@ -312,7 +312,7 @@ test('advice turns to caution at the minimum count in the current band and needs
   for (let i = 0; i < 3; i++) await report(f, 'robo', -12.525, -76.725, '2026-10-11T04:00:00Z'); // 23:00 in Lima
   assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'none' });
   await report(f, 'intento_robo', -12.525, -76.725, day);
-  assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'caution', count: 3, band: 'dia', text: '3 reportes de robo en esta zona de día (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro.' });
+  assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'caution', count: 3, includesSynthetic: false, band: 'dia', text: '3 reportes de robo en esta zona de día (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro.' });
   assert.match((await advice('?lat=-12.47&lon=-76.68&locale=pt-BR')).body.text, /^3 relatos de roubo nesta região durante o dia/);
   assert.deepEqual((await advice('?lat=-12.37&lon=-76.68')).body, { level: 'none' });
   assert.equal((await advice('?lat=95&lon=0')).status, 400);
@@ -379,12 +379,12 @@ Add this route after the hotspots route:
     const lat = Number(query.lat), lon = Number(query.lon);
     if (Math.abs(lat) > 90 || Math.abs(lon) > 180) problem(400, 'invalid_coordinates');
     const now = ctx.clock();
-    const row = (await ctx.pool.query(`SELECT count(*)::int AS n, time_band($4,$3) AS band FROM security_events
+    const row = (await ctx.pool.query(`SELECT count(*)::int AS n, count(*) FILTER (WHERE synthetic)::int AS synthetic, time_band($4,$3) AS band FROM security_events
       WHERE abs(floor(latitude/$5) - floor($1::float8/$5)) <= 1 AND abs(floor(longitude/$5) - floor($2::float8/$5)) <= 1
         AND occurred_at > $6 AND occurred_at <= $4 AND time_band(occurred_at,$3) = time_band($4,$3)`,
     [lat, lon, TIME_ZONE, now, CELL, new Date(now.getTime() - 90 * DAY)])).rows[0];
     if (row.n < MIN_COUNT) return { level: 'none' };
-    return { level: 'caution', count: row.n, band: row.band, text: adviceText[query.locale ?? 'es'](row.n, row.band === 'noche') };
+    return { level: 'caution', count: row.n, includesSynthetic: row.synthetic > 0, band: row.band, text: adviceText[query.locale ?? 'es'](row.n, row.band === 'noche') };
   });
 ```
 
