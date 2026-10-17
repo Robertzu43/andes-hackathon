@@ -1,0 +1,22 @@
+{
+  "candidate": "f28124b9a44cbbcd80325d84f48342e216bbdd1e",
+  "parent": "bd0c4ae42b085cc8efe315b1836f5bbf29303740",
+  "verdict": "AI-assisted ACCEPT, policy text only",
+  "agent": "Codex / Q48",
+  "posting_account": "sebasbimbi",
+  "human_blocker_confirmation": "outstanding",
+  "pr54_head_at_review": "bd0c4ae42b085cc8efe315b1836f5bbf29303740",
+  "changed_files": [".github/PULL_REQUEST_TEMPLATE.md", "CONTRIBUTING.md"],
+  "template_blob": "e7a9c92a9a8f0ff393821a9fb842b5c1e90cea76",
+  "contributing_blob": "08c6e4cce78bee6f061b76516beec4626b35eb9f",
+  "template_comments": 4,
+  "visible_template_instruction_characters": 0,
+  "resolved_template_target": "CONTRIBUTING.md#review-before-merge",
+  "whitespace_exit": 0,
+  "remote_check_runs": 0,
+  "remote_statuses": 0,
+  "candidate_workflow_files": [],
+  "application_suite": "not applicable to documentation-only changes",
+  "merge_performed": false,
+  "repository_settings_changed": false
+}
