@@ -62,7 +62,7 @@ export function insightRoutes(app: FastifyInstance, ctx: Context) {
     const cells = (await publicCells(days, now)).map(({ cy, cx, ...cell }) => ({ lat: centre(cy), lon: centre(cx), ...cell }));
     return { generatedAt: now.toISOString(), days, cellDegrees: CELL, minCount: MIN_COUNT, includesSynthetic: cells.some(c => c.synthetic > 0), cells };
   });
-  app.get('/v1/insights/advice', { schema: { querystring: object({ lat: decimal, lon: decimal, locale: { type: 'string', pattern: '^[a-z]{2}(-[A-Z]{2})?$' } }, ['lat', 'lon']) } }, async request => {
+  app.get('/v1/insights/advice', { schema: { querystring: object({ lat: decimal, lon: decimal, locale: { type: 'string', maxLength: 35 } }, ['lat', 'lon']) } }, async request => {
     const query = request.query as { lat: string; lon: string; locale?: string };
     const lat = Number(query.lat), lon = Number(query.lon);
     if (Math.abs(lat) > 90 || Math.abs(lon) > 180) problem(400, 'invalid_coordinates');
@@ -72,6 +72,6 @@ export function insightRoutes(app: FastifyInstance, ctx: Context) {
     const near = (await publicCells(90, now)).filter(c => c.band === band && Math.abs(c.cy - cy) <= 1 && Math.abs(c.cx - cx) <= 1);
     const count = near.reduce((sum, c) => sum + c.total, 0);
     if (!count) return { level: 'none' };
-    return { level: 'caution', count, includesSynthetic: near.some(c => c.synthetic > 0), band, text: adviceText[query.locale?.startsWith('pt') ? 'pt-BR' : 'es'](count, band === 'noche') };
+    return { level: 'caution', count, includesSynthetic: near.some(c => c.synthetic > 0), band, text: adviceText[query.locale?.toLowerCase().startsWith('pt') ? 'pt-BR' : 'es'](count, band === 'noche') };
   });
 }

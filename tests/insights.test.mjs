@@ -139,7 +139,9 @@ test('advice only sums published cells, so it cannot locate or time a hidden rep
   assert.deepEqual(await advice(-13.075, -76.375), { level: 'none' });
   f.advance(31 * 60000);
   assert.equal((await advice(-13.075, -76.375)).count, 3);
+  for (const locale of ['es-PE', 'es-419', 'pt-br']) assert.equal((await f.req('GET', `/v1/insights/advice?lat=-13.075&lon=-76.375&locale=${locale}`)).status, 200, locale);
   assert.match((await f.req('GET', '/v1/insights/advice?lat=-13.075&lon=-76.375&locale=es-PE')).body.text, /^3 reportes de robo/);
+  assert.match((await f.req('GET', '/v1/insights/advice?lat=-13.075&lon=-76.375&locale=pt-br')).body.text, /^3 relatos de roubo/);
 });
 
 // Demo personas are free to mint, so in demo mode every report is demo data and every view must say so.
