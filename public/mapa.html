@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
 <style>
   :root {
     --sign-green: #0b5f36;      /* guide-sign green; white on it is 7.6:1 */
@@ -73,6 +73,9 @@
   th { font-weight: 600; }
   td.num, th.num { text-align: right; }
 
+  .nomap { position: absolute; top: 50%; left: 0; right: 0; text-align: center; color: var(--ink); font-weight: 600; padding: 0 24px; }
+  body.noche .nomap { color: var(--sign-white); }
+  .status:focus { outline: none; }
   .fine { font-size: .8rem; line-height: 1.45; margin: 0; opacity: .92; }
 
   .leaflet-tooltip { font-family: inherit; font-size: .9rem; line-height: 1.35; color: var(--ink); border-radius: 6px; padding: 8px 10px; max-width: 260px; white-space: normal; }
@@ -88,7 +91,7 @@
 
 <aside class="sign" aria-labelledby="title">
   <h1 id="title">Robos reportados en carretera</h1>
-  <p class="lede">Zonas de unos 5 km donde 3 o más personas distintas reportaron un robo o un intento de robo a su camión.</p>
+  <p class="lede">Zonas de unos 5 km donde <span class="min">3</span> o más personas distintas reportaron un robo o un intento de robo a su camión.</p>
 
   <fieldset>
     <legend class="group">Periodo</legend>
@@ -118,9 +121,9 @@
     <p><strong>Incluye datos de demostración</strong>Parte de estos reportes son de prueba. Cada zona indica cuántos.</p>
   </div>
 
-  <p class="status" id="status" aria-live="polite">Cargando reportes…</p>
+  <p class="status" id="status" aria-live="polite" tabindex="-1">Cargando reportes…</p>
 
-  <details>
+  <details id="table">
     <summary>Ver los datos en tabla</summary>
     <table>
       <thead><tr><th>Zona (centro)</th><th class="num">Reportes</th><th class="num">Robos</th><th class="num">Intentos</th><th class="num">Demo</th></tr></thead>
@@ -128,10 +131,11 @@
     </table>
   </details>
 
-  <p class="fine" id="fine">Sin nombres, teléfonos ni rutas de conductores. Las zonas con menos de 3 personas no se muestran. Hora de Lima.</p>
+  <p class="fine" id="fine">Sin nombres, teléfonos ni rutas de conductores. Las zonas con menos de <span class="min">3</span> personas no se muestran. Hora de Lima.</p>
 </aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>window.L || document.write('<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""><\/script>')</script>
 <script>
   // Ordinal ramps validated with the dataviz checker against each map surface: day (light) and night (inverted tiles).
   const bins = [{ min: 3, label: '3 a 4' }, { min: 5, label: '5 a 7' }, { min: 8, label: '8 a 11' }, { min: 12, label: '12 o más' }];
@@ -139,10 +143,18 @@
   const ring = { dia: '#ffffff', noche: '#1f2023' };
   const state = { days: '90', band: 'noche', data: null, fitted: false };
   const $ = id => document.getElementById(id);
-  const map = L.map('map', { zoomControl: false }).setView([-12.6, -76.7], 9);
-  L.control.zoom({ position: 'topright', zoomInTitle: 'Acercar', zoomOutTitle: 'Alejar' }).addTo(map);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: '&copy; colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
-  const layer = L.layerGroup().addTo(map);
+  const mobile = matchMedia('(max-width: 640px)').matches, still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // If both Leaflet CDNs fail, the data stays usable through the table.
+  const map = window.L ? L.map('map', { zoomControl: false, zoomAnimation: !still, fadeAnimation: !still }).setView([-12.6, -76.7], 9) : null;
+  const layer = map ? L.featureGroup().addTo(map) : null;
+  if (map) {
+    L.control.zoom({ position: 'topright', zoomInTitle: 'Acercar', zoomOutTitle: 'Alejar' }).addTo(map);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: '&copy; colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+    if (mobile) map.attributionControl.setPosition('topleft'); // the bottom sheet would cover it
+  } else {
+    $('map').innerHTML = '<p class="nomap">No se pudo cargar el mapa. Los datos están en la tabla del panel.</p>';
+    $('table').open = true;
+  }
 
   const bin = total => bins.reduce((found, b, i) => total >= b.min ? i : found, 0);
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -162,11 +174,12 @@
   function render() {
     drawScale();
     document.body.classList.toggle('noche', state.band === 'noche');
-    layer.clearLayers();
+    layer?.clearLayers();
     if (!state.data) return;
+    for (const el of document.querySelectorAll('.min')) el.textContent = state.data.minCount;
     const half = state.data.cellDegrees / 2;
     const cells = state.data.cells.filter(c => c.band === state.band);
-    for (const c of cells) {
+    if (layer) for (const c of cells) {
       L.rectangle([[c.lat - half, c.lon - half], [c.lat + half, c.lon + half]], {
         color: ring[state.band], weight: 2, fillColor: ramp[state.band][bin(c.total)], fillOpacity: .82
       }).bindTooltip(describe(c), { sticky: true }).addTo(layer);
@@ -178,11 +191,11 @@
     const period = state.days === '365' ? 'el último año' : `los últimos ${state.days} días`;
     $('status').textContent = cells.length
       ? `${plural(cells.length, 'zona', 'zonas')} con reportes ${when} en ${period}. Datos hasta las ${limaHour(state.data.generatedAt)}.`
-      : `No hay zonas con suficientes reportes ${when} en ${period}. Prueba con un periodo más largo o cambia el horario.`;
-    if (cells.length && !state.fitted) {
+      : `No hay zonas con suficientes reportes ${when} en ${period}. ${state.days === '365' ? 'Prueba con el otro horario.' : 'Prueba con un periodo más largo o cambia el horario.'}`;
+    if (map && cells.length && !state.fitted) {
       // Keep zones clear of the panel: beside it on desktop, above the bottom sheet on phones.
-      const mobile = matchMedia('(max-width: 640px)').matches, panel = document.querySelector('.sign');
-      map.fitBounds(layer.getLayers().map(r => r.getBounds()).reduce((a, b) => a.extend(b)), {
+      const panel = document.querySelector('.sign');
+      map.fitBounds(layer.getBounds(), {
         paddingTopLeft: [mobile ? 24 : panel.offsetWidth + 40, 40], paddingBottomRight: [40, mobile ? panel.offsetHeight + 24 : 40], maxZoom: 11
       });
       state.fitted = true;
@@ -190,16 +203,19 @@
   }
 
   async function load() {
+    const days = state.days; // a slower earlier request must not overwrite the period the user picked last
     $('status').textContent = 'Cargando reportes…';
     try {
-      const response = await fetch(`/v1/insights/hotspots?days=${state.days}`, { headers: { accept: 'application/json' } });
+      const response = await fetch(`/v1/insights/hotspots?days=${days}`, { headers: { accept: 'application/json' } });
       if (!response.ok) throw new Error(String(response.status));
-      state.data = await response.json();
-      render();
+      const data = await response.json();
+      if (days !== state.days) return;
+      state.data = data; render();
     } catch {
-      state.data = null; layer.clearLayers(); $('demo').classList.remove('visible');
+      if (days !== state.days) return;
+      state.data = null; layer?.clearLayers(); $('demo').classList.remove('visible'); $('rows').innerHTML = '';
       $('status').innerHTML = 'No se pudo cargar el mapa de reportes. Revisa la conexión e inténtalo de nuevo.<br><button type="button" id="retry">Reintentar</button>';
-      $('retry').addEventListener('click', load);
+      $('retry').addEventListener('click', () => { load(); $('status').focus(); });
     }
   }
 
