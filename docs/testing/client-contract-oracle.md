@@ -130,3 +130,48 @@ ANDES_REVIEW_API_ROOT=/ABS/78EFAD0/ARCHIVE \
 The two focused controls check both nested path UUIDs share a lowercase replay
 scope and that credential injection never reads an unrelated getter. Earlier
 accepted evidence remains pinned to its original SHA rather than silently moved.
+
+## Durable observation queue oracle
+
+`queue-probes.mjs` defines ten scenarios before a lane42 candidate is supplied:
+source-time preservation, finite capacity/loss counts, restart, ambiguous upload
+across restart, wrong-trip acknowledgement, scope switch, stop/revocation, signout
+including late completion, source-age retention, and unavailable persistent storage.
+`queue-probes.test.mjs` checks each assertion with separate positive/fault traces,
+plus missing-data and hung-collector controls. These traces are fabricated, not an
+implementation of a queue or proof that lane42 passes.
+
+`queueInputs()` supplies two explicit user/trip/session scopes, old source samples,
+capacity 3 and an explicit 24h engineering retention configuration. Its neutral
+`sourceAtMs`/event fields are reviewer notation; a collector must map them to the
+candidate's documented event/storage seam without inventing source timestamps or
+freezing a shared event contract. `wireSample()` defines only the already accepted
+backend upload fields. A source's upload/read time cannot change its captured time.
+
+A reviewer-bound `collectQueueTrace({scenario, inputs})` executes the named actions
+against archived candidate code and returns observations in the checked shape.
+See the assertions for exact fields: upload requests include actual user/trip,
+path, idempotency key and body; `pending` records project original event IDs/source
+facts; `intent` projects persisted key/body/scope; `persistedEntries` comes from the
+actual injected store after signout. The collector must observe real public state
+and transport/store calls, never synthesize expected outcomes or implement missing
+queue behavior. Review its source alongside the frozen candidate.
+
+Ambiguous reconciliation accepts either an explicit same-key/same-body replay or
+a visible unresolved hold retaining the original batch. It never requires an
+automatic resend. A storage failure may expose a memory-only fallback, but cannot
+claim durability. Stop/revocation prevents new uploads; it does not claim to undo
+an already sent request. A signout probe releases old completion before checking
+that prior-user data has not returned.
+
+```sh
+node tests/client-contract-review/run-queue.mjs \
+  --collector /ABS/REVIEWER/frozen-queue-collector.mjs \
+  --candidate AUTHOR_40_CHARACTER_FROZEN_SHA
+```
+
+Missing collector/candidate exits 2, assertion/collection failure exits 1, all
+assertions holding exits 0. Each collection is bounded. Candidate/trace provenance
+must still be verified independently. There is **no lane42 acceptance yet**.
+Real IndexedDB reload/offline tests wait for its frozen exports and the local
+browser foundation; lane46's real backend/auth/process tests remain separate.
