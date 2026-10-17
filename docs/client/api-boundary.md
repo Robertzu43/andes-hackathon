@@ -148,3 +148,68 @@ Q47 independently reviews the frozen client candidate. Q41 read APIs, Q49 UI wir
 a real configured identity flow, trusted browser proxy/CORS, backend integration and
 physical/human/provider evidence remain separate dependencies. Existing product gates
 remain open; synthetic passing tests do not establish field safety or channel support.
+
+## Published controller integration
+
+`createContactApi(api)` supplies the structural `ContactApi` from PR62 at
+`a8466d50554238951570ec4a2949e5f8d7348541`. It maps `getTripSnapshot` to `getSnapshot`
+and `reportIncidentAction(id,{action},options)` to `reportAction(id,action,options)`.
+Other contact operations forward their exact arguments. The facade introduces no
+routes, keys, retries, error rewriting, role authority or local data cache.
+
+`bindJourneySession(session, api, setActor)` connects a caller-owned controller to
+the shared session and `/v1/me`. It first clears its controller, then `activate()`
+reads the backend identity and sets that UUID only if the session and activation
+are still current. `setActor(null)` must synchronously clear protected state. The
+binding does not interpret OIDC subjects or change tokens to match a local role.
+
+For the published contact controller, the host supplies a fixed-view callback:
+
+```ts
+const journey = createContactJourney(createContactApi(api));
+const binding = bindJourneySession(session, api, actorId => {
+  journey.setSession(actorId ? { actorId, view: 'contact' } : null);
+});
+await binding.activate();
+// On unmount: binding.dispose(). Local sign-out: session.clear().
+```
+
+`createContactJourney` belongs to the feature lane and is not re-exported or copied
+into this library. Driver controllers can bind with `id => driver.setSession(id)`;
+their operation/result adapter stays with their feature owner. All controllers
+using the same session must register their own binding. Local view changes require
+disposing/rebinding the old context; they never grant server permission.
+
+`MemorySession.subscribe(listener)` emits a token-free invalidation signal on
+credential replacement, clear,401 and expiry. While observed, a bounded timer checks
+expiry even without another HTTP request; unsubscribing retires it when no listeners
+remain. A throwing view listener cannot prevent other views from clearing. Timer
+execution still depends on browser scheduling; suspended/killed contexts have no
+guaranteed cleanup deadline. New requests and responses independently recheck expiry.
+
+The separate integration command requires the two published source objects to have
+been fetched. It reads only their explicitly pinned feature files into a temporary
+directory and removes that directory afterwards; it never edits those lanes or adds
+their source to this branch. No missing dependency is silently skipped.
+
+```sh
+git fetch origin sebasbimbi/feat/andes-trusted-contact-flow sebasbimbi/feat/andes-driver-trip-flow
+ANDES_TYPESCRIPT_TSC=/absolute/path/to/existing/typescript/bin/tsc \
+  node --test web/tests/api/contacts.integration.mjs
+```
+
+This probes the actual PR62 contact implementation plus PR63 driver controller at
+`c256e75a1b58168925a8e9f760c3759ee33bfa0a`, the real typed-client exports and a strict
+structural `ContactApi` compile check. HTTP replies and tokens are synthetic fixtures;
+these tests do not replace Q44/Q46's signed-JWT/PostgreSQL/native-HTTP integration or
+actual browser rendering. The standard client suite remains runnable without Git
+feature objects or a compiler.
+
+**Open external finding at PR62/a8466d5:** network loss leaves a revoke uncertain, but
+a same-key retry's409 changes the controller operation to rejected, dropping the
+original ambiguity. A direct frozen-source reproduction was sent to Q51 and Brain.
+The facade preserves both original ApiErrors and does not hide the HTTP status to
+work around feature state. Current integration checks establish mapping, successful
+same-key replay and normal cache invalidation only; they do not claim this unresolved
+retry-rejection axis passes. Re-test that case against Q51's published repair before
+claiming complete contact-journey integration. Q43's privacy review remains separate.

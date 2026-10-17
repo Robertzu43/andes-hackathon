@@ -23,6 +23,9 @@ export class MemorySession {
   #revision = 0;
   #controller = new AbortController();
   #clock: () => number;
+  #listeners = new Set<() => void>();
+  #expiryTimer: ReturnType<typeof setTimeout> | null = null;
+  #notifying = false;
 
   constructor(clock: () => number = Date.now) { this.#clock = clock; }
 
@@ -34,17 +37,49 @@ export class MemorySession {
       || !Number.isFinite(credentials.expiresAt) || credentials.expiresAt <= this.#clock()) {
       throw new ApiError('invalid_input');
     }
-    this.clear();
-    this.#credentials = { issuer: credentials.issuer, subject: credentials.subject,
-      accessToken: credentials.accessToken, expiresAt: credentials.expiresAt };
+    this.#transition({ issuer: credentials.issuer, subject: credentials.subject,
+      accessToken: credentials.accessToken, expiresAt: credentials.expiresAt }, 'anonymous');
   }
 
   clear(): void {
-    this.#credentials = null;
-    this.#status = 'anonymous';
+    this.#transition(null, 'anonymous');
+  }
+
+  /** Token-free invalidation signal for caller-owned protected views. */
+  subscribe(listener: () => void): () => void {
+    if (typeof listener !== 'function' || this.#listeners.size >= 32) throw new ApiError('invalid_input');
+    this.#expire();
+    this.#listeners.add(listener);
+    this.#scheduleExpiry();
+    return () => { this.#listeners.delete(listener); this.#scheduleExpiry(); };
+  }
+
+  #transition(credentials: SessionCredentials | null, status: 'anonymous' | 'expired'): void {
+    const oldController = this.#controller;
+    this.#credentials = credentials;
+    this.#status = status;
     this.#revision += 1;
-    this.#controller.abort();
     this.#controller = new AbortController();
+    oldController.abort();
+    if (!this.#notifying) {
+      this.#notifying = true;
+      try {
+        for (const listener of [...this.#listeners]) {
+          try { listener(); } catch { /* One view must not prevent other protected views clearing. */ }
+        }
+      } finally { this.#notifying = false; }
+    }
+    this.#scheduleExpiry();
+  }
+
+  #scheduleExpiry(): void {
+    if (this.#expiryTimer !== null) clearTimeout(this.#expiryTimer);
+    this.#expiryTimer = null;
+    if (!this.#credentials || this.#listeners.size === 0) return;
+    const delay = Math.max(0, Math.min(this.#credentials.expiresAt - this.#clock(), 2_147_483_647));
+    this.#expiryTimer = setTimeout(() => { this.#expire(); this.#scheduleExpiry(); }, delay);
+    // Browser timers are numbers; native Node tests must not be held open by a session.
+    (this.#expiryTimer as unknown as { unref?: () => void }).unref?.();
   }
 
   snapshot(): SessionSnapshot {
@@ -72,8 +107,7 @@ export class MemorySession {
 
   #expire(): void {
     if (this.#credentials && this.#credentials.expiresAt <= this.#clock()) {
-      this.clear();
-      this.#status = 'expired';
+      this.#transition(null, 'expired');
     }
   }
 }
