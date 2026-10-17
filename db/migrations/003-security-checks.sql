@@ -12,3 +12,6 @@ CREATE TABLE security_checks (
   closed_at timestamptz, incident_id uuid REFERENCES incidents
 );
 CREATE UNIQUE INDEX one_open_check ON security_checks(trip_id) WHERE status = 'asking';
+-- The sweeper reads each trip's latest events; alerts look up the check behind a missed-check incident.
+CREATE INDEX trip_events_trip ON trip_events(trip_id, created_at);
+CREATE INDEX security_checks_incident ON security_checks(incident_id);

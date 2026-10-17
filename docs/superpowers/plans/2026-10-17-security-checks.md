@@ -10,7 +10,9 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-17-security-checks-incident-data-design.md`, Part 1. **Owner:** `andes-hackathon-a4` on branch `hackathon/delivery`. Part 2 (`feat/incident-insights`) owns migration 004, `src/insights/**`, and two lines in `src/api/app.ts`. Do not touch them.
 
-**Deliberate deviations from the spec (all small):**
+**Deliberate deviations from the spec (all small).** The code review after implementation tightened `arrival_overdue` to count from the driver's last action; the sweeper code below is the final version.
+
+**Deviations:**
 - `createIncident(client, trip, trigger, checkReason, support, now)` has no `actorId`: `incidents.driver_id` is always `trip.driver_id` (the SOS route already enforces owner), and callers record their own `sos_report` event.
 - A driver `resume` command and an incident resolution also count as signs of life. Resuming after a long rest, or resolving a false alarm, then does not immediately open a new check and send a second round of alerts.
 - `infra/template.json` (the production design) deliberately does not set the check timings, so automatic escalation stays off there until #11 supplies evidence-backed values. Only the demo deployment sets them.
@@ -353,10 +355,11 @@ export function checkConfig(env: NodeJS.ProcessEnv): CheckConfig | null {
 /** Trips that should open a check now. Sign of life: location receipt, OK/resume command, incident resolution, or trip start. */
 async function dueReasons(db: pg.Pool | pg.PoolClient, now: Date, config: CheckConfig, tripId: string | null = null) {
   return (await db.query(`WITH s AS (
-      SELECT t.id, t.sharing_stopped_at, t.expected_arrival_at, greatest(t.created_at, l.received_at, e.signal_at, r.resolved_at) AS signal_at, e.ok_at
+      SELECT t.id, t.sharing_stopped_at, t.expected_arrival_at, greatest(t.created_at, l.received_at, e.signal_at, r.resolved_at) AS signal_at,
+        greatest(t.created_at, e.signal_at, r.resolved_at) AS driver_at
       FROM trips t LEFT JOIN latest_locations l ON l.trip_id=t.id
-      LEFT JOIN LATERAL (SELECT max(created_at) FILTER (WHERE kind IN ('checkin_ok','resume')) AS signal_at,
-        max(created_at) FILTER (WHERE kind='checkin_ok') AS ok_at FROM trip_events WHERE trip_id=t.id) e ON true
+      LEFT JOIN LATERAL (SELECT max(created_at) FILTER (WHERE kind IN ('checkin_ok','resume')) AS signal_at
+        FROM trip_events WHERE trip_id=t.id) e ON true
       LEFT JOIN LATERAL (SELECT max(resolved_at) AS resolved_at FROM incidents WHERE trip_id=t.id) r ON true
       WHERE t.status='active' AND t.checkins_active AND NOT t.paused AND ($3::uuid IS NULL OR t.id=$3)
         AND NOT EXISTS (SELECT 1 FROM incidents i WHERE i.trip_id=t.id AND i.status='active')
@@ -364,13 +367,16 @@ async function dueReasons(db: pg.Pool | pg.PoolClient, now: Date, config: CheckC
     SELECT id, signal_at, CASE
       WHEN sharing_stopped_at > signal_at THEN 'sharing_stopped'
       WHEN signal_at < $1 THEN 'silence'
-      WHEN expected_arrival_at IS NOT NULL AND greatest(expected_arrival_at, ok_at) < $2 THEN 'arrival_overdue' END AS reason
+      -- Overdue counts from the later of the expected arrival and the driver's last action (start, OK, resume, resolution).
+      WHEN expected_arrival_at IS NOT NULL AND greatest(expected_arrival_at, driver_at) < $2 THEN 'arrival_overdue' END AS reason
     FROM s`, [new Date(now.getTime() - config.silenceMs), new Date(now.getTime() - config.arrivalGraceMs), tripId])).rows.filter(row => row.reason);
 }
 async function sweepTrip(client: pg.PoolClient, trip: Trip, now: Date, config: CheckConfig, support: ChannelSupport[]) {
   const check = (await client.query("SELECT * FROM security_checks WHERE trip_id=$1 AND status='asking' FOR UPDATE", [trip.id])).rows[0];
   if (check) {
     if (check.ask_until > now) return;
+    // Commands already cancel open checks on close/pause; this guards any other path.
+    if (trip.status !== 'active' || trip.paused) { await client.query("UPDATE security_checks SET status='cancelled',closed_at=$2 WHERE id=$1", [check.id, now]); return; }
     const active = (await client.query("SELECT id FROM incidents WHERE trip_id=$1 AND status='active'", [trip.id])).rows[0];
     const incidentId = active?.id ?? await createIncident(client, trip, 'missed_check', check.reason, support, now);
     await client.query("UPDATE security_checks SET status='escalated',incident_id=$2,closed_at=$3 WHERE id=$1", [check.id, incidentId, now]);

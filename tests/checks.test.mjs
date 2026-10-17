@@ -1,15 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/runtime.mjs';
-
-export async function contactFor(f, subject, role) {
-  const jwt = await f.token(subject);
-  const id = (await f.req('GET', '/v1/me', undefined, jwt)).body.id;
-  const invitation = await f.req('POST', '/v1/contacts', {contactId: id, phone: '+5511999990000', map: true, incident: true, ...(role ? {role} : {})});
-  assert.equal(invitation.status, 200);
-  assert.equal((await f.req('POST', `/v1/contacts/${invitation.body.id}/accept`, {map: true, incident: true}, jwt)).status, 200);
-  return {jwt, id, grant: invitation.body.id};
-}
+import {contactFor, jobsOf, expectedFanOut, cfg, sweep, checksOf, asking} from './helpers/checks.mjs';
 
 test('drafts keep an optional expected arrival; invitations take a family or colleague role', async t => {
   const f = await fixture(t);
@@ -28,12 +20,6 @@ test('drafts keep an optional expected arrival; invitations take a family or col
   assert.deepEqual(row, {expected_arrival_at: new Date('2026-10-17T18:00:00Z'), sharing_stopped_at: null});
   assert.equal((await f.draft({expectedArrivalAt: 'tomorrow'})).status, 400);
 });
-
-export const jobsOf = async (f, incident) => (await f.ctx.pool.query(`SELECT COALESCE(cg.role,'group') AS role,j.channel,j.status,j.unavailable_reason
-  FROM jobs j LEFT JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 ORDER BY role,j.channel`, [incident])).rows;
-const pending = (role, channel) => ({role, channel, status: 'pending', unavailable_reason: null});
-export const expectedFanOut = [pending('colleague', 'sms'), pending('colleague', 'whatsapp'), pending('family', 'sms'), pending('family', 'voice'), pending('family', 'whatsapp'),
-  {role: 'group', channel: 'group', status: 'unavailable', unavailable_reason: 'group_support_unverified'}];
 
 test('SOS alerts family on three channels, colleagues on two and records the group as unavailable', async t => {
   const f = await fixture(t);
@@ -58,12 +44,6 @@ test('SOS while a check is asking closes it with the SOS incident; SOS upgrades 
   assert.deepEqual((await g.ctx.pool.query('SELECT id,trigger FROM incidents')).rows, [{id: upgraded, trigger: 'sos'}]);
   assert.equal((await g.ctx.pool.query('SELECT count(*)::int n FROM jobs')).rows[0].n, 0);
 });
-
-const support = ['sms', 'whatsapp', 'voice'].map(channel => ({channel, country: 'BR', locale: 'pt-BR'}));
-export const cfg = {silenceMs: 120000, askGraceMs: 60000, arrivalGraceMs: 120000, sweepMs: 5000};
-export async function sweep(f, config = cfg) { const {checkOnce} = await import('../dist/checks/sweep.js'); await checkOnce(f.ctx, support, config); }
-export const checksOf = async (f, trip) => (await f.ctx.pool.query('SELECT reason,status,incident_id FROM security_checks WHERE trip_id=$1 ORDER BY created_at,status', [trip])).rows;
-const asking = reason => ({reason, status: 'asking', incident_id: null});
 
 test('check timings are all-or-nothing and positive', async () => {
   const {checkConfig} = await import('../dist/checks/sweep.js');
@@ -204,6 +184,10 @@ test('alert wording names the truck, keeps the incident ID and never invents loc
   assert.match(alertSummary({...base, incident: {id: 'i-3', trigger: 'missed_check', check_reason: 'arrival_overdue'}}, env), /no llegó a la hora prevista\). Incidente i-3\..*Llámalo; si no responde, llama al 105\./);
   assert.match(alertSummary({...base, incident: {id: 'i-4', trigger: 'missed_check', check_reason: 'sharing_stopped'}}, {}), /dejó de compartir su ubicación/);
   assert.match(alertSummary({...base, location: {...base.location, captured_at: new Date('2026-10-17T10:00:00Z')}, incident: {id: 'i-5', trigger: 'sos', check_reason: null}}, {}), /hace 2 h 5 min/);
+  assert.match(alertSummary({...base, truck: 'ABC\n123\t'.padEnd(80, 'x'), incident: {id: 'i-6', trigger: 'sos', check_reason: null}}, {}), /camión ABC 123 x{32} pidió/);
+  const spoken = alertSummary({...base, voice: true, incident: {id: 'i-7', trigger: 'sos', check_reason: null}}, env);
+  assert.doesNotMatch(spoken, /https?:/);
+  assert.match(spoken, /Incidente i-7\. Última ubicación hace 3 min, precisión de 18 metros\. Llámalo\./);
 });
 
 test('the control worker runs the sweeper only when check timings are configured', async t => {
@@ -218,3 +202,29 @@ test('the control worker runs the sweeper only when check timings are configured
   abort.abort(); await running;
   assert.deepEqual(await checksOf(f, trip), [asking('silence')]);
 });
+
+test('resolving an overdue alert or resuming after the expected arrival does not re-alert at once', async t => {
+  const f = await fixture(t);
+  const draft = await f.draft({expectedArrivalAt: '2026-10-17T12:30:00Z'});
+  const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: []})).body.id;
+  const quiet = {...cfg, silenceMs: 86400000};
+  f.advance(32 * 60000 + 1); await sweep(f, quiet); f.advance(60000); await sweep(f, quiet);
+  const incident = (await f.ctx.pool.query('SELECT id FROM incidents')).rows[0].id;
+  assert.equal((await f.req('POST', `/v1/incidents/${incident}/resolve`, {})).status, 200);
+  await sweep(f, quiet); assert.deepEqual((await checksOf(f, trip)).map(c => c.status), ['escalated']);
+  await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'pause'}); f.advance(600000);
+  await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'resume'}); await sweep(f, quiet);
+  assert.deepEqual((await checksOf(f, trip)).map(c => c.status), ['escalated']);
+  f.advance(120001); await sweep(f, quiet);
+  assert.deepEqual(await checksOf(f, trip), [{reason: 'arrival_overdue', status: 'escalated', incident_id: incident}, asking('arrival_overdue')]);
+});
+
+test('a trip confirmed after its expected arrival gets the full grace period first', async t => {
+  const f = await fixture(t); f.advance(3600000);
+  const draft = await f.draft({expectedArrivalAt: '2026-10-17T12:30:00Z'});
+  const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: []})).body.id;
+  const quiet = {...cfg, silenceMs: 86400000};
+  f.advance(120000); await sweep(f, quiet); assert.deepEqual(await checksOf(f, trip), []);
+  f.advance(1); await sweep(f, quiet); assert.deepEqual(await checksOf(f, trip), [asking('arrival_overdue')]);
+});
+
