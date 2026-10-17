@@ -40,7 +40,9 @@ export function PhoneIllustration({
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     let inView = false;
     const update = () => setPermitted(inView && !document.hidden && !reduced.matches);
-    const observer = new IntersectionObserver(([entry]) => {
+    const observer = new IntersectionObserver(entries => {
+      const entry = entries.filter(item => item.target === node).at(-1);
+      if (!entry) return;
       inView = entry.isIntersecting;
       update();
     });

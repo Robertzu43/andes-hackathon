@@ -1,6 +1,6 @@
 .andes-phone {
   margin: 0;
-  color: var(--andes-ink, #173139);
+  color: var(--ink, #173139);
   font-family: inherit;
 }
 
@@ -10,10 +10,10 @@
   max-inline-size: 25rem;
   aspect-ratio: 5 / 4;
   margin-inline: auto;
-  background: var(--andes-surface, #fcfdfd);
+  background: var(--surface, #fcfdfd);
   /* The approved drawing uses one neutral stroke hierarchy. */
-  --hairline-plate: var(--andes-surface, #fcfdfd);
-  --hairline-hi: var(--andes-ink, #173139);
+  --hairline-plate: var(--surface, #fcfdfd);
+  --hairline-hi: var(--ink, #173139);
   --hairline-edge: #617a81;
   --hairline-mid: #84989e;
   --hairline-lo: #a6b8bd;
@@ -28,7 +28,7 @@
 .andes-phone__canvas {
   position: absolute;
   inset: 0;
-  background: var(--andes-surface, #fcfdfd);
+  background: var(--surface, #fcfdfd);
   touch-action: pan-y;
 }
 
@@ -44,7 +44,7 @@
   flex-direction: column;
   gap: .25rem;
   margin-block-start: 1rem;
-  color: var(--andes-ink, #173139);
+  color: var(--ink, #173139);
   font: inherit;
 }
 
@@ -52,11 +52,11 @@
   inline-size: 100%;
   min-block-size: 2.75rem;
   margin: 0;
-  accent-color: var(--andes-primary, #166675);
+  accent-color: var(--primary, #166675);
 }
 
 .andes-phone-mount__range input:focus-visible {
-  outline: 3px solid var(--andes-primary, #166675);
+  outline: 3px solid var(--primary, #166675);
   outline-offset: 3px;
 }
 

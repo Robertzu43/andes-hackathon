@@ -18,8 +18,8 @@ No auxiliary coding agents were used. Read Hairline-create, its actual rules,
 kernel API index and look reference; Impeccable/product/craft floor; Codus UX build,
 UI proof, copy, testing, site SEO/implementation and brand identity/furniture;
 commit and PR-writer. The context loader ran against the supplied foundation,
-where PRODUCT.md exists. Rendered foundation/brand assets remain component49's
-dependency, not a scaffold to recreate here.
+where PRODUCT.md exists. Shared foundation/brand assets remain component49's
+ownership; the committed dependency confirmation is recorded below.
 
 `IMPECCABLE_PREFLIGHT: context=pass product=pass command_reference=pass shape=not_required image_gate=skipped:approved existing upstream Phone, no new generated imagery mutation=open`
 
@@ -57,7 +57,8 @@ the pointer/touch opens the existing Phone layers. No raw onRead values are expo
 Static SVG is the default. No idle tour or autoplay: upstream `play={false}`.
 The React engine chunk loads only when motion is explicitly interactive, the
 figure intersects the viewport, the document is visible and reduced motion is off.
-Offscreen/hidden/reduced state unmounts the upstream component and runs its
+The latest observation for this figure governs visibility; empty or unrelated
+batches preserve the previous observation. Offscreen/hidden/reduced state unmounts the upstream component and runs its
 destroy path. React and observer/media/document listeners clean up on teardown.
 Missing IntersectionObserver/matchMedia leaves a useful still image. A failed
 optional chunk/render leaves the static image and caption; no trip action depends
@@ -88,10 +89,13 @@ SVGs are committed. They remain meaningful without animation/JavaScript.
 
 ## Reproduction and measured cost
 
-Component49 alone owns the shared package/lock/tokens/router. This candidate uses
-disposable tools under `/tmp/andes53-tools` because no rendered foundation commit
-was available. Shared integration still needs49's actual dependency pin and55/52
-route acceptance. Tool versions tested: Node24.17.0, React/ReactDOM19.3.1,
+Component49 alone owns the shared package/lock/tokens/router. The original candidate
+used disposable tools under `/tmp/andes53-tools` before a rendered foundation was
+available. The actual package/lock at `3283fe675ebeee04bb2be8a62f42ab5c475b4b0e`
+now confirms the exact Hairline/React/Vite pins below; foundation follow-up
+`6f8dc52a566d3880cf1f10bbfd5282a888725ca1` retains those dependencies/exports.
+The module consumes actual `--ink`, `--surface` and `--primary` tokens. Shared
+integration still needs55/52 route acceptance. Tool versions tested: Node24.17.0, React/ReactDOM19.3.1,
 types19.3.0, Vite8.3.4, TypeScript5.9.3, playwright-core1.64.1,
 @axe-core/playwright4.14.0 and system Google Chrome. No second app package was added.
 
@@ -102,6 +106,7 @@ source ~/.nvm/nvm.sh && nvm use 24
 ANDES_VISUAL_TOOLS=/tmp/andes53-tools node web/src/visuals/hairline/preview/serve.mjs
 ANDES_VISUAL_TOOLS=/tmp/andes53-tools node web/src/visuals/hairline/preview/serve.mjs --build
 ANDES_VISUAL_TOOLS=/tmp/andes53-tools node web/tests/visuals/hairline/browser.mjs
+ANDES_VISUAL_TOOLS=/tmp/andes53-tools node web/tests/visuals/hairline/visibility-batches.mjs
 ```
 
 Codus supervises the running preview in its dev slot. URL `http://127.0.0.1:3053/`;
@@ -134,17 +139,33 @@ states and4x detail were inspected. Phone silhouette, single board highlight,
 opaque layers, rounded outlines, camera/button details and frame bounds remain
 readable. Screenshots are browser emulation, not a physical iPhone qualification.
 Source anti-pattern detector returned[] and detected a planted side-tab control.
-Its rendered URL pass could not run: installed detector lacks Puppeteer; it prints
-an error then[] and must not be interpreted as clean. Manual rendered/axe checks
-cover layout/contrast/controls provisionally;56 owns independent final acceptance.
+The installed CLI's default URL mode lacks Puppeteer and prints an error then[];
+that output is not a pass. The revised proof passes a disposable
+puppeteer-core25.14.0/system-Chrome browser through the unchanged bundled detector's
+supported external-browser API. It detected the rendered side-tab negative control
+and returned zero findings at all five actual viewport sizes. No installed skill
+or engine was edited. Component56 owns independent final acceptance.
+
+Reviewers55/56 found a P2 batched-observation bug in the first candidate. The
+new controlled browser regression fails on that code: [visible,offscreen] wrongly
+kept the engine, [offscreen,visible] wrongly stopped it, and an empty batch threw.
+The fix selects the latest entry for the observed node and guards absent entries.
+All six cases pass, including empty and foreign-target batches. The original14
+browser groups, strict typecheck and build also pass. Sixty additional combinations
+capture compact/open/interactive/reduced/failure/no-JS states across both browser
+locales and all five widths, with zero primary runtime errors or overflow.
 
 TypeScript strict check and Vite production build passed. Root `npm test` compiled
 the backend, then reported11 passed/36 failed out of47 because TEST_DATABASE_URL
 is required. This visual lane has no disposable backend DB and does not claim the
 backend suite passed. No real backend was needed or started for this fixture.
 
-The UI contract/manifest schema is1.0.0. Evidence and inventory stay outside
-tracked source. Builder evidence is provisional: component56 must independently
+The UI contract/manifest schema is1.0.0. The narrowed review contract preserves
+the exact approved packet direction and bounds proof to the Phone module/bridge.
+Evidence and the formal manifest stay outside tracked source under
+`/tmp/andes53-evidence-r2`. The manifest stays red until component56 independently
+approves the revised immutable SHA; the builder does not fill its review verdict.
+Builder evidence is provisional: component56 must independently
 review the exact SHA and seal the Git-bound receipt. Component55 must adapt the
-host,49 must supply the real shared foundation/pin,52 must verify full app routes,
+host,52 must verify full app routes,
 and44 alone integrates after all actionable Robert/reviewer findings are resolved.
