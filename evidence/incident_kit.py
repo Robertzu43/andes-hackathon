@@ -131,7 +131,7 @@ INTERVIEW_ROLE = {"interview_driver": "driver", "interview_contact": "contact"}
 
 ID = re.compile(r"(?=.*[A-Z])[A-Z0-9][A-Z0-9-]{1,39}")
 COUNTRY = re.compile(r"[A-Z]{2}")
-LANGUAGE = re.compile(r"[a-z]{2,3}(-[A-Z]{2})?")
+LANGUAGE = re.compile(r"[a-z]{2,3}(-([A-Z]{2}|\d{3}))?")
 SEQ = re.compile(r"[1-9][0-9]{0,5}")
 TIME = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})")
 
@@ -216,7 +216,7 @@ KINDS = {
     "reporter": lambda v: None if v == "record" else _id(v),
     "country": _country,
     "countries": _country,
-    "language": _pattern(LANGUAGE, "must be a language tag such as es or pt-BR"),
+    "language": _pattern(LANGUAGE, "must be a language tag such as es, pt-BR or es-419"),
     "channels": _member(CHANNELS),
     "concerns": _member(CONCERNS),
     "int": _pattern(SEQ, "must be a whole number from 1"),
@@ -259,32 +259,37 @@ def read_tables(folder: Path, report: Report) -> dict[str, list[dict]]:
         if not path.is_file():
             report.error(path.name, "file not found")
             continue
-        with path.open(newline="", encoding="utf-8-sig") as handle:
-            first_line = handle.readline()
-            handle.seek(0)
-            # Spanish and Portuguese spreadsheet locales often save CSV with ";".
-            delimiter = ";" if ";" in first_line and "," not in first_line else ","
-            reader = csv.DictReader(handle, delimiter=delimiter)
-            header = [name.strip() for name in reader.fieldnames or []]
-            missing = [name for name in columns if name not in header]
-            if missing:
-                report.error(path.name, "missing columns: " + ", ".join(missing))
-                continue
-            extra = [name for name in header if name and name not in columns]
-            if extra:
-                report.warn(path.name, "extra columns are ignored and never exported: " + ", ".join(extra))
-            for raw in reader:
-                cells = {key.strip(): (value or "").strip() for key, value in raw.items() if isinstance(key, str)}
-                row = {name: cells.get(name, "") for name in columns}
-                if not any(row.values()):
+        try:
+            with path.open(newline="", encoding="utf-8-sig") as handle:
+                first_line = handle.readline()
+                handle.seek(0)
+                # Spanish and Portuguese spreadsheet locales often save CSV with ";".
+                delimiter = ";" if ";" in first_line and "," not in first_line else ","
+                reader = csv.DictReader(handle, delimiter=delimiter)
+                header = [name.strip() for name in reader.fieldnames or []]
+                missing = [name for name in columns if name not in header]
+                if missing:
+                    report.error(path.name, "missing columns: " + ", ".join(missing))
                     continue
-                key = row[next(iter(columns))]
-                row["_where"] = f"{path.name} line {reader.line_num}" + (f" ({key})" if key else "")
-                if raw.get(None):
-                    report.error(row["_where"], "row has more cells than the header")
-                rows.append(row)
-                for name, spec in columns.items():
-                    check_cell(report, row["_where"], name, spec, row[name])
+                extra = [name for name in header if name and name not in columns]
+                if extra:
+                    report.warn(path.name, "extra columns are ignored and never exported: " + ", ".join(extra))
+                for raw in reader:
+                    cells = {key.strip(): (value or "").strip() for key, value in raw.items() if isinstance(key, str)}
+                    row = {name: cells.get(name, "") for name in columns}
+                    if not any(row.values()):
+                        continue
+                    key = row[next(iter(columns))]
+                    row["_where"] = f"{path.name} line {reader.line_num}" + (f" ({key})" if key else "")
+                    if raw.get(None):
+                        report.error(row["_where"], "row has more cells than the header")
+                    rows.append(row)
+                    for name, spec in columns.items():
+                        check_cell(report, row["_where"], name, spec, row[name])
+        except UnicodeDecodeError:
+            # Excel on Spanish/Portuguese Windows saves cp1252 by default.
+            report.error(path.name, "is not valid UTF-8; save it again as CSV UTF-8 "
+                                    "(Excel: Save As → CSV UTF-8 (delimitado por comas))")
     return tables
 
 
@@ -419,6 +424,15 @@ def check_occurrence(event: dict, reporter: dict | None, cited: list[dict], repo
                                 "use reported_second_hand")
         if not any(source["evidence_basis"] == "attributed_account" for source in cited):
             report.error(where, "self_reported needs a cited attributed account")
+        elif reporter and not any(
+            # An interview is the interviewee's account; a message export can hold
+            # the reporter's own words even when the other participant supplied it.
+            source["evidence_basis"] == "attributed_account"
+            and INTERVIEW_ROLE.get(source["kind"], reporter["role"]) == reporter["role"]
+            for source in cited
+        ):
+            report.error(where, "self_reported needs the participant's own attributed account "
+                                "(their interview or a message they wrote)")
     elif occurrence == "reported_second_hand":
         if not reporter:
             report.error(where, "reported_second_hand needs the participant repeating the account in reported_by")

@@ -18,7 +18,7 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 | `pair_id` | ID | yes | Shared by a driver and their trusted contact. A pair is one driver and one contact. |
 | `role` | `driver`, `contact` | yes | |
 | `country_of_residence` | two-letter code such as `BR`, `CO`, `MX` | yes | |
-| `preferred_language` | language tag such as `es` or `pt-BR` | yes | Language of the guides used with this person. |
+| `preferred_language` | language tag such as `es`, `pt-BR` or `es-419` | yes | Language of the guides used with this person. |
 | `phone_platform` | `iphone`, `android`, `other`, `unknown` | yes | Phone used on the reconstructed trips. Feeds the #9 device coverage. |
 | `work_arrangement` | `owner_operator`, `independent_driver`, `fleet_employed`, `other`, `unknown`; contacts use `not_applicable` | yes | How the driver works. `fleet_employed` is outside the target segment and raises a warning. |
 | `trucks_operated` | `1`, `2`, `3_or_more`, `unknown`; contacts use `not_applicable` | yes | Trucks the driver owns or operates. `3_or_more` raises a warning. |

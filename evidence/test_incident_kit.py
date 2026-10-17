@@ -259,6 +259,15 @@ class RuleTest(unittest.TestCase):
         self.assertEqual(event["reported_by"], "SYN-A-D")
         self.assertEqual(event["source_ids"], ["SYN-A-W-S3"])
 
+    def test_self_report_cannot_rest_on_the_other_participants_interview(self):
+        self.edit("timeline", "SYN-A-W-E03", source_ids="SYN-A-W-S2",
+                  time_basis="unknown", observed_time="", observed_source_id="")
+        self.assertRejected("self_reported needs the participant's own attributed account")
+        result, report = kit.export(self.folder)
+        self.assertIsNone(result)
+        self.assertTrue(any("self_reported needs the participant's own attributed account" in error
+                            for error in report.errors))
+
     def test_second_hand_report_needs_an_attributed_account(self):
         self.edit("timeline", "SYN-A-W-E10", event_type="dozed_off_report", actor="driver",
                   reported_by="SYN-A-C", occurrence="reported_second_hand")
@@ -500,6 +509,26 @@ class RuleTest(unittest.TestCase):
         path = self.folder / "cases.csv"
         path.write_bytes(b"\xef\xbb\xbf" + path.read_bytes())
         self.assertEqual(self.errors(), [])
+
+    def test_cp1252_spreadsheet_csv_gets_a_utf8_instruction(self):
+        path = self.folder / "participants.csv"
+        path.write_bytes(path.read_bytes().replace("owner_operator".encode(),
+                                                   "owner_opérator".encode("cp1252")))
+        errors = self.errors()
+        self.assertTrue(any("participants.csv: is not valid UTF-8" in error for error in errors),
+                        "\n".join(errors) or "no errors")
+        self.assertTrue(any("CSV UTF-8" in error for error in errors))
+        code, out, _ = run_cli("check", self.folder)
+        self.assertEqual(code, 1)
+        self.assertIn("CSV UTF-8", out)
+
+    def test_latin_american_spanish_tag_is_accepted(self):
+        self.edit("participants", "SYN-B-D", preferred_language="es-419")
+        self.edit("participants", "SYN-B-C", preferred_language="es-419")
+        result, report = kit.export(self.folder)
+        self.assertEqual(report.errors, [])
+        self.assertEqual(result["coverage"]["languages"].get("es-419"), 2)
+        self.assertNotIn("Spanish (es) not represented", result["coverage"]["gaps"])
 
     def test_missing_table_is_reported(self):
         (self.folder / "sources.csv").unlink()
