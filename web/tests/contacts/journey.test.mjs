@@ -230,6 +230,50 @@ test('uncertain revoke conceals data until explicit same-key retry confirms the 
   assert.equal(writes[0].args[1].idempotencyKey, writes[1].args[1].idempotencyKey);
 });
 
+test('a refused retry cannot erase the original unknown revoke outcome or reopen protected reads', async () => {
+  for (const status of [400, 401, 403, 404, 409, 422]) {
+    let attempts = 0;
+    const { journey, calls } = setup('contact', { revokeContact: id => {
+      if (++attempts === 1) throw new TypeError('response lost after possible commit');
+      if (attempts === 2) throw httpError(status);
+      return { id, revoked: true };
+    } });
+    assert.equal(await journey.revokeStanding(ids.grant), 'uncertain');
+    assert.equal(await journey.retryUncertainCommand(), 'uncertain');
+    assert.equal(journey.getState().operation.status, 'uncertain');
+    assert.equal(journey.getState().location.data, null);
+    const writes = calls.filter(call => call.method === 'revokeContact');
+    assert.equal(writes.length, 2);
+    assert.equal(writes[0].args[1].idempotencyKey, writes[1].args[1].idempotencyKey);
+    if (status === 401) {
+      assert.equal(journey.getState().session, null);
+      assert.throws(() => journey.retryUncertainCommand());
+    } else {
+      await assert.rejects(journey.loadLocation(), /revocation/);
+      assert.equal(await journey.retryUncertainCommand(), 'recorded');
+    }
+  }
+});
+
+test('a known first-attempt conflict remains rejected; an unknown action survives a later read denial', async () => {
+  const known = setup('contact', { revokeContact: () => { throw httpError(409); } });
+  assert.equal(await known.journey.revokeStanding(ids.grant), 'rejected');
+  assert.equal(known.journey.getState().operation.status, 'rejected');
+  assert.throws(() => known.journey.retryUncertainCommand());
+  let attempts = 0;
+  const { journey } = setup('contact', { reportIncidentAction: () => {
+    if (++attempts === 1) throw new TypeError('response lost');
+    throw httpError(409);
+  }, getTripSnapshot: () => { throw httpError(403); } });
+  await journey.loadIncident(ids.incident);
+  assert.equal(await journey.reportAction('SYNTHETIC: reports requesting support'), 'uncertain');
+  await journey.loadLocation();
+  assert.equal(journey.getState().operation.status, 'uncertain');
+  assert.equal(await journey.retryUncertainCommand(), 'uncertain');
+  assert.equal(journey.getState().operation.failure, 'conflict');
+  assert.deepEqual(journey.getState().receipts, []);
+});
+
 test('malformed command responses remain uncertain and never create reassuring receipts', async () => {
   const { journey } = setup('contact', { acknowledgeIncident: () => ({ id: ids.other, status: 'resolved', recorded: 'acknowledged' }) });
   await journey.loadIncident(ids.incident);

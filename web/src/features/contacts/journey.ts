@@ -89,13 +89,16 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
   const requests = new Set<AbortController>();
   const reads = { location: 0, incident: 0 };
   let retry: (() => Promise<'recorded' | 'superseded' | 'rejected' | 'uncertain'>) | null = null;
-  function invalidate() {
+  function invalidate(preserveUncertain = false) {
+    const uncertain = preserveUncertain && state.operation.status === 'uncertain'
+      ? { operation: state.operation, retry } : null;
     epoch++;
     for (const request of requests) request.abort();
     requests.clear();
     retry = null;
     state.location = unread(); state.incident = unread(); state.receipts = [];
-    state.operation = idle();
+    state.operation = uncertain?.operation ?? idle();
+    if (uncertain) retry = uncertain.retry;
   }
   function session(view?: Session['view']) {
     if (!state.session || (view && state.session.view !== view)) throw new TypeError('Choose the authenticated journey view');
@@ -133,7 +136,8 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
     } catch (error) {
       if (started !== epoch) return 'superseded' as const;
       const reason = failure(error);
-      const uncertain = reason === 'network' || reason === 'server';
+      // A later refusal is evidence about that attempt, not proof the first write did not commit.
+      const uncertain = existingKey !== undefined || reason === 'network' || reason === 'server';
       if (reason === 'authentication' || reason === 'forbidden' || reason === 'missing') {
         invalidate();
       }
@@ -141,7 +145,7 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
         state.session = null; state.trip = null; state.invitation = null;
       }
       state.operation = { kind, status: uncertain ? 'uncertain' : 'rejected', failure: reason };
-      if (uncertain) retry = () => write(kind, request, apply, key);
+      if (uncertain && state.session) retry = () => write(kind, request, apply, key);
       return uncertain ? 'uncertain' as const : 'rejected' as const;
     } finally { requests.delete(controller); }
   }
@@ -166,8 +170,8 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
       if (started !== epoch || sequence !== reads[slot]) return 'superseded' as const;
       const reason = failure(error);
       if (reason === 'authentication' || reason === 'forbidden' || reason === 'missing') {
-        invalidate();
-        if (reason === 'authentication') { state.session = null; state.trip = null; state.invitation = null; }
+        invalidate(true);
+        if (reason === 'authentication') { state.session = null; state.trip = null; state.invitation = null; retry = null; }
       }
       state[slot] = { status: ['authentication', 'forbidden', 'missing'].includes(reason!) ? 'denied' : 'unknown', data: null };
       return 'unavailable' as const;

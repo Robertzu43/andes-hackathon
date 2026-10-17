@@ -75,7 +75,12 @@ again after confirmation. Protected reads are blocked during pending/uncertain
 revocation. An ambiguous write remains uncertain, does not create a receipt, and
 is never automatically replayed. `retryUncertainCommand()` is an explicit user
 action reusing the exact original key/body. It is unavailable after identity/trip
-changes. There is no promise that revocation cancels already authorized provider
+changes. A refusal of that retry (including409) does not disprove the original
+possible commit: the outcome remains uncertain and revocation keeps protected
+reads blocked. Authentication failure clears the session and prevents replay in
+another identity. Same-session protected-read denial also preserves a prior unknown
+write outcome. A first-attempt definitive4xx remains rejected, distinct from this
+prior-unknown case. There is no promise that revocation cancels already authorized provider
 work; no restore/re-enrolment operation is invented.
 
 Location state preserves capturedAt, receivedAt, server readAt, server freshness
