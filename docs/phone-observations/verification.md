@@ -41,3 +41,10 @@ rerun the command, and record pass/revise/stop/inconclusive against this scoped
 software candidate while leaving physical qualification inconclusive/not-run.
 The exact frozen candidate SHA is supplied in the PR body and Brain handoff,
 outside the commit that contains this document.
+
+PR52 follow-up: the independent review found four defects at the original frozen
+head. The original 60-check result above remains historical author evidence;
+it did not cover those defects. See [review-fixes.md](review-fixes.md) for the
+finding dispositions, failing baseline, new regressions, unchanged reviewer
+evidence hashes and results on the revised candidate. Independent re-review of
+that new head remains pending.

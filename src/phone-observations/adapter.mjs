@@ -129,6 +129,12 @@ export function createPhoneObservationAdapter({
   function updatePermission(s, stream, browserState, source, requestId = null) {
     if (!live(s)) return;
     const old = s.permission[stream];
+    if (['denied', 'revoked'].includes(old.state)) {
+      // Later monitor answers remain evidence, but cannot reopen this session's gate.
+      emit(s, 'permission-observed', { stream, browserState, source, requestId,
+        applied: false, reason: 'terminal-session-permission' });
+      return;
+    }
     const state = old.state === 'granted' && browserState !== 'granted' ? 'revoked' : browserState;
     s.permission[stream] = { state, browserState, source };
     if (state !== 'granted') cancel(s, stream === 'geolocation' ? 'geo' : 'motion');
@@ -190,7 +196,7 @@ export function createPhoneObservationAdapter({
     return { ok: true };
   }
 
-  function callback(s, token, stream) {
+  function requestTime(s, token, stream) {
     if (!live(s) || s[stream] !== token || !token.active) return null;
     const at = atSession(s);
     if (visibility() !== 'visible') { finish(s, 'visibility-lost'); return null; }
@@ -198,6 +204,12 @@ export function createPhoneObservationAdapter({
         at.monoMs - s.started.monoMs >= limits.maxSessionMs) {
       finish(s, 'duration-or-clock-budget'); return null;
     }
+    return at;
+  }
+
+  function callback(s, token, stream) {
+    const at = requestTime(s, token, stream);
+    if (!at) return null;
     s.callbacks[stream] += 1;
     if (s.callbacks[stream] > limits.maxCallbacksPerStream) {
       cancel(s, stream);
@@ -265,8 +277,9 @@ export function createPhoneObservationAdapter({
     const options = { enableHighAccuracy: false, maximumAge: limits.maximumAgeMs, timeout: limits.requestTimeoutMs };
     const requestId = `${s.generation}:geo:${s.requests}`;
     emit(s, 'acquisition-request', { stream: 'geolocation', requestId, watch, options });
-    if (!live(s)) return { ok: false, reason: 'session-stopped' };
+    if (!requestTime(s, token, 'geo')) return { ok: false, reason: live(s) ? 'obsolete-request' : 'session-stopped' };
     observePermission(s, 'geolocation', 'geolocation');
+    if (!requestTime(s, token, 'geo')) return { ok: false, reason: live(s) ? 'obsolete-request' : 'session-stopped' };
     const success = (position) => {
       const at = callback(s, token, 'geo');
       if (!at) return;
@@ -303,13 +316,13 @@ export function createPhoneObservationAdapter({
       const code = [1, 2, 3].includes(error?.code) ? error.code : null;
       if (!watch || code === 1) cancel(s, 'geo');
       if (code === 1) updatePermission(s, 'geolocation', 'denied', 'position-error', requestId);
-      emit(s, 'geolocation-error', { requestId, code }); // Raw platform messages may contain sensitive context.
+      emit(s, 'geolocation-error', { requestId, watch, options, code }); // Omit sensitive raw platform messages.
     };
     try {
       // Bound a one-shot even when the browser waits indefinitely for permission.
       if (!watch) token.timer = platform.setTimeout(() => {
         if (!live(s) || s.geo !== token) return;
-        cancel(s, 'geo'); emit(s, 'acquisition-timeout', { requestId });
+        cancel(s, 'geo'); emit(s, 'acquisition-timeout', { requestId, watch, options });
       }, limits.requestTimeoutMs);
       const id = api[method](success, failure, options);
       if (watch) {
@@ -317,7 +330,7 @@ export function createPhoneObservationAdapter({
         if (!live(s) || !token.active) read(() => api.clearWatch(id));
       }
     } catch {
-      cancel(s, 'geo'); emit(s, 'acquisition-error', { stream: 'geolocation', requestId });
+      cancel(s, 'geo'); emit(s, 'acquisition-error', { stream: 'geolocation', requestId, watch, options });
       return { ok: false, reason: 'platform-error' };
     }
     return { ok: true, requestId };
@@ -337,7 +350,18 @@ export function createPhoneObservationAdapter({
     s.motion = token;
     const requestId = `${s.generation}:motion:${s.requests}`;
     emit(s, 'acquisition-request', { stream: 'motion', requestId });
-    if (!live(s) || s.motion !== token) return Promise.resolve({ ok: false, reason: 'session-stopped' });
+    const requestedAt = requestTime(s, token, 'motion');
+    if (!requestedAt) return Promise.resolve({ ok: false, reason: 'session-stopped' });
+    function pendingTime() {
+      const at = requestTime(s, token, 'motion');
+      if (!at) return null;
+      const elapsed = at.monoMs - requestedAt.monoMs;
+      if (elapsed < 0 || elapsed >= limits.requestTimeoutMs) {
+        cancel(s, 'motion'); emit(s, 'acquisition-timeout', { requestId });
+        return null;
+      }
+      return at;
+    }
     let answer;
     // Invoke synchronously while transient activation is still present; do not await first.
     try { answer = api.requestPermission(); }
@@ -351,11 +375,13 @@ export function createPhoneObservationAdapter({
       cancel(s, 'motion'); emit(s, 'acquisition-timeout', { requestId });
     }, limits.requestTimeoutMs);
     return Promise.resolve(answer).then((answerState) => {
-      if (!live(s) || s.motion !== token) return { ok: false, reason: 'obsolete-request' };
+      if (!pendingTime()) return { ok: false, reason: 'obsolete-request' };
       read(() => platform.clearTimeout(token.timer)); token.timer = null;
       const state = permissionState(answerState);
       updatePermission(s, 'motion', state, 'requestPermission', requestId);
-      if (!live(s) || s.motion !== token || state !== 'granted') return { ok: false, reason: state };
+      if (state !== 'granted') return { ok: false, reason: state };
+      // Permission delivery invokes the local sink; revalidate after that reentrant boundary.
+      if (!pendingTime()) return { ok: false, reason: 'obsolete-request' };
       token.handler = (event) => {
         const at = callback(s, token, 'motion');
         if (!at) return;
@@ -375,7 +401,7 @@ export function createPhoneObservationAdapter({
       observePermission(s, 'gyroscope', 'motion');
       return { ok: true, requestId };
     }, () => {
-      if (!live(s) || s.motion !== token) return { ok: false, reason: 'obsolete-request' };
+      if (!pendingTime()) return { ok: false, reason: 'obsolete-request' };
       cancel(s, 'motion'); updatePermission(s, 'motion', 'unknown', 'requestPermission-rejected', requestId);
       return { ok: false, reason: 'permission-request-failed' };
     });

@@ -41,6 +41,11 @@ callback budgets, cleanup failures and consumer errors have explicit local
 summaries; they are not delivery outcomes. Each request's events retain their
 original request ID and options. Session cleanup retires request tokens before
 unsubscription, so late callbacks do not become events in a newer session.
+GPS error, local timeout and platform-failure events carry the original `watch`
+and `options` alongside `requestId`, even after eviction of the request event.
+Conflicting passive permission observations are retained as `permission-observed`
+with `applied: false` once the session's permission is denied/revoked. They do not
+replace the terminal state's original provenance or reopen acquisition.
 
 Before integration, Robert and Sebastian must agree versioned field names,
 timestamp/zone encoding, server reconciliation, IDs/deduplication, country/locale

@@ -56,7 +56,10 @@ our waiting state; the total request cap also bounds abandoned browser requests.
 Cleanup errors are counted; a throwing platform cleanup cannot be guaranteed to
 release its native resource. Timer execution/cleanup cannot be guaranteed while
 the browser is suspended, killed or shut down. Duration is checked again before
-new acquisition and callbacks. This is no background-liveness promise.
+new acquisition and callbacks. Pending motion answers also recheck the session
+and request deadlines and visibility before applying an answer and after local
+permission-event delivery, before subscribing. Deadlines are inclusive even when
+browser timers have not executed. This is no background-liveness promise.
 
 ## Qualification is separate from API availability
 
@@ -95,6 +98,9 @@ and retires that stream. A single sensor grant cannot restore a revoked combined
 motion grant. When a browser cannot expose motion permission changes, silence is
 unknown; the host must call `revokeConsent` when its consent is withdrawn. A new
 explicit session is required to retry a denied/revoked permission.
+Conflicting later passive answers and change events remain local observations
+with `applied: false`; they cannot replace that session's terminal permission
+state or its original source.
 
 ## Privacy and local retention
 
