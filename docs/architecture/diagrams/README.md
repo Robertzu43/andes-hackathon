@@ -10,7 +10,7 @@ Esta vista lógica muestra una sola base de estado y cinco pasos de operación. 
 
 Los iconos conservan los vectores y colores del [paquete oficial AWS de julio de 2026](https://aws.amazon.com/architecture/icons/), descargado desde [AWS](https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip). Incluye Fargate, ELB, RDS, SQS, S3, Secrets Manager, CloudWatch y los recursos de usuario/cliente. Zavu aparece como texto; no se presenta un logotipo inventado.
 
-El SVG es autocontenido, sin imágenes remotas ni scripts, organizado en grupos identificados por componente. Se puede importar en un archivo Figma Design. La importación y persistencia en Figma aún no están verificadas: el inicio de sesión está pendiente. La fuente SVG sigue siendo editable independientemente de cómo Figma convierta el texto.
+El SVG es autocontenido, sin imágenes remotas ni scripts, organizado en grupos identificados por componente. Se puede importar en un archivo Figma Design. Importado en [Figma: ANDES — Arquitectura de protección en ruta](https://www.figma.com/design/RGVfq91b25JmWFuespSFbp/ANDES?node-id=1-2). Se verificaron el renderizado, las capas de texto editables y el frame de 2760 × 1800. [Captura del canvas en Figma](andes-architecture-figma.jpg). La fuente SVG conserva una copia editable independiente.
 
 ```sh
 sips -s format png docs/architecture/diagrams/andes-infrastructure-professional.svg \
