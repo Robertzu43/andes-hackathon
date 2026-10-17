@@ -32,6 +32,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - run: npm run test:tooling
       - run: pip install cfn-lint==1.57.2
       - run: cfn-lint infra/template.json
       - run: docker compose config --quiet
