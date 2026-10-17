@@ -58,3 +58,91 @@ test('SOS while a check is asking closes it with the SOS incident; SOS upgrades 
   assert.deepEqual((await g.ctx.pool.query('SELECT id,trigger FROM incidents')).rows, [{id: upgraded, trigger: 'sos'}]);
   assert.equal((await g.ctx.pool.query('SELECT count(*)::int n FROM jobs')).rows[0].n, 0);
 });
+
+const support = ['sms', 'whatsapp', 'voice'].map(channel => ({channel, country: 'BR', locale: 'pt-BR'}));
+export const cfg = {silenceMs: 120000, askGraceMs: 60000, arrivalGraceMs: 120000, sweepMs: 5000};
+export async function sweep(f, config = cfg) { const {checkOnce} = await import('../dist/checks/sweep.js'); await checkOnce(f.ctx, support, config); }
+export const checksOf = async (f, trip) => (await f.ctx.pool.query('SELECT reason,status,incident_id FROM security_checks WHERE trip_id=$1 ORDER BY created_at,status', [trip])).rows;
+const asking = reason => ({reason, status: 'asking', incident_id: null});
+
+test('check timings are all-or-nothing and positive', async () => {
+  const {checkConfig} = await import('../dist/checks/sweep.js');
+  assert.equal(checkConfig({}), null);
+  assert.throws(() => checkConfig({SILENCE_MS: '120000'}), /Complete check timing/);
+  assert.throws(() => checkConfig({SILENCE_MS: '0', ASK_GRACE_MS: '1', ARRIVAL_GRACE_MS: '1', CHECK_SWEEP_MS: '1'}), /Complete check timing/);
+  assert.deepEqual(checkConfig({SILENCE_MS: '120000', ASK_GRACE_MS: '60000', ARRIVAL_GRACE_MS: '120000', CHECK_SWEEP_MS: '5000'}), cfg);
+});
+
+test('silence opens one check; OK closes it and the same reason does not reopen at once', async t => {
+  const f = await fixture(t); const trip = await f.trip();
+  f.advance(120000); await sweep(f); assert.deepEqual(await checksOf(f, trip), []);
+  f.advance(1); await sweep(f); await sweep(f); assert.deepEqual(await checksOf(f, trip), [asking('silence')]);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'checkin_ok'})).status, 200);
+  await sweep(f); assert.deepEqual(await checksOf(f, trip), [{reason: 'silence', status: 'ok', incident_id: null}]);
+  f.advance(120001); await sweep(f); assert.deepEqual((await checksOf(f, trip)).map(c => c.status), ['ok', 'asking']);
+});
+
+test('a location upload, resume or incident resolution counts as a sign of life', async t => {
+  const f = await fixture(t); const trip = await f.trip();
+  f.advance(100000);
+  await f.req('POST', `/v1/trips/${trip}/locations`, {observations: [{capturedAt: f.ctx.clock().toISOString(), latitude: -12, longitude: -77, accuracy: 9}]});
+  f.advance(100000); await sweep(f); assert.deepEqual(await checksOf(f, trip), []);
+  await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'pause'}); f.advance(500000);
+  await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'resume'}); await sweep(f);
+  assert.deepEqual(await checksOf(f, trip), []);
+  const sos = (await f.req('POST', `/v1/trips/${trip}/sos`, {})).body.id;
+  f.advance(500000); assert.equal((await f.req('POST', `/v1/incidents/${sos}/resolve`, {})).status, 200); await sweep(f);
+  assert.deepEqual(await checksOf(f, trip), []);
+});
+
+test('an unanswered check escalates once to family (3 channels), colleague (2) and an unavailable group', async t => {
+  const f = await fixture(t);
+  const family = await contactFor(f, 'family'); const colleague = await contactFor(f, 'colleague', 'colleague');
+  const trip = await f.trip([family.grant, colleague.grant]);
+  f.advance(120001); await sweep(f); f.advance(59999); await sweep(f);
+  assert.deepEqual(await checksOf(f, trip), [asking('silence')]);
+  f.advance(1); await Promise.all([sweep(f), sweep(f)]); await sweep(f);
+  const incidents = (await f.ctx.pool.query('SELECT id,driver_id,trigger,check_reason,status FROM incidents')).rows;
+  assert.equal(incidents.length, 1);
+  assert.deepEqual({...incidents[0], id: undefined}, {id: undefined, driver_id: f.me.id, trigger: 'missed_check', check_reason: 'silence', status: 'active'});
+  assert.deepEqual(await checksOf(f, trip), [{reason: 'silence', status: 'escalated', incident_id: incidents[0].id}]);
+  assert.deepEqual(await jobsOf(f, incidents[0].id), expectedFanOut);
+});
+
+test('arrival and pause cancel an open check; a paused trip gets no new check', async t => {
+  const f = await fixture(t); const arriving = await f.trip(); const pausing = await f.trip();
+  f.advance(120001); await sweep(f);
+  await f.req('POST', `/v1/trips/${arriving}/commands`, {type: 'arrived'});
+  await f.req('POST', `/v1/trips/${pausing}/commands`, {type: 'pause'});
+  f.advance(600000); await sweep(f);
+  assert.deepEqual(await checksOf(f, arriving), [{reason: 'silence', status: 'cancelled', incident_id: null}]);
+  assert.deepEqual(await checksOf(f, pausing), [{reason: 'silence', status: 'cancelled', incident_id: null}]);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM incidents')).rows[0].n, 0);
+});
+
+test('escalation attaches to an already active incident instead of creating a second one', async t => {
+  const f = await fixture(t); const trip = await f.trip();
+  f.advance(120001); await sweep(f);
+  const id = (await f.ctx.pool.query("INSERT INTO incidents(id,trip_id,driver_id,created_at) VALUES(gen_random_uuid(),$1,$2,$3) RETURNING id", [trip, f.me.id, f.ctx.clock()])).rows[0].id;
+  f.advance(60000); await sweep(f);
+  assert.deepEqual(await checksOf(f, trip), [{reason: 'silence', status: 'escalated', incident_id: id}]);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM incidents')).rows[0].n, 1);
+});
+
+test('arrival overdue opens a check after the grace period', async t => {
+  const f = await fixture(t);
+  const draft = await f.draft({expectedArrivalAt: '2026-10-17T12:30:00Z'});
+  const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: []})).body.id;
+  const quiet = {...cfg, silenceMs: 86400000};
+  f.advance(32 * 60000); await sweep(f, quiet); assert.deepEqual(await checksOf(f, trip), []);
+  f.advance(1); await sweep(f, quiet); assert.deepEqual(await checksOf(f, trip), [asking('arrival_overdue')]);
+});
+
+test('one failing trip does not stop the sweep for the others', async t => {
+  const f = await fixture(t); const broken = await f.trip(); const healthy = await f.trip();
+  await f.ctx.pool.query(`CREATE FUNCTION fail_check() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.trip_id = '${broken}' THEN RAISE EXCEPTION 'synthetic failure'; END IF; RETURN NEW; END $$`);
+  await f.ctx.pool.query('CREATE TRIGGER fail_check BEFORE INSERT ON security_checks FOR EACH ROW EXECUTE FUNCTION fail_check()');
+  f.advance(120001); await sweep(f);
+  assert.deepEqual(await checksOf(f, broken), []);
+  assert.deepEqual(await checksOf(f, healthy), [asking('silence')]);
+});
