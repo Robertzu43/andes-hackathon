@@ -38,7 +38,7 @@ Each test runs in its own schema (`tests/helpers/runtime.mjs`), with the clock f
 | `package.json` (modify) | `seed:demo` script |
 | `docs/contracts/runtime.md` (modify) | Document the four endpoints for the frontend |
 
-Tasks 2 → 3 are sequential (same files). Task 4 touches only the seed, package.json and docs, so it can run in parallel with tasks 2–3 once task 1 is committed.
+Tasks 2 → 3 are sequential (same files). Task 4 touches only the seed, package.json and docs, so it runs in parallel with tasks 2–3 **in its own worktree** (`~/.config/superpowers/worktrees/andes-hackathon/incident-insights-seed`, branch `feat/incident-insights-seed` from the task 1 commit) to avoid sharing a git index and `dist/`; it is merged back after task 3. Commit with explicit paths (`git commit -m … -- <paths>`). Expect a small `docs/contracts/runtime.md` merge conflict with part 1 later.
 
 ---
 
@@ -59,7 +59,7 @@ import { fixture } from './helpers/runtime.mjs';
 
 async function sosAt(f, latitude, longitude) {
   const trip = await f.trip();
-  assert.equal((await f.req('POST', `/v1/trips/${trip}/locations`, { observations: [{ capturedAt: '2026-10-17T11:59:00Z', latitude, longitude, accuracy: 20 }] })).status, 200);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/locations`, { observations: [{ capturedAt: '2026-10-17T11:58:00Z', latitude: 0, longitude: 0, accuracy: 99 }, { capturedAt: '2026-10-17T11:59:00Z', latitude, longitude, accuracy: 20 }] })).status, 200);
   const sos = await f.req('POST', `/v1/trips/${trip}/sos`, {}); assert.equal(sos.status, 200);
   return sos.body.id;
 }
@@ -201,7 +201,7 @@ import { idempotent } from '../api/mutations.js';
 import { object } from '../api/schemas.js';
 // shortcut: one aggregation zone and suppression count for the demo; per-country bands need their own evidence.
 const TIME_ZONE = process.env.INSIGHTS_TIME_ZONE ?? 'America/Lima';
-const MIN_COUNT = Number(process.env.INSIGHTS_MIN_COUNT ?? 3);
+const MIN_COUNT = Math.max(3, Number(process.env.INSIGHTS_MIN_COUNT ?? 3) || 3); // never weaken public suppression below 3
 const CELL = 0.05, DAY = 86400000;
 const centre = (cell: number) => Number(((cell + 0.5) * CELL).toFixed(4));
 export function insightRoutes(app: FastifyInstance, ctx: Context) {
@@ -297,6 +297,8 @@ test('only the driver labels incidents and only robbery labels enter hotspots', 
   assert.deepEqual((await hotspots(f)).body.cells.map(c => [c.lat, c.lon, c.band, c.robo, c.total]), [[-12.325, -76.775, 'dia', 3, 3]]);
   assert.equal((await label(ids[2], 'sin_senal')).status, 200);
   assert.deepEqual((await hotspots(f)).body.cells, []);
+  assert.equal((await label(ids[2], 'falsa_alarma')).status, 200);
+  assert.deepEqual((await hotspots(f)).body.cells, []);
   assert.equal((await f.req('POST', `/v1/incidents/${ids[2]}/resolve`, {})).status, 200);
   assert.equal((await label(ids[2], 'intento_robo')).status, 200);
   assert.deepEqual((await hotspots(f)).body.cells.map(c => [c.robo, c.intentoRobo, c.total]), [[2, 1, 3]]);
@@ -339,9 +341,9 @@ import { idempotent } from '../api/mutations.js';
 import { idParams, object } from '../api/schemas.js';
 // shortcut: one aggregation zone and suppression count for the demo; per-country bands need their own evidence.
 const TIME_ZONE = process.env.INSIGHTS_TIME_ZONE ?? 'America/Lima';
-const MIN_COUNT = Number(process.env.INSIGHTS_MIN_COUNT ?? 3);
+const MIN_COUNT = Math.max(3, Number(process.env.INSIGHTS_MIN_COUNT ?? 3) || 3); // never weaken public suppression below 3
 const CELL = 0.05, DAY = 86400000;
-const decimal = { type: 'string', pattern: '^-?\\d{1,3}(\\.\\d{1,12})?$' };
+const decimal = { type: 'string', maxLength: 32, pattern: '^-?\\d{1,3}(\\.\\d+)?$' }; // raw browser coordinates can carry 15+ decimals
 const centre = (cell: number) => Number(((cell + 0.5) * CELL).toFixed(4));
 // ponytail: a count rule, not a model; replace once real labelled incidents exist.
 const adviceText = {
@@ -405,7 +407,7 @@ git commit -m "feat(insights): Let drivers label incidents and receive area advi
 
 ---
 
-### Task 4: Demo seed and runtime contract (parallel with tasks 2–3 after task 1)
+### Task 4: Demo seed and runtime contract (parallel with tasks 2–3, own worktree)
 
 **Files:**
 - Create: `scripts/seed-demo.mjs`
@@ -477,9 +479,9 @@ Read the file first and match its heading level and style, then append a section
 
 - **`POST /v1/incidents/:id/label`.** Trip owner only; body `{label}` with `robo|intento_robo|falsa_alarma|sin_senal|otro`; allowed on active or resolved incidents; relabelling overwrites.
 - **`POST /v1/reports`.** Any signed identity; body `{kind: robo|intento_robo, latitude, longitude, occurredAt}`. `occurredAt` may be at most 30 s in the future and at most 365 days old.
-- **`GET /v1/insights/hotspots?days=1..365`.** Public, no auth. Envelope `{generatedAt, days, cellDegrees, minCount, includesSynthetic, cells:[{lat, lon, band: dia|noche, robo, intentoRobo, total, synthetic}]}`. Cells hold fewer than `minCount` events are suppressed. There are no identifiers. Show `incluye datos de demostración` when `includesSynthetic`.
+- **`GET /v1/insights/hotspots?days=1..365`.** Public, no auth. Envelope `{generatedAt, days, cellDegrees, minCount, includesSynthetic, cells:[{lat, lon, band: dia|noche, robo, intentoRobo, total, synthetic}]}`. Cells that hold fewer than `minCount` events are suppressed. There are no identifiers. Show `incluye datos de demostración` when `includesSynthetic`.
 - **`GET /v1/insights/advice?lat=&lon=&locale=es|pt-BR`.** Signed. Returns `{level:'none'}` or `{level:'caution', count, band, text}`. It looks at the 3×3 cells around the point, in the current time band, over the last 90 days.
-- **Settings.** `INSIGHTS_TIME_ZONE` (default `America/Lima`), `INSIGHTS_MIN_COUNT` (default 3), and `SEED_DEMO=1 npm run seed:demo` for synthetic demo data.
+- **Settings.** `INSIGHTS_TIME_ZONE` (default `America/Lima`), `INSIGHTS_MIN_COUNT` (default 3, never below 3), and `SEED_DEMO=1 npm run seed:demo` for synthetic demo data.
 - **Location.** Incidents copy the trip's latest location when they are created. `falsa_alarma`, `sin_senal` and `otro` labels never reach hotspots or advice.
 
 - [ ] **Step 5: Commit**
