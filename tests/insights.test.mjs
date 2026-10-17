@@ -76,3 +76,43 @@ test('time bands split at 22:00 and 06:00 local time', async t => {
   const cells = (await hotspots(f)).body.cells.map(c => `${c.lat},${c.lon},${c.band},${c.total}`).sort();
   assert.deepEqual(cells, ['-12.325,-76.775,dia,3', '-12.325,-76.775,noche,3', '-13.075,-76.375,dia,3', '-13.075,-76.375,noche,3']);
 });
+
+// Letting contacts/strangers label, or counting false alarms and dead zones, would put non-robberies on the police map.
+test('only the driver labels incidents and only robbery labels enter hotspots', async t => {
+  const f = await fixture(t); const owners = [f.driver, f.stranger, f.contact];
+  const ids = [await sosAt(f, -12.325, -76.775, owners[0]), await sosAt(f, -12.326, -76.776, owners[1]), await sosAt(f, -12.324, -76.774, owners[2])];
+  const label = (i, value, jwt = owners[i]) => f.req('POST', `/v1/incidents/${ids[i]}/label`, { label: value }, jwt);
+  assert.equal((await label(0, 'robo', f.stranger)).status, 403);
+  assert.equal((await label(0, 'robo', f.contact)).status, 403);
+  assert.equal((await label(0, 'secuestro')).status, 400);
+  assert.equal((await f.req('POST', '/v1/incidents/00000000-0000-4000-8000-000000000000/label', { label: 'robo' })).status, 404);
+  for (const i of [0, 1, 2]) assert.equal((await label(i, 'robo')).status, 200);
+  assert.deepEqual((await hotspots(f)).body.cells.map(c => [c.lat, c.lon, c.band, c.robo, c.total]), [[-12.325, -76.775, 'dia', 3, 3]]);
+  assert.equal((await label(2, 'sin_senal')).status, 200);
+  assert.deepEqual((await hotspots(f)).body.cells, []);
+  assert.equal((await label(2, 'falsa_alarma')).status, 200);
+  assert.deepEqual((await hotspots(f)).body.cells, []);
+  assert.equal((await f.req('POST', `/v1/incidents/${ids[2]}/resolve`, {}, owners[2])).status, 200);
+  assert.equal((await label(2, 'intento_robo')).status, 200);
+  assert.deepEqual((await hotspots(f)).body.cells.map(c => [c.robo, c.intentoRobo, c.total]), [[2, 1, 3]]);
+});
+
+// Advice from the wrong band, too far away, below the minimum or from unflagged demo data would warn drivers without basis.
+test('advice needs distinct contributors in the current band, flags demo data and needs a signed driver', async t => {
+  const f = await fixture(t); const day = '2026-10-10T17:00:00Z'; // 12:00 in Lima: same band as the fixture clock
+  const advice = query => f.req('GET', `/v1/insights/advice${query}`);
+  const text = '3 reportes de robo en esta zona de día (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro.';
+  for (const jwt of [f.driver, f.stranger]) await report(f, 'robo', -12.525, -76.725, day, jwt);
+  for (const jwt of [f.driver, f.stranger, f.contact]) await report(f, 'robo', -12.525, -76.725, '2026-10-11T04:00:00Z', jwt); // 23:00 in Lima
+  assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'none' });
+  await report(f, 'intento_robo', -12.525, -76.725, day, f.contact);
+  assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'caution', count: 3, includesSynthetic: false, band: 'dia', text });
+  assert.match((await advice('?lat=-12.47&lon=-76.68&locale=pt-BR')).body.text, /^3 relatos de roubo nesta região durante o dia/);
+  assert.deepEqual((await advice('?lat=-12.37&lon=-76.68')).body, { level: 'none' });
+  for (let i = 0; i < 3; i++) await seeded(f, 'robo', -13.075, -76.375, day);
+  assert.deepEqual((await advice('?lat=-13.075&lon=-76.375')).body, { level: 'caution', count: 3, includesSynthetic: true, band: 'dia', text });
+  assert.equal((await advice('?lat=-12.046373100000001&lon=-77.042754')).status, 200);
+  assert.equal((await advice('?lat=95&lon=0')).status, 400);
+  assert.equal((await advice('?lat=abc&lon=0')).status, 400);
+  assert.equal((await f.app.inject({ method: 'GET', url: '/v1/insights/advice?lat=0&lon=0' })).statusCode, 401);
+});
