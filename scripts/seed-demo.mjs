@@ -15,12 +15,14 @@ for (const c of clusters) for (let i = 0; i < c.night + c.day; i++) {
   at.setUTCHours(i < c.night ? 4 + (i % 3) : 19, 30 * (i % 2), 0, 0); // 23:00–01:30 or 14:00–14:30 in Lima
   rows.push([i % 4 === 3 ? 'intento_robo' : 'robo', c.lat + ((i % 5) - 2) * 0.004, c.lon + ((i % 3) - 1) * 0.004, at]);
 }
-const ctx = createContext(databaseConfig(), undefined, 2);
+let ctx;
 try {
+  ctx = createContext(databaseConfig(), undefined, 2);
   await transaction(ctx.pool, async client => {
     const seeder = (await client.query(`INSERT INTO identities(id,issuer,subject) VALUES($1,'seed','demo') ON CONFLICT(issuer,subject) DO UPDATE SET subject=excluded.subject RETURNING id`, [randomUUID()])).rows[0].id;
     await client.query('DELETE FROM reports WHERE reporter_id=$1 AND synthetic', [seeder]);
-    for (const [kind, lat, lon, at] of rows) await client.query('INSERT INTO reports VALUES($1,$2,$3,$4,$5,$6,now(),true)', [randomUUID(), seeder, kind, lat, lon, at]);
+    for (const [kind, lat, lon, at] of rows) await client.query('INSERT INTO reports(id,reporter_id,kind,latitude,longitude,occurred_at,created_at,synthetic) VALUES($1,$2,$3,$4,$5,$6,now(),true)', [randomUUID(), seeder, kind, lat, lon, at]);
   });
   console.log(`Seeded ${rows.length} synthetic reports`);
-} finally { await ctx.close(); }
+} catch { process.stderr.write('Seed failed\n'); process.exitCode = 1; }
+finally { await ctx?.close(); }
