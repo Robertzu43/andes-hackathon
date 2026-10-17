@@ -65,4 +65,4 @@ Use official Zavu contract supplied in research report to implement optional dis
 **Files:** Only fixes identified in integration/review; final evidence/report.
 - [ ] Run complete local verification on final tree: install reproducibility, typecheck/build, PostgreSQL suite, infrastructure checks and demo.
 - [ ] Fresh reviewer checks cross-task authorization, shutdown/recovery, secret logging, migration/startup and infrastructure wiring; fix important findings with tests and scoped re-review.
-- [ ] Record engineering results separately from unverified AWS/device/provider operations. Leave issues open and branch/worktree reviewable; no deployment/push/merge.
+- [ ] Record engineering results separately from unverified AWS/device/provider operations. Leave issues open and branch/worktree reviewable; push each reviewed block to codex/aws-durable-backend under Robert’s subsequent explicit instruction. No deployment or merge.
