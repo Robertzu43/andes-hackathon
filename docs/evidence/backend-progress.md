@@ -8,8 +8,8 @@ Robert authorized implementation of [ADR-002](../architecture/ADR-002-aws-durabl
 | --- | --- | --- |
 | Architecture and execution plan | Published | `19e1e01`, `1503b01`; [execution plan](../superpowers/plans/2026-10-17-aws-backend-execution.md) |
 | Trip, consent, location and SOS API | Implemented and independently reviewed | `d390ba7`, `8d9d289`; 12 real PostgreSQL/signed-JWT tests; two reproduced deadlocks fixed and re-reviewed; [runtime contract](../contracts/runtime.md) |
-| Durable dispatch and Zavu boundary | In implementation | Reviewed API schema; [official-contract research](../contracts/zavu-research.md) |
-| AWS artifacts, CI and local demo | Planned | Depends on runtime contracts |
+| Durable dispatch and Zavu boundary | Implemented and independently reviewed | `615969f`, `374d2aa`; 39 total tests; sends-off/read-only reconciliation regression fixed; [runtime contract](../contracts/runtime.md) |
+| AWS artifacts, CI and local demo | In implementation | Runtime contracts reviewed; local CloudFormation checks and readable architecture image next |
 | Final integration review | Planned | Required before completion |
 
 For other agents: fetch this branch and inspect the runtime contract when published before integrating. Engineering tests use synthetic identities and provider fixtures. Live delivery, Android capture, account qualification and AWS availability remain unverified; original issue blockers remain open.
