@@ -1,0 +1,263 @@
+TAP version 13
+# Subtest: B1 throttled 60Hz motion does not spend the useful-work callback budget
+not ok 1 - B1 throttled 60Hz motion does not spend the useful-work callback budget
+  ---
+  duration_ms: 2.200542
+  type: 'test'
+  location: '/Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:70:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:75:10)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: B3 repeated blocked requests leave useful GPS alive under a small valid cap
+not ok 2 - B3 repeated blocked requests leave useful GPS alive under a small valid cap
+  ---
+  duration_ms: 1.774167
+  type: 'test'
+  location: '/Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:79:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'stopped'
+    - 'started'
+         ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'started'
+  actual: 'stopped'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:83:10)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: S2 code1 plus a fresh prompt status permits an explicit retry without inventing a grant
+not ok 3 - S2 code1 plus a fresh prompt status permits an explicit retry without inventing a grant
+  ---
+  duration_ms: 2.342042
+  type: 'test'
+  location: '/Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:87:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:91:10)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: S2 positive control: browser-confirmed denial remains blocked
+ok 4 - S2 positive control: browser-confirmed denial remains blocked
+  ---
+  duration_ms: 0.769084
+  type: 'test'
+  ...
+# Subtest: S3 GPS permission wait is excluded from the acquisition timeout
+not ok 5 - S3 GPS permission wait is excluded from the acquisition timeout
+  ---
+  duration_ms: 0.536125
+  type: 'test'
+  location: '/Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:101:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    undefined !== 8
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 8
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:105:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: S3 motion grant after the acquisition timeout still attaches within the session
+not ok 6 - S3 motion grant after the acquisition timeout still attaches within the session
+  ---
+  duration_ms: 0.34225
+  type: 'test'
+  location: '/Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:109:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:112:10)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: S3 positive control: session expiry still rejects a pending motion grant
+ok 7 - S3 positive control: session expiry still rejects a pending motion grant
+  ---
+  duration_ms: 0.295625
+  type: 'test'
+  ...
+# Subtest: S4 GPS budget-stop stream uses public geolocation spelling
+not ok 8 - S4 GPS budget-stop stream uses public geolocation spelling
+  ---
+  duration_ms: 0.294625
+  type: 'test'
+  location: '/Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:123:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'geo'
+    - 'geolocation'
+          ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'geolocation'
+  actual: 'geo'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:127:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: S5 synchronous denial returns failed acquisition
+not ok 9 - S5 synchronous denial returns failed acquisition
+  ---
+  duration_ms: 0.262625
+  type: 'test'
+  location: '/Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:130:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:132:48)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: S8 sink cancellation is attributed to cancellation rather than a stopped session
+not ok 10 - S8 sink cancellation is attributed to cancellation rather than a stopped session
+  ---
+  duration_ms: 0.312958
+  type: 'test'
+  location: '/Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:135:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /cancel|obsolete/. Input:
+    
+    'session-stopped'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'session-stopped'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:139:42)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: S8 a regressed request clock is attributed to clock uncertainty rather than timeout
+not ok 11 - S8 a regressed request clock is attributed to clock uncertainty rather than timeout
+  ---
+  duration_ms: 0.1995
+  type: 'test'
+  location: '/Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:143:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /clock/. Input:
+    
+    'obsolete-request   '
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'obsolete-request   '
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:150:10)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: S9 synchronous native callbacks flush the sink after native watch assignment settles
+not ok 12 - S9 synchronous native callbacks flush the sink after native watch assignment settles
+  ---
+  duration_ms: 0.237833
+  type: 'test'
+  location: '/Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:153:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/review-probes/robert-pr52-followup.test.mjs:160:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1306:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+    Test.postRun (node:internal/test_runner/test:1447:19)
+    Test.run (node:internal/test_runner/test:1372:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 2
+# fail 10
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 50.673042
