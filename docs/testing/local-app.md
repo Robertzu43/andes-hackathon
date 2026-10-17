@@ -1,7 +1,9 @@
 # Local backend integration runtime
 
 Lane 46 owns `tests/app-integration/**`, `scripts/app-integration/**` and this file.
-The initial source base is Robert's `codex/aws-durable-backend` at
+The current source base is the reviewed integrated backend at
+`5591c9b55fe7f4505e36ccee96d27aa913e0debf` (PR61). The original PR58/749f46f
+branch and receipts remain bound to Robert's
 `ebc8fb1d36f441ef012ca585201cefabf61383d6`. Routes and dependency seams come from
 [the executable runtime contract](../contracts/runtime.md); this harness does not
 add app routes or change backend policy.
@@ -140,10 +142,12 @@ authentication/API boundary; these HTTP tests do not count as UI/device proof.
 
 ## Redacted acceptance receipts
 
-The adapter targets Q52's independently authored schema
-`andes.app-acceptance.receipt/1` at frozen commit
-`e3ed9720ad1490a1797adbb3ed1a8c76eadffe50` (draft PR60). Its implementation is
-not copied into this lane. To export receipts from an actual isolated run, select
+The adapter targets Q52's independently authored format
+`andes.app-acceptance.receipt/1`. The original-backend checker
+`e3ed9720ad1490a1797adbb3ed1a8c76eadffe50` (PR60) remains a rejecting control
+for the new backend; the matching source-reviewed checker is pending from Q52,
+so `ORACLE_SHA` is explicitly null. Its implementation is not copied into this
+lane. To export facts from an actual isolated run, select
 a **new**, absolute local directory outside Git:
 
 ```sh
@@ -158,7 +162,7 @@ a 512 KiB bound. Do not commit or paste them into a PR. Give an authorised local
 reviewer their path plus the producer commit, exact command and raw test output.
 
 Receipt export checks that `src/`, `db/`, manifests and compiler config still match
-backend `ebc8fb1d36f441ef012ca585201cefabf61383d6`, including unstaged and untracked
+backend `5591c9b55fe7f4505e36ccee96d27aa913e0debf`, including unstaged and untracked
 runtime changes. Export requires a Git checkout containing that commit. A changed
 backend needs source review and coordinated oracle rebinding before receipt reuse;
 setting a revision label cannot bypass the source check.
@@ -178,7 +182,8 @@ headers, phone values, coordinates and raw trip text are not captured. Source
 `observedAt` is a separate wall-clock field in the selected HTTP records; the
 server clock advances are still synthetic engineering controls.
 
-Against an independently checked-out PR60 at its exact frozen head:
+Only after Q52 publishes the matching source-reviewed checker, against its
+independently checked-out exact frozen head:
 
 ```sh
 node "$(realpath /path/to/pr60/evidence/app-acceptance/check.mjs)" /tmp/andes-q46-receipts-unique/acceptance-receipt.json
@@ -237,7 +242,29 @@ that cannot invalidate replacement credentials. Local missing-session failures
 report `unauthenticated/not_sent` from the session boundary; in-flight read
 invalidation reports `session_changed/not_applicable`. These are distinct cases.
 
-This proves the native client/backend boundary, with synthetic identities and
+This exercises the native client/backend boundary, with synthetic identities and
 controlled transport faults. It does not exercise browser storage/rendering,
 same-origin Vite proxy/CORS, remote OIDC login, physical capture or real delivery.
 Q49's runnable foundation and proxy hooks remain necessary for UI-driven coverage.
+
+## Reviewed source rebinding
+
+The new integrated-source branch preserves PR58 at
+`749f46fd34d2856dfd0b547fe38795d7bfc4fdc8` and all original `ebc8fb1` receipts.
+It carries the same owned harness onto reviewed baseline `5591c9b`; source export
+must compare against the actual integrated `src/`, migrations, manifests and
+compiler configuration. The guarded delta includes the reviewed post-quota-wait
+claim/expiry clock recheck and root package wiring. No source comparison is relaxed.
+
+Reproduce source rebinding with fresh runs and fresh receipt files. The original
+guard correctly rejected integrated source before any evidence directory was
+created; the unchanged non-export harness independently passed 74 checks in a
+scratch integration checkout. Those observations are preflight evidence, not a
+relabelled original receipt or an independent acceptance of this new branch.
+
+Matching Q52 oracle rebinding is coordinated separately. The older `e3ed972`
+checker is still an intentional rejecting control for a `5591c9b` receipt until
+the source-reviewed replacement is published. A backend label change alone must
+never convert old receipt data into new evidence. Additional root test forwarding
+changes `package.json`, so a later integration head must be explicitly reviewed
+and rebound again before its receipts can be accepted.

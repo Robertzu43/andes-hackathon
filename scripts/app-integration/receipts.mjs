@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
-export const BACKEND_SHA = 'ebc8fb1d36f441ef012ca585201cefabf61383d6';
-export const ORACLE_SHA = 'e3ed9720ad1490a1797adbb3ed1a8c76eadffe50';
+export const BACKEND_SHA = '5591c9b55fe7f4505e36ccee96d27aa913e0debf';
+// Q52 must publish a source-reviewed checker for this integrated backend.
+export const ORACLE_SHA = null;
 export const CASE_LENGTHS = {'setup': 4, 'explicit-confirm': 2, 'duplicate-confirm': 3,
   'stale-snapshot': 2, 'unavailable-snapshot': 1, 'revocation': 3, 'sos-acceptance': 2,
   'acknowledgement-action': 2, 'arrival-preserves-sos': 4, 'owner-resolution': 2,
