@@ -142,4 +142,8 @@ Limits:
 ## Incident data and insights
 
 - **Settings.** `INSIGHTS_TIME_ZONE` (default `America/Lima`; IANA names only, because PostgreSQL reads offsets such as `-05:00` with the opposite sign), `INSIGHTS_MIN_COUNT` (default 3, never below 3), `DEMO_MODE=true` (insights follows `createApp`'s demo issuer, so it is on only when demo-persona sign-in is; reports are stored as synthetic and every published cell counts as demo data, because demo personas are free to create), and `SEED_DEMO=1 npm run seed:demo` for synthetic demo data. `npm run build` must run before seeding, because the script imports `dist/`; it is included in the image. On AWS the database is private, so seeding needs a separately authorised one-off task, which is not configured. Remove demo data with `DELETE FROM reports WHERE synthetic`.
+- **Known limits, accepted by Robert for the hackathon (recorded on PR #76).**
+  - Three colluding phone-verified accounts can still publish a cell that contains one other person's report. The suppression threshold is fixed, and there is no added noise.
+  - A change to a published cell can be tied to the hour in which it surfaced, because the public view is recomputed hourly.
+  - Full fixes, either calibrated noise or contributor reputation, need their own analysis and review before real data is collected.
 - **Location.** Incidents copy the trip's latest location when they are created; an incident counts only if that location is at most an hour older than the alert. `falsa_alarma`, `sin_senal` and `otro` labels never reach hotspots or advice. Incident snapshots and report coordinates are kept with no deletion scheduler, so they fall under the same unqualified-deletion caveat as other location data before live collection.
