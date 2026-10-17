@@ -116,7 +116,7 @@ Keep contact status and incident verification in separate rows. An unanswered ca
 ### Time rules
 
 - `observed`: `observed_time` and `observed_source_id`, a timestamped record also listed in `source_ids`. No recalled times.
-- `recalled`: both recalled times, earliest first, with `reported_by` a participant and an untimestamped account in `source_ids`. No observed time.
+- `recalled`: both recalled times, earliest first, with `reported_by` naming the participant whose memory it is and that participant's own untimestamped account in `source_ids`. No observed time.
 - `both`: everything above. The export reports how far the record falls from the memory.
 - `unknown`: no times. The row still counts and keeps its place in `seq`.
 - `check` warns when observed times run backwards against `seq`, which points to a clock difference between sources or an ordering mistake.
@@ -131,5 +131,5 @@ Keep contact status and incident verification in separate rows. An unanswered ca
 - **`recall_gap_min`:** for `both` rows, the minutes by which the record falls outside the remembered range. Negative when the record is earlier than remembered, 0 inside the range.
 - **`window`:** the claimed window with the basis of each end. `duration_min` gives the shortest and longest possible window from the endpoint times, or null when an end has no time. `traceable_to_records` is true only when both ends have observed times.
 - **`conflicts_with`** lists both directions.
-- **`coverage`** counts countries, languages, phone platforms, drivers by trucks operated and case concerns, and lists gaps: Spanish, Brazilian Portuguese, iPhone, Android, security or robbery cases and fatigue cases.
+- **`coverage`** counts countries, languages, phone platforms, drivers by trucks operated and case concerns, and lists gaps: Spanish (any `es` locale), Brazilian Portuguese (exact `pt-BR`; `pt-PT` does not count), iPhone, Android, security or robbery cases and fatigue cases.
 - **Scanned text:** `corridor_label`, `arrangement`, `knew`, `basis_note` and `note_redacted` must not contain calendar dates, email addresses, links, coordinates, phone numbers or vehicle plates. A hit is an error, and the message never repeats the text. Clock times are allowed. Names, places and cargo details cannot be detected automatically, so the redaction review covers them.

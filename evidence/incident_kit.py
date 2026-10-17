@@ -465,8 +465,9 @@ def check_times(event: dict, cited: list[dict], report: Report) -> None:
     if recalled:
         if event["reported_by"] == "record":
             report.error(where, "recalled times need the participant who recalled them in reported_by")
-        if not any(source["timestamped_record"] == "no" for source in cited):
-            report.error(where, "recalled times must cite the participant's account (an untimestamped source)")
+        if not any(source["timestamped_record"] == "no" and source["provided_by"] == event["reported_by"]
+                   for source in cited):
+            report.error(where, "recalled times need the named participant's own account (an untimestamped source)")
         earliest, latest = parse_time(event["recalled_earliest"]), parse_time(event["recalled_latest"])
         if earliest and latest and earliest > latest:
             report.error(where, "recalled_earliest is after recalled_latest")
@@ -696,9 +697,10 @@ def coverage(people: list[dict], cases: list[dict]) -> dict:
     languages, platforms = count(people, "preferred_language"), count(people, "phone_platform")
     concerns = dict(sorted(Counter(c for case in cases for c in split(case["concerns"])).items()))
     gaps = []
-    for code, label in (("es", "Spanish (es)"), ("pt", "Brazilian Portuguese (pt-BR)")):
-        if not any(tag == code or tag.startswith(code + "-") for tag in languages):
-            gaps.append(f"{label} not represented")
+    if not any(tag == "es" or tag.startswith("es-") for tag in languages):
+        gaps.append("Spanish (es) not represented")
+    if "pt-BR" not in languages:
+        gaps.append("Brazilian Portuguese (pt-BR) not represented")
     for platform, label in (("iphone", "iPhone"), ("android", "Android")):
         if platform not in platforms:
             gaps.append(f"{label} not represented")

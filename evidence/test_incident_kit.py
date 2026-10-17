@@ -186,6 +186,14 @@ class RuleTest(unittest.TestCase):
                   recalled_earliest="2026-09-14T14:30-03:00", recalled_latest="2026-09-14T14:00-03:00")
         self.assertRejected("recalled_earliest is after recalled_latest")
 
+    def test_recalled_times_need_the_named_participants_own_account(self):
+        self.edit("timeline", "SYN-A-W-E07", source_ids="SYN-A-W-S1")
+        self.assertRejected("recalled times need the named participant's own account")
+        result, report = kit.export(self.folder)
+        self.assertIsNone(result)
+        self.assertTrue(any("recalled times need the named participant's own account" in error
+                            for error in report.errors))
+
     def test_unknown_time_stays_unknown(self):
         self.edit("timeline", "SYN-A-W-E15", observed_time="2026-09-14T22:40-03:00", time_zone="America/Sao_Paulo")
         self.assertRejected("observed_time must be empty when time_basis is unknown")
@@ -212,6 +220,17 @@ class RuleTest(unittest.TestCase):
         self.edit("timeline", "SYN-A-W-E10", event_type="robbery", actor="driver",
                   reported_by="SYN-A-D", occurrence="self_reported")
         self.assertRejected("self_reported needs a cited attributed account")
+
+    def test_driver_message_supplied_by_contact_can_be_self_reported(self):
+        self.edit("timeline", "SYN-A-W-E10", event_type="robbery", actor="driver",
+                  reported_by="SYN-A-D", occurrence="self_reported",
+                  source_ids="SYN-A-W-S3", observed_source_id="SYN-A-W-S3")
+        result, report = kit.export(self.folder)
+        self.assertEqual(report.errors, [])
+        event = events_of(result)["SYN-A-W-E10"]
+        self.assertEqual(event["occurrence"], "self_reported")
+        self.assertEqual(event["reported_by"], "SYN-A-D")
+        self.assertEqual(event["source_ids"], ["SYN-A-W-S3"])
 
     def test_second_hand_report_needs_an_attributed_account(self):
         self.edit("timeline", "SYN-A-W-E10", event_type="dozed_off_report", actor="driver",
@@ -359,6 +378,15 @@ class RuleTest(unittest.TestCase):
         _, report = kit.check(self.folder)
         self.assertIn("participants.csv line 4 (SYN-B-D): driver is outside the owner-operator segment "
                       "of one or two trucks", report.warnings)
+
+    def test_european_portuguese_does_not_cover_brazilian_portuguese(self):
+        self.edit("participants", "SYN-A-D", preferred_language="pt-PT")
+        self.edit("participants", "SYN-A-C", preferred_language="pt-PT")
+        result, report = kit.export(self.folder)
+        self.assertEqual(report.errors, [])
+        self.assertEqual(result["coverage"]["languages"], {"es": 2, "pt-PT": 2})
+        self.assertIn("Brazilian Portuguese (pt-BR) not represented", result["coverage"]["gaps"])
+        self.assertNotIn("Spanish (es) not represented", result["coverage"]["gaps"])
 
     def test_export_needs_consent_from_both_people(self):
         self.edit("participants", "SYN-B-C", consent_share_redacted="pending")

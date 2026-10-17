@@ -39,7 +39,7 @@ It checks the declared source classifications and required basis, but cannot ver
 
 ## Handoff to Robert
 
-The export is the input for rules and replay fixtures in #12, #18, #23 and #29. It gives minutes between events, observed and recalled ranges, recall gaps, window ranges, conflicts, unknown times and how each event is known. Its coverage block carries the gaps, so the Spanish and Brazilian Portuguese needs survive a sample in one language. `fixtures/synthetic/expected-export.json` shows the shape now. Real exports come only after the gates below.
+The export is the input for rules and replay fixtures in #12, #18, #23 and #29. It gives minutes between events, observed and recalled ranges, recall gaps, window ranges, conflicts, unknown times and how each event is known. Its coverage block carries the gaps, so the Spanish and Brazilian Portuguese needs survive a sample in one language; `pt-PT` does not satisfy the Brazilian Portuguese need. `fixtures/synthetic/expected-export.json` shows the shape now. Real exports come only after the gates below.
 
 ## Gates this kit does not pass
 
