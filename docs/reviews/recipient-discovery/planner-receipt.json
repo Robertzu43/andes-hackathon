@@ -1,0 +1,18 @@
+{
+  "plan": "pl_mvd1u5yz_f780e7",
+  "title": "Recipient invitations and shared trips",
+  "verificationSubplan": "pl_mvd1veds_9ee560",
+  "rootWorkflowNodes": 8,
+  "rootNotes": 1,
+  "verificationNodes": 7,
+  "firstImplementationPrerequisite": "Owner44 confirms read partition",
+  "sourceScope": "contract proposal only; no route implementation",
+  "checks": [
+    "Re-read all root and child nodes after creation; every workflow node connected, notes exempt",
+    "Decision target metadata contains Yes/No labels and semantic colors",
+    "Viewed root and child overview images, then zoomed into first decision",
+    "Capture exporter hides edge chip text; repeated meaning in destination titles, reported tool bug"
+  ],
+  "visualLimit": "Edge-label chip export remains imperfect; proposal structure and destinations are readable",
+  "ownerPartition": "pending; publication does not wait for internal acknowledgement"
+}

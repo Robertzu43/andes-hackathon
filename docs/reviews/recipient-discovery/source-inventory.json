@@ -1,0 +1,240 @@
+{
+  "inspectedAt": "2026-10-17T23:54:06.145Z",
+  "kind": "read-only source contract inventory; not execution evidence",
+  "inventory": [
+    {
+      "pr": 74,
+      "sha": "4c138ca1d00742400a850cd72b0888cc59260a36",
+      "tree": "e5456747775346cc86a2b41605ccee5239e8c709",
+      "files": [
+        {
+          "path": "src/api/app.ts",
+          "blob": "9ed376890048287c2f87fe47b61c73f48c73a688",
+          "routes": [
+            {
+              "line": 32,
+              "declaration": "app.get('/health', async (_request, reply) => {"
+            },
+            {
+              "line": 38,
+              "declaration": "app.get('/v1/me', async request => ({ id: request.actor.id }));"
+            }
+          ]
+        },
+        {
+          "path": "src/auth.ts",
+          "blob": "8fb86caceb9a4e09c92b15e2258a3a4104e02969",
+          "routes": []
+        },
+        {
+          "path": "src/contacts/routes.ts",
+          "blob": "2a05f19053d100da6fc95bad8a81833db537b0ba",
+          "routes": [
+            {
+              "line": 8,
+              "declaration": "app.post('/v1/contacts', { schema: { body: object({ contactId: uuid, phone: { type: 'string', pattern: '^\\\\+[1-9]\\\\d{6,14}$' }, ...scopeChoices, role: { enum: ['family', 'colleague'] } }, ['contactId', 'phone', 'map', 'incident']) } }, request => transaction(ctx.pool, client => idempotent(ctx, client, request, async () => {"
+            },
+            {
+              "line": 17,
+              "declaration": "app.post('/v1/contacts/:id/accept', { schema: { params: idParams, body: object(scopeChoices) } }, request => transaction(ctx.pool, async client => {"
+            },
+            {
+              "line": 31,
+              "declaration": "app.post('/v1/contacts/:id/revoke', { schema: { params: idParams, body: empty } }, request => transaction(ctx.pool, async client => {"
+            },
+            {
+              "line": 45,
+              "declaration": "app.post('/v1/trips/:id/contacts/:grantId/revoke', { schema: { params: object({ id: uuid, grantId: uuid }), body: empty } }, request => {"
+            }
+          ]
+        },
+        {
+          "path": "src/checks/routes.ts",
+          "blob": "6bfe350b8aae180eaeecaee41877df1ced9224ca",
+          "routes": [
+            {
+              "line": 9,
+              "declaration": "app.post('/v1/trips/:id/sharing', { schema: { params: idParams, body: object({ state: { enum: ['stopped', 'resumed'] }, reason: { enum: ['user', 'page_hidden', 'permission_denied', 'error'] } }) } }, request => withTripTransaction(ctx, (request.params as { id: string }).id, async (client, trip) => {"
+            },
+            {
+              "line": 19,
+              "declaration": "app.get('/v1/trips/:id/status', { schema: { params: idParams } }, request => withTripTransaction(ctx, (request.params as { id: string }).id, async (client, trip) => {"
+            }
+          ]
+        },
+        {
+          "path": "src/location/routes.ts",
+          "blob": "a20b270e433741a8b31377bb851656a8d6999ff5",
+          "routes": [
+            {
+              "line": 16,
+              "declaration": "app.post('/v1/trips/:id/locations', { schema: { params: idParams, body: object({ observations: { type: 'array', minItems: 1, maxItems: 100, items: object({"
+            },
+            {
+              "line": 34,
+              "declaration": "app.get('/v1/trips/:id/snapshot', { schema: { params: idParams } }, async (request, reply) => {"
+            }
+          ]
+        },
+        {
+          "path": "src/incidents/routes.ts",
+          "blob": "94fb41dec87273bf2c4a709487ffce707b707dbd",
+          "routes": [
+            {
+              "line": 10,
+              "declaration": "app.post('/v1/trips/:id/sos', { schema: { params: idParams, body: empty } }, request => withTripTransaction(ctx, (request.params as { id: string }).id, async (client, trip) => {"
+            },
+            {
+              "line": 37,
+              "declaration": "app.get('/v1/incidents/:id', { schema: { params: idParams } }, request => withIncidentTransaction(request, async (client, trip, incident) => {"
+            },
+            {
+              "line": 42,
+              "declaration": "app.post(`/v1/incidents/:id/${kind}`, { schema: { params: idParams, body: kind === 'actions' ? object({ action: text }) : empty } }, request => mutateIncident(request, async (client, trip, incident) => {"
+            },
+            {
+              "line": 50,
+              "declaration": "app.post('/v1/incidents/:id/resolve', { schema: { params: idParams, body: empty } }, request => mutateIncident(request, async (client, trip, incident) => {"
+            }
+          ]
+        },
+        {
+          "path": "src/trips/routes.ts",
+          "blob": "7b9185e7474c544c82a3928ee2d321273ad17107",
+          "routes": [
+            {
+              "line": 16,
+              "declaration": "app.post('/v1/trucks', { schema: { body: object({ label: text }) } }, request => transaction(ctx.pool, client => idempotent(ctx, client, request, async () => {"
+            },
+            {
+              "line": 19,
+              "declaration": "app.post('/v1/trip-drafts', { schema: { body: object({ text: { type: 'string', minLength: 1, maxLength: 10000 }, fields: fieldsSchema, audio: { type: 'string', maxLength: 1000 } }, []) } }, request => transaction(ctx.pool, client => idempotent(ctx, client, request, async () => {"
+            },
+            {
+              "line": 28,
+              "declaration": "app.post('/v1/trip-drafts/:id/confirm', { schema: { params: idParams, body: object({ confirmed: { const: true }, contactGrantIds: { type: 'array', maxItems: 10, uniqueItems: true, items: uuid }, fields: fieldsSchema }, ['confirmed', 'contactGrantIds']) } }, request => transaction(ctx.pool, async client => {"
+            },
+            {
+              "line": 52,
+              "declaration": "app.get('/v1/trips/:id', { schema: { params: idParams } }, request => withTripTransaction(ctx, (request.params as { id: string }).id, async (_client, trip) => { owner(trip, request.actor); return trip; }));"
+            },
+            {
+              "line": 53,
+              "declaration": "app.post('/v1/trips/:id/commands', { schema: { params: idParams, body: object({ type: { enum: ['arrived', 'cancel', 'pause', 'resume', 'checkin_ok', 'rest_report'] } }) } }, request => withTripTransaction(ctx, (request.params as { id: string }).id, async (client, trip) => {"
+            }
+          ]
+        },
+        {
+          "path": "db/migrations/001-core.sql",
+          "blob": "d99568880c5c686deb393283c6da2c7a39ef9df0",
+          "routes": []
+        },
+        {
+          "path": "db/migrations/003-security-checks.sql",
+          "blob": "f5602a1664b33bb76a777cb285fa9712af5e60c2",
+          "routes": []
+        }
+      ]
+    },
+    {
+      "pr": 68,
+      "sha": "938a8dfcd5d35b39ae91171dd7fe7d538c2eb2bf",
+      "tree": "f85f6476224d7fcdb7c677db3af734b60890f9cd",
+      "files": [
+        {
+          "path": "src/api/app.ts",
+          "blob": "193c402d2bd7dd660cd7d5d1d77c0b91104d6ae6",
+          "routes": [
+            {
+              "line": 30,
+              "declaration": "app.get('/health', async (_request, reply) => {"
+            },
+            {
+              "line": 34,
+              "declaration": "app.get('/v1/me', async request => ({ id: request.actor.id }));"
+            }
+          ]
+        },
+        {
+          "path": "src/client-read/routes.ts",
+          "blob": "fc60d9aba2e2a9733c4c86a2b88057b53de339a8",
+          "routes": [
+            {
+              "line": 82,
+              "declaration": "app.get('/v1/profile', request => transaction(ctx.pool, client => readProfile(client, request.actor)));"
+            },
+            {
+              "line": 83,
+              "declaration": "app.get('/v1/trucks', request => transaction(ctx.pool, client => readTrucks(client, request.actor)));"
+            },
+            {
+              "line": 84,
+              "declaration": "app.get('/v1/contacts', request => transaction(ctx.pool, client => readContacts(client, request.actor)));"
+            },
+            {
+              "line": 85,
+              "declaration": "app.get('/v1/trips', request => transaction(ctx.pool, client => readTrips(client, request.actor)));"
+            },
+            {
+              "line": 86,
+              "declaration": "app.get('/v1/bootstrap', request => transaction(ctx.pool, async client => {"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pr": 65,
+      "sha": "748d30c6e6c595fd1a2c2c648a045750de3dd9c8",
+      "tree": "e9915138d631e208355f6bd2cdacc8b76b913363",
+      "files": [
+        {
+          "path": "src/client-read/routes.ts",
+          "blob": "fc60d9aba2e2a9733c4c86a2b88057b53de339a8",
+          "routes": [
+            {
+              "line": 82,
+              "declaration": "app.get('/v1/profile', request => transaction(ctx.pool, client => readProfile(client, request.actor)));"
+            },
+            {
+              "line": 83,
+              "declaration": "app.get('/v1/trucks', request => transaction(ctx.pool, client => readTrucks(client, request.actor)));"
+            },
+            {
+              "line": 84,
+              "declaration": "app.get('/v1/contacts', request => transaction(ctx.pool, client => readContacts(client, request.actor)));"
+            },
+            {
+              "line": 85,
+              "declaration": "app.get('/v1/trips', request => transaction(ctx.pool, client => readTrips(client, request.actor)));"
+            },
+            {
+              "line": 86,
+              "declaration": "app.get('/v1/bootstrap', request => transaction(ctx.pool, async client => {"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "pr74Feedback": {
+    "discussion": {
+      "pages": 1,
+      "items": 0
+    },
+    "reviews": {
+      "pages": 1,
+      "items": 0
+    },
+    "inline": {
+      "pages": 1,
+      "items": 0
+    }
+  },
+  "planner": {
+    "plan": "pl_mvd1u5yz_f780e7",
+    "verification": "pl_mvd1veds_9ee560"
+  },
+  "ownership": "44 freezes interface;41 owner reads;45 typed adapter;51 contact UI;Robert status/sharing",
+  "implementation": "none"
+}

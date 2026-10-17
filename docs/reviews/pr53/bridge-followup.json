@@ -1,0 +1,54 @@
+{
+  "reviewedAt": "2026-10-17T23:55:24.952Z",
+  "runtime": "v24.17.0",
+  "candidate": "e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6",
+  "result": "P2 source-age mismatch reproduced; original owner/reviewer confirmation required",
+  "source": "web/src/features/contacts/journey.ts:74-81",
+  "aligned": {
+    "ageMs": 240000,
+    "serverFreshnessAtRead": "fresh",
+    "readAt": "2026-10-17T12:00:00.000Z",
+    "live": false,
+    "currentAuthorization": "requires-server-check"
+  },
+  "behind": {
+    "ageMs": 180000,
+    "serverFreshnessAtRead": "fresh",
+    "readAt": "2026-10-17T12:00:00.000Z",
+    "live": false,
+    "currentAuthorization": "requires-server-check"
+  },
+  "ahead": {
+    "ageMs": 300000,
+    "serverFreshnessAtRead": "fresh",
+    "readAt": "2026-10-17T12:00:00.000Z",
+    "live": false,
+    "currentAuthorization": "requires-server-check"
+  },
+  "sameClientClockAfterBackwardStep": {
+    "ageMs": 150000,
+    "serverFreshnessAtRead": "fresh",
+    "readAt": "2026-10-17T12:00:00.000Z",
+    "live": false,
+    "currentAuthorization": "requires-server-check"
+  },
+  "accepted300msFutureCapture": {
+    "ageMs": null,
+    "serverFreshnessAtRead": "fresh",
+    "readAt": "2026-10-17T12:00:00.000Z",
+    "live": false,
+    "currentAuthorization": "requires-server-check"
+  },
+  "boundary": "No live/safe claim observed; these are source arithmetic probes, not UI or backend integration proof",
+  "formalReview": "https://github.com/Bimbi-Dev/andes-hackathon/pull/62#pullrequestreview-5560699766",
+  "state": "COMMENTED",
+  "existingContactPrivacyChecks": {
+    "runtime": "v24.17.0",
+    "passed": 22,
+    "failed": 0
+  },
+  "currentConsumerBoundary": "Location UI renders raw server age/freshness with explicit as-of-read ES/PT-BR labels; no production calls to exported locationAge helper found",
+  "originalReviewer43": "Explicitly concurred P2 display issue; no auth/privacy escalation; prior scoped ACCEPT unchanged; will confirm corrected SHA",
+  "fixOwner": 51,
+  "fixDisposition": "pending; no source fix or whole-PR/UI acceptance by59"
+}

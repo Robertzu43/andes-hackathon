@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 if (!process.argv[2]) throw new Error('Supply an immutable PR62 archive path');
+const candidate = process.argv[3] ?? '21cd50ac15c22a2a3cc71bf105336e8ebc77c285';
 const { locationAge } = await import(pathToFileURL(resolve(process.argv[2], 'web/src/features/contacts/journey.ts')));
 const T = Date.parse('2026-10-17T12:00:00.000Z');
 const snapshot = { tripId: 'synthetic-trip', readAt: new Date(T).toISOString(), ageMs: 120000, freshness: 'fresh',
@@ -25,7 +26,7 @@ for (const out of [aligned, behind, ahead, sameClientClockAfterBackwardStep]) {
   assert.equal(out.serverFreshnessAtRead, 'fresh'); assert.equal(out.live, false);
   assert.equal(out.currentAuthorization, 'requires-server-check');
 }
-console.log(JSON.stringify({ runtime: process.version, candidate: '21cd50ac15c22a2a3cc71bf105336e8ebc77c285',
+console.log(JSON.stringify({ runtime: process.version, candidate,
   result: 'P2 source-age mismatch reproduced; original owner/reviewer confirmation required',
   source: 'web/src/features/contacts/journey.ts:74-81', aligned, behind, ahead, sameClientClockAfterBackwardStep,
   accepted300msFutureCapture: locationAge(acceptedFutureCapture, T),
