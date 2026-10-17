@@ -9,10 +9,20 @@ test('client reads require a signed identity and return only the authenticated p
     assert.equal((await f.app.inject({ method: 'GET', url: path })).statusCode, 401);
   }
   const profile = await f.req('GET', '/v1/profile');
-  assert.deepEqual(profile.body, { id: f.me.id, phone: '+5511999990000', phoneVerified: true });
+  assert.deepEqual(profile.body, { id: f.me.id, phone: '+5511999990000', phoneVerified: true, readAt: '2026-10-17T12:00:00.000Z' });
   const stranger = await f.req('GET', '/v1/profile', undefined, f.stranger);
   assert.equal(stranger.status, 200);
   assert.notEqual(stranger.body.id, f.me.id);
+});
+
+// readAt is the server clock at request time, never a client-derived value.
+test('every read response carries the server as-of timestamp', async t => {
+  const f = await fixture(t);
+  for (const path of ['/v1/profile', '/v1/trucks', '/v1/contacts', '/v1/trips', '/v1/bootstrap']) {
+    const response = await f.req('GET', path);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.readAt, '2026-10-17T12:00:00.000Z', path);
+  }
 });
 
 // Ownership filters stop another driver's trucks appearing in the web bootstrap list.

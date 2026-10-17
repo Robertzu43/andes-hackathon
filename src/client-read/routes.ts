@@ -79,22 +79,38 @@ async function readTrips(client: Client, actor: Actor) {
 }
 
 export function clientReadRoutes(app: FastifyInstance, ctx: Context) {
-  app.get('/v1/profile', request => transaction(ctx.pool, client => readProfile(client, request.actor)));
-  app.get('/v1/trucks', request => transaction(ctx.pool, client => readTrucks(client, request.actor)));
-  app.get('/v1/contacts', request => transaction(ctx.pool, client => readContacts(client, request.actor)));
-  app.get('/v1/trips', request => transaction(ctx.pool, client => readTrips(client, request.actor)));
-  app.get('/v1/bootstrap', request => transaction(ctx.pool, async client => {
-    const profile = await readProfile(client, request.actor);
-    const trucks = await readTrucks(client, request.actor);
-    const contacts = await readContacts(client, request.actor);
-    const trips = await readTrips(client, request.actor);
-    return {
-      profile,
-      trucks: trucks.trucks,
-      contacts: contacts.contacts,
-      trips: { active: trips.active, recent: trips.recent },
-      limits: { trucks: trucks.limit, contacts: contacts.limit, activeTrips: trips.limits.active, recentTrips: trips.limits.recent },
-      hasMore: { trucks: trucks.hasMore, contacts: contacts.hasMore, activeTrips: trips.hasMore.active, recentTrips: trips.hasMore.recent }
-    };
-  }));
+  app.get('/v1/profile', request => {
+    const readAt = iso(ctx.clock());
+    return transaction(ctx.pool, async client => ({ ...(await readProfile(client, request.actor)), readAt }));
+  });
+  app.get('/v1/trucks', request => {
+    const readAt = iso(ctx.clock());
+    return transaction(ctx.pool, async client => ({ ...(await readTrucks(client, request.actor)), readAt }));
+  });
+  app.get('/v1/contacts', request => {
+    const readAt = iso(ctx.clock());
+    return transaction(ctx.pool, async client => ({ ...(await readContacts(client, request.actor)), readAt }));
+  });
+  app.get('/v1/trips', request => {
+    const readAt = iso(ctx.clock());
+    return transaction(ctx.pool, async client => ({ ...(await readTrips(client, request.actor)), readAt }));
+  });
+  app.get('/v1/bootstrap', request => {
+    const readAt = iso(ctx.clock());
+    return transaction(ctx.pool, async client => {
+      const profile = await readProfile(client, request.actor);
+      const trucks = await readTrucks(client, request.actor);
+      const contacts = await readContacts(client, request.actor);
+      const trips = await readTrips(client, request.actor);
+      return {
+        profile,
+        trucks: trucks.trucks,
+        contacts: contacts.contacts,
+        trips: { active: trips.active, recent: trips.recent },
+        limits: { trucks: trucks.limit, contacts: contacts.limit, activeTrips: trips.limits.active, recentTrips: trips.limits.recent },
+        hasMore: { trucks: trucks.hasMore, contacts: contacts.hasMore, activeTrips: trips.hasMore.active, recentTrips: trips.hasMore.recent },
+        readAt
+      };
+    });
+  });
 }
