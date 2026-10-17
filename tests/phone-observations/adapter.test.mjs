@@ -352,7 +352,7 @@ test('R2 explicit resume restores the watch under a new generation and ignores o
 
 test('R2 denied permission cannot be bypassed by suspension and resume', async () => {
   const b = fixture(); b.adapter.start(context()); b.adapter.acquireLocation({ watch: true });
-  b.latestWatch().failure({ code: 1 });
+  b.statuses.geolocation.state = 'denied'; b.latestWatch().failure({ code: 1 }); await settle();
   b.platform.dispatch('pagehide');
   assert.equal((await b.adapter.resume()).reason, 'permission-denied-or-revoked');
   assert.equal(b.watches.size, 0);
@@ -484,12 +484,13 @@ test('R6 transient errors are throttled separately while denial and later valid 
 });
 
 test('late motion grant cannot subscribe after stop, replacement request or timeout', async () => {
-  for (const stop of [
-    (b) => b.adapter.stop(), (b) => b.adapter.stopMotion(), (b) => b.fireTimers(10_000),
+  for (const [stop, reason] of [
+    [(b) => b.adapter.stop(), 'session-stopped'], [(b) => b.adapter.stopMotion(), 'obsolete-request'],
+    [(b) => b.fireTimers(PROVISIONAL_BUDGET.permissionPromptTimeoutMs), 'permission-prompt-timeout'],
   ]) {
     const b = fixture(); b.adapter.start(context()); const pending = b.adapter.acquireMotion();
     stop(b); b.motionRequests[0].resolve('granted');
-    assert.equal((await pending).reason, 'obsolete-request');
+    assert.equal((await pending).reason, reason);
     assert.equal(b.platform.count('devicemotion'), 0);
   }
 });
@@ -537,11 +538,12 @@ test('request, callback, rate, buffer, event and duration budgets bound work', (
   assert.equal(e.watches.size + e.timers.size, 0);
 });
 
-test('timeouts retire one-shot tokens; raw API errors are redacted and denial is explicit', () => {
+test('timeouts retire one-shot tokens; raw API errors are redacted and verified denial is explicit', async () => {
   const b = fixture(); b.adapter.start(context()); b.adapter.acquireLocation(); const old = b.requests[0];
-  b.fireTimers(10_000); old.success(fix()); assert.equal(b.last('geolocation'), undefined);
-  b.adapter.acquireLocation(); b.requests[1].failure({ code: 1, message: '-12.04318 private context' });
-  assert.equal(b.adapter.snapshot().permission.geolocation.state, 'denied');
+  await settle(); b.fireTimers(10_000); old.success(fix()); assert.equal(b.last('geolocation'), undefined);
+  b.adapter.acquireLocation(); b.statuses.geolocation.state = 'denied';
+  b.requests[1].failure({ code: 1, message: '-12.04318 private context' });
+  assert.equal(b.adapter.snapshot().permission.geolocation.state, 'revoked');
   assert.equal(JSON.stringify(b.events).includes('private context'), false);
   assert.equal(b.last('geolocation-error').data.code, 1);
 });
@@ -696,15 +698,15 @@ test('F1 stream cancellation during request delivery prevents GPS calls, permiss
   }
 });
 
-test('F2 delayed motion grants recheck inclusive session and request deadlines without timer execution', async () => {
-  for (const [maxSessionMs, requestTimeoutMs, elapsed, expected] of [
+test('F2 delayed motion grants recheck inclusive session and permission-prompt deadlines without timer execution', async () => {
+  for (const [maxSessionMs, permissionPromptTimeoutMs, elapsed, expected] of [
     [1000, 2000, 999, true], [1000, 2000, 1000, false], [1000, 2000, 1001, false],
     [3000, 1000, 999, true], [3000, 1000, 1000, false], [3000, 1000, 1001, false],
   ]) {
-    const b = fixture({ budget: { ...PROVISIONAL_BUDGET, maxSessionMs, requestTimeoutMs } });
+    const b = fixture({ budget: { ...PROVISIONAL_BUDGET, maxSessionMs, permissionPromptTimeoutMs } });
     b.adapter.start(context()); const pending = b.adapter.acquireMotion();
     b.advance(elapsed); b.motionRequests[0].resolve('granted');
-    assert.equal((await pending).ok, expected, `session=${maxSessionMs}, request=${requestTimeoutMs}, elapsed=${elapsed}`);
+    assert.equal((await pending).ok, expected, `session=${maxSessionMs}, prompt=${permissionPromptTimeoutMs}, elapsed=${elapsed}`);
     assert.equal(b.platform.count('devicemotion'), expected ? 1 : 0);
     if (expected) {
       b.platform.dispatch('devicemotion', { acceleration: { x: 1, y: 2, z: 3 } });
@@ -734,7 +736,7 @@ test('F2 motion grants recheck visibility and clocks before applying the answer'
 test('F2 permission-event sink cannot delay or hide the page and then attach a motion listener', async () => {
   for (const mutate of [
     (b) => b.advance(PROVISIONAL_BUDGET.maxSessionMs),
-    (b) => b.advance(PROVISIONAL_BUDGET.requestTimeoutMs),
+    (b) => b.advance(PROVISIONAL_BUDGET.permissionPromptTimeoutMs),
     (b) => { b.document.visibilityState = 'hidden'; },
   ]) {
     const b = fixture();
@@ -750,11 +752,13 @@ test('F2 permission-event sink cannot delay or hide the page and then attach a m
 
 test('F3 conflicting passive grants and changes cannot reopen denied or revoked session permission', async () => {
   for (const initiallyGranted of [false, true]) {
-    const b = fixture(); const answer = deferred();
-    b.platform.navigator.permissions.query = () => answer.promise;
+    const b = fixture(); const answer = deferred(); let queries = 0;
+    const provenDenied = Object.assign(new Target(), { state: 'denied' });
+    b.platform.navigator.permissions.query = () => ++queries === 1 ? answer.promise : Promise.resolve(provenDenied);
     b.adapter.start(context()); b.adapter.acquireLocation({ watch: true });
     if (initiallyGranted) { answer.resolve(b.statuses.geolocation); await settle(); }
-    b.latestWatch().failure({ code: 1 });
+    if (initiallyGranted) b.statuses.geolocation.state = 'denied';
+    b.latestWatch().failure({ code: 1 }); await settle();
     const denied = b.adapter.snapshot().permission.geolocation;
     assert.equal(denied.state, initiallyGranted ? 'revoked' : 'denied');
     answer.resolve(b.statuses.geolocation); await settle();
@@ -766,6 +770,7 @@ test('F3 conflicting passive grants and changes cannot reopen denied or revoked 
     }
     assert.equal(b.watches.size + b.requests.length, 0);
     b.adapter.stop(); b.statuses.geolocation.state = 'granted';
+    b.platform.navigator.permissions.query = () => Promise.resolve(b.statuses.geolocation);
     b.adapter.start(context('replacement')); assert.equal(b.adapter.acquireLocation().ok, true);
     await settle(); b.requests[0].success(fix());
     assert.equal(b.last('geolocation').sessionId, 'replacement');
@@ -794,11 +799,171 @@ test('F4 failed GPS events keep original per-request options after request evict
   }
 });
 
-test('F4 local GPS timeout and platform failure also retain their request options', () => {
-  const b = fixture(); b.adapter.start(context()); b.adapter.acquireLocation(); b.fireTimers(10_000);
+test('F4 local GPS timeout and platform failure also retain their request options', async () => {
+  const b = fixture(); b.adapter.start(context()); b.adapter.acquireLocation(); await settle(); b.fireTimers(10_000);
   assert.deepEqual(b.last('acquisition-timeout').data.options, b.requests[0].args);
   b.geo.getCurrentPosition = () => { throw new Error('private'); };
   b.adapter.acquireLocation();
   assert.deepEqual(b.last('acquisition-error').data.options, b.requests[0].args);
   b.adapter.stop(); assert.equal(b.timers.size, 0);
+});
+
+
+test('N1 sixty-hertz motion remains subscribed for thirty seconds with default raw callback guard', async () => {
+  const b = fixture(); b.adapter.start(context()); const pending = b.adapter.acquireMotion();
+  b.motionRequests[0].resolve('granted'); await pending;
+  for (let n = 0; n < 1800; n += 1) {
+    b.advance(1000 / 60); b.platform.dispatch('devicemotion', { acceleration: { x: 1, y: 2, z: 3 } });
+  }
+  assert.equal(b.platform.count('devicemotion'), 1);
+  assert.ok(b.events.filter((e) => e.type === 'motion').length >= 29);
+  assert.equal(b.adapter.snapshot().summary.callbacks.motion, 1800);
+  b.adapter.stop();
+});
+
+test('N3 repeated blocked GPS acquisition cannot terminate another active stream', async () => {
+  const b = fixture({ budget: { ...PROVISIONAL_BUDGET, maxEvents: 20 } });
+  const qualification = { ...b.config.qualification, streams: { geolocation: false, motion: true } };
+  const adapter = createPhoneObservationAdapter({ ...b.config, qualification });
+  adapter.start(context()); const pending = adapter.acquireMotion(); b.motionRequests[0].resolve('granted'); await pending;
+  for (let n = 0; n < 1000; n += 1) assert.equal(adapter.acquireLocation().reason, 'unqualified');
+  assert.equal(adapter.snapshot().state, 'started'); assert.equal(b.platform.count('devicemotion'), 1);
+  assert.equal(adapter.snapshot().summary.suppressedBlocked, 999);
+  assert.equal(b.events.filter((e) => e.type === 'acquisition-blocked').length, 1);
+  adapter.stop();
+});
+
+test('N4 withdrawal purges buffered precise coordinates even after a prior stop', () => {
+  for (const stopped of [false, true]) {
+    const b = fixture(); b.adapter.start(context()); b.adapter.acquireLocation({ watch: true,
+      preciseConsent: { granted: true, purpose: 'trip', reference: 'consent' } });
+    b.latestWatch().success(fix()); assert.match(JSON.stringify(b.adapter.snapshot()), /-12.04318/);
+    if (stopped) b.adapter.stop();
+    b.adapter.revokeConsent(); b.adapter.revokeConsent();
+    assert.equal(JSON.stringify(b.adapter.snapshot()).includes('-12.04318'), false);
+    assert.equal(JSON.stringify(b.adapter.snapshot()).includes('-77.02824'), false);
+    assert.equal(b.adapter.snapshot().permission.geolocation.state, 'revoked');
+    assert.equal(b.adapter.snapshot().events.find((e) => e.type === 'geolocation').data.coordinates, null);
+  }
+});
+
+test('N5 synthetic mode rejects inherited globals/platform and the default real clock', () => {
+  const b = fixture();
+  for (const platform of [globalThis, Object.create(globalThis), Object.create(b.platform)]) {
+    assert.throws(() => createPhoneObservationAdapter({ ...b.config, platform }), /detached injected/);
+  }
+  const { clock, ...withoutClock } = b.config;
+  assert.throws(() => createPhoneObservationAdapter(withoutClock), /detached injected/);
+  assert.equal(b.requests.length + b.motionRequests.length + b.queries.length, 0);
+});
+
+test('N8 GPS callback budget stop uses the public geolocation stream name', () => {
+  const b = fixture({ budget: { ...PROVISIONAL_BUDGET, maxCallbacksPerStream: 1 } });
+  b.adapter.start(context()); b.adapter.acquireLocation({ watch: true }); const watch = b.latestWatch();
+  watch.success(fix()); b.advance(1000); watch.success(fix());
+  assert.equal(b.last('stream-stopped').data.stream, 'geolocation'); b.adapter.stop();
+});
+
+
+test('N6 code1 prompt dismissal remains explicit and retryable; verified denial stays terminal', async () => {
+  const b = fixture(); b.statuses.geolocation.state = 'prompt'; b.adapter.start(context());
+  b.adapter.acquireLocation(); b.requests[0].failure({ code: 1 }); await settle();
+  assert.equal(b.adapter.snapshot().permission.geolocation.state, 'prompt');
+  assert.equal(b.adapter.acquireLocation().ok, true);
+  b.requests[1].success(fix()); assert.equal(b.last('geolocation').data.accuracyM, 20);
+  b.adapter.stop();
+  const c = fixture(); c.statuses.geolocation.state = 'denied'; c.adapter.start(context());
+  c.adapter.acquireLocation(); c.requests[0].failure({ code: 1 }); await settle();
+  assert.equal(c.adapter.snapshot().permission.geolocation.state, 'denied');
+  c.statuses.geolocation.state = 'granted'; c.statuses.geolocation.dispatch('change');
+  assert.equal(c.adapter.acquireLocation().reason, 'permission-denied-or-revoked'); c.adapter.stop();
+});
+
+test('N7 a thirty-second prompt does not discard the first GPS or motion grant', async () => {
+  const b = fixture(); const permission = deferred();
+  b.platform.navigator.permissions.query = () => permission.promise;
+  b.adapter.start(context()); b.adapter.acquireLocation(); const motion = b.adapter.acquireMotion();
+  b.advance(30_000); b.requests[0].success(fix(WALL + 30_000)); b.motionRequests[0].resolve('granted');
+  assert.equal((await motion).ok, true); assert.equal(b.last('geolocation').sourceTime.value, WALL + 30_000);
+  assert.equal(b.adapter.snapshot().summary.requests, 2);
+  assert.equal(b.requests[0].args.timeout, PROVISIONAL_BUDGET.requestTimeoutMs);
+  b.adapter.stop(); permission.resolve(b.statuses.geolocation); await settle(); assert.equal(b.timers.size, 0);
+});
+
+test('N7 permission-prompt deadline remains inclusive when browser timers are delayed', async () => {
+  for (const [elapsed, expected] of [[119999, true], [120000, false], [120001, false]]) {
+    const b = fixture(); b.adapter.start(context()); const pending = b.adapter.acquireMotion();
+    b.advance(elapsed); b.motionRequests[0].resolve('granted');
+    const result = await pending; assert.equal(result.ok, expected);
+    if (!expected) assert.equal(result.reason, 'permission-prompt-timeout');
+    b.adapter.stop(); assert.equal(b.platform.count() + b.timers.size, 0);
+  }
+});
+
+test('N9 synchronous GPS denial or sink stop cannot report a successful acquisition', () => {
+  const b = fixture(); b.geo.watchPosition = (success, failure) => { failure({ code: 1 }); return 991; };
+  b.adapter.start(context());
+  assert.equal(b.adapter.acquireLocation({ watch: true }).reason, 'permission-not-granted');
+  assert.deepEqual(b.cleared, [991]); b.adapter.stop();
+  const c = fixture(); let adapter;
+  adapter = createPhoneObservationAdapter({ ...c.config, sink(event) {
+    if (event.type === 'geolocation') adapter.stop();
+  } });
+  c.geo.watchPosition = (success) => { success(fix()); return 992; };
+  adapter.start(context()); assert.equal(adapter.acquireLocation({ watch: true }).reason, 'session-stopped');
+  assert.deepEqual(c.cleared, [992]);
+});
+
+test('N10 observer fulfil-path exceptions are caught and normal notifications follow listener setup', async () => {
+  const b = fixture(); b.statuses.geolocation.addEventListener = () => { throw new Error('private status failure'); };
+  b.adapter.start(context()); b.adapter.acquireLocation(); await settle();
+  assert.equal(b.adapter.snapshot().summary.permissionObserverErrors, 1);
+  assert.equal(JSON.stringify(b.events).includes('private status failure'), false); b.adapter.stop();
+  const c = fixture(); const counts = [];
+  const adapter = createPhoneObservationAdapter({ ...c.config, sink(event) {
+    if (event.type === 'permission' && event.data.source === 'permissions:geolocation') counts.push(c.statuses.geolocation.count());
+  } });
+  adapter.start(context()); adapter.acquireLocation(); await settle(); assert.deepEqual(counts, [1]); adapter.stop();
+});
+
+test('N11 a throwing motion timer settles explicitly, retires the token and handles its later rejected promise', async () => {
+  const b = fixture(); const original = b.platform.setTimeout; b.adapter.start(context());
+  b.platform.setTimeout = () => { throw new Error('private timer failure'); };
+  assert.equal((await b.adapter.acquireMotion()).reason, 'timer-unavailable');
+  b.motionRequests[0].reject(new Error('private late rejection')); await settle();
+  assert.equal(b.platform.count('devicemotion'), 0);
+  b.platform.setTimeout = original;
+  const next = b.adapter.acquireMotion(); b.motionRequests[1].resolve('granted'); assert.equal((await next).ok, true);
+  b.adapter.stop(); assert.equal(b.timers.size, 0);
+});
+
+test('N12 sink stream cancellation and backward motion clock retain distinct reasons', async () => {
+  const b = fixture(); let adapter;
+  adapter = createPhoneObservationAdapter({ ...b.config, sink(event) {
+    if (event.type === 'acquisition-request') adapter.stopMotion();
+  } });
+  adapter.start(context()); assert.equal((await adapter.acquireMotion()).reason, 'obsolete-request');
+  assert.equal(b.motionRequests.length, 0); adapter.stop();
+  const c = fixture(); c.adapter.start(context()); c.advance(1000);
+  const pending = c.adapter.acquireMotion(); c.clocks(WALL + 500, 1000); c.motionRequests[0].resolve('granted');
+  assert.equal((await pending).reason, 'clock-regressed');
+  assert.equal(c.last('acquisition-error').data.reason, 'clock-regressed');
+  assert.equal(c.last('acquisition-timeout'), undefined); c.adapter.stop();
+});
+
+test('N13 queued location events are redacted on sink withdrawal before subsequent delivery', () => {
+  const b = fixture(); let adapter; let first = true;
+  adapter = createPhoneObservationAdapter({ ...b.config, sink(event) {
+    b.events.push(event);
+    if (event.type === 'geolocation' && first) { first = false; adapter.revokeConsent(); }
+  } });
+  b.geo.watchPosition = (success) => { success(fix()); b.advance(1000); success(fix(WALL + 1000)); return 993; };
+  adapter.start(context());
+  assert.equal(adapter.acquireLocation({ watch: true,
+    preciseConsent: { granted: true, purpose: 'trip', reference: 'consent' } }).ok, false);
+  const fixes = b.events.filter((e) => e.type === 'geolocation');
+  assert.equal(fixes.length, 2); assert.notEqual(fixes[0].data.coordinates, null);
+  assert.equal(fixes[1].data.coordinates, null); assert.equal(fixes[1].data.redaction, 'consent-withdrawn');
+  assert.equal(JSON.stringify(adapter.snapshot()).includes('-12.04318'), false);
+  assert.deepEqual(b.cleared, [993]); assert.equal(adapter.snapshot().summary.sinkErrors, 0);
 });
