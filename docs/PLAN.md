@@ -9,11 +9,15 @@ All 63 original nodes are retained below. The 44 task nodes map to GitHub issues
 
 Project: ANDES (hackathon). Team: GOAT. This project has its own workspace and GitHub repository, separate from SurcoCheck.
 
-Product scope: drivers across Latin America, including Brazil, who own or use one or two cars and want a trusted contact to know when an agreed trip check-in or arrival is missed. Personal and work journeys are eligible use cases; Peruvian nationality, residence or routes are not product requirements. Interurban journeys are a candidate research scenario, not an eligibility restriction. Regional demand and effectiveness remain unvalidated.
+Product scope: independent freight truck drivers and owner-operators across Latin America, including Brazil, who typically own or operate one or two trucks (camiones/caminhões). The individual driver is the primary customer. Freight transport is the target use case, covering local and interurban haulage; a corporate fleet account or control centre is not required. The product is designed around the phone and trusted contacts the driver already has.
+
+Core problems: robbery or attempted robbery during freight transportation, and fatigue or falling asleep while driving. ANDES aims to help drivers request support, keep trusted contacts informed and preserve useful security/fatigue evidence. Record phone and route observations, bounded check-ins, driving/rest context, attributed fatigue or sleepiness reports, and reported security incidents. Keep unknown, self-reported, suspected and independently corroborated events distinct.
+
+Positioning: a direct-to-driver service for small owner-operators, with simple onboarding and individual control over sharing. The founder identifies a gap in products oriented toward large fleets. Whether current alternatives fail this segment, how common one/two-truck ownership is and what drivers will pay remain research questions; no market-share statistic or competitor capability is asserted.
 
 Design for Spanish and Brazilian Portuguese, configurable country/locale, international phone numbers and local time zones. Additional language coverage must be stated explicitly. Validation may start with a small evidence-selected cohort and corridor in any Latin American country. Record the countries, languages and conditions actually tested; a local sample does not validate the whole region. Each enabled country/channel/language combination needs its own support evidence, with unsupported conditions shown honestly.
 
-Critical scenario: a driver misses an agreed trip check-in or arrival, and the contact cannot tell whether to act. Intended benefit: reduce avoidable delay to an appropriate contact action without increasing driving distraction or overwhelming contacts. Phone signal -> qualified observation -> bounded check-in -> uncertain-status alert -> contact acknowledgement -> recorded action is the causal chain to test. No claim of preventing crashes or detecting sleep, robbery or weapons.
+Critical scenarios: a freight driver requests help or reports a security incident; a driver reports tiredness and needs a safe rest/support action; or an agreed check-in/arrival is missed and the trusted contact cannot tell whether to act. Intended benefit: reduce avoidable delay to appropriate contact action without increasing driving distraction or alarm burden. Phone signal -> qualified observation/report -> bounded check-in or explicit help -> attributed/uncertain alert -> contact acknowledgement -> recorded action is the causal chain to test. Phone telemetry and missed replies alone do not establish sleep or robbery. Any later automatic detection or stronger safety claim requires independent validation; weapon detection is not an implemented capability.
 
 Incoming flow: Entry/context.
 
@@ -23,6 +27,8 @@ Define the initial harm, inventory original evidence and challenge the three cla
 
 The target market is Latin America. Record the countries, languages, devices and routes represented by evidence; a local validation cohort must not become a Peru-only product requirement.
 
+Validate the freight owner-operator problem directly: robbery/security concerns and fatigue/sleepiness during transport. Test the proposed gap against the drivers' actual tracking/contact tools, purchase decisions and setup constraints; a large-fleet comparison alone does not establish unmet demand.
+
 Incoming flow: entry.
 
 ### Prepare a safe trip
@@ -30,6 +36,8 @@ Incoming flow: entry.
 Make the monitoring limits, driver choices and contact responsibilities understandable before departure. Gate the journey on observed comprehension and safe interaction, with a clear server registration and cancellation contract.
 
 Support country and language selection for Latin American drivers and contacts. Verify localised comprehension, international phone entry and time-zone handling without a hard-coded Peruvian default.
+
+The account is controlled by an individual freight driver with one or two trucks. Keep registration and trusted-circle setup usable without an enterprise fleet administrator or dispatcher.
 
 Incoming flow: validate [Evidence passes].
 
@@ -39,11 +47,15 @@ Capture only supported observations with provenance, freshness and missingness. 
 
 Retain country, locale and time-zone provenance so route context and observed coverage remain interpretable across Latin America.
 
+Capture freight-trip security and fatigue evidence explicitly, including reported rest/tiredness and reported incidents with their source and corroboration level. Generic location traces cannot substitute for these outcomes.
+
 Incoming flow: prepare.
 
 ### Adapt safety check-ins
 
 Test H1: bounded adaptive check-ins must add useful information without demanding attention at an unsafe time. Compare the simplest fixed policy and current contact practice before accepting added adaptation.
+
+Keep fatigue/rest self-report and security/help reports as explicit states in freight scenarios. Do not infer either from a slow response or phone movement; capture incident detail later when safe.
 
 Incoming flow: track.
 
@@ -52,6 +64,8 @@ Incoming flow: track.
 Test H2: persist deadlines, qualify uncertainty and progress from delivery to human action. Gate each promised channel on observed receipts and contact behaviour, including ambiguous failures and unavailable recipients.
 
 Enable each country/channel/language combination only with evidence for the actual driver and recipient destinations; do not infer regional delivery from one country test.
+
+Route explicit freight security/help reports and fatigue/rest-support requests through the agreed trusted circle. A missing check-in remains an unknown-status event; it is not a confirmed robbery or sleep event.
 
 Incoming flow: checkins.
 
@@ -77,6 +91,8 @@ Later conditional phase for H3. Separate operational observations, self-reports 
 
 Label results by country, language, route and measured exposure; any regional aggregate must disclose which populations and conditions are represented.
 
+The later data purpose includes freight-security and fatigue/rest patterns by route and time. Distinguish reported events from corroborated incidents and retain exposure and uncertainty for both.
+
 Incoming flow: candidate [Data gates pass].
 
 ### Evidence review complete
@@ -87,7 +103,7 @@ Incoming flow: insights.
 
 ### GOAT project and delivery
 
-Authorised now: publish this existing Codus plan as open GitHub issues in the separate private Bimbi-Dev/andes-hackathon repository, team GOAT, and invite Robertzu43 with write access. The geographic scope now covers drivers across Latin America, including Brazil, in the existing one-or-two-car segment. The seven sections, 63 nodes and 44 task nodes are retained; the regional requirements are incorporated into existing tasks. App implementation, provider activation, participant recruitment, trip collection and live pilots have not started.
+Authorised now: publish this existing Codus plan as open GitHub issues in the separate private Bimbi-Dev/andes-hackathon repository, team GOAT, and invite Robertzu43 with write access. The scope is independent freight truck drivers/owner-operators across Latin America, including Brazil, typically with one or two trucks. Robbery during transport and fatigue/sleepiness are the core problems; the individual driver is the primary customer. The seven sections, 63 nodes and 44 task nodes are retained; the regional requirements are incorporated into existing tasks. Sebastian has authorised starting his assigned engineering work: the #8 evidence kit and preparatory #9 iPhone recorder/protocol are in progress. Android remains untested. Real participant interviews, provider activation, trip collection and live pilots have not started; tooling does not satisfy those evidence gates.
 
 ANDES is separate from SurcoCheck, with independent code, configuration, data and delivery ownership. Before starting a section, satisfy its evidence gate. Missing or inconclusive evidence is not a pass. Use issue closure only for completed work supported by evidence. Invitation acceptance must be reported separately from sending the invitation. Hosting deployment, spending and live pilots remain separately scoped.
 
@@ -99,12 +115,14 @@ H1: a bounded check-in can obtain useful status without unsafe distraction. H2: 
 
 Heartbeat means an “I’m OK” check-in, not cardiac pulse. Device liveness, prompt delivery, driver response and wellbeing are different facts. An OK reply is time-specific self-report; a missing reply is unknown. A careful driver on a curve may respond slowly. More prompting on that curve can manufacture a misleading hotspot.
 
+Robbery and fatigue are the product's motivating problems. Their measurement must distinguish an attributed report (for example tiredness, suspected threat or a reported attempted robbery), the app's observations and any independently corroborated outcome. A missing reply is never a substitute for an incident label.
+
 Incoming flow: Entry/context.
 
 <a id="validate"></a>
 ## Validate the promise
 
-### Reconstruct real trip incidents · #8
+### Reconstruct freight trip incidents · #8
 
 Claim: the initial cohort experiences avoidable delay between an unconfirmed trip status and useful contact action. Start from original driver/contact accounts and consented timestamps, not competitor marketing or founder summaries.
 
@@ -112,7 +130,9 @@ Smallest proposed collection after separate authorisation: five driver-contact p
 
 Tools: recorded interview/transcript with consent and a spreadsheet timeline with source IDs, observed versus recalled timestamps, contradictions and uncertainty. Compare with their actual WhatsApp/call arrangements and include harmless late replies. Independent criterion: both participants review their own account; a reviewer outside implementation can trace the claimed intervention window to source records. Change/stop: if records show no actionable window, nobody available to act, or no unmet problem, revise the scenario before building. Output: cohort brief, evidence inventory and baseline timelines.
 
-Recruitment eligibility, when authorised, may include drivers from any Latin American country in the one-or-two-car segment; do not require Peru or work-only journeys. Record country, preferred language, journey purpose, route, connectivity and contact arrangement. Select the exploratory cohort from accessible original evidence and report its coverage gaps; five pairs cannot establish regional demand. Preserve Spanish/Portuguese language needs in the handoff even if the first sample covers only one language.
+Recruitment eligibility, when authorised, is independent freight drivers/owner-operators from any Latin American country who typically own or operate one or two trucks. Record country, preferred language, truck count/driver role, freight journey type, route, connectivity and trusted-contact arrangement. Do not require Peru or a large-fleet employer. Select the exploratory cohort from accessible original evidence and report its coverage gaps; five pairs cannot establish regional demand. Preserve Spanish/Portuguese language needs in the handoff even if the first sample covers only one language.
+
+Cover the two motivating problems in interviews without requiring a participant to have experienced both: robbery/attempted robbery or security concern during freight transport, and tiredness/sleepiness or a rest-related difficulty. Use ordinary freight trips as counterexamples. Record source, observed versus recalled time, road context, reported rest, action taken, outcome and any independently available corroboration; preserve missing evidence. Ask what existing GPS/fleet/contact tools they actually use, what setup/cost constraints matter and whether the proposed driver-controlled flow adds value. Do not infer prevalence or willingness to pay from the founder's description.
 
 Entry in this section.
 
@@ -128,7 +148,9 @@ Accept: each promised state has reproducible device evidence, and every unavaila
 
 Tie the capability matrix to the devices, carriers, connectivity and languages represented in the selected Latin American cohort. Device evidence from one setup is not country-wide coverage evidence; keep untested combinations explicit.
 
-Incoming flow: Reconstruct real trip incidents.
+Qualify the recorder in the freight cab use context when actual testing is authorised: phone placement, navigation/calls, mounting vibration, charging and connectivity may affect observations. Do not treat motion or a quiet phone as evidence of sleep, assault or cargo theft. Start with the available iPhone; keep Android and other configurations untested until measured.
+
+Incoming flow: Reconstruct freight trip incidents.
 
 Codus node: `pn_mvcq4l8x_bee2e7`
 
@@ -158,6 +180,8 @@ Zero-tolerance deterministic gates: no forced screen interaction to prevent an a
 
 Freeze the country, language, route and device conditions to which each acceptance threshold applies. Record what must be retested before enabling another combination; do not silently transfer local timings or tolerances to all Latin American drivers.
 
+The hazard table must cover explicit help/security reports, fatigue/rest-support requests and uncertain lost contact during freight transport. Separate operational response performance from the eventual claims of reduced robbery or fatigue-related harm. Make route/cargo disclosure during a security event a specific privacy failure case.
+
 Incoming flow: Verify channel evidence.
 
 Codus node: `pn_mvcq4lwg_71ec5d`
@@ -170,6 +194,8 @@ Deliver a small architecture decision record, the check-in/escalation state mach
 
 Keep country, locale, message templates, channel eligibility and verified emergency guidance configurable. Support international phone identities and explicit time zones; do not hard-code Peru, a single dialling prefix, national document or plate format. Unknown or changed country/channel coverage must use the existing degraded/unavailable states rather than an unsupported safety promise. This extends the existing contracts, not the number of workstreams.
 
+The product boundary is a driver-controlled account with one or two freight trucks; a corporate fleet tenant or dispatcher workflow is not a prerequisite. Extend the existing event contract with typed fatigue/rest and security reports, reporter/source and corroboration state. These are requirements for the existing architecture task, not a new fleet-management product.
+
 Incoming flow: Set evidence and stop gates.
 
 Codus node: `pn_mvcq4m7h_1e9695`
@@ -178,9 +204,11 @@ Codus node: `pn_mvcq4m7h_1e9695`
 
 Available now: the user's original product description; the existing native plan and local spec; the user's clarification that Chofex's CEO only made a Samsara comparison, with no unmet-need evidence or pilot offer (Brain note 1842). The old freight-vision validation.json contains public/sample-video vehicle/dwell smoke tests, including a failed parking case; it does not validate phone-based check-ins or real drivers. Source: the separate freight-vision prototype validation.json, retained in the private research archive and not bundled with this repository.
 
-Not supplied/collected for this mobile hypothesis: original driver/contact interviews, consented real journey traces, communication logs, phone lifecycle measurements, provider receipts, independent incident labels or baseline response/burden measures. Their absence is an evidence gap, not evidence that the hypothesis passes. The smallest acquisition exercise is in Reconstruct real trip incidents; device and channel tasks specify their own missing measurements.
+Not supplied/collected for this mobile hypothesis: original driver/contact interviews, consented real journey traces, communication logs, phone lifecycle measurements, provider receipts, independent incident labels or baseline response/burden measures. Their absence is an evidence gap, not evidence that the hypothesis passes. The smallest acquisition exercise is in Reconstruct freight trip incidents; device and channel tasks specify their own missing measurements.
 
 Primary references checked 17 October 2026: MIT STPA methods https://psas.scripts.mit.edu/home/books-and-handbooks/ ; attention/distraction https://www.nhtsa.gov/book/countermeasures-that-work/distracted-driving ; geolocation https://www.w3.org/TR/geolocation/ ; Web Push https://webkit.org/blog/12945/meet-web-push/ . These support methods/platform constraints, not this product's efficacy or country-specific compliance anywhere in Latin America. Previously reviewed device permission reference: https://developer.mozilla.org/en-US/docs/Web/API/DeviceMotionEvent/requestPermission_static . Meta Groups documentation was rate-limited in the earlier review; account/existing-group capability remains unverified. No new customer research has been performed by upgrading this plan.
+
+The founder's corrected brief identifies independent one/two-truck freight owner-operators, robbery during transport and fatigue/falling asleep as the problem focus. The claim that mainstream tools underserve this group is a research hypothesis; no customer sample, ownership prevalence statistic or competitor-gap finding is supplied by the correction.
 
 Entry in this section.
 
@@ -191,23 +219,27 @@ Codus node: `pn_mvcq4mpt_a00d76`
 
 ### Validate the mobile journey · #13
 
-Map Home, Cars, Trusted Contacts, Start Trip, Active Trip, Check-in, Alert Status, Contact Response, Trip Summary and Privacy. Use a low-bandwidth, localisable clickable flow with Spanish and Brazilian Portuguese variants, large targets, screen-reader labels and clear permission states. Include explicit country/language choice and local phone, date and time presentation; language must not be inferred solely from location. Setup takes place while stationary.
+Map Home, Trucks, Trusted Contacts, Start Trip, Active Trip, Check-in, Alert Status, Contact Response, Trip Summary and Privacy. Use a low-bandwidth, localisable clickable flow with Spanish and Brazilian Portuguese variants, large targets, screen-reader labels and clear permission states. Include explicit country/language choice and local phone, date and time presentation; language must not be inferred solely from location. Setup takes place while stationary.
 
 Evidence gate: observed task walkthroughs with representative drivers/contacts, screen recordings and teach-back of what “unknown”, last location and alert acknowledgement mean. Every critical task must be completed and limits explained without facilitator rescue; record all confusion before revision. A stationary walkthrough establishes comprehension, not driving safety. Driving interaction requires the separate human-factors gate. Remove typing and any requirement to look/tap while moving to prevent an alarm. A visually polished screen cannot close this task without the observation record.
 
 Validate each enabled language with drivers and contacts who use it, including translated uncertainty and help messages. Preserve layout and accessibility with longer text. Any untested language remains labelled as such; a Spanish-only walkthrough cannot establish suitability for Brazil.
 
+Use freight-driver terminology: Trucks / Camiones / Caminhões, freight trip, rest and trusted contacts. Show fatigue/rest and security/help reporting without requiring an incident description while moving; collect detailed context when stationary or through an authorised contact. The default flow must be usable by one owner-operator without a company dashboard.
+
 Entry in this section.
 
 Codus node: `pn_mvcq4rfu_e36ab0`
 
-### Verify driver and cars · #14
+### Verify driver and trucks · #14
 
-Create driver-entered phone verification and one/two-car profiles with a nickname and useful identification. Do not infer SIM number or identity from browser access. Include recovery, number change and shared-car assignment; car ownership alone never grants covert location access.
+Create driver-entered phone verification and one/two-truck profiles with a nickname and useful identification. Do not infer SIM number or identity from browser access. Include recovery, number change and shared-truck assignment; truck ownership alone never grants covert location access.
 
-Acceptance evidence: designated test-account verification/recovery logs, expired/reused-code cases and cross-driver access tests. The acting driver's explicit trip selection must determine which contacts and car are associated. A second tester must confirm number recycling or shared cars cannot expose another driver's history. Unresolved identity/permission ambiguity blocks trip sharing.
+Acceptance evidence: designated test-account verification/recovery logs, expired/reused-code cases and cross-driver access tests. The acting driver's explicit trip selection must determine which contacts and truck are associated. A second tester must confirm number recycling or shared trucks cannot expose another driver's history. Unresolved identity/permission ambiguity blocks trip sharing.
 
-Accept driver-entered international numbers with an explicit country selector and canonical international representation; test at least distinct Latin American numbering patterns including Brazil, plus number changes. Phone-number country, residence and trip country are separate facts. Keep car identification flexible across countries; do not require a Peruvian document or plate pattern. No number-validation fixture proves provider delivery.
+Accept driver-entered international numbers with an explicit country selector and canonical international representation; test at least distinct Latin American numbering patterns including Brazil, plus number changes. Phone-number country, residence and trip country are separate facts. Keep truck identification flexible across countries; do not require a Peruvian document or plate pattern. No number-validation fixture proves provider delivery.
+
+Represent the driver's relationship to each freight truck without creating a fleet-company account requirement. Truck count and role describe the target segment; they do not grant permission to track another driver.
 
 Incoming flow: Validate the mobile journey.
 
@@ -221,17 +253,19 @@ Claim: a named contact is willing and able to take a useful action, not merely r
 
 Store each contact's preferred language, phone-number country and verified reachable channels independently from the driver's country. Confirm mutual understanding of the localised message and agreed action; a foreign number does not imply nearby physical assistance.
 
-Incoming flow: Verify driver and cars.
+Incoming flow: Verify driver and trucks.
 
 Codus node: `pn_mvcq4s7y_319dc6`
 
 ### Register the trip and limits · #16
 
-Before departure select car, destination/expected arrival, optional route, planned stops and accepted contacts. Explain the tested capability limits and policy; check permissions while stationary. Server acknowledgement must confirm durable trip and deadline registration before showing monitoring configured.
+Before departure select truck, destination/expected arrival, optional route, planned stops and accepted contacts. Explain the tested capability limits and policy; check permissions while stationary. Server acknowledgement must confirm durable trip and deadline registration before showing monitoring configured.
 
 Test with dropped start responses, offline setup, denied sensors, unavailable channels, refresh and duplicate submit. Accept: the independent observer can reconcile the displayed state with one server trip and one valid deadline; an unknown registration never displays active coverage. A timed-check-in-only mode must name its limits, and lack of contact delivery capability must remain visible. Avoid an unqualified “protected” claim. Unregistered trips cannot be silently treated as covered.
 
 Make departure/destination country context and arrival time zone explicit where relevant; display local times and retain unambiguous instants for server deadlines. Test different device/destination time zones and changed or unknown country coverage. Preserve the existing unsupported/degraded flow when the route or recipient combination lacks evidence, including cross-border trips; do not silently assume home-country coverage.
+
+Associate each freight trip with the selected truck and driver, planned rest/check-in arrangement and agreed contacts. Use only the transport context needed for safety; cargo value, customer details and manifests are not required default inputs.
 
 Incoming flow: Validate the trusted circle.
 
@@ -242,6 +276,8 @@ Codus node: `pn_mvcq4sje_2fe977`
 Model planned rest, extension, cancellation and arrival with explicit server acknowledgement. Pause/extension has a bounded new deadline; arrival cancels future check-ins and escalation jobs. Already sent alerts receive a scoped resolution update where possible. Contact acknowledgement cannot declare the driver safe.
 
 Acceptance evidence: deterministic event replay of arrival versus worker dispatch, delayed offline closure, repeated taps, restart and expired pause. Zero obsolete escalation may be initiated after committed resolution; if the provider already accepted a send, record that fact and reconcile rather than promise recall. The same final state must appear on Active Trip, Contact Response and Summary. Preserve unresolved contact/driver disagreement and retest the failing race.
+
+Record planned and reported actual rest separately, including the driver's attributed tiredness/sleepiness report when supplied. A parked truck or a break timer does not establish that the driver slept or recovered.
 
 Incoming flow: Register the trip and limits.
 
@@ -257,6 +293,8 @@ Schema: event/trip/session ID, sequence, source time, server receipt time, timez
 Tooling: versioned data dictionary, labelled JSON fixtures and SQL reconciliation queries. Observer ground truth is stored separately from model/rule outputs and preserves disagreement; do not let an alert label its own “incident”. Acceptance: another engineer reproduces the trip timeline and denominators from raw events, including duplicate, out-of-order and clock-skew cases. If source/receipt times cannot be reconciled, mark uncertain latency instead of inventing precision.
 
 Represent country context, user/contact locale and the provenance or uncertainty of each. Store event instants consistently with an explicit offset and IANA time-zone identifier for local-hour derivation where known. Test offset changes, device-zone mismatch and unknown country/zone without moving an already agreed deadline. Do not infer trip country from the phone prefix.
+
+Add explicit event categories for fatigue/sleepiness self-report, planned/started/ended rest, security concern, reported attempted robbery, reported robbery/theft, help request and independently corroborated outcome. Preserve reporter role/source, event time and uncertainty, source/receipt times, truck/trip reference, location accuracy or unknown context, reported action and verification status. Reporter information and evidence references remain access-controlled. Test that no telemetry or no-response rule silently upgrades a report to confirmed sleep/crime; the schema must retain contradictory accounts.
 
 Entry in this section.
 
@@ -279,6 +317,8 @@ Attach local hour, elapsed trip time, time since reported break, road segment an
 Compare representative traces with independently reviewed locations, including parallel roads, poor GPS and passing a petrol station without stopping. Accept only matches supported by position uncertainty; otherwise retain unknown context. A nearby station cannot establish a safe stop, and a curve cannot justify pressuring a driver to respond. Geometry/time may inform conservative deferral; they do not establish sleep or crime risk. Reject context rules whose benefit depends on precise map knowledge the phone cannot supply.
 
 Qualify map coverage per country and route, and derive local hour from the observed location/time-zone evidence rather than a fixed Peru offset. Test cross-zone or cross-border context and unknown mappings; unsupported enrichment must not fabricate road risk or block the existing deadline path.
+
+Use freight route/stop context where available, and keep a mapped rest stop separate from an observed stop and a driver-reported rest. Record time since a reported break without treating it as a medical diagnosis or proving continuous driving from sparse GPS.
 
 Incoming flow: Qualify phone observations.
 
@@ -347,6 +387,8 @@ Replay OK, tired self-report, explicit help, unanswered delivery, delivery unkno
 
 Counterexamples: a careful driver ignores a curve prompt; a message arrives after arrival; phone stolen/offline; a passenger replies; a stale OK arrives after a newer help request. Accept: unsafe opportunities are deferred, late events cannot erase current help state, and no response grants indefinite reassurance. Compare added adaptation against the fixed safe policy on held-out scenarios. If it adds burden or only reclassifies noise, keep the simpler policy and record the rejected rule.
 
+Treat a security report/SOS as a request for help with attributed or uncertain facts, not a request for the driver to gather proof. For fatigue, record the report and proposed rest/contact action without requiring continued interaction while driving. Distinguish reported sleepiness from a later independently documented sleep-related event.
+
 Incoming flow: Separate delivery from response.
 
 Codus node: `pn_mvcq52sw_695a01`
@@ -384,6 +426,8 @@ Define useful action from the incident timeline before testing: for example a co
 
 Accept: independent scenario labels map every transition to an appropriate action and uncertainty statement. No response must never become “robbery confirmed”. If nobody can reasonably act within T_action, narrow the service promise; provider delivery alone cannot rescue it.
 
+Represent the reason for escalation separately from delivery and action state: explicit security/help report, fatigue/rest-support request or unconfirmed trip status. Alert wording must preserve who reported the problem and whether it has been corroborated.
+
 Entry in this section.
 
 Codus node: `pn_mvcq57ru_d409aa`
@@ -400,11 +444,13 @@ Codus node: `pn_mvcq58gp_395557`
 
 ### Qualify contact notifications · #31
 
-Send incident/stage/recipient/channel attempts with the observed status, last location and age, driver/car reference and scoped response link. Use verified WhatsApp one-to-one templates, SMS fallback and voice according to a pre-agreed priority/deadline policy. Payload minimisation and contact opt-in apply to every route.
+Send incident/stage/recipient/channel attempts with the observed status, last location and age, driver/truck reference and scoped response link. Use verified WhatsApp one-to-one templates, SMS fallback and voice according to a pre-agreed priority/deadline policy. Payload minimisation and contact opt-in apply to every route.
 
 Evidence: sandbox/authorised-recipient logs plus recipient screenshots or observation, with IDs and timestamps. Test unavailable channels, expired links, wrong/revoked contacts and language comprehension. Accept: recipients understand what is uncertain and what action is requested; sending fits T_action and never discloses a full route unnecessarily. Unproven channels remain disabled/conditional. This plan edit sends nothing.
 
 Choose verified templates and voice content using the recipient's preferred language and the country/channel support matrix. Test Spanish and Brazilian Portuguese, international recipients and unsupported destinations. A channel proven in one country must remain conditional elsewhere until its delivery and comprehension checks pass.
+
+Include the freight truck reference and minimum useful incident context; keep reported robbery/attempt/fatigue wording attributed. Do not broadcast cargo details, a full route or unnecessary evidence attachments to contacts or colleague groups.
 
 Incoming flow: Prove durable notification jobs.
 
@@ -471,6 +517,8 @@ Future verification only, after the evidence contract is fixed. Use synthetic/co
 
 Run current practice and proposed policy on matched safe scenarios; retain development/holdout separation. Save revision, configuration, device versions, observer labels, source/receipt clock uncertainty and every failure. A scenario matrix maps each H1/H2/H3 constraint to an existing verification axis. No real emergency, deliberately tired driving or external contact is authorised by this plan edit.
 
+Include safe synthetic or consented freight scenarios for an explicit security report, a reported attempted robbery, a fatigue/rest request, ordinary late delivery, a planned freight stop and contradictory incident accounts. Prove reporting, provenance and response handling; no test induces robbery or drowsy driving.
+
 Entry in this section.
 
 Codus node: `pn_mvcq5lk1_fd0e00`
@@ -495,7 +543,7 @@ Codus node: `pn_mvcq5ma5_740ad7`
 
 ### Trip state and meaning pass? · action
 
-Replay start/unknown registration, rest/extension, arrival, cancellation, late OK, explicit SOS and contact acknowledgement. Inspect Home, Cars, Contacts, Active Trip, Check-in, Alert Status, Contact Response, Summary and Privacy for shared-state regressions.
+Replay start/unknown registration, rest/extension, arrival, cancellation, late OK, explicit SOS and contact acknowledgement. Inspect Home, Trucks, Contacts, Active Trip, Check-in, Alert Status, Contact Response, Summary and Privacy for shared-state regressions.
 
 Independent expected transitions must match UI/server events through duplicate submit, concurrent actions, offline closure and cross-trip isolation. Pass requires no stale alert initiation after resolved state, no acknowledgement mistaken for driver safety and no erased help request from an older OK. Unknown state remains explicit. Any critical mismatch follows the No repair branch.
 
@@ -577,7 +625,7 @@ Codus node: `pn_mvcq5pql_d275be`
 
 ### Compare a bounded pilot · #37
 
-Future execution after separate authorisation only. Choose a bounded owner-driver cohort and evidence-selected corridor in any Latin American country, with accepted contacts. The product remains region-wide; the pilot records the specific country, language, route, device and provider combinations it tests. Begin with stationary scenarios and shadow observation; moving interaction requires the human-factors gate. Keep existing safety arrangements available and never induce fatigue, crime or an emergency.
+Future execution after separate authorisation only. Choose a bounded cohort of independent freight owner-operators with one or two trucks and an evidence-selected corridor in any Latin American country, with accepted contacts. The product remains region-wide; the pilot records the specific country, language, route, device and provider combinations it tests. Begin with stationary scenarios and shadow observation; moving interaction requires the human-factors gate. Keep existing safety arrangements available and never induce fatigue, crime or an emergency.
 
 Register baseline/current practice, fixed versus adaptive comparison, eligible cases, action ground truth, missing-outcome handling, budgets and stopping rules before looking at outcomes. Proposed 10-20 drivers is feasibility recruitment only; derive duration/sample/exposure from baseline variation and desired precision. Repeated trips are not independent people. Where safe and practical, counterbalance within-driver conditions; label observational comparisons and confounding honestly.
 
@@ -620,6 +668,8 @@ This later phase requires the driver-value gate and enough consented observation
 
 Test with consent-state fixtures and participant teach-back: declining contribution must not remove core trip assistance. Verify deletion/withdrawal reaches derived datasets where applicable, and explain any irreversibly aggregated outputs. A privacy reviewer independently checks access and re-identification risks. Missing lawful/understood permission or an unresolved precise-location exposure blocks collection/release. No country-specific compliance claim is established by this plan.
 
+Explain optional reuse of freight security reports and fatigue/rest reports, including who may receive aggregates. Operational help-sharing remains separate from company/authority research access; sensitive route and cargo context must not become a default export.
+
 Entry in this section.
 
 Codus node: `pn_mvcq5fk5_cff5ef`
@@ -632,6 +682,8 @@ Tools: versioned schema and SQL reconciliation against raw operational fixtures.
 
 Retain country, language, route coverage and source time-zone lineage with consent provenance. Keep unknown geography explicit; regional pooling must not erase which population supplied the observations.
 
+Keep separate, source-linked records for fatigue/sleepiness reports, reported rest, security concerns, reported attempted/completed robbery and corroborated outcomes. Retain their observation windows, eligible reporting opportunities, source and verification status so the data can answer freight-security and fatigue questions without treating alerts as ground truth.
+
 Incoming flow: Gate voluntary data contribution.
 
 Codus node: `pn_mvcq5fw1_d523dd`
@@ -643,6 +695,8 @@ H3 claim: data can describe observed check-in patterns by local hour and road co
 Independently corroborated incidents may use trips or covered kilometres only when numerator/outcome linkage and exposure are adequate. SQL/Python analysis must show independent drivers, trips, coverage/missingness and uncertainty alongside every rate. A second analyst must reproduce a small hand-labelled fixture and then the analysis from raw events. If a denominator or outcome is absent, withhold the rate/ranking rather than fill gaps with inferred danger.
 
 Publish country/route/language coverage and denominators before any Latin America aggregate. Pool only comparable measures with an explicit rationale; expose uneven coverage and never present one country's observed rate as representative of the region.
+
+Report fatigue self-reports and reported security incidents separately from independently corroborated events. Any route/hour comparison must show freight-trip or relevant driver-hour/distance exposure, repeated-driver structure and reporting opportunity. Neither a count of reports nor one silent phone establishes theft risk or sleep incidence.
 
 Incoming flow: Preserve analytical provenance.
 
@@ -669,6 +723,8 @@ Release tiers: (1) observed response/coverage patterns; (2) attributed tiredness
 Before a stronger claim, compare independent outcomes whose provenance and time/location linkage were assessed without using our alert as the label. Preserve disagreements and missing outcomes. Independent methodology/privacy review must reproduce the result and approve its wording. Small/sparse data or absent ground truth keeps the report descriptive or withheld. Authorities/companies receive only specifically approved aggregates; individual evidence export is a separate driver choice.
 
 State the countries, languages, routes and observation window actually represented. Regional wording requires justified coverage and comparability; local observations must remain local claims, with approved recipients and country-specific release conditions recorded.
+
+Use freight-specific descriptive titles that distinguish reported security concerns, attributed fatigue/rest and corroborated outcomes. A later stronger robbery or fatigue-risk claim must meet the independent-outcome gates; direct driver value remains the priority over institutional reporting.
 
 Incoming flow: Test policy bias and privacy.
 

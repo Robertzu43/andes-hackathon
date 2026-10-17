@@ -1,12 +1,12 @@
 # ANDES (hackathon) · GOAT
 
-Mobile driver safety for Latin American owners/drivers with one or two cars. Separate from SurcoCheck.
+Phone-based safety support for independent Latin American freight truck drivers and owner-operators with one or two trucks. The core problems are robbery during transportation and driver fatigue/sleepiness. Separate from SurcoCheck.
 
-Status: planning. The 44 task issues are open; publishing the plan does not complete implementation or establish product efficacy.
+Status: evidence tooling in progress (#8 evidence kit, preparatory #9 iPhone recorder). All 44 task issues remain open. No participant interviews or physical-device results are complete, Android is untested, and there is no production app or evidence of product efficacy.
 
 ## Start here
 
-[Reconstruct real trip incidents](https://github.com/Bimbi-Dev/andes-hackathon/issues/8) is the first task. Follow the section gates and GitHub blocked-by links.
+[Reconstruct freight trip incidents](https://github.com/Bimbi-Dev/andes-hackathon/issues/8) is the first task. Follow the section gates and GitHub blocked-by links.
 
 ## Work sections
 
@@ -30,19 +30,25 @@ Each issue has one accountable owner. Sebastian (`sebasbimbi`, 20 issues) owns d
 
 Project: ANDES (hackathon). Team: GOAT. This project has its own workspace and GitHub repository, separate from SurcoCheck.
 
-Product scope: drivers across Latin America, including Brazil, who own or use one or two cars and want a trusted contact to know when an agreed trip check-in or arrival is missed. Personal and work journeys are eligible use cases; Peruvian nationality, residence or routes are not product requirements. Interurban journeys are a candidate research scenario, not an eligibility restriction. Regional demand and effectiveness remain unvalidated.
+Product scope: independent freight truck drivers and owner-operators across Latin America, including Brazil, who typically own or operate one or two trucks (camiones/caminhões). The individual driver is the primary customer. Freight transport is the target use case, covering local and interurban haulage; a corporate fleet account or control centre is not required. The product is designed around the phone and trusted contacts the driver already has.
+
+Core problems: robbery or attempted robbery during freight transportation, and fatigue or falling asleep while driving. ANDES aims to help drivers request support, keep trusted contacts informed and preserve useful security/fatigue evidence. Record phone and route observations, bounded check-ins, driving/rest context, attributed fatigue or sleepiness reports, and reported security incidents. Keep unknown, self-reported, suspected and independently corroborated events distinct.
+
+Positioning: a direct-to-driver service for small owner-operators, with simple onboarding and individual control over sharing. The founder identifies a gap in products oriented toward large fleets. Whether current alternatives fail this segment, how common one/two-truck ownership is and what drivers will pay remain research questions; no market-share statistic or competitor capability is asserted.
 
 Design for Spanish and Brazilian Portuguese, configurable country/locale, international phone numbers and local time zones. Additional language coverage must be stated explicitly. Validation may start with a small evidence-selected cohort and corridor in any Latin American country. Record the countries, languages and conditions actually tested; a local sample does not validate the whole region. Each enabled country/channel/language combination needs its own support evidence, with unsupported conditions shown honestly.
 
-Critical scenario: a driver misses an agreed trip check-in or arrival, and the contact cannot tell whether to act. Intended benefit: reduce avoidable delay to an appropriate contact action without increasing driving distraction or overwhelming contacts. Phone signal -> qualified observation -> bounded check-in -> uncertain-status alert -> contact acknowledgement -> recorded action is the causal chain to test. No claim of preventing crashes or detecting sleep, robbery or weapons.
+Critical scenarios: a freight driver requests help or reports a security incident; a driver reports tiredness and needs a safe rest/support action; or an agreed check-in/arrival is missed and the trusted contact cannot tell whether to act. Intended benefit: reduce avoidable delay to appropriate contact action without increasing driving distraction or alarm burden. Phone signal -> qualified observation/report -> bounded check-in or explicit help -> attributed/uncertain alert -> contact acknowledgement -> recorded action is the causal chain to test. Phone telemetry and missed replies alone do not establish sleep or robbery. Any later automatic detection or stronger safety claim requires independent validation; weapon detection is not an implemented capability.
 
 H1: a bounded check-in can obtain useful status without unsafe distraction. H2: escalation can get an appropriate trusted-contact action sooner than current arrangements under supported conditions. H3: contributed observations can describe response patterns; stronger fatigue/crime/road-risk claims need independent outcomes.
 
 Heartbeat means an “I’m OK” check-in, not cardiac pulse. Device liveness, prompt delivery, driver response and wellbeing are different facts. An OK reply is time-specific self-report; a missing reply is unknown. A careful driver on a curve may respond slowly. More prompting on that curve can manufacture a misleading hotspot.
 
+Robbery and fatigue are the product's motivating problems. Their measurement must distinguish an attributed report (for example tiredness, suspected threat or a reported attempted robbery), the app's observations and any independently corroborated outcome. A missing reply is never a substitute for an incident label.
+
 ## Working agreement
 
-Authorised now: publish this existing Codus plan as open GitHub issues in the separate private Bimbi-Dev/andes-hackathon repository, team GOAT, and invite Robertzu43 with write access. The geographic scope now covers drivers across Latin America, including Brazil, in the existing one-or-two-car segment. The seven sections, 63 nodes and 44 task nodes are retained; the regional requirements are incorporated into existing tasks. App implementation, provider activation, participant recruitment, trip collection and live pilots have not started.
+Authorised now: publish this existing Codus plan as open GitHub issues in the separate private Bimbi-Dev/andes-hackathon repository, team GOAT, and invite Robertzu43 with write access. The scope is independent freight truck drivers/owner-operators across Latin America, including Brazil, typically with one or two trucks. Robbery during transport and fatigue/sleepiness are the core problems; the individual driver is the primary customer. The seven sections, 63 nodes and 44 task nodes are retained; the regional requirements are incorporated into existing tasks. Sebastian has authorised starting his assigned engineering work: the #8 evidence kit and preparatory #9 iPhone recorder/protocol are in progress. Android remains untested. Real participant interviews, provider activation, trip collection and live pilots have not started; tooling does not satisfy those evidence gates.
 
 ANDES is separate from SurcoCheck, with independent code, configuration, data and delivery ownership. Before starting a section, satisfy its evidence gate. Missing or inconclusive evidence is not a pass. Use issue closure only for completed work supported by evidence. Invitation acceptance must be reported separately from sending the invitation. Hosting deployment, spending and live pilots remain separately scoped.
 
