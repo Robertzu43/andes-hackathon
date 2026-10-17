@@ -246,8 +246,9 @@ def check_cell(report: Report, where: str, column: str, spec, value: str) -> Non
     for item in items:
         problem = KINDS[kind](item)
         if problem:
-            # Never echo free text back: it is the part that may hold an identifier.
-            shown = "" if kind == "text" else f" (found '{item}')"
+            # Never echo identifiers or free text back: that is exactly where a
+            # name or phone number is most likely to be typed by mistake.
+            shown = "" if kind in ("text", "id", "ids", "reporter") else f" (found '{item}')"
             report.error(where, f"{column} {problem}{shown}")
 
 
@@ -265,7 +266,7 @@ def read_tables(folder: Path, report: Report) -> dict[str, list[dict]]:
                 handle.seek(0)
                 # Spanish and Portuguese spreadsheet locales often save CSV with ";".
                 delimiter = ";" if ";" in first_line and "," not in first_line else ","
-                reader = csv.DictReader(handle, delimiter=delimiter)
+                reader = csv.DictReader(handle, delimiter=delimiter, strict=True)
                 header = [name.strip() for name in reader.fieldnames or []]
                 missing = [name for name in columns if name not in header]
                 if missing:
@@ -290,6 +291,8 @@ def read_tables(folder: Path, report: Report) -> dict[str, list[dict]]:
             # Excel on Spanish/Portuguese Windows saves cp1252 by default.
             report.error(path.name, "is not valid UTF-8; save it again as CSV UTF-8 "
                                     "(Excel: Save As → CSV UTF-8 (delimitado por comas))")
+        except csv.Error as problem:
+            report.error(path.name, f"could not be read as CSV ({problem}); save it again as CSV UTF-8")
     return tables
 
 
@@ -372,7 +375,8 @@ def check_events(data: dict, report: Report) -> None:
         for source_id in split(event["source_ids"]):
             source = data["sources"].get(source_id)
             if not source:
-                report.error(where, f"source {source_id} is not in sources.csv")
+                # Do not echo the value: a mistyped name or phone number lands here.
+                report.error(where, "a cited source is not in sources.csv")
             elif source["case_id"] != event["case_id"]:
                 report.error(where, f"source {source_id} belongs to case {source['case_id']}")
             else:
@@ -405,6 +409,12 @@ def check_occurrence(event: dict, reporter: dict | None, cited: list[dict], repo
                 report.error(where, f"{occurrence} needs {column}")
     if event_type == "contact_unconfirmed" and occurrence != "unknown":
         report.error(where, "contact_unconfirmed must keep occurrence unknown; record any attributed concern separately")
+    # The ban keys on the event type, not only on occurrence recorded: location,
+    # contact or call metadata can never establish a robbery or a rest, so
+    # occurrence unknown on metadata alone is equally forbidden.
+    if event_type in SENSITIVE | REST_REPORTS and occurrence == "unknown":
+        report.error(where, f"metadata alone cannot show {event_type}; use self_reported, "
+                            "reported_second_hand, suspected or corroborated with a cited account")
     if occurrence == "recorded":
         if event_type in SENSITIVE:
             report.error(where, f"a phone or message record cannot show {event_type}; use self_reported, "
@@ -534,6 +544,8 @@ def check_cases(data: dict, report: Report) -> None:
             report.error(where, f"pair_id {case['pair_id']} has no enrolled participants")
         if "none" in split(case["concerns"]) and len(split(case["concerns"])) > 1:
             report.error(where, "concerns cannot combine none with other values")
+        if "none" in split(case["arrangement_channels"]) and len(split(case["arrangement_channels"])) > 1:
+            report.error(where, "arrangement_channels cannot combine none with other values")
         if bool(start_id) != bool(end_id):
             report.error(where, "give both window_start_event and window_end_event, or neither")
             continue
@@ -593,6 +605,20 @@ def export_blockers(case: dict, members: list[dict]) -> list[str]:
         if person["consent_share_redacted"] != "yes":
             reasons.append(f"{person['participant_id']} consent_share_redacted is {person['consent_share_redacted']}")
     return reasons
+
+
+def public_reason(reason: str) -> str:
+    """Map a private export blocker to the generic code the handoff may carry.
+
+    The export must not name a participant who refused sharing or repeat the
+    refusal value, so only a generic code leaves the private folder. Run
+    `check` to see the detailed reason.
+    """
+    if "consent_share_redacted" in reason:
+        return "consent"
+    if "redaction_status" in reason:
+        return "redaction"
+    return "pair_incomplete"
 
 
 def window_export(case: dict, events: dict[str, dict]) -> dict | None:
@@ -742,7 +768,7 @@ def export(folder) -> tuple[dict | None, Report]:
     for case_id, case in sorted(data["cases"].items()):
         reasons = export_blockers(case, data["pairs"][case["pair_id"]])
         if reasons:
-            excluded.append({"case_id": case_id, "reasons": reasons})
+            excluded.append({"case_id": case_id, "reasons": sorted({public_reason(r) for r in reasons})})
         else:
             ready.append(case)
     pair_ids = sorted({case["pair_id"] for case in ready})
@@ -827,6 +853,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if report.errors else 0
 
     result, report = export(args.folder)
+    for line in report.warnings:
+        print(f"warning: {line}", file=sys.stderr)
     if result is None:
         print("Export refused. Fix these errors first:", *report.errors, sep="\n  ", file=sys.stderr)
         return 1

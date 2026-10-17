@@ -31,6 +31,7 @@ def events_of(result):
 
 
 class SyntheticCohortTest(unittest.TestCase):
+    @unittest.skipUnless(kit.ZONES, "no time-zone database on this machine")
     def test_fixture_passes_with_only_the_expected_warning(self):
         _, report = kit.check(FIXTURE)
         self.assertEqual(report.errors, [])
@@ -46,7 +47,7 @@ class SyntheticCohortTest(unittest.TestCase):
         events = events_of(result)
         self.assertEqual(sorted(cases), ["SYN-A-W", "SYN-B-W"])
         self.assertEqual(result["excluded_cases"],
-                         [{"case_id": "SYN-A-O", "reasons": ["redaction_status is in_progress"]}])
+                         [{"case_id": "SYN-A-O", "reasons": ["redaction"]}])
 
         brazil = cases["SYN-A-W"]
         self.assertEqual(brazil["anchor_local_hour"], 14)  # trip start remembered from 14:00
@@ -89,9 +90,19 @@ class SyntheticCohortTest(unittest.TestCase):
         result, _ = kit.export(FIXTURE)
         text = json.dumps(result)
         for leaked in ("2026-", "storage_ref", "consent_ref", "consent_recording", "note_private",
-                       "redaction_status\"", "no stored file", "no consent form"):
+                       "redaction_status", "no stored file", "no consent form"):
             self.assertNotIn(leaked, text)
         self.assertEqual(result["coverage"]["gaps"], ["Android not represented"])
+
+    def test_excluded_cases_carry_only_generic_reason_codes(self):
+        result, _ = kit.export(FIXTURE)
+        for excluded in result["excluded_cases"]:
+            for reason in excluded["reasons"]:
+                self.assertIn(reason, {"consent", "redaction", "pair_incomplete"})
+        text = json.dumps(result["excluded_cases"])
+        for participant in ("SYN-A-D", "SYN-A-C", "SYN-B-D", "SYN-B-C"):
+            self.assertNotIn(participant, text)
+        self.assertNotIn("consent_share_redacted", text)
 
     def test_command_line(self):
         code, out, _ = run_cli("check", FIXTURE)
@@ -102,7 +113,7 @@ class SyntheticCohortTest(unittest.TestCase):
             code, out, _ = run_cli("export", FIXTURE, "--out", target)
             self.assertEqual(code, 0)
             self.assertEqual(target.read_text(encoding="utf-8"), GOLDEN.read_text(encoding="utf-8"))
-            self.assertIn("excluded SYN-A-O: redaction_status is in_progress", out)
+            self.assertIn("excluded SYN-A-O: redaction", out)
 
 
 class KitFilesTest(unittest.TestCase):
@@ -227,7 +238,7 @@ class RuleTest(unittest.TestCase):
 
     def test_sources_must_exist_in_the_same_case(self):
         self.edit("timeline", "SYN-A-W-E01", source_ids="SYN-A-W-S9")
-        self.assertRejected("source SYN-A-W-S9 is not in sources.csv")
+        self.assertRejected("a cited source is not in sources.csv")
         self.edit("timeline", "SYN-A-W-E01", source_ids="SYN-B-W-S1")
         self.assertRejected("source SYN-B-W-S1 belongs to case SYN-B-W")
 
@@ -242,6 +253,31 @@ class RuleTest(unittest.TestCase):
     def test_a_record_cannot_show_tiredness_or_robbery(self):
         self.edit("timeline", "SYN-A-W-E03", occurrence="recorded")
         self.assertRejected("a phone or message record cannot show tiredness_report")
+
+    def test_metadata_alone_cannot_leave_robbery_unknown(self):
+        # Robert's probe: an unanswered-call log with occurrence unknown must not
+        # produce a robbery event.
+        self.edit("timeline", "SYN-A-W-E10", event_type="robbery", actor="driver",
+                  occurrence="unknown", time_basis="unknown", observed_time="", observed_source_id="")
+        self.assertRejected("metadata alone cannot show robbery")
+        result, _ = kit.export(self.folder)
+        self.assertIsNone(result)
+
+    def test_metadata_alone_cannot_leave_rest_unknown(self):
+        self.edit("timeline", "SYN-A-W-E10", event_type="dozed_off_report", actor="driver",
+                  occurrence="unknown", time_basis="unknown", observed_time="", observed_source_id="")
+        self.assertRejected("metadata alone cannot show dozed_off_report")
+
+    def test_arrangement_channels_cannot_combine_none_with_other_values(self):
+        self.edit("cases", "SYN-A-W", arrangement_channels="none;whatsapp")
+        self.assertRejected("arrangement_channels cannot combine none with other values")
+
+    def test_invalid_ids_are_not_echoed_in_errors(self):
+        # A mistyped name or phone number in an ID column must not be repeated back.
+        self.edit("timeline", "SYN-A-W-E02", source_ids="Maria 11987654321")
+        errors = self.errors()
+        self.assertTrue(any("source_ids" in error for error in errors), "\n".join(errors))
+        self.assertFalse(any("Maria 11987654321" in error for error in errors), "\n".join(errors))
 
     def test_self_report_needs_an_attributed_account(self):
         self.edit("timeline", "SYN-A-W-E10", event_type="robbery", actor="driver",
@@ -428,7 +464,7 @@ class RuleTest(unittest.TestCase):
         self.edit("participants", "SYN-B-C", consent_share_redacted="pending")
         result, _ = kit.export(self.folder)
         self.assertEqual([case["case_id"] for case in result["cases"]], ["SYN-A-W"])
-        self.assertIn({"case_id": "SYN-B-W", "reasons": ["SYN-B-C consent_share_redacted is pending"]},
+        self.assertIn({"case_id": "SYN-B-W", "reasons": ["consent"]},
                       result["excluded_cases"])
         self.assertNotIn("SYN-B", json.dumps(result["participants"]))
 
@@ -467,11 +503,11 @@ class RuleTest(unittest.TestCase):
         result = json.loads(target.read_text(encoding="utf-8"))
         self.assertEqual([case["case_id"] for case in result["cases"]], ["SYN-B-W"])
         self.assertEqual(result["excluded_cases"], [
-            {"case_id": "SYN-A-O", "reasons": [f"no {missing_role} enrolled"]},
+            {"case_id": "SYN-A-O", "reasons": ["pair_incomplete"]},
         ])
         self.assertEqual({person["pair_id"] for person in result["participants"]}, {"SYN-B"})
         self.assertEqual(result["coverage"]["pairs"], 1)
-        self.assertIn(f"excluded SYN-A-O: no {missing_role} enrolled", out)
+        self.assertIn("excluded SYN-A-O: pair_incomplete", out)
         self.assertIn(f"export blocked: no {missing_role} enrolled", kit.summary(self.folder, data, report))
 
     def test_export_excludes_driver_only_pair(self):

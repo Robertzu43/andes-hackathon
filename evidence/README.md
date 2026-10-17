@@ -23,7 +23,7 @@ Tools for reconstructing real freight trips with independent truck drivers and t
 6. Each participant reviews their own account with the review guide. Record the result in `cases.csv`.
 7. A reviewer outside implementation traces each claimed window to its sources and records `trace_review`.
 8. Someone other than the interviewer checks the redaction, then sets `redaction_status` to `reviewed`.
-9. Run `python3 evidence/incident_kit.py export evidence/private/<cohort> --out evidence/private/<cohort>-export.json` and share the file through private storage. Committing a real export to this repository needs participant consent for that use and a privacy review.
+9. Run `python3 evidence/incident_kit.py export evidence/private/<cohort> --out evidence/private/<cohort>-export.json` and share the file through private storage. Committing a real export to this repository needs participant consent for that use and a privacy review. The command prints warnings (for example, time zones that could not be checked) to stderr; excluded cases carry only the generic reason codes `consent`, `redaction` or `pair_incomplete`, so run `check` in the private folder for the detailed reason.
 
 ## What `check` enforces
 
