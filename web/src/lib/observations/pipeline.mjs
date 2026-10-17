@@ -9,9 +9,11 @@
 //
 // Only adapter geolocation events that carry consented coordinates map to
 // the backend's single accepted upload shape. Everything else — redacted
-// geolocation, motion, permission and lifecycle events — has no server
-// route in the current contract and is dropped AT THE BOUNDARY with an
-// explicit count. Nothing is queued for an invented endpoint.
+// geolocation, motion, permission and other events — has no server route in
+// the current contract and is dropped AT THE BOUNDARY with an explicit
+// count. session-start/session-stop are observed into a local per-trip
+// intent map (see tripStatus) and are never staged or uploaded. Nothing is
+// queued for an invented endpoint.
 
 const PROVISIONAL_SCHEMA = 'andes.phone-observations.provisional/1';
 // Deliberately duplicated from the adapter module: web/ must not import from
@@ -30,7 +32,8 @@ export function createObservationPipeline({ queue, uploader, ownerSubject, onErr
     persistErrors: 0,
     stageOverflow: 0, // staged list full; event dropped before persistence
     unmappedSchema: 0, // not the provisional phone-observation schema
-    unmappedNoRoute: 0, // valid observation with no server route (motion, permission, lifecycle)
+    unmappedNoRoute: 0, // valid observation with no server route (motion, permission, other)
+    lifecycleObserved: 0, // session-start/session-stop: local intent, never uploaded
     droppedNoCoordinates: 0, // redacted geolocation: never leaves the device
     droppedMissingAccuracy: 0, // server requires accuracy; adapter reported it unknown
     droppedBadSourceTime: 0, // no unix-epoch source timestamp to preserve
@@ -41,6 +44,11 @@ export function createObservationPipeline({ queue, uploader, ownerSubject, onErr
   const stagingCapacity = 512; // bounded staging between sink and drain
   let drainChain = Promise.resolve();
   let stopped = false;
+  // Latest observed lifecycle intent per trip (page-lifetime, observability
+  // only). A session-stop is local intent — never a delivery, freshness or
+  // trip-closure claim, and nothing is POSTed for it (the /sharing endpoint
+  // does not exist in the current backend contract).
+  const lifecycle = new Map();
 
   async function drainStaged() {
     while (staging.length > 0) {
@@ -69,6 +77,20 @@ export function createObservationPipeline({ queue, uploader, ownerSubject, onErr
     counters.received += 1;
     if (stopped || !event || event.schema !== PROVISIONAL_SCHEMA) {
       counters.unmappedSchema += 1;
+      return;
+    }
+    if (event.type === 'session-start' || event.type === 'session-stop') {
+      counters.lifecycleObserved += 1;
+      if (text(event.tripId)) {
+        const data = event.data ?? {};
+        lifecycle.set(event.tripId, {
+          intent: event.type === 'session-start' ? 'active' : 'stopped',
+          reason: text(data.reason) ? data.reason : null,
+          sharingState: text(data.sharingState) ? data.sharingState : null,
+          resumable: data.resumable === true,
+          eventId: text(event.eventId) ? event.eventId : null,
+        });
+      }
       return;
     }
     if (event.type !== 'geolocation') {
@@ -139,8 +161,17 @@ export function createObservationPipeline({ queue, uploader, ownerSubject, onErr
   }
 
   async function counts() {
-    return { boundary: { ...counters }, queue: await queue.counts() };
+    return { boundary: { ...counters }, queue: await queue.counts(), lifecycle: Object.fromEntries(lifecycle) };
   }
 
-  return { sink, drain, flush, revokeTrip, stop, counts };
+  // Per-trip status: latest observed lifecycle intent plus the durable
+  // unsent counts. `unsent` is queue occupancy, not a delivery statement.
+  async function tripStatus(tripId) {
+    return {
+      lifecycle: lifecycle.get(tripId) ?? null,
+      queue: await queue.scopeCounts({ tripId, userId: ownerSubject }),
+    };
+  }
+
+  return { sink, drain, flush, revokeTrip, stop, counts, tripStatus };
 }

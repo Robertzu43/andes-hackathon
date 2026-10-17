@@ -21,12 +21,23 @@ claims, and no invented endpoints. An upload receipt is a server receipt fact �
 never evidence that a trip is healthy, fresh or being tracked right now.
 
 **Source-backed gap:** the backend currently accepts location samples only.
-Adapter motion, permission and lifecycle events have no route. They are dropped
-at the pipeline boundary with an explicit `unmappedNoRoute` count — not queued,
-not uploaded anywhere. Geolocation events whose coordinates were redacted at
-acquisition (no per-request consent) are likewise never queued
+Adapter motion, permission and other observation events have no route. They are
+dropped at the pipeline boundary with an explicit `unmappedNoRoute` count — not
+queued, not uploaded anywhere. Geolocation events whose coordinates were
+redacted at acquisition (no per-request consent) are likewise never queued
 (`droppedNoCoordinates`). A route for non-location observation evidence is an
 #18 contract decision and is reported as a gap, not worked around.
+
+**Lifecycle intent is local and separate from samples.** `session-start` /
+`session-stop` events are observed into a page-lifetime intent map
+(`lifecycleObserved`, per-trip `tripStatus()`), never staged, never uploaded,
+never treated as delivery evidence. Trip stop intent is NOT reported to the
+backend: Robert's `/sharing` stop endpoint does not exist in the fetched
+contract (`codex/aws-durable-backend` @ `ebc8fb1`), and this module does not
+POST to unimplemented paths or invent a success shape. When that endpoint
+lands, stop reporting is a separate binding — the queue only exposes
+`tripStatus(tripId)` = latest intent + durable unsent counts, where `unsent` is
+queue occupancy, not a freshness or trip-health statement.
 
 ## Storage boundary
 
@@ -61,6 +72,10 @@ frontend foundation exists. Concurrent-tab writers are out of scope here.
   so late sink events cannot re-enter. Consent withdrawal is deletion, not a
   "stop uploading but keep" mode. The host must separately call the adapter's
   own `revokeConsent()` to stop capture.
+- **Per-trip exposure**: `scopeCounts({ tripId, userId })` returns
+  `{ pending, uploading, failed, unsent, revoked }` so a host can honestly
+  render "N samples not yet sent" / "storage unavailable" / "queue wiped"
+  without inventing delivery state.
 - **Failed is a retained state**: records that exhaust upload attempts stay in
   the queue as `failed` for inspection (`failedRetained`). Nothing is silently
   discarded.
@@ -148,9 +163,10 @@ Node 22.22.3, no install, no server, no device:
 node --test web/tests/observations/*.test.mjs
 ```
 
-40 tests covering the queue (bounds, dedupe, overflow, FIFO, recovery,
-revocation, persistence across reopen), the bridge (contract shape, batching,
-idempotent reconnect retry, every response class, owner scoping, stop) and the
-pipeline boundary (source-time preservation, redaction honored, no-route counts,
-synchronous sink contract). Real-browser IndexedDB storage tests are follow-up
-evidence after the shared frontend foundation lands.
+42 tests covering the queue (bounds, dedupe, overflow, FIFO, recovery,
+revocation, persistence across reopen, per-scope unsent exposure), the bridge
+(contract shape, batching, idempotent reconnect retry, every response class,
+owner scoping, stop) and the pipeline boundary (source-time preservation,
+redaction honored, no-route counts, lifecycle intent, synchronous sink
+contract). Real-browser IndexedDB storage tests are follow-up evidence after
+the shared frontend foundation lands.

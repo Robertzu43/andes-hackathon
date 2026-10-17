@@ -226,9 +226,23 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
     return { ...state.counts, ...live, retained: live.pending + live.uploading + live.failed };
   }
 
+  // Per-trip exposure of what is still unsent. `unsent` is a queue-occupancy
+  // fact — it says nothing about delivery, freshness or trip health.
+  async function scopeCounts({ tripId, userId }) {
+    const live = { pending: 0, uploading: 0, failed: 0 };
+    for (const record of await allRecords()) {
+      if (record.tripId === tripId && record.userId === userId) live[record.state] += 1;
+    }
+    return {
+      ...live,
+      unsent: live.pending + live.uploading + live.failed,
+      revoked: state.revokedScopes.includes(scopeKey({ tripId, userId })),
+    };
+  }
+
   return {
     enqueue, pendingScopes, takeBatch, confirmUploaded, releaseBatch,
-    markFailed, failBatchPermanent, wipeScope, counts,
+    markFailed, failBatchPermanent, wipeScope, counts, scopeCounts,
     noteTripStopped: async (n) => { state.counts.tripStoppedRejections += n; await persist(); },
     isScopeRevoked: (scope) => state.revokedScopes.includes(scopeKey(scope)),
   };

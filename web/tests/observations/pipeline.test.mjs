@@ -92,16 +92,39 @@ test('geolocation without a unix-epoch source time is dropped at the boundary', 
   assert.equal((await pipeline.counts()).boundary.droppedBadSourceTime, 1);
 });
 
-test('motion, permission and lifecycle events have no server route and are counted, not queued', async () => {
+test('motion, permission and other non-lifecycle events have no server route and are counted, not queued', async () => {
   const { pipeline, calls } = await setup();
-  for (const type of ['motion', 'permission', 'session-start', 'session-stop', 'acquisition-request']) {
+  for (const type of ['motion', 'permission', 'acquisition-request', 'geolocation-error']) {
     pipeline.sink(geoEvent({ type, data: {} }));
   }
   await pipeline.flush();
   assert.equal(calls.length, 0);
   const counts = await pipeline.counts();
-  assert.equal(counts.boundary.unmappedNoRoute, 5);
+  assert.equal(counts.boundary.unmappedNoRoute, 4);
   assert.equal(counts.queue.retained, 0);
+});
+
+test('session lifecycle events are local intent: observed, never uploaded, never a delivery claim', async () => {
+  const { pipeline, calls } = await setup();
+  pipeline.sink(geoEvent({ type: 'session-start', data: { streamsDisabledUntilExplicitAcquisition: true } }));
+  pipeline.sink(geoEvent());
+  await pipeline.drain();
+  pipeline.sink(geoEvent({
+    type: 'session-stop',
+    data: { reason: 'explicit-stop', sharingState: 'stopped', resumable: false },
+  }));
+  await pipeline.flush();
+  const status = await pipeline.tripStatus('trip-1');
+  assert.equal(status.lifecycle.intent, 'stopped');
+  assert.equal(status.lifecycle.reason, 'explicit-stop');
+  assert.equal(status.lifecycle.sharingState, 'stopped');
+  assert.equal(status.lifecycle.resumable, false);
+  assert.equal(status.queue.unsent, 0, 'the sample uploaded; unsent reflects occupancy only');
+  const counts = await pipeline.counts();
+  assert.equal(counts.boundary.lifecycleObserved, 2);
+  assert.equal(counts.boundary.unmappedNoRoute, 0);
+  assert.equal(calls.length, 1, 'only the location sample hit the wire — nothing POSTed for stop intent');
+  assert.equal(counts.lifecycle['trip-1'].intent, 'stopped');
 });
 
 test('foreign schemas are ignored and counted', async () => {

@@ -210,3 +210,20 @@ test('pendingScopes aggregates by trip and user', async () => {
   const mine = scopes.find((s) => s.tripId === 'trip-1');
   assert.equal(mine.pending, 2);
 });
+
+test('scopeCounts exposes unsent occupancy and revocation per trip', async () => {
+  const queue = await open();
+  await queue.enqueue({ sample: sampleAt(NOW - 4000), scope });
+  await queue.enqueue({ sample: sampleAt(NOW - 3000), scope });
+  await queue.enqueue({ sample: sampleAt(NOW - 2000), scope: otherScope });
+  const batch = await queue.takeBatch({ ...scope, limit: 1 });
+  await queue.markFailed(batch, 'http-500');
+  const mine = await queue.scopeCounts(scope);
+  assert.deepEqual(mine, { pending: 1, uploading: 0, failed: 1, unsent: 2, revoked: false });
+  const theirs = await queue.scopeCounts(otherScope);
+  assert.equal(theirs.unsent, 1);
+  await queue.wipeScope(scope);
+  const after = await queue.scopeCounts(scope);
+  assert.equal(after.unsent, 0);
+  assert.equal(after.revoked, true);
+});
