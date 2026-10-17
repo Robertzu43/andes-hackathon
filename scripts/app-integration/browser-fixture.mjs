@@ -9,7 +9,7 @@ import {dirname, isAbsolute, join} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {exportJWK, generateKeyPair, SignJWT} from 'jose';
 import pg from 'pg';
-import {command, disposableDatabase, stop, testEnvironment} from './runtime.mjs';
+import {command, stop, testEnvironment} from './runtime.mjs';
 import {verifiedBackendSource} from './source-pin.mjs';
 
 export const FOUNDATION_SHA = '6f8dc52a566d3880cf1f10bbfd5282a888725ca1';
@@ -19,6 +19,32 @@ function blob(revision, path) {
   const result = spawnSync('git', ['show', `${revision}:${path}`], {cwd: repo, maxBuffer: 2 * 1024 * 1024});
   assert.equal(result.status, 0, 'Fetch the frozen foundation/client Git objects');
   return result.stdout;
+}
+
+async function ownedResources(directory) {
+  const extra = {};
+  for (const key of ['APP_INTEGRATION_PG_BIN', 'APP_INTEGRATION_PG_PORT', 'APP_INTEGRATION_ADMIN_URL']) {
+    if (process.env[key]) extra[key] = process.env[key];
+  }
+  const owner = fork(fileURLToPath(new URL('./browser-resources.mjs', import.meta.url)), [], {
+    env: testEnvironment(extra), silent: true, execArgv: [],
+  });
+  owner.stdout.resume(); owner.stderr.resume();
+  const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 30000);
+  try {
+    const ready = Promise.race([
+      once(owner, 'message', {signal: abort.signal}).then(([value]) => value),
+      once(owner, 'exit', {signal: abort.signal}).then(() => {throw Error('Fixture resource owner exited before readiness');}),
+    ]);
+    owner.send({type: 'create', directory});
+    const result = await ready;
+    assert.equal(result.failed, undefined, 'Fixture database setup failed; select the intended PostgreSQL binary directory');
+    return {...result, cleanup: async () => {
+      if (owner.exitCode !== null || owner.signalCode !== null) return;
+      const exited = once(owner, 'exit'); owner.send({type: 'cleanup'}); await exited;
+    }};
+  } catch (error) {await stop(owner); throw error;}
+  finally {clearTimeout(timer); abort.abort();}
 }
 
 export async function startBrowserFixture(dependencyRoot) {
@@ -51,6 +77,7 @@ export async function startBrowserFixture(dependencyRoot) {
     }
   }
   try {
+    runtime = await ownedResources(directory);
     const inventory = spawnSync('git', ['ls-tree', '-r', '--name-only', FOUNDATION_SHA, 'web'], {cwd: repo, encoding: 'utf8'});
     assert.equal(inventory.status, 0);
     for (const path of inventory.stdout.trim().split('\n')) {
@@ -69,7 +96,6 @@ export async function startBrowserFixture(dependencyRoot) {
     await writeFile(join(directory, 'package.json'), '{"type":"module"}\n');
     // Node's native TypeScript loader uses this explicit module boundary too.
     await writeFile(join(fixture, 'package.json'), '{"type":"module"}\n');
-    runtime = await disposableDatabase();
     pool = new pg.Pool({connectionString: runtime.url, max: 2});
     const {migrate} = await import(pathToFileURL(join(repo, 'dist/db.js')));
     await migrate(pool);

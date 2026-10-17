@@ -306,7 +306,7 @@ git fetch origin db7034fc9e1dba035b87368117376e9730d6b830
 APP_INTEGRATION_WEB_ROOT=/absolute/frozen-foundation/web node scripts/app-integration/check-browser-seam.mjs
 ```
 
-This runs backend typecheck/build plus seven checks over actual development and
+This runs backend typecheck/build plus eight checks over actual development and
 production-preview HTTP sockets, signed `/v1/me`, SQL identity persistence,
 production-proxy idempotent truck creation, missing-target JSON503, rejected
 authorization and owned-resource cleanup. It consumes the existing API45 gateway;
@@ -340,10 +340,12 @@ Production builds omit the test mount hook and fixture modules. The separate
 production-preview proxy is exercised by the explicit check, without browser-hook
 injection. The interactive process stops after ten minutes or SIGINT/SIGTERM,
 closing its web/API children and dropping only its owned database/temporary files.
-Terminal SIGHUP and parent IPC disconnect also trigger cleanup. A real CLI-child
-regression sends the aux hangup signal and requires clean exit, removed extraction
-and a freed owned PostgreSQL port; the original missing-handler failure is retained
-in the provisional browser observation record.
+Terminal SIGHUP triggers cleanup too. A separate IPC resource owner holds the
+disposable database and removes the extraction after parent disconnect, including
+forced SIGKILL that cannot run a foreground signal handler. Real CLI-child
+regressions cover both hangup and forced exit, requiring removed extraction and a
+freed owned PostgreSQL port. The original aux-stop failure remains preserved in
+the provisional browser observation record.
 Do not run it concurrently with another owned cluster on port56446; select an
 explicit spare `APP_INTEGRATION_PG_PORT` when needed.
 

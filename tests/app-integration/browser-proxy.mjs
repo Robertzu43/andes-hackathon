@@ -92,7 +92,7 @@ test('frozen foundation proxy and accepted gateway reach the actual signed SQL b
   assert.equal(existsSync(fixture.directory), false, 'Owned frontend extraction and database resources must be cleaned');
 });
 
-test('interactive CLI cleans owned resources on aux terminal hangup', {timeout: 30000}, async t => {
+for (const shutdownSignal of ['SIGHUP', 'SIGKILL']) test(`interactive CLI resource owner cleans after ${shutdownSignal}`, {timeout: 30000}, async t => {
   const extra = {APP_INTEGRATION_WEB_ROOT: process.env.APP_INTEGRATION_WEB_ROOT};
   for (const key of ['APP_INTEGRATION_PG_BIN', 'APP_INTEGRATION_PG_PORT', 'APP_INTEGRATION_ADMIN_URL']) {
     if (process.env[key]) extra[key] = process.env[key];
@@ -108,9 +108,11 @@ test('interactive CLI cleans owned resources on aux terminal hangup', {timeout: 
     ]);
     assert.equal((await fetch(ready.origin + '/v1/me')).status, 401);
     const exited = once(child, 'exit', {signal: abort.signal});
-    child.kill('SIGHUP');
+    child.kill(shutdownSignal);
     const [code, signal] = await exited;
-    assert.equal(code, 0); assert.equal(signal, null);
+    if (shutdownSignal === 'SIGHUP') {assert.equal(code, 0); assert.equal(signal, null);}
+    else {assert.equal(code, null); assert.equal(signal, 'SIGKILL');}
+    for (let i = 0; i < 100 && existsSync(ready.directory); i++) await new Promise(resolve => setTimeout(resolve, 50));
     assert.equal(existsSync(ready.directory), false);
     if (!process.env.APP_INTEGRATION_ADMIN_URL) {
       const probe = createServer();
