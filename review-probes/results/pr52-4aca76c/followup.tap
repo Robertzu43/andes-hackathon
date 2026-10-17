@@ -8,9 +8,9 @@ not ok 1 - B1 throttled 60Hz motion does not spend the useful-work callback budg
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     0 !== 1
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 1
@@ -31,11 +31,11 @@ not ok 2 - B3 repeated blocked requests leave useful GPS alive under a small val
   error: |-
     Expected values to be strictly equal:
     + actual - expected
-    
+
     + 'stopped'
     - 'started'
          ^
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 'started'
@@ -55,9 +55,9 @@ not ok 3 - S2 code1 plus a fresh prompt status permits an explicit retry without
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     false !== true
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: true
@@ -83,9 +83,9 @@ not ok 5 - S3 GPS permission wait is excluded from the acquisition timeout
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     undefined !== 8
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 8
@@ -108,9 +108,9 @@ not ok 6 - S3 motion grant after the acquisition timeout still attaches within t
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     false !== true
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: true
@@ -137,11 +137,11 @@ not ok 8 - S4 GPS budget-stop stream uses public geolocation spelling
   error: |-
     Expected values to be strictly equal:
     + actual - expected
-    
+
     + 'geo'
     - 'geolocation'
           ^
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 'geolocation'
@@ -165,9 +165,9 @@ not ok 9 - S5 synchronous denial returns failed acquisition
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     true !== false
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: false
@@ -191,9 +191,9 @@ not ok 10 - S8 sink cancellation is attributed to cancellation rather than a sto
   failureType: 'testCodeFailure'
   error: |-
     The input did not match the regular expression /cancel|obsolete/. Input:
-    
+
     'session-stopped'
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected:
@@ -213,9 +213,9 @@ not ok 11 - S8 a regressed request clock is attributed to clock uncertainty rath
   failureType: 'testCodeFailure'
   error: |-
     The input did not match the regular expression /clock/. Input:
-    
+
     'obsolete-request   '
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected:
@@ -235,9 +235,9 @@ not ok 12 - S9 synchronous native callbacks flush the sink after native watch as
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     true !== false
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: false

@@ -33,6 +33,9 @@ deployment or auxiliary coding agent was used. GitHub reads fetched feedback.
 | Unchanged Q52 lifecycle probe from 534dba0 | 8 pass / 8 fail; [actual/expected output](results/pr52-4aca76c/lifecycle.json) |
 | New complementary Robert probes | 2 pass / 10 fail; [TAP](results/pr52-4aca76c/followup.tap) and [source](robert-pr52-followup.test.mjs) |
 
+The displayed TAP removes trailing horizontal whitespace from Node's output.
+Assertions, actual/expected values and exit status are unchanged.
+
 Original file SHA-256 values remain unchanged:
 `probes.test.mjs`: `0da135e3c2aa6dc9364d955b948e35e6d75fa57f8d36aa14b5a567e92321f756`;
 `reproduce.mjs`: `abc8294f928c03f838d03016df051634d47b8f20c73a416dbd87954504db5a85`.
