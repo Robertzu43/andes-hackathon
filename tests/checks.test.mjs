@@ -205,3 +205,16 @@ test('alert wording names the truck, keeps the incident ID and never invents loc
   assert.match(alertSummary({...base, incident: {id: 'i-4', trigger: 'missed_check', check_reason: 'sharing_stopped'}}, {}), /dejó de compartir su ubicación/);
   assert.match(alertSummary({...base, location: {...base.location, captured_at: new Date('2026-10-17T10:00:00Z')}, incident: {id: 'i-5', trigger: 'sos', check_reason: null}}, {}), /hace 2 h 5 min/);
 });
+
+test('the control worker runs the sweeper only when check timings are configured', async t => {
+  const f = await fixture(t); const trip = await f.trip(); f.advance(120001);
+  const {control} = await import('../dist/worker.js');
+  const {provider} = await import('./helpers/dispatch.mjs');
+  const quiet = new AbortController(); const off = control(f.ctx, {async publish() {}}, provider(), quiet.signal);
+  await new Promise(resolve => setTimeout(resolve, 50)); quiet.abort(); await off;
+  assert.deepEqual(await checksOf(f, trip), []);
+  const abort = new AbortController(); const running = control(f.ctx, {async publish() {}}, provider(), abort.signal, {...cfg, sweepMs: 10});
+  for (let i = 0; i < 100 && !(await checksOf(f, trip)).length; i++) await new Promise(resolve => setTimeout(resolve, 10));
+  abort.abort(); await running;
+  assert.deepEqual(await checksOf(f, trip), [asking('silence')]);
+});
