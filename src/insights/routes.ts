@@ -19,7 +19,7 @@ const adviceText = {
   'pt-BR': (n: number, night: boolean) => `${n} relatos de roubo nesta região ${night ? 'à noite' : 'durante o dia'} (últimos 90 dias). Se puder, pare em um local movimentado e seguro.`
 };
 export function insightRoutes(app: FastifyInstance, ctx: Context) {
-  const demo = ['1', 'true'].includes(process.env.DEMO_MODE ?? ''); // demo personas are free to mint, so all their data is demo data
+  const demo = process.env.DEMO_MODE === 'true'; // same switch as demo-persona sign-in: personas are free to mint, so their data is demo data
   // The only view of the data anyone gets: fixed windows ending on the hour; real events need MIN_COUNT distinct
   // contributors in a cell and band on their own; seeded rows are added on top and never help reach it.
   // ponytail: recomputed per request; cache per (days, hour) if public traffic grows.

@@ -144,7 +144,7 @@ test('advice only sums published cells, so it cannot locate or time a hidden rep
 
 // Demo personas are free to mint, so in demo mode every report is demo data and every view must say so.
 test('demo mode stores reports as synthetic and flags every published cell as demo data', async t => {
-  process.env.DEMO_MODE = '1'; t.after(() => { delete process.env.DEMO_MODE; });
+  process.env.DEMO_MODE = 'true'; t.after(() => { delete process.env.DEMO_MODE; });
   const f = await fixture(t); const night = '2026-10-16T04:30:00Z';
   for (let i = 0; i < 3; i++) assert.equal((await report(f, 'robo', -12.325, -76.775, night)).status, 200);
   assert.equal((await f.ctx.pool.query('SELECT count(*)::int AS n FROM reports WHERE synthetic')).rows[0].n, 3);
