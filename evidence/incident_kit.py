@@ -131,7 +131,7 @@ INTERVIEW_ROLE = {"interview_driver": "driver", "interview_contact": "contact"}
 
 ID = re.compile(r"(?=.*[A-Z])[A-Z0-9][A-Z0-9-]{1,39}")
 COUNTRY = re.compile(r"[A-Z]{2}")
-LANGUAGE = re.compile(r"[a-z]{2,3}(-([A-Z]{2}|\d{3}))?")
+LANGUAGE = re.compile(r"[a-z]{2,3}(-([A-Z]{2}|[0-9]{3}))?")
 SEQ = re.compile(r"[1-9][0-9]{0,5}")
 TIME = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})")
 
@@ -303,12 +303,25 @@ def read_tables(folder: Path, report: Report) -> dict[str, list[dict]]:
                         check_cell(report, row["_where"], name, spec, row[name])
         except UnicodeDecodeError:
             # Excel on Spanish/Portuguese Windows saves cp1252 by default.
+            rows.clear()
             report.error(path.name, "is not valid UTF-8; save it again as CSV UTF-8 "
-                                    "(Excel: Save As → CSV UTF-8 (delimitado por comas))")
+                                    "(Excel: Save As -> CSV UTF-8 (delimitado por comas))")
         except csv.Error:
+            rows.clear()
             report.error(path.name, "could not parse CSV; check quoting and cell size (maximum "
                                     f"{csv.field_size_limit()} characters per cell)")
     return tables
+
+
+def is_own_account(source: dict, participant_id: str) -> bool:
+    """Match an account to its reporter; a message supplier may differ from its author.
+
+    For message sources the trace reviewer must verify the reporter's words in
+    the original. The source declaration alone cannot prove message authorship.
+    """
+    return source["evidence_basis"] == "attributed_account" and (
+        source["provided_by"] == participant_id or source["kind"] in {"whatsapp_export", "sms"}
+    )
 
 
 def index(rows: list[dict], key: str, report: Report) -> dict[str, dict]:
@@ -444,14 +457,7 @@ def check_occurrence(event: dict, reporter: dict | None, cited: list[dict], repo
                                 "use reported_second_hand")
         if not any(source["evidence_basis"] == "attributed_account" for source in cited):
             report.error(where, "self_reported needs a cited attributed account")
-        elif reporter and not any(
-            # Only message formats can contain the reporter's own words when
-            # supplied by someone else. Other accounts must come from the reporter.
-            source["evidence_basis"] == "attributed_account"
-            and (source["provided_by"] == event["reported_by"]
-                 or source["kind"] in {"whatsapp_export", "sms"})
-            for source in cited
-        ):
+        elif reporter and not any(is_own_account(source, event["reported_by"]) for source in cited):
             report.error(where, "self_reported needs the participant's own attributed account "
                                 "(their interview or a message they wrote)")
     elif occurrence == "reported_second_hand":
@@ -461,6 +467,8 @@ def check_occurrence(event: dict, reporter: dict | None, cited: list[dict], repo
             report.error(where, f"{reporter['participant_id']} is reporting their own experience; use self_reported")
         if not any(source["evidence_basis"] == "attributed_account" for source in cited):
             report.error(where, "reported_second_hand needs a cited attributed account")
+        elif reporter and not any(is_own_account(source, event["reported_by"]) for source in cited):
+            report.error(where, "reported_second_hand needs the reporting participant's own attributed account")
     elif occurrence == "suspected":
         if not reporter:
             report.error(where, "a suspicion needs the participant who held it in reported_by")
