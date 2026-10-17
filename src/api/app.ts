@@ -10,6 +10,7 @@ import { contactRoutes } from '../contacts/routes.js';
 import { locationRoutes } from '../location/routes.js';
 import { incidentRoutes } from '../incidents/routes.js';
 import { demoRoutes, type DemoIssuer } from '../demo.js';
+import { insightRoutes } from '../insights/routes.js';
 declare module 'fastify' { interface FastifyRequest { actor: Actor } }
 export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer }
 export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo }: AppOptions) {
@@ -19,7 +20,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store');
     if (demo && request.routeOptions.url === '/v1/demo/session') return;
-    if (request.routeOptions.url === '/health' || (callbackConfig && request.routeOptions.url === '/v1/callbacks/zavu')) return;
+    if (request.routeOptions.url === '/health' || request.routeOptions.url === '/v1/insights/hotspots' || request.routeOptions.url === '/mapa' || (callbackConfig && request.routeOptions.url === '/v1/callbacks/zavu')) return;
     const telemetry = request.routeOptions.url?.endsWith('/locations') || request.routeOptions.url?.endsWith('/snapshot');
     request.actor = await authenticate(request.headers.authorization, telemetry ? ctx.telemetryPool : ctx.pool);
   });
@@ -36,7 +37,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
   checkRoutes(app, ctx);
   if (demo) demoRoutes(app, ctx, demo);
   app.get('/v1/me', async request => ({ id: request.actor.id }));
-  tripRoutes(app, ctx); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport);
+  tripRoutes(app, ctx); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport); insightRoutes(app, ctx);
   if (callbackConfig) callbackRoutes(app, ctx, callbackConfig);
   return app;
 }
