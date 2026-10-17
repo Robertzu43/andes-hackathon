@@ -99,7 +99,9 @@ Every write requires explicit `WriteOptions.idempotencyKey` (1–128 visible ASC
 characters) and accepts `signal`. Generate one key for one explicit intent and keep
 its exact payload/key until the result is reconciled. The payload is serialized before
 asynchronous work. The server scopes keys by actor, method, route and parameters;
-changed payload with a reused key conflicts. The library makes exactly one HTTP
+changed payload with a reused key conflicts. UUID path parameters are canonicalised
+to lowercase so case aliases preserve the same backend idempotency scope.
+The library makes exactly one HTTP
 attempt and never retries, refreshes, queues offline work or generates a replacement
 key. Explicit same-key reconciliation remains a caller decision against current
 server state; automatic retry on a timeout/network error is prohibited. Losing a

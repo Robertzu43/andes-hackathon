@@ -25,7 +25,7 @@ function resource(id: string): string {
   if (typeof id !== 'string' || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)) {
     throw new ApiError('invalid_input');
   }
-  return id;
+  return id.toLowerCase();
 }
 
 /** No retries, write queue, token refresh, provider calls, or synthetic-login fallback. */

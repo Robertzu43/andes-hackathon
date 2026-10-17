@@ -156,6 +156,18 @@ test('payload is captured before async work and explicit retries preserve key an
   assert.deepEqual(sent, [[JSON.stringify({ label: 'original' }), write.idempotencyKey], [JSON.stringify({ label: 'original' }), write.idempotencyKey]]);
 });
 
+test('UUID case aliases preserve the same backend idempotency path scope', async () => {
+  const resource = 'abcdefab-abcd-4abc-8abc-abcdefabcdef';
+  const paths = [];
+  const { api } = fixture(async (url, init) => {
+    paths.push([url.pathname, init.headers['Idempotency-Key']]);
+    return json({ id: resource, tripId: resource, status: 'active', groupCapability: 'unavailable' });
+  });
+  await api.reportSos(resource.toUpperCase(), write);
+  await api.reportSos(resource, write);
+  assert.deepEqual(paths, [[`/v1/trips/${resource}/sos`, write.idempotencyKey], [`/v1/trips/${resource}/sos`, write.idempotencyKey]]);
+});
+
 test('network failure never replays a write or exposes transport cause', async () => {
   let calls = 0;
   const { api } = fixture(async () => { calls += 1; throw new Error('PRIVATE_TOKEN_FROM_TRANSPORT'); });

@@ -35,7 +35,8 @@ export class MemorySession {
       throw new ApiError('invalid_input');
     }
     this.clear();
-    this.#credentials = { ...credentials };
+    this.#credentials = { issuer: credentials.issuer, subject: credentials.subject,
+      accessToken: credentials.accessToken, expiresAt: credentials.expiresAt };
   }
 
   clear(): void {
