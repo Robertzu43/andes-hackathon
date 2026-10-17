@@ -1,13 +1,12 @@
 import { readFileSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { isMain } from './entrypoint.mjs';
 import { evaluate } from './oracle.mjs';
 
 export function checkFile(path) {
   if (statSync(path).size > 512 * 1024) throw new Error('receipt exceeds 512 KiB');
   return evaluate(JSON.parse(readFileSync(path, 'utf8')));
 }
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   try {
     if (process.argv.length !== 3) throw new Error('usage: node evidence/app-acceptance/check.mjs <receipt.json>');
     const result = checkFile(process.argv[2]);

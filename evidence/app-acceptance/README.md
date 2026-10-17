@@ -6,6 +6,11 @@ calls a device or provider. It supplements the backend's integration tests and
 independent browser review; it does not implement another backend or certify a
 whole app. Refs #24, #35, #38; their human/physical prerequisites remain open.
 
+Both CLI entrypoints compare physical file paths, so macOS `/var`/`/private/var`
+aliases and symlinked worktree paths execute normally. Consumers must require
+nonempty parseable JSON as well as the exit status. Two alias regressions failed
+before this correction; the existing canonical CLI and receipt controls remain.
+
 Exact reference: Robert's `origin/codex/aws-durable-backend` at
 `ebc8fb1d36f441ef012ca585201cefabf61383d6`, refreshed 2026-10-17. Read
 `docs/contracts/runtime.md`, `package.json`, `docs/evidence/backend-progress.md`,

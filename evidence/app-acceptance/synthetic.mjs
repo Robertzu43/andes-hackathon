@@ -1,5 +1,4 @@
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { isMain } from './entrypoint.mjs';
 import { BACKEND_SHA, SCHEMA } from './oracle.mjs';
 const exchange = (method, route, actor, response, request = {}, status = 200) =>
   ({ method, route, actor, request, status, response });
@@ -57,4 +56,4 @@ export function syntheticControl() {
       { id: 'self-report', steps: ['checkin_ok', 'rest_report'].map(type => exchange('POST', '/v1/trips/:id/commands', 'driver', { command: type, automaticEscalation: false }, { type })) },
     ] };
 }
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) console.log(JSON.stringify(syntheticControl(), null, 2));
+if (isMain(import.meta.url)) console.log(JSON.stringify(syntheticControl(), null, 2));

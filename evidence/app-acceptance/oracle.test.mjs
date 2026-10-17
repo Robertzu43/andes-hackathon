@@ -1,11 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { evaluate, CASES } from './oracle.mjs';
 import { syntheticControl } from './synthetic.mjs';
+import { isMain } from './entrypoint.mjs';
 
 const exampleCase = (r, id) => r.cases.find(c => c.id === id);
 test('valid synthetic controls pass individual assertions but cannot accept an app', () => {
@@ -82,4 +83,28 @@ test('CLI returns 2 for synthetic-only evidence, 1 for defect and 0 for backend-
     const invalid = spawnSync(process.execPath, ['evidence/app-acceptance/check.mjs', path], { encoding: 'utf8' });
     assert.equal(invalid.status, 1); assert.equal(invalid.stdout.includes('SENSITIVE'), false);
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+for (const script of ['check.mjs', 'synthetic.mjs']) test(`${script} entrypoint works through directory aliases`, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'andes-cli-alias-'));
+  try {
+    const alias = join(dir, 'worktree-alias');
+    symlinkSync(process.cwd(), alias, process.platform === 'win32' ? 'junction' : 'dir');
+    const receipt = join(dir, 'receipt.json');
+    writeFileSync(receipt, JSON.stringify(syntheticControl()));
+    const args = [join(alias, 'evidence/app-acceptance', script)];
+    if (script === 'check.mjs') args.push(receipt);
+    const run = spawnSync(process.execPath, args, { encoding: 'utf8' });
+    assert.equal(run.status, script === 'check.mjs' ? 2 : 0);
+    assert.ok(run.stdout.trim().length > 0, 'CLI must emit JSON through an alias');
+    const json = JSON.parse(run.stdout);
+    assert.equal(script === 'check.mjs' ? json.disposition : json.kind,
+      script === 'check.mjs' ? 'inconclusive' : 'synthetic-control');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('entrypoint guard tolerates non-file argv during import without claiming main', () => {
+  assert.equal(isMain(import.meta.url, ''), false);
+  assert.equal(isMain(import.meta.url, '/definitely-absent/andes-entrypoint'), false);
+  assert.equal(isMain(import.meta.url, new URL('./check.mjs', import.meta.url)), false);
 });
