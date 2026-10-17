@@ -1,0 +1,190 @@
+TAP version 13
+# Subtest: valid synthetic controls pass individual assertions but cannot accept an app
+ok 1 - valid synthetic controls pass individual assertions but cannot accept an app
+  ---
+  duration_ms: 1.013875
+  type: 'test'
+  ...
+# Subtest: a bounded real isolated receipt checks backend facts only, never browser or human qualification
+ok 2 - a bounded real isolated receipt checks backend facts only, never browser or human qualification
+  ---
+  duration_ms: 0.117917
+  type: 'test'
+  ...
+# Subtest: absent cases are pending; no response is never counted as success
+ok 3 - absent cases are pending; no response is never counted as success
+  ---
+  duration_ms: 0.084834
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects invitation is not contact acceptance
+ok 4 - sensitivity control rejects invitation is not contact acceptance
+  ---
+  duration_ms: 0.246
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects scope widening
+ok 5 - sensitivity control rejects scope widening
+  ---
+  duration_ms: 0.128459
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects empty accepted consent
+ok 6 - sensitivity control rejects empty accepted consent
+  ---
+  duration_ms: 0.501542
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects draft silently activated
+ok 7 - sensitivity control rejects draft silently activated
+  ---
+  duration_ms: 0.116333
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects confirmation without explicit consent
+ok 8 - sensitivity control rejects confirmation without explicit consent
+  ---
+  duration_ms: 0.09625
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects invented timezone default
+ok 9 - sensitivity control rejects invented timezone default
+  ---
+  duration_ms: 0.08525
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects implicit country supplied by server
+ok 10 - sensitivity control rejects implicit country supplied by server
+  ---
+  duration_ms: 0.143583
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects confirmation changes entered locale
+ok 11 - sensitivity control rejects confirmation changes entered locale
+  ---
+  duration_ms: 0.088916
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects duplicate creates different trip
+ok 12 - sensitivity control rejects duplicate creates different trip
+  ---
+  duration_ms: 0.07375
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects new-key conflict control reuses key
+ok 13 - sensitivity control rejects new-key conflict control reuses key
+  ---
+  duration_ms: 0.050292
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects receipt refreshes old source age
+ok 14 - sensitivity control rejects receipt refreshes old source age
+  ---
+  duration_ms: 0.093708
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects stale shown fresh
+ok 15 - sensitivity control rejects stale shown fresh
+  ---
+  duration_ms: 0.085667
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects source clocks omit explicit offset
+ok 16 - sensitivity control rejects source clocks omit explicit offset
+  ---
+  duration_ms: 0.062541
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects missing location called fresh
+ok 17 - sensitivity control rejects missing location called fresh
+  ---
+  duration_ms: 0.050667
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects revoked contact retains map
+ok 18 - sensitivity control rejects revoked contact retains map
+  ---
+  duration_ms: 0.046708
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects SOS POST upgraded to delivery
+ok 19 - sensitivity control rejects SOS POST upgraded to delivery
+  ---
+  duration_ms: 0.050916
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects SOS POST upgraded to provider acceptance
+ok 20 - sensitivity control rejects SOS POST upgraded to provider acceptance
+  ---
+  duration_ms: 0.048458
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects acknowledgement relabelled action
+ok 21 - sensitivity control rejects acknowledgement relabelled action
+  ---
+  duration_ms: 0.036417
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects arrival resolves SOS
+ok 22 - sensitivity control rejects arrival resolves SOS
+  ---
+  duration_ms: 0.035167
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects contact resolves driver incident
+ok 23 - sensitivity control rejects contact resolves driver incident
+  ---
+  duration_ms: 0.033917
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects cross-user SOS accepted
+ok 24 - sensitivity control rejects cross-user SOS accepted
+  ---
+  duration_ms: 0.040208
+  type: 'test'
+  ...
+# Subtest: sensitivity control rejects report enables automatic escalation
+ok 25 - sensitivity control rejects report enables automatic escalation
+  ---
+  duration_ms: 0.038791
+  type: 'test'
+  ...
+# Subtest: unknown schema, source revision, duplicated/unknown cases, oversized or malformed steps fail closed
+ok 26 - unknown schema, source revision, duplicated/unknown cases, oversized or malformed steps fail closed
+  ---
+  duration_ms: 0.123292
+  type: 'test'
+  ...
+# Subtest: CLI returns 2 for synthetic-only evidence, 1 for defect and 0 for backend-only checks
+ok 27 - CLI returns 2 for synthetic-only evidence, 1 for defect and 0 for backend-only checks
+  ---
+  duration_ms: 108.489
+  type: 'test'
+  ...
+# Subtest: check.mjs entrypoint works through directory aliases
+ok 28 - check.mjs entrypoint works through directory aliases
+  ---
+  duration_ms: 29.71125
+  type: 'test'
+  ...
+# Subtest: synthetic.mjs entrypoint works through directory aliases
+ok 29 - synthetic.mjs entrypoint works through directory aliases
+  ---
+  duration_ms: 26.164458
+  type: 'test'
+  ...
+# Subtest: entrypoint guard tolerates non-file argv during import without claiming main
+ok 30 - entrypoint guard tolerates non-file argv during import without claiming main
+  ---
+  duration_ms: 0.195333
+  type: 'test'
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 30
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 216.540583

@@ -1,0 +1,184 @@
+{
+  "reviewedHead": "e3ed9720ad1490a1797adbb3ed1a8c76eadffe50",
+  "node": "v24.17.0",
+  "author_suite": {
+    "command": "node --test --test-reporter=tap evidence/app-acceptance/oracle.test.mjs",
+    "exit": 0,
+    "passed": 30
+  },
+  "independent": {
+    "command": "node review-probes/receipt-checker-probes.mjs",
+    "exit": 1,
+    "total": 20,
+    "expected_outcomes": 17,
+    "unexpected": 3
+  },
+  "results": [
+    {
+      "name": "labelled synthetic is inconclusive",
+      "expected": "inconclusive",
+      "actual": "inconclusive",
+      "expectedExit": 2,
+      "exit": 2,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "simulated backend category remains backend-only",
+      "expected": "backend-receipt-checks-pass",
+      "actual": "backend-receipt-checks-pass",
+      "expectedExit": 0,
+      "exit": 0,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "input cannot promote whole-app status",
+      "expected": "backend-receipt-checks-pass",
+      "actual": "backend-receipt-checks-pass",
+      "expectedExit": 0,
+      "exit": 0,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "missing case stays pending",
+      "expected": "inconclusive",
+      "actual": "inconclusive",
+      "expectedExit": 2,
+      "exit": 2,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "bad source age fails",
+      "expected": "fix",
+      "actual": "fix",
+      "expectedExit": 1,
+      "exit": 1,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "changed replay-key alias fails",
+      "expected": "fix",
+      "actual": "fix",
+      "expectedExit": 1,
+      "exit": 1,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "invented delivery fails",
+      "expected": "fix",
+      "actual": "fix",
+      "expectedExit": 1,
+      "exit": 1,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "different source revision fails",
+      "expected": "fix",
+      "actual": "fix",
+      "expectedExit": 1,
+      "exit": 1,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "duplicate case IDs fail",
+      "expected": "fix",
+      "actual": "fix",
+      "expectedExit": 1,
+      "exit": 1,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "missing source clock fails",
+      "expected": "fix",
+      "actual": "fix",
+      "expectedExit": 1,
+      "exit": 1,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "different snapshot trip IDs fail",
+      "expected": "fix",
+      "actual": "fix",
+      "expectedExit": 1,
+      "exit": 1,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "missing snapshot trip IDs must fail",
+      "expected": "fix",
+      "actual": "backend-receipt-checks-pass",
+      "expectedExit": 1,
+      "exit": 0,
+      "wholeAppAccepted": false,
+      "passed": false
+    },
+    {
+      "name": "resolved second SOS must fail",
+      "expected": "fix",
+      "actual": "backend-receipt-checks-pass",
+      "expectedExit": 1,
+      "exit": 0,
+      "wholeAppAccepted": false,
+      "passed": false
+    },
+    {
+      "name": "invented group support on second SOS must fail",
+      "expected": "fix",
+      "actual": "backend-receipt-checks-pass",
+      "expectedExit": 1,
+      "exit": 0,
+      "wholeAppAccepted": false,
+      "passed": false
+    },
+    {
+      "name": "file-symlink checker success emits JSON",
+      "expected": "backend-receipt-checks-pass",
+      "actual": "backend-receipt-checks-pass",
+      "expectedExit": 0,
+      "exit": 0,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "file-symlink missing case emits pending JSON",
+      "expected": "inconclusive",
+      "actual": "inconclusive",
+      "expectedExit": 2,
+      "exit": 2,
+      "wholeAppAccepted": false,
+      "passed": true
+    },
+    {
+      "name": "file-symlink synthetic command emits labelled JSON",
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "name": "malformed receipt fails without echoing input",
+      "exit": 1,
+      "passed": true
+    },
+    {
+      "name": "oversized receipt fails without echoing input",
+      "exit": 1,
+      "passed": true
+    },
+    {
+      "name": "imported CLI modules stay inert",
+      "passed": true
+    }
+  ],
+  "verdict": "FIX",
+  "runtime_tests_executed": false,
+  "whole_app_accepted": false
+}

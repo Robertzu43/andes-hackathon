@@ -1,0 +1,81 @@
+{
+  "hashes": {
+    "design-contract.json": "2148eba873c75ba5714247259bc37a25f2e542bb7a978ce11a803e5cbc2660cf",
+    "site.config.json": "e576c4db008837f993b6826281058297d4ee36ecb2bd8e0ad3c075224b370ea2"
+  },
+  "routes": [
+    {
+      "route": "/",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    },
+    {
+      "route": "/session",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    },
+    {
+      "route": "/trucks",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    },
+    {
+      "route": "/contacts",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    },
+    {
+      "route": "/trips/new",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    },
+    {
+      "route": "/trips/:tripId",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    },
+    {
+      "route": "/trips/:tripId/check-in",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    },
+    {
+      "route": "/trips/:tripId/alerts",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    },
+    {
+      "route": "/contact/trips/:tripId",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    },
+    {
+      "route": "/contact/invitations/:grantId",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    },
+    {
+      "route": "/trips/:tripId/summary",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    },
+    {
+      "route": "/privacy",
+      "sections_match": true,
+      "hook_match": true,
+      "event_match": true
+    }
+  ],
+  "rendered_ui_evidence": false
+}
