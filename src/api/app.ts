@@ -8,6 +8,7 @@ import { tripRoutes } from '../trips/routes.js';
 import { contactRoutes } from '../contacts/routes.js';
 import { locationRoutes } from '../location/routes.js';
 import { incidentRoutes } from '../incidents/routes.js';
+import { clientReadRoutes } from '../client-read/routes.js';
 declare module 'fastify' { interface FastifyRequest { actor: Actor } }
 export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig }
 export function createApp({ ctx, auth, channelSupport = [], callbackConfig }: AppOptions) {
@@ -31,6 +32,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig }: Ap
     catch { return reply.status(503).send({ status: 'unavailable' }); }
   });
   app.get('/v1/me', async request => ({ id: request.actor.id }));
+  clientReadRoutes(app, ctx);
   tripRoutes(app, ctx); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport);
   if (callbackConfig) callbackRoutes(app, ctx, callbackConfig);
   return app;
