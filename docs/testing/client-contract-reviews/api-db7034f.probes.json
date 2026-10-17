@@ -1,0 +1,279 @@
+{
+  "schema": "andes.reviewer-api-delta/1",
+  "claimedCandidateSha": "db7034fc9e1dba035b87368117376e9730d6b830",
+  "candidateIdentityVerifiedByRunner": false,
+  "readContractSha": "748d30c6e6c595fd1a2c2c648a045750de3dd9c8",
+  "results": {
+    "baseline": {
+      "schema": "andes.reviewer-client-probes/1",
+      "claimedCandidateSha": "db7034fc9e1dba035b87368117376e9730d6b830",
+      "candidateIdentityVerifiedByRunner": false,
+      "backendContract": "ebc8fb1d36f441ef012ca585201cefabf61383d6",
+      "scope": "api-driver-conformance",
+      "passed": true,
+      "checks": [
+        {
+          "id": "route:identity",
+          "passed": true
+        },
+        {
+          "id": "route:createTruck",
+          "passed": true
+        },
+        {
+          "id": "route:inviteContact",
+          "passed": true
+        },
+        {
+          "id": "route:acceptContact",
+          "passed": true
+        },
+        {
+          "id": "route:revokeStanding",
+          "passed": true
+        },
+        {
+          "id": "route:createDraft",
+          "passed": true
+        },
+        {
+          "id": "route:confirmTrip",
+          "passed": true
+        },
+        {
+          "id": "route:command",
+          "passed": true
+        },
+        {
+          "id": "route:uploadLocations",
+          "passed": true
+        },
+        {
+          "id": "route:snapshot",
+          "passed": true
+        },
+        {
+          "id": "route:revokeTrip",
+          "passed": true
+        },
+        {
+          "id": "route:sos",
+          "passed": true
+        },
+        {
+          "id": "route:incident",
+          "passed": true
+        },
+        {
+          "id": "route:acknowledge",
+          "passed": true
+        },
+        {
+          "id": "route:action",
+          "passed": true
+        },
+        {
+          "id": "route:resolve",
+          "passed": true
+        },
+        {
+          "id": "http:400",
+          "passed": true
+        },
+        {
+          "id": "http:401",
+          "passed": true
+        },
+        {
+          "id": "http:403",
+          "passed": true
+        },
+        {
+          "id": "http:404",
+          "passed": true
+        },
+        {
+          "id": "http:409",
+          "passed": true
+        },
+        {
+          "id": "http:422",
+          "passed": true
+        },
+        {
+          "id": "http:500",
+          "passed": true
+        },
+        {
+          "id": "write:lost-response-explicit-same-key-replay",
+          "passed": true
+        },
+        {
+          "id": "write:malformed-success-is-ambiguous",
+          "passed": true
+        },
+        {
+          "id": "write:abort-after-start-is-not-proof-of-cancellation",
+          "passed": true
+        },
+        {
+          "id": "read:revoked-snapshot-cannot-reuse-cached-location",
+          "passed": true
+        },
+        {
+          "id": "session:signout-clears-sensitive-store-and-prevents-new-request",
+          "passed": true
+        },
+        {
+          "id": "session:late-response-cannot-cross-to-new-user",
+          "passed": true
+        }
+      ],
+      "limitation": "Reviewer must verify the archived candidate and transparent driver binding. No backend, browser, device, identity or provider qualification."
+    },
+    "priorDelta": {
+      "passed": true,
+      "checks": [
+        "required-credential-fields-only",
+        "both-path-uuid-aliases-preserve-idempotency-scope"
+      ]
+    },
+    "readLifecycle": {
+      "passed": true,
+      "checks": [
+        {
+          "id": "read:getProfile-exact-wire-and-truncation",
+          "passed": true
+        },
+        {
+          "id": "read:getBootstrap-exact-wire-and-truncation",
+          "passed": true
+        },
+        {
+          "id": "read:listTrucks-exact-wire-and-truncation",
+          "passed": true
+        },
+        {
+          "id": "read:listContacts-exact-wire-and-truncation",
+          "passed": true
+        },
+        {
+          "id": "read:listTrips-exact-wire-and-truncation",
+          "passed": true
+        },
+        {
+          "id": "read:revoked-history-is-preserved-and-private-fields-are-projected-out",
+          "passed": true
+        },
+        {
+          "id": "protocol:oversized-bootstrap",
+          "passed": true
+        },
+        {
+          "id": "protocol:duplicate-trucks",
+          "passed": true
+        },
+        {
+          "id": "protocol:unpublished-limit",
+          "passed": true
+        },
+        {
+          "id": "protocol:accepted-unrequested-scope",
+          "passed": true
+        },
+        {
+          "id": "protocol:missing-truncation",
+          "passed": true
+        },
+        {
+          "id": "lifecycle:concurrent-activation-cannot-publish-the-older-result",
+          "passed": true
+        },
+        {
+          "id": "lifecycle:rotation-retires-a-held-identity-response",
+          "passed": true
+        },
+        {
+          "id": "lifecycle:current-401-clears-all-bound-views",
+          "passed": true
+        },
+        {
+          "id": "lifecycle:expiry-invalidates-an-idle-observed-view",
+          "passed": true
+        },
+        {
+          "id": "driver-adapter:http-400-keeps-terminal-or-unknown-meaning",
+          "passed": true
+        },
+        {
+          "id": "driver-adapter:http-401-keeps-terminal-or-unknown-meaning",
+          "passed": true
+        },
+        {
+          "id": "driver-adapter:http-403-keeps-terminal-or-unknown-meaning",
+          "passed": true
+        },
+        {
+          "id": "driver-adapter:http-404-keeps-terminal-or-unknown-meaning",
+          "passed": true
+        },
+        {
+          "id": "driver-adapter:http-409-keeps-terminal-or-unknown-meaning",
+          "passed": true
+        },
+        {
+          "id": "driver-adapter:http-422-keeps-terminal-or-unknown-meaning",
+          "passed": true
+        },
+        {
+          "id": "driver-adapter:http-500-keeps-terminal-or-unknown-meaning",
+          "passed": true
+        },
+        {
+          "id": "driver-adapter:command-preserves-controller-body-and-original-key",
+          "passed": true
+        }
+      ],
+      "limitation": "Frozen typed-client exports with independent synthetic wire fixtures and lifecycle scheduling; no actual read-route SQL, browser or provider qualification."
+    },
+    "gateway": {
+      "passed": true,
+      "checks": [
+        {
+          "id": "gateway:unconfigured-has-no-acquisition-or-authentication",
+          "passed": true
+        },
+        {
+          "id": "gateway:credentials-alone-cannot-bypass-held-server-identity",
+          "passed": true
+        },
+        {
+          "id": "gateway:retired-provider-success-cannot-replace-a-new-session",
+          "passed": true
+        },
+        {
+          "id": "gateway:retired-provider-failure-cannot-replace-a-new-session",
+          "passed": true
+        },
+        {
+          "id": "gateway:retired-401-cannot-clear-newly-verified-session",
+          "passed": true
+        },
+        {
+          "id": "gateway:old-logout-failure-cannot-overwrite-a-new-authenticated-state",
+          "passed": true
+        },
+        {
+          "id": "gateway:private-provider-failure-is-fixed-state-and-never-auto-retried",
+          "passed": true
+        },
+        {
+          "id": "gateway:dispose-clears-bound-protected-view-without-external-logout",
+          "passed": true
+        }
+      ],
+      "limitation": "Actual headless gateway/client code with synthetic providers and HTTP scheduling; no frozen foundation compatibility, browser login or production provider qualification."
+    }
+  },
+  "passed": true
+}

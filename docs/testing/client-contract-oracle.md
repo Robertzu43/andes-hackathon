@@ -162,6 +162,38 @@ own delta review. The new read routes were **not** executed against actual SQL h
 There is no claim that typed bindings repair the independently held driver finding,
 establish contact feature acceptance, or prove the pending frontend/browser seam.
 
+### Current gateway/read candidate
+
+Scoped independent disposition: **ACCEPT for the typed-client module** at
+`db7034fc9e1dba035b87368117376e9730d6b830`. Its five-file delta from `7da6dbb`
+adds the headless session gateway, exports, tests and documentation. Gateway
+snapshots carry only explicit state/mode; trusted acquisition alone cannot publish
+authenticated until the actual typed `/v1/me` call succeeds. No implicit provider,
+storage, login endpoint, refresh or demo identity is supplied.
+
+```sh
+ANDES_REVIEW_API_ROOT=/ABS/DB7034F/ARCHIVE \
+  node tests/client-contract-review/api-gateway.probes.mjs
+```
+
+Fresh checks on this exact head: **77 author tests, 14 declared actual-controller
+fixture integration checks, 29 unchanged baseline probes, 2 prior delta controls,
+23 read/lifecycle probes and 8 independent gateway probes all passed**. Both strict
+TypeScript5.9.3 NodeNext/ESNext-Bundler configurations passed on Node26.3.0. The eight
+new cases exercise inert unconfigured state, held identity verification, old provider
+success/failure after replacement, stale401 after new authentication, stale logout
+failure, private provider errors without retry, and teardown clearing a bound view
+without invoking external logout.
+
+The sanitized combined result is `client-contract-reviews/api-db7034f.probes.json`.
+The supplied source directory was manually archived/verified; the runner does not
+attest source identity. Actual frozen foundation type compatibility, browser login
+and protected view rendering, new read-route SQL/auth isolation and production
+provider behavior remain unproved. Source read-time metadata needed by driver
+selection evidence is still absent from PR65's contract and is not fabricated.
+The independent PR63/PR66 findings remain separate holds; this module acceptance
+does not approve those features or the complete application.
+
 ## Durable observation queue oracle
 
 `queue-probes.mjs` defines ten scenarios before a lane42 candidate is supplied:
