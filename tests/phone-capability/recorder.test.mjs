@@ -444,6 +444,7 @@ test('samplePosition() is the only path to a location request and coordinates ar
       mono: 2500,
       wall: WALL0 + 2000,
       source: 'sample',
+      options: { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 },
       accuracyM: 35,
       positionTimestamp: WALL0 - 2000,
       ageMs: 4000,
@@ -589,6 +590,31 @@ test('acquisition settings survive buffer eviction of the request observation', 
   assert.equal(ofType(trace, 'geolocation-request').length, 0); // evicted from the buffer
   assert.deepEqual(trace.acquisition.geolocation.watch, { enableHighAccuracy: true, maximumAge: 123456, timeout: 7890 });
   assert.equal(trace.acquisition.geolocation.sample, null);
+});
+
+test('each retained fix carries the settings of its own request after settings change', () => {
+  const b = fakeBrowser({ permissions: false });
+  const recorder = createRecorder({ env: b.env, maxObservations: 8 });
+  recorder.start();
+  recorder.watchPosition({ maximumAge: 111_111 });
+  const [[, watchA]] = [...b.geo.watches];
+  watchA.success({ coords: { accuracy: 11 }, timestamp: WALL0 });
+  recorder.clearPositionWatch();
+  recorder.watchPosition({ maximumAge: 222_222 });
+  const [[, watchB]] = [...b.geo.watches];
+  watchB.success({ coords: { accuracy: 22 }, timestamp: WALL0 });
+  recorder.samplePosition({ maximumAge: 333_333 });
+  b.geo.requests[0].success({ coords: { accuracy: 33 }, timestamp: WALL0 });
+  recorder.samplePosition({ maximumAge: 444_444 });
+  b.geo.requests[1].success({ coords: { accuracy: 44 }, timestamp: WALL0 });
+  const trace = recorder.exportTrace();
+  assert.ok(trace.summary.dropped > 0); // the buffer wrapped: per-callback settings must stand alone
+  assert.deepEqual(
+    ofType(trace, 'geolocation').map((o) => [o.accuracyM, o.options.maximumAge]),
+    [[11, 111_111], [22, 222_222], [33, 333_333], [44, 444_444]],
+  );
+  assert.equal(trace.acquisition.geolocation.watch.maximumAge, 222_222); // latest request per source
+  assert.equal(trace.acquisition.geolocation.sample.maximumAge, 444_444);
 });
 
 test('invalid options are rejected before anything starts', () => {

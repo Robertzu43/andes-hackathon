@@ -189,13 +189,14 @@ export function createRecorder(options = {}) {
     return ageMs > staleAfterMs ? 'stale' : 'fresh';
   }
 
-  function onPosition(source, position) {
+  function onPosition(source, position, options) {
     const at = now();
     const coords = position?.coords ?? {};
     const positionTimestamp = finiteOrNull(position?.timestamp);
     const ageMs = positionTimestamp === null ? null : at.wall - positionTimestamp;
     const fields = {
       source,
+      options,
       accuracyM: finiteOrNull(coords.accuracy),
       positionTimestamp,
       ageMs,
@@ -212,10 +213,11 @@ export function createRecorder(options = {}) {
     record('geolocation', fields, at);
   }
 
-  function onPositionError(source, error) {
+  function onPositionError(source, error, options) {
     const code = Number.isInteger(error?.code) ? error.code : null;
     record('geolocation-error', {
       source,
+      options,
       code,
       codeName: GEOLOCATION_ERRORS[code] ?? 'UNKNOWN',
       message: typeof error?.message === 'string' ? error.message.slice(0, MAX_TEXT) : null,
@@ -268,7 +270,7 @@ export function createRecorder(options = {}) {
     record('geolocation-request', { source: 'sample', options: request });
     acquisition.sample = request;
     try {
-      geolocation.getCurrentPosition((p) => onPosition('sample', p), (e) => onPositionError('sample', e), request);
+      geolocation.getCurrentPosition((p) => onPosition('sample', p, request), (e) => onPositionError('sample', e, request), request);
     } catch (error) {
       record('geolocation-unavailable', { source: 'sample', reason: 'threw', error: errorName(error) });
     }
@@ -284,7 +286,7 @@ export function createRecorder(options = {}) {
     record('geolocation-request', { source: 'watch', options: request });
     acquisition.watch = request;
     try {
-      const id = geolocation.watchPosition((p) => onPosition('watch', p), (e) => onPositionError('watch', e), request);
+      const id = geolocation.watchPosition((p) => onPosition('watch', p, request), (e) => onPositionError('watch', e, request), request);
       watch = { geolocation, id };
     } catch (error) {
       record('geolocation-unavailable', { source: 'watch', reason: 'threw', error: errorName(error) });

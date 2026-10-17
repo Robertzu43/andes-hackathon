@@ -51,7 +51,7 @@ Nothing is attached, scheduled or queried until `start()`. Location is touched o
 
 - `session`: random `id`, `label`, `state`, `startedAt` and `stoppedAt` (each `{ mono, wall }`).
 - `config`: the options above.
-- `acquisition.geolocation`: the most recently requested position `options` per source (`sample`, `watch`), or `null` when that source was never requested. Kept in recorder state, outside the bounded buffer, so the acquisition settings survive even when the `geolocation-request` observation itself has been evicted (`summary.dropped`).
+- `acquisition.geolocation`: the most recently requested position `options` per source (`sample`, `watch`), or `null` when that source was never requested. Kept in recorder state, outside the bounded buffer, so the acquisition settings survive even when the `geolocation-request` observation itself has been evicted (`summary.dropped`). When settings changed between requests, trust the per-callback `options` on each `geolocation` or `geolocation-error` observation, not this latest-only summary.
 - `environment`: `source` (`global` or `injected`), `physicalDeviceVerified` (always `false`; a trace cannot prove which device or conditions produced it), `userAgent`, `navigatorStandalone`, `displayModeStandalone`, `timeOrigin`.
 - `capabilities`: `secureContext`; `apis` with `exposed`, `not-exposed` or `unknown` for geolocation, permissions, motion, notifications, service worker, push, wake lock, battery, network information, page freeze and visibility; `permissionsAtStart` for motion (always `unknown`) and notifications. `exposed` means the object exists, not that it works on the device.
 - `redaction.coordinates`: `omitted`, or `included-by-tester-choice`.
@@ -68,8 +68,8 @@ Nothing is attached, scheduled or queried until `start()`. Location is touched o
 | `permission` | `name`, `state` (`granted`, `denied`, `prompt` or `unknown`), `source` (`query` or `change`), `error` |
 | `mark` | `label` |
 | `geolocation-request` | `source` (`sample` or `watch`), `options` |
-| `geolocation` | `source`, `accuracyM`, `positionTimestamp`, `ageMs`, `freshness`, `providedFields`, and `coords` only by tester choice |
-| `geolocation-error` | `source`, `code`, `codeName`, `message` |
+| `geolocation` | `source`, `options` (the request settings that produced this callback), `accuracyM`, `positionTimestamp`, `ageMs`, `freshness`, `providedFields`, and `coords` only by tester choice |
+| `geolocation-error` | `source`, `options` (as above), `code`, `codeName`, `message` |
 | `geolocation-unavailable` | `source`, `reason` (`not-exposed` or `threw`), `error` |
 | `geolocation-watch-cleared` | `error` |
 
