@@ -1,0 +1,198 @@
+{
+  "runtime": "v24.17.0",
+  "candidate": "975e48b74173245dc02e5c20f553021203d1649a",
+  "base": "3d7e724fc7a24a124765611b2cd9ef235fa42d20",
+  "source": "01519d8275b28caf88091feca07247622eace973",
+  "kind": "independent document/integrity checks; no participant, app, device or legal qualification",
+  "hashes": [
+    {
+      "path": ".gitignore",
+      "blob": "335e8210a4a63e8fe7656eb5568e37ed68a9b622",
+      "sha256": "1dd6309a34a3a95a87b4b29988c7f943930921faf9fa8e1513fdd41cbbc2f864",
+      "unchangedFrom015": false
+    },
+    {
+      "path": "evidence/README.md",
+      "blob": "300b9b0448a38a7f3d80164cc1c95ca6b3e30d26",
+      "sha256": "16923bc9116eda3550ae06243db0c3ecf49919b6bbd7f6372809d7258ccc9ad4",
+      "unchangedFrom015": false
+    },
+    {
+      "path": "evidence/cohort-brief.md",
+      "blob": "d1fec07a6a581bc9dc62d70af5914b3a55641e24",
+      "sha256": "b024babeaee44c742cc46ce3100d8d2c9e5a005bab7bae3bd15f3c2a75630898",
+      "unchangedFrom015": false
+    },
+    {
+      "path": "evidence/data-dictionary.md",
+      "blob": "cd7c3e30cdcc437aa28dc3cce87990a5c3f092b3",
+      "sha256": "169184bf582c2a621c8477a13ff7d9c3c6a911804dc469d404c506290b0076e0",
+      "unchangedFrom015": false
+    },
+    {
+      "path": "evidence/guides/interview.es.md",
+      "blob": "74ee1f47bb561d02fdaca04b92117b2a79ddc4f6",
+      "sha256": "cd96f248eaae4a37bbb1d4c2e1fc0891d95a267bc26dcfe52f8bcbe39507d9d5",
+      "unchangedFrom015": true
+    },
+    {
+      "path": "evidence/guides/interview.pt-BR.md",
+      "blob": "bf8918e3d39e92e462bc7eb0208481ca5e6b409d",
+      "sha256": "b0050b0146d8880053305f69ce0af98c4703604fd3f9d3a2c2e601a78c2c9c29",
+      "unchangedFrom015": true
+    },
+    {
+      "path": "evidence/guides/review.es.md",
+      "blob": "385a75e3056fe247c0cd012c9a1d80f7f9e72352",
+      "sha256": "a1883a8ad01605eb2cc3b4d93ee36b52c1fbd38fb7fdc2ca58d340a899047188",
+      "unchangedFrom015": true
+    },
+    {
+      "path": "evidence/guides/review.pt-BR.md",
+      "blob": "fc426eb5a2b1af5a1fb5e58a564844a212ca4d83",
+      "sha256": "3581a90c806a1ee0735e98b32bb5f99e19c68060ecb5a551e15df205a6f66cfa",
+      "unchangedFrom015": true
+    },
+    {
+      "path": "evidence/templates/cases.csv",
+      "blob": "0c35c64499bab4e43db51cd6bbecf17f076a3c42",
+      "sha256": "c2374597d17ae12ae8428eba5ce0d098ae685aa04a18566edc159312059fedd3",
+      "unchangedFrom015": true
+    },
+    {
+      "path": "evidence/templates/participants.csv",
+      "blob": "3ab35a75dc28aeb34d208d2e78016f06824c3c2c",
+      "sha256": "94422105bb759b3933e4b092fe08e6a6b7a9876f855ef3c118dcfad507c17f7f",
+      "unchangedFrom015": true
+    },
+    {
+      "path": "evidence/templates/sources.csv",
+      "blob": "58a61fa6e6d5d67340a9ebfeb28c1534fe71ca0a",
+      "sha256": "2745f563c1153e9ec0f2287702fd290beadcbbbdba9b15c2e98d34fc1cb72878",
+      "unchangedFrom015": true
+    },
+    {
+      "path": "evidence/templates/timeline.csv",
+      "blob": "1a704dc3e0579789c0d6e12f27393b59827b3923",
+      "sha256": "47f1cbeddd58c1384b06ef9d03e922d8b0047bab14f538de1a22f82bc375798c",
+      "unchangedFrom015": true
+    }
+  ],
+  "csvs": [
+    {
+      "path": "evidence/templates/cases.csv",
+      "columns": [
+        "case_id",
+        "pair_id",
+        "trip_kind",
+        "synthetic",
+        "concerns",
+        "trip_countries",
+        "interview_language",
+        "load_status",
+        "haul_type",
+        "corridor_label",
+        "connectivity",
+        "arrangement",
+        "arrangement_channels",
+        "actionable_window",
+        "someone_available_to_act",
+        "unmet_problem",
+        "window_start_event",
+        "window_end_event",
+        "driver_review",
+        "contact_review",
+        "trace_review",
+        "redaction_status"
+      ]
+    },
+    {
+      "path": "evidence/templates/participants.csv",
+      "columns": [
+        "participant_id",
+        "pair_id",
+        "role",
+        "country_of_residence",
+        "preferred_language",
+        "phone_platform",
+        "work_arrangement",
+        "trucks_operated",
+        "relationship_to_driver",
+        "consent_ref",
+        "consent_recording",
+        "consent_share_redacted"
+      ]
+    },
+    {
+      "path": "evidence/templates/sources.csv",
+      "columns": [
+        "source_id",
+        "case_id",
+        "kind",
+        "provided_by",
+        "evidence_basis",
+        "timestamped_record",
+        "source_time_zone",
+        "storage_ref",
+        "note_private"
+      ]
+    },
+    {
+      "path": "evidence/templates/timeline.csv",
+      "columns": [
+        "event_id",
+        "case_id",
+        "seq",
+        "event_type",
+        "actor",
+        "reported_by",
+        "occurrence",
+        "source_ids",
+        "basis_source_id",
+        "basis_note",
+        "time_basis",
+        "observed_time",
+        "observed_source_id",
+        "recalled_earliest",
+        "recalled_latest",
+        "time_zone",
+        "knew",
+        "conflicts_with",
+        "note_redacted",
+        "note_private"
+      ]
+    }
+  ],
+  "ignoreCases": [
+    [
+      "evidence/private/test/participants.csv",
+      true
+    ],
+    [
+      "evidence/private/raw.txt",
+      true
+    ],
+    [
+      "evidence/templates/cases.csv",
+      false
+    ],
+    [
+      "evidence/guides/interview.es.md",
+      false
+    ],
+    [
+      ".env.test",
+      true
+    ],
+    [
+      ".env.example",
+      false
+    ]
+  ],
+  "controls": [
+    "duplicate CSV header rejected",
+    "populated CSV rejected",
+    "removing private ignore rule exposes synthetic path"
+  ],
+  "result": "AI ACCEPT of standalone manual-material scope; original Robert/human review still required"
+}
