@@ -1,0 +1,800 @@
+{
+  "format": "andes-incident-export",
+  "format_version": 1,
+  "issue": 8,
+  "caveat": "Exploratory reconstruction of a small cohort. It cannot show prevalence, regional demand or safety efficacy. Recalled times are memories; only observed times come from records. A missing reply or phone record never shows sleep or robbery.",
+  "coverage": {
+    "pairs": 2,
+    "cases": 2,
+    "participants": 4,
+    "countries": {
+      "BR": 2,
+      "CO": 2
+    },
+    "languages": {
+      "es": 2,
+      "pt-BR": 2
+    },
+    "phone_platforms": {
+      "iphone": 2,
+      "unknown": 2
+    },
+    "trucks_operated": {
+      "1": 1,
+      "2": 1
+    },
+    "concerns": {
+      "fatigue": 1,
+      "lost_contact": 1,
+      "security": 1
+    },
+    "gaps": [
+      "Android not represented"
+    ]
+  },
+  "participants": [
+    {
+      "participant_id": "SYN-A-C",
+      "pair_id": "SYN-A",
+      "role": "contact",
+      "country_of_residence": "BR",
+      "preferred_language": "pt-BR",
+      "phone_platform": "unknown",
+      "work_arrangement": "not_applicable",
+      "trucks_operated": "not_applicable",
+      "relationship_to_driver": "family"
+    },
+    {
+      "participant_id": "SYN-A-D",
+      "pair_id": "SYN-A",
+      "role": "driver",
+      "country_of_residence": "BR",
+      "preferred_language": "pt-BR",
+      "phone_platform": "iphone",
+      "work_arrangement": "owner_operator",
+      "trucks_operated": "1",
+      "relationship_to_driver": "not_applicable"
+    },
+    {
+      "participant_id": "SYN-B-C",
+      "pair_id": "SYN-B",
+      "role": "contact",
+      "country_of_residence": "CO",
+      "preferred_language": "es",
+      "phone_platform": "unknown",
+      "work_arrangement": "not_applicable",
+      "trucks_operated": "not_applicable",
+      "relationship_to_driver": "fellow_driver"
+    },
+    {
+      "participant_id": "SYN-B-D",
+      "pair_id": "SYN-B",
+      "role": "driver",
+      "country_of_residence": "CO",
+      "preferred_language": "es",
+      "phone_platform": "iphone",
+      "work_arrangement": "owner_operator",
+      "trucks_operated": "2",
+      "relationship_to_driver": "not_applicable"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "SYN-A-W",
+      "pair_id": "SYN-A",
+      "synthetic": true,
+      "trip_kind": "worrying",
+      "concerns": [
+        "fatigue",
+        "lost_contact"
+      ],
+      "trip_countries": [
+        "BR"
+      ],
+      "interview_language": "pt-BR",
+      "load_status": "loaded",
+      "haul_type": "interurban",
+      "corridor_label": "SYNTHETIC: interstate freight route with a mountain stretch without signal",
+      "connectivity": "patchy",
+      "arrangement": "SYNTHETIC: driver sends a WhatsApp message at each long stop and the spouse calls if it is late",
+      "arrangement_channels": [
+        "whatsapp",
+        "call"
+      ],
+      "actionable_window": "yes",
+      "someone_available_to_act": "yes",
+      "unmet_problem": "unknown",
+      "reviews": {
+        "driver": "confirmed",
+        "contact": "corrected",
+        "trace": "traced"
+      },
+      "anchor_local_hour": 14,
+      "window": {
+        "start_event": "SYN-A-W-E07",
+        "end_event": "SYN-A-W-E13",
+        "start_basis": "recalled",
+        "end_basis": "both",
+        "duration_min": {
+          "min": 44,
+          "max": 74
+        },
+        "traceable_to_records": false
+      },
+      "sources": [
+        {
+          "source_id": "SYN-A-W-S1",
+          "kind": "interview_driver",
+          "provided_by": "SYN-A-D",
+          "timestamped_record": false,
+          "source_time_zone": null
+        },
+        {
+          "source_id": "SYN-A-W-S2",
+          "kind": "interview_contact",
+          "provided_by": "SYN-A-C",
+          "timestamped_record": false,
+          "source_time_zone": null
+        },
+        {
+          "source_id": "SYN-A-W-S3",
+          "kind": "whatsapp_export",
+          "provided_by": "SYN-A-C",
+          "timestamped_record": true,
+          "source_time_zone": "America/Sao_Paulo"
+        },
+        {
+          "source_id": "SYN-A-W-S4",
+          "kind": "call_log",
+          "provided_by": "SYN-A-C",
+          "timestamped_record": true,
+          "source_time_zone": "America/Sao_Paulo"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "SYN-A-W-E01",
+          "seq": 1,
+          "event_type": "trip_start",
+          "actor": "driver",
+          "reported_by": "SYN-A-D",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-A-W-S1"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 0,
+            "latest": 30
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: loaded haul expected to take about nine hours with one rest stop",
+          "note": null
+        },
+        {
+          "event_id": "SYN-A-W-E02",
+          "seq": 2,
+          "event_type": "message_sent",
+          "actor": "driver",
+          "reported_by": "record",
+          "occurrence": "recorded",
+          "source_ids": [
+            "SYN-A-W-S3"
+          ],
+          "time_basis": "observed",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": 12,
+          "observed_source_id": "SYN-A-W-S3",
+          "recalled_offset_min": null,
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": null,
+          "note": "SYNTHETIC: departure message"
+        },
+        {
+          "event_id": "SYN-A-W-E03",
+          "seq": 3,
+          "event_type": "tiredness_report",
+          "actor": "driver",
+          "reported_by": "record",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-A-W-S3"
+          ],
+          "time_basis": "observed",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": 340,
+          "observed_source_id": "SYN-A-W-S3",
+          "recalled_offset_min": null,
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": null,
+          "note": "SYNTHETIC: message saying the driver was tired and stopping to rest"
+        },
+        {
+          "event_id": "SYN-A-W-E04",
+          "seq": 4,
+          "event_type": "rest_start",
+          "actor": "driver",
+          "reported_by": "SYN-A-D",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-A-W-S1"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 345,
+            "latest": 360
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: stopped at a fuel station to sleep for about an hour",
+          "note": null
+        },
+        {
+          "event_id": "SYN-A-W-E05",
+          "seq": 5,
+          "event_type": "rest_end",
+          "actor": "driver",
+          "reported_by": "SYN-A-D",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-A-W-S1"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 410,
+            "latest": 430
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": null,
+          "note": null
+        },
+        {
+          "event_id": "SYN-A-W-E06",
+          "seq": 6,
+          "event_type": "message_sent",
+          "actor": "driver",
+          "reported_by": "SYN-A-D",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-A-W-S1"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 420,
+            "latest": 435
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [
+            "SYN-A-W-E14"
+          ],
+          "knew": "SYNTHETIC: the driver believes a message went out after waking up",
+          "note": "SYNTHETIC: the chat export shows no message between 19:40 and 22:31"
+        },
+        {
+          "event_id": "SYN-A-W-E07",
+          "seq": 7,
+          "event_type": "checkin_due",
+          "actor": "contact",
+          "reported_by": "SYN-A-C",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-A-W-S2"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 420,
+            "latest": 450
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: expected a message once the driver was back on the road after about an hour",
+          "note": null
+        },
+        {
+          "event_id": "SYN-A-W-E08",
+          "seq": 8,
+          "event_type": "contact_concerned",
+          "actor": "contact",
+          "reported_by": "SYN-A-C",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-A-W-S2"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 435,
+            "latest": 465
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: the driver had said they were resting and had not written since",
+          "note": null
+        },
+        {
+          "event_id": "SYN-A-W-E09",
+          "seq": 9,
+          "event_type": "robbery",
+          "actor": "driver",
+          "reported_by": "SYN-A-C",
+          "occurrence": "suspected",
+          "source_ids": [
+            "SYN-A-W-S2"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 450,
+            "latest": 480
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: feared the loaded truck had been robbed because the driver's phone was off",
+          "note": "SYNTHETIC: suspicion only; the driver reported no robbery on this trip"
+        },
+        {
+          "event_id": "SYN-A-W-E10",
+          "seq": 10,
+          "event_type": "call_attempt",
+          "actor": "contact",
+          "reported_by": "record",
+          "occurrence": "recorded",
+          "source_ids": [
+            "SYN-A-W-S4"
+          ],
+          "time_basis": "observed",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": 460,
+          "observed_source_id": "SYN-A-W-S4",
+          "recalled_offset_min": null,
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": null,
+          "note": "SYNTHETIC: call not answered"
+        },
+        {
+          "event_id": "SYN-A-W-E11",
+          "seq": 11,
+          "event_type": "call_attempt",
+          "actor": "contact",
+          "reported_by": "record",
+          "occurrence": "recorded",
+          "source_ids": [
+            "SYN-A-W-S4"
+          ],
+          "time_basis": "observed",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": 485,
+          "observed_source_id": "SYN-A-W-S4",
+          "recalled_offset_min": null,
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": null,
+          "note": "SYNTHETIC: call not answered"
+        },
+        {
+          "event_id": "SYN-A-W-E12",
+          "seq": 12,
+          "event_type": "decision",
+          "actor": "contact",
+          "reported_by": "SYN-A-C",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-A-W-S2"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 485,
+            "latest": 500
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: unsure whether the phone was out of signal or something had happened; decided to ask a fellow driver on the same route",
+          "note": null
+        },
+        {
+          "event_id": "SYN-A-W-E13",
+          "seq": 13,
+          "event_type": "third_party_contacted",
+          "actor": "contact",
+          "reported_by": "SYN-A-C",
+          "occurrence": "recorded",
+          "source_ids": [
+            "SYN-A-W-S2",
+            "SYN-A-W-S4"
+          ],
+          "time_basis": "both",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": 494,
+          "observed_source_id": "SYN-A-W-S4",
+          "recalled_offset_min": {
+            "earliest": 470,
+            "latest": 485
+          },
+          "recall_gap_min": 9,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: called a fellow driver who uses the same route",
+          "note": null
+        },
+        {
+          "event_id": "SYN-A-W-E14",
+          "seq": 14,
+          "event_type": "message_sent",
+          "actor": "driver",
+          "reported_by": "record",
+          "occurrence": "recorded",
+          "source_ids": [
+            "SYN-A-W-S3"
+          ],
+          "time_basis": "observed",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": 511,
+          "observed_source_id": "SYN-A-W-S3",
+          "recalled_offset_min": null,
+          "recall_gap_min": null,
+          "conflicts_with": [
+            "SYN-A-W-E06"
+          ],
+          "knew": null,
+          "note": "SYNTHETIC: message saying the driver slept longer than planned without signal and all was fine"
+        },
+        {
+          "event_id": "SYN-A-W-E15",
+          "seq": 15,
+          "event_type": "other",
+          "actor": "third_party",
+          "reported_by": "SYN-A-C",
+          "occurrence": "reported_second_hand",
+          "source_ids": [
+            "SYN-A-W-S2"
+          ],
+          "time_basis": "unknown",
+          "time_zone": null,
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": null,
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: the fellow driver said the truck was seen parked at the fuel station; time not known",
+          "note": null
+        },
+        {
+          "event_id": "SYN-A-W-E16",
+          "seq": 16,
+          "event_type": "resolution",
+          "actor": "contact",
+          "reported_by": "SYN-A-C",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-A-W-S2",
+            "SYN-A-W-S3"
+          ],
+          "time_basis": "both",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": 511,
+          "observed_source_id": "SYN-A-W-S3",
+          "recalled_offset_min": {
+            "earliest": 515,
+            "latest": 530
+          },
+          "recall_gap_min": -4,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: read the message and stopped worrying",
+          "note": null
+        },
+        {
+          "event_id": "SYN-A-W-E17",
+          "seq": 17,
+          "event_type": "arrival",
+          "actor": "driver",
+          "reported_by": "SYN-A-D",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-A-W-S1"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Sao_Paulo",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 690,
+            "latest": 720
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-B-W",
+      "pair_id": "SYN-B",
+      "synthetic": true,
+      "trip_kind": "worrying",
+      "concerns": [
+        "security"
+      ],
+      "trip_countries": [
+        "CO"
+      ],
+      "interview_language": "es",
+      "load_status": "loaded",
+      "haul_type": "interurban",
+      "corridor_label": "SYNTHETIC: mountain freight corridor with a known stopping point",
+      "connectivity": "patchy",
+      "arrangement": "SYNTHETIC: driver posts in a group of fellow drivers and uses the radio near known stopping points",
+      "arrangement_channels": [
+        "whatsapp",
+        "radio"
+      ],
+      "actionable_window": "yes",
+      "someone_available_to_act": "yes",
+      "unmet_problem": "unknown",
+      "reviews": {
+        "driver": "confirmed",
+        "contact": "confirmed",
+        "trace": "traced"
+      },
+      "anchor_local_hour": 22,
+      "window": {
+        "start_event": "SYN-B-W-E03",
+        "end_event": "SYN-B-W-E06",
+        "start_basis": "observed",
+        "end_basis": "both",
+        "duration_min": {
+          "min": 26,
+          "max": 26
+        },
+        "traceable_to_records": true
+      },
+      "sources": [
+        {
+          "source_id": "SYN-B-W-S1",
+          "kind": "interview_driver",
+          "provided_by": "SYN-B-D",
+          "timestamped_record": false,
+          "source_time_zone": null
+        },
+        {
+          "source_id": "SYN-B-W-S2",
+          "kind": "interview_contact",
+          "provided_by": "SYN-B-C",
+          "timestamped_record": false,
+          "source_time_zone": null
+        },
+        {
+          "source_id": "SYN-B-W-S3",
+          "kind": "whatsapp_export",
+          "provided_by": "SYN-B-C",
+          "timestamped_record": true,
+          "source_time_zone": "America/Bogota"
+        },
+        {
+          "source_id": "SYN-B-W-S4",
+          "kind": "independent_record",
+          "provided_by": "SYN-B-D",
+          "timestamped_record": true,
+          "source_time_zone": "America/Bogota"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "SYN-B-W-E01",
+          "seq": 1,
+          "event_type": "trip_start",
+          "actor": "driver",
+          "reported_by": "SYN-B-D",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-B-W-S1"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Bogota",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 0,
+            "latest": 30
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: loaded night haul through the mountain corridor",
+          "note": null
+        },
+        {
+          "event_id": "SYN-B-W-E02",
+          "seq": 2,
+          "event_type": "security_concern",
+          "actor": "driver",
+          "reported_by": "SYN-B-D",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-B-W-S1"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Bogota",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 180,
+            "latest": 200
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: noticed a car following the truck before the stopping point",
+          "note": null
+        },
+        {
+          "event_id": "SYN-B-W-E03",
+          "seq": 3,
+          "event_type": "message_sent",
+          "actor": "driver",
+          "reported_by": "record",
+          "occurrence": "recorded",
+          "source_ids": [
+            "SYN-B-W-S3"
+          ],
+          "time_basis": "observed",
+          "time_zone": "America/Bogota",
+          "observed_offset_min": 192,
+          "observed_source_id": "SYN-B-W-S3",
+          "recalled_offset_min": null,
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": null,
+          "note": "SYNTHETIC: message to the fellow driver saying a car was following the truck"
+        },
+        {
+          "event_id": "SYN-B-W-E04",
+          "seq": 4,
+          "event_type": "robbery_attempt",
+          "actor": "driver",
+          "reported_by": "SYN-B-D",
+          "occurrence": "corroborated",
+          "source_ids": [
+            "SYN-B-W-S1",
+            "SYN-B-W-S4"
+          ],
+          "time_basis": "both",
+          "time_zone": "America/Bogota",
+          "observed_offset_min": 205,
+          "observed_source_id": "SYN-B-W-S4",
+          "recalled_offset_min": {
+            "earliest": 200,
+            "latest": 220
+          },
+          "recall_gap_min": 0,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: men tried to stop the truck and the driver kept going",
+          "note": "SYNTHETIC: the police report gives the same stretch and a time inside the recalled range"
+        },
+        {
+          "event_id": "SYN-B-W-E05",
+          "seq": 5,
+          "event_type": "help_request",
+          "actor": "driver",
+          "reported_by": "record",
+          "occurrence": "recorded",
+          "source_ids": [
+            "SYN-B-W-S3"
+          ],
+          "time_basis": "observed",
+          "time_zone": "America/Bogota",
+          "observed_offset_min": 211,
+          "observed_source_id": "SYN-B-W-S3",
+          "recalled_offset_min": null,
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": null,
+          "note": "SYNTHETIC: message asking the fellow driver to alert others nearby"
+        },
+        {
+          "event_id": "SYN-B-W-E06",
+          "seq": 6,
+          "event_type": "assistance_arranged",
+          "actor": "contact",
+          "reported_by": "SYN-B-C",
+          "occurrence": "recorded",
+          "source_ids": [
+            "SYN-B-W-S2",
+            "SYN-B-W-S3"
+          ],
+          "time_basis": "both",
+          "time_zone": "America/Bogota",
+          "observed_offset_min": 218,
+          "observed_source_id": "SYN-B-W-S3",
+          "recalled_offset_min": {
+            "earliest": 210,
+            "latest": 225
+          },
+          "recall_gap_min": 0,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: alerted drivers near the stopping point and called the highway police line",
+          "note": null
+        },
+        {
+          "event_id": "SYN-B-W-E07",
+          "seq": 7,
+          "event_type": "resolution",
+          "actor": "contact",
+          "reported_by": "SYN-B-C",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-B-W-S2",
+            "SYN-B-W-S3"
+          ],
+          "time_basis": "both",
+          "time_zone": "America/Bogota",
+          "observed_offset_min": 232,
+          "observed_source_id": "SYN-B-W-S3",
+          "recalled_offset_min": {
+            "earliest": 240,
+            "latest": 255
+          },
+          "recall_gap_min": -8,
+          "conflicts_with": [],
+          "knew": "SYNTHETIC: the driver wrote from the toll plaza that all was fine",
+          "note": null
+        },
+        {
+          "event_id": "SYN-B-W-E08",
+          "seq": 8,
+          "event_type": "arrival",
+          "actor": "driver",
+          "reported_by": "SYN-B-D",
+          "occurrence": "self_reported",
+          "source_ids": [
+            "SYN-B-W-S1"
+          ],
+          "time_basis": "recalled",
+          "time_zone": "America/Bogota",
+          "observed_offset_min": null,
+          "observed_source_id": null,
+          "recalled_offset_min": {
+            "earliest": 480,
+            "latest": 510
+          },
+          "recall_gap_min": null,
+          "conflicts_with": [],
+          "knew": null,
+          "note": null
+        }
+      ]
+    }
+  ],
+  "excluded_cases": [
+    {
+      "case_id": "SYN-A-O",
+      "reasons": [
+        "redaction_status is in_progress"
+      ]
+    }
+  ]
+}
