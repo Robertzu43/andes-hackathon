@@ -6,8 +6,9 @@ This is headless browser application logic. It is based on Robert's backend at
 and `src/incidents/routes.ts`. It has no UI, visual system, transport, tokens,
 storage, notification sends or optional research/data-pool implementation.
 Lane49's shared foundation gates rendering; lane45 owns authenticated HTTP/session
-transport. The small `ContactApi` interface is an injection seam for that adapter,
-not a claim that a shared client or missing backend read already exists.
+transport. The small `ContactApi` interface is an injection seam. Its published
+adapter is pinned below; neither that adapter nor missing backend reads are imported
+into this feature branch.
 
 Run the standalone tests using the backend's supported Node24–26 runtime:
 
@@ -43,6 +44,32 @@ No operation silently obtains another user's credentials from a role selection.
 | `acknowledgeIncident(id, options)` | `POST /v1/incidents/:id/acknowledgements`, `{}` |
 | `reportIncidentAction(id, body, options)` | `POST /v1/incidents/:id/actions`, `{action}` |
 | `resolveIncident(id, options)` | `POST /v1/incidents/:id/resolve`, `{}` |
+
+### Published adapter handoff
+
+Lane45's PR59 at `7da6dbbd629eb996a0493f750d20e1845fa8f907` exports
+`createContactApi` and `bindJourneySession` from `web/src/lib/api/index.ts`.
+The facade maps `getTripSnapshot` to `getSnapshot`, and
+`reportIncidentAction(id,{action},options)` to `reportAction(id,action,options)`;
+the other methods forward their arguments. It introduces no retries or authority.
+
+The host creates the journey with that facade and binds it to the shared
+`MemorySession`. The binding's callback must synchronously call `setSession(null)`
+when cleared, or set the verified `/v1/me` actor UUID with the host's fixed local
+view. `activate()` verifies the actor before setting it. Dispose the binding on
+unmount or view replacement; every controller using the session needs its own
+binding. A real client401 clears the shared session and can supersede an outstanding
+journey result. Superseded never means the server mutation was cancelled.
+
+Lane45 publicly confirmed the retry repair at the feature logic/test freeze
+`b95bdbaa3f106f33d30b3aa8b0127ca3b691ee0e` in
+[its scoped PR62 confirmation](https://github.com/Bimbi-Dev/andes-hackathon/pull/62#issuecomment-6243021647).
+It reports14 controller/client checks, including retry400/403/404/409/422 unknown
+retention, a first-attempt409 rejection control, shared-session401 invalidation and
+strict structural types. HTTP/token fixtures are synthetic; those checks do not
+establish real browser login or signed-JWT/PostgreSQL integration of the adapter.
+This source-reviewed handoff does not import another lane's files or extend its
+confirmation to broader privacy review or merge approval.
 
 `setSession({actorId,view})` consumes the registered identity from `/v1/me` and a
 local journey view. It is not authentication or authorization. The adapter must
@@ -112,8 +139,10 @@ The incident read returns only id/tripId/status/createdAt/resolvedAt/groupCapabi
 It has no acknowledgement/action history, participant availability, structured
 cannot-assist state or conflict-resolution interface. This journey retains only its
 own successful action receipts in memory. Rendering other people's reports or
-reconciling disputes requires41's actual read contract. Real auth/session integration
-awaits45; UI awaits49; auth/privacy review belongs43 and functional UI review52.
+reconciling disputes requires an actual backend read contract. Lane45's published
+adapter now covers the semantic/session seam above; browser host wiring and real
+authentication remain unintegrated here. UI awaits49; auth/privacy review belongs43
+and functional UI review52.
 
 The standalone unit tests use synthetic transport receipts and failure/race probes.
 They do not prove backend authentication. The persisted scenarios below add real
@@ -191,11 +220,17 @@ bounds and truncation flags; they expose no effective per-trip-grant revocation,
 incident discovery, coordinates or provider facts. Forthcoming response/deadline/
 channel status remains a separate actual-contract dependency; PR53 stays unwired.
 
-### Minimal retrieval request to41
+### Retrieval request and backend ownership
 
-Q41 chooses/publishes paths and DTOs;45 types actual contracts before51 consumes
-them. The immediate need is two bounded participant-authorized retrievals with
-stable IDs/order and explicit truncation:
+Q41 confirmed that its PR65 is limited to actor-owned profile/truck/contact/trip
+catalogs and bootstrap. It will not duplicate Robert's planned
+`GET /v1/trips/:id/status` and `/sharing`; those paths have no published recipient
+discovery DTO in the reviewed source. The two needs below were sent to41/44 for
+backend-owner coordination, not as authorization for41 to invent parallel routes.
+Robert/44 must settle any remaining invitation/shared-trip discovery ownership and
+publish the actual paths/DTOs;45 then types them before51 consumes them.
+The immediate need is two bounded participant-authorized retrievals with stable
+IDs/order and explicit truncation:
 
 1. Incoming invitation list/detail for the authenticated recipient: grant ID,
    driver binding, requested/accepted operational scopes, pending/accepted/revoked
