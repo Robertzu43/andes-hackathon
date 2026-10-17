@@ -46,6 +46,12 @@ Heartbeat means an “I’m OK” check-in, not cardiac pulse. Device liveness, 
 
 Robbery and fatigue are the product's motivating problems. Their measurement must distinguish an attributed report (for example tiredness, suspected threat or a reported attempted robbery), the app's observations and any independently corroborated outcome. A missing reply is never a substitute for an incident label.
 
+## Trip creation and live sharing
+
+Core journey: while stationary, a freight driver describes a haul by voice note or natural-language text, reviews and confirms the proposed trip, then starts phone-based live location sharing with selected accepted trusted contacts. Contacts follow current location while supported observations are available, with timestamp, accuracy and explicit stale/unavailable states. The trip continues through the existing rest, check-in, help, escalation, contact-action and arrival flows. Voice/text interpretation never activates a trip or grants access without driver confirmation.
+
+Robert owns the intake backend (#12/#16), event contracts (#18), authorised location delivery and reconnect behaviour (#21), and trip-end sharing termination (#17). Sebastian owns voice/text capture and confirmation UX (#13), contact consent (#15), phone capture (#19) and the live contact map (#22). Physical-device checks (#9) establish supported cadence, freshness and background behaviour; these features are requirements, not implemented capabilities.
+
 ## Working agreement
 
 Authorised now: publish this existing Codus plan as open GitHub issues in the separate private Bimbi-Dev/andes-hackathon repository, team GOAT, and invite Robertzu43 with write access. The scope is independent freight truck drivers/owner-operators across Latin America, including Brazil, typically with one or two trucks. Robbery during transport and fatigue/sleepiness are the core problems; the individual driver is the primary customer. The seven sections, 63 nodes and 44 task nodes are retained; the regional requirements are incorporated into existing tasks. Sebastian has authorised starting his assigned engineering work: the #8 evidence kit and preparatory #9 iPhone recorder/protocol are in progress. Android remains untested. Real participant interviews, provider activation, trip collection and live pilots have not started; tooling does not satisfy those evidence gates.
