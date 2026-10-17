@@ -6,7 +6,7 @@ Duración: de 40 a 50 minutos, con una persona a la vez. El camionero y su conta
 
 ## Antes de empezar (para quien entrevista)
 
-- Confirme que el reclutamiento está autorizado y que tiene el consentimiento de la persona, incluido el permiso para grabar. Sin eso, no empiece.
+- Confirme que el reclutamiento está autorizado y que tiene el consentimiento de la persona, incluido el permiso para grabar. Sin eso, no empiece. Anote la referencia del consentimiento guardado fuera del repositorio en `consent_ref`; sin esa referencia, la validación falla.
 - Nunca entreviste a alguien que está manejando. Si el camionero está en ruta, acuerden otro momento con el camión detenido.
 - Este estudio mira hacia atrás. Nunca pida a nadie que maneje cansado, que aguante el sueño, que simule un robo ni que provoque una emergencia.
 - Use solo los códigos del estudio, por ejemplo `P03-D`. No anote nombres, teléfonos, placas, direcciones ni detalles de la carga que identifiquen a alguien.
@@ -70,6 +70,7 @@ Para cerrar esta parte: "Mirando hacia atrás, ¿hubo un momento en que algo se 
 - "¿Tiene registros de ese viaje: mensajes, historial de llamadas, ubicación, datos del rastreador, una denuncia o un reporte a la aseguradora?"
 - Si la persona acepta, mírenlos juntos. Anote qué registro es, la hora que muestra y la zona horaria del teléfono o del sistema.
 - Una denuncia presentada solo acredita que se hizo una declaración. Si repite el relato del camionero, manténgala como relato atribuido. Para corroborar un incidente, identifique observaciones independientes que apoyen ese hecho específico y su fuente. La hora de presentación de la denuncia no es la hora observada del incidente.
+- Un historial de ubicación puede registrar una parada. No lo convierta en descanso: `rest_start`, `rest_end` y `rest_difficulty` necesitan el relato atribuido de un participante.
 - No copie mensajes de otras personas. La persona puede ocultar lo que no quiera mostrar antes de enseñarlo.
 - No pida el chat completo. Si hace falta una copia, guárdela en el almacenamiento privado del estudio.
 

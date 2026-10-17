@@ -68,6 +68,7 @@ class SyntheticCohortTest(unittest.TestCase):
     def test_export_keeps_reports_suspicions_and_corroboration_apart(self):
         events = events_of(kit.export(FIXTURE)[0])
         self.assertEqual(events["SYN-A-W-E03"]["occurrence"], "self_reported")  # tiredness message
+        self.assertEqual(events["SYN-A-W-E03"]["reported_by"], "SYN-A-D")
         self.assertEqual(events["SYN-A-W-E09"]["occurrence"], "suspected")  # attributed fear, unverified
         self.assertEqual(events["SYN-A-W-E09"]["basis_source_id"], "SYN-A-W-S2")
         self.assertIn("explicitly said they feared robbery", events["SYN-A-W-E09"]["basis_note"])
@@ -206,6 +207,32 @@ class RuleTest(unittest.TestCase):
     def test_a_record_cannot_show_tiredness_or_robbery(self):
         self.edit("timeline", "SYN-A-W-E03", occurrence="recorded")
         self.assertRejected("a phone or message record cannot show tiredness_report")
+
+    def test_self_report_needs_an_attributed_account(self):
+        self.edit("timeline", "SYN-A-W-E10", event_type="robbery", actor="driver",
+                  reported_by="SYN-A-D", occurrence="self_reported")
+        self.assertRejected("self_reported needs a cited attributed account")
+
+    def test_second_hand_report_needs_an_attributed_account(self):
+        self.edit("timeline", "SYN-A-W-E10", event_type="dozed_off_report", actor="driver",
+                  reported_by="SYN-A-C", occurrence="reported_second_hand")
+        self.assertRejected("reported_second_hand needs a cited attributed account")
+
+    def test_self_report_names_the_person_even_when_a_message_records_it(self):
+        self.edit("timeline", "SYN-A-W-E03", reported_by="record")
+        self.assertRejected("self_reported needs the participant whose account it is in reported_by")
+
+    def test_location_metadata_cannot_be_recorded_as_rest(self):
+        self.edit("sources", "SYN-A-W-S4", kind="location_history")
+        self.edit("timeline", "SYN-A-W-E10", event_type="rest_start", actor="driver")
+        self.assertRejected("rest_start needs a participant account; location or contact metadata can only record a stop")
+
+    def test_consent_reference_is_required(self):
+        self.edit("participants", "SYN-A-D", consent_ref="")
+        self.assertRejected("consent_ref is required")
+        result, report = kit.export(self.folder)
+        self.assertIsNone(result)
+        self.assertTrue(any("consent_ref is required" in error for error in report.errors))
 
     def test_corroboration_needs_an_independent_record(self):
         self.edit("timeline", "SYN-B-W-E04", source_ids="SYN-B-W-S1;SYN-B-W-S3", observed_source_id="SYN-B-W-S3")

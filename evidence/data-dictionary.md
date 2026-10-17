@@ -23,7 +23,7 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 | `work_arrangement` | `owner_operator`, `independent_driver`, `fleet_employed`, `other`, `unknown`; contacts use `not_applicable` | yes | How the driver works. `fleet_employed` is outside the target segment and raises a warning. |
 | `trucks_operated` | `1`, `2`, `3_or_more`, `unknown`; contacts use `not_applicable` | yes | Trucks the driver owns or operates. `3_or_more` raises a warning. |
 | `relationship_to_driver` | `family`, `fellow_driver`, `freight_company`, `friend`, `other`, `unknown`; drivers use `not_applicable` | yes | Who the trusted contact is. `freight_company` covers a carrier, shipper, broker or dispatcher. |
-| `consent_ref` | free text, may be blank | private | Reference to the consent record held offline. |
+| `consent_ref` | free text | private | Required reference to the consent record held offline. The reference must exist; the kit does not judge legal validity. |
 | `consent_recording` | `yes`, `no`, `pending` | no | Consent to record the interview. |
 | `consent_share_redacted` | `yes`, `no`, `pending` | no | Consent to share the redacted account with the GOAT team. Export needs `yes` from both people in the pair. |
 
@@ -75,7 +75,7 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 | `seq` | whole number from 1, unique in the case | yes | Reconstructed order. |
 | `event_type` | listed below | yes | What happened. Judgements such as "this was the useful action" belong in the case window. |
 | `actor` | `driver`, `contact`, `third_party`, `system`, `unknown` | yes | Who did or experienced it. For `checkin_due`, the person who expected to hear from the other. |
-| `reported_by` | participant ID or `record` | yes | Whose account the row is. `record` when it comes only from a record. |
+| `reported_by` | participant ID or `record` | yes | Whose account the row is. Use the participant for `self_reported` and `reported_second_hand`; `record` is for an act shown by a record, such as a message being sent. |
 | `occurrence` | listed below | yes | How the team knows it happened. |
 | `source_ids` | list of source IDs from the same case, at least one | yes | The evidence behind the row. |
 | `basis_source_id` | source ID; required for `suspected` and `corroborated`, otherwise may be blank | yes | The specific source supporting the classification, also in this event's `source_ids`. A suspicion requires an attributed account supplied by the participant in `reported_by`. Confirm the account actually expresses that person's suspicion; supplying a document does not prove authorship. Corroboration requires an `independent_record` with `evidence_basis=independent_observation`. |
@@ -98,15 +98,15 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 - Security: `security_concern` (followed, a suspicious stop, a threat), `robbery_attempt`, `robbery`.
 - Response: `help_request`, `contact_concerned`, `decision`, `third_party_contacted` (fellow drivers, the freight company, police or others), `assistance_arranged`, `missed_opportunity`, `resolution` (when someone learned how it ended), `other`.
 
-The fatigue and security types are sensitive: they can never be `recorded`.
+The fatigue, security and rest types are reported states: they can never be `recorded` from phone, location or contact metadata alone. A GPS or tracker stop can be recorded as a stop with `other`; it is not `rest_start` unless a participant account says the driver rested.
 
 ### Occurrence
 
 | Value | Meaning and rule |
 |---|---|
-| `recorded` | A timestamped record shows the act happened: a message was sent, a call was made. Needs a cited timestamped record. A record can show that someone wrote that they were tired or robbed. It cannot show that they were, so sensitive types never use this value. |
-| `self_reported` | The person who did or experienced it says so, in an interview or in their own message. When a participant reports it, their role must match the actor. |
-| `reported_second_hand` | Someone else says it happened. |
+| `recorded` | A timestamped record shows the act happened: a message was sent, a call was made, a truck stopped. Needs a cited timestamped record. A record can show that someone wrote that they were tired or robbed, or that a truck stopped. It cannot show tiredness, robbery or rest, so sensitive and rest types never use this value. |
+| `self_reported` | The person who did or experienced it says so, in an interview or in their own message. Requires that participant in `reported_by`, a role matching the actor, and a cited source with `evidence_basis=attributed_account`. A message export supplied by the other participant can be that cited account; the tool checks the declaration, not the message's truth. |
+| `reported_second_hand` | Someone else says it happened. Requires the participant repeating the account in `reported_by` and a cited source with `evidence_basis=attributed_account`; that participant's role must differ from the actor. |
 | `suspected` | A participant explicitly expressed a fear or suspicion, with their own cited account and stated basis in `basis_source_id` and `basis_note`. Requires that person in `reported_by`. An unanswered message alone does not create this classification. The suspicion is attributed, and the incident remains unverified. |
 | `corroborated` | Independent observations support this specific claim. Requires `basis_source_id` pointing to a cited `independent_record` with `evidence_basis=independent_observation`, and `basis_note` explaining the observations. A police complaint repeating the driver's allegation remains `self_reported` with attribution to the driver; a second-hand account remains `reported_second_hand`. |
 | `unknown` | Missing evidence leaves occurrence unverified. For no reply alone, use `contact_unconfirmed` with this value, without adding a fatigue, sleep or robbery label. A bounded follow-up under an agreed policy does not change that evidence status. |

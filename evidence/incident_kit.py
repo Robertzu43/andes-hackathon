@@ -34,6 +34,10 @@ CONCERNS = {"security", "fatigue", "lost_contact", "breakdown", "crash", "health
 # never that it happened. These event types need an account or corroboration.
 SENSITIVE = {"tiredness_report", "dozed_off_report", "security_concern", "robbery_attempt", "robbery"}
 
+# Location or contact metadata can record that the truck stopped. Rest itself is a
+# participant-reported state, so these types need an attributed account too.
+REST_REPORTS = {"rest_start", "rest_end", "rest_difficulty"}
+
 # Each column maps to the set of values it allows, or to the name of a value
 # kind checked in KINDS. A trailing "?" means the cell may be left empty.
 SCHEMA = {
@@ -51,7 +55,7 @@ SCHEMA = {
         "relationship_to_driver": {
             "family", "fellow_driver", "freight_company", "friend", "other", "unknown", "not_applicable",
         },
-        "consent_ref": "private?",
+        "consent_ref": "private",
         "consent_recording": CONSENT,
         "consent_share_redacted": CONSENT,
     },
@@ -400,14 +404,28 @@ def check_occurrence(event: dict, reporter: dict | None, cited: list[dict], repo
         if event_type in SENSITIVE:
             report.error(where, f"a phone or message record cannot show {event_type}; use self_reported, "
                                 "reported_second_hand, suspected or corroborated")
+        if event_type in REST_REPORTS:
+            report.error(where, f"{event_type} needs a participant account; location or contact metadata "
+                                "can only record a stop")
         if not any(source["timestamped_record"] == "yes" for source in cited):
             report.error(where, "occurrence recorded needs a cited timestamped record")
     elif occurrence == "self_reported":
-        if event["actor"] not in ("driver", "contact"):
+        if not reporter:
+            report.error(where, "self_reported needs the participant whose account it is in reported_by")
+        elif event["actor"] not in ("driver", "contact"):
             report.error(where, "self_reported needs the driver or contact as actor; use reported_second_hand")
-        elif reporter and reporter["role"] != event["actor"]:
+        elif reporter["role"] != event["actor"]:
             report.error(where, f"{reporter['participant_id']} is reporting the {event['actor']}'s experience; "
                                 "use reported_second_hand")
+        if not any(source["evidence_basis"] == "attributed_account" for source in cited):
+            report.error(where, "self_reported needs a cited attributed account")
+    elif occurrence == "reported_second_hand":
+        if not reporter:
+            report.error(where, "reported_second_hand needs the participant repeating the account in reported_by")
+        elif reporter["role"] == event["actor"]:
+            report.error(where, f"{reporter['participant_id']} is reporting their own experience; use self_reported")
+        if not any(source["evidence_basis"] == "attributed_account" for source in cited):
+            report.error(where, "reported_second_hand needs a cited attributed account")
     elif occurrence == "suspected":
         if not reporter:
             report.error(where, "a suspicion needs the participant who held it in reported_by")

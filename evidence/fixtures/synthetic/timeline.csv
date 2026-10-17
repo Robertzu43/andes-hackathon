@@ -1,7 +1,7 @@
 event_id,case_id,seq,event_type,actor,reported_by,occurrence,source_ids,basis_source_id,basis_note,time_basis,observed_time,observed_source_id,recalled_earliest,recalled_latest,time_zone,knew,conflicts_with,note_redacted,note_private
 SYN-A-W-E01,SYN-A-W,1,trip_start,driver,SYN-A-D,self_reported,SYN-A-W-S1,,,recalled,,,2026-09-14T14:00-03:00,2026-09-14T14:30-03:00,America/Sao_Paulo,SYNTHETIC: loaded haul expected to take about nine hours with one rest stop,,,
 SYN-A-W-E02,SYN-A-W,2,message_sent,driver,record,recorded,SYN-A-W-S3,,,observed,2026-09-14T14:12-03:00,SYN-A-W-S3,,,America/Sao_Paulo,,,SYNTHETIC: departure message,
-SYN-A-W-E03,SYN-A-W,3,tiredness_report,driver,record,self_reported,SYN-A-W-S3,,,observed,2026-09-14T19:40-03:00,SYN-A-W-S3,,,America/Sao_Paulo,,,SYNTHETIC: message saying the driver was tired and stopping to rest,
+SYN-A-W-E03,SYN-A-W,3,tiredness_report,driver,SYN-A-D,self_reported,SYN-A-W-S3,,,observed,2026-09-14T19:40-03:00,SYN-A-W-S3,,,America/Sao_Paulo,,,SYNTHETIC: message saying the driver was tired and stopping to rest,
 SYN-A-W-E04,SYN-A-W,4,rest_start,driver,SYN-A-D,self_reported,SYN-A-W-S1,,,recalled,,,2026-09-14T19:45-03:00,2026-09-14T20:00-03:00,America/Sao_Paulo,SYNTHETIC: stopped at a fuel station to sleep for about an hour,,,
 SYN-A-W-E05,SYN-A-W,5,rest_end,driver,SYN-A-D,self_reported,SYN-A-W-S1,,,recalled,,,2026-09-14T20:50-03:00,2026-09-14T21:10-03:00,America/Sao_Paulo,,,,
 SYN-A-W-E06,SYN-A-W,6,message_sent,driver,SYN-A-D,self_reported,SYN-A-W-S1,,,recalled,,,2026-09-14T21:00-03:00,2026-09-14T21:15-03:00,America/Sao_Paulo,SYNTHETIC: the driver believes a message went out after waking up,SYN-A-W-E14,SYNTHETIC: the chat export shows no message between 19:40 and 22:31,

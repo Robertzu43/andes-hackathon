@@ -208,7 +208,7 @@
           "seq": 3,
           "event_type": "tiredness_report",
           "actor": "driver",
-          "reported_by": "record",
+          "reported_by": "SYN-A-D",
           "occurrence": "self_reported",
           "source_ids": [
             "SYN-A-W-S3"

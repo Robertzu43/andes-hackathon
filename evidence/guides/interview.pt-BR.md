@@ -6,7 +6,7 @@ Duração: de 40 a 50 minutos, com uma pessoa por vez. O caminhoneiro e o contat
 
 ## Antes de começar (para quem entrevista)
 
-- Confirme que o recrutamento está autorizado e que você tem o consentimento da pessoa, incluindo a permissão para gravar. Sem isso, não comece.
+- Confirme que o recrutamento está autorizado e que você tem o consentimento da pessoa, incluindo a permissão para gravar. Sem isso, não comece. Anote a referência do consentimento guardado fora do repositório em `consent_ref`; sem essa referência, a validação falha.
 - Nunca entreviste alguém que está dirigindo. Se o caminhoneiro estiver na estrada, combinem outro momento com o caminhão parado.
 - Este estudo olha para trás. Nunca peça a ninguém que dirija cansado, que segure o sono, que simule um roubo ou que provoque uma emergência.
 - Use só os códigos do estudo, por exemplo `P03-D`. Não anote nomes, telefones, placas, endereços nem detalhes da carga que identifiquem alguém.
@@ -70,6 +70,7 @@ Para fechar esta parte: "Olhando para trás, houve um momento em que algo poderi
 - "Você tem registros daquela viagem: mensagens, histórico de ligações, localização, dados do rastreador, um boletim de ocorrência ou um aviso à seguradora?"
 - Se a pessoa concordar, vejam juntos. Anote qual é o registro, o horário que ele mostra e o fuso horário do celular ou do sistema.
 - Um boletim de ocorrência, por si só, registra uma declaração. Se repete o relato do caminhoneiro, mantenha como relato atribuído. Para corroborar um incidente, identifique observações independentes que sustentem aquele fato específico e a fonte. O horário de registro do boletim não é o horário observado do incidente.
+- Um histórico de localização pode registrar uma parada. Não a transforme em descanso: `rest_start`, `rest_end` e `rest_difficulty` precisam do relato atribuído de um participante.
 - Não copie mensagens de outras pessoas. A pessoa pode esconder o que não quiser mostrar antes de mostrar.
 - Não peça a conversa inteira. Se for preciso guardar uma cópia, use o armazenamento privado do estudo.
 
