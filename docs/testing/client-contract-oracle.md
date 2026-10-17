@@ -218,3 +218,31 @@ Separately, the complete lane46 **df05aeb** runner passed typecheck/build and **
 tests** on this lane's owned cluster/port. Its explicit `check-ci-seam.mjs` mode was
 not run. Neither run establishes browser CORS, frontend state/cache cleanup,
 production remote JWT/JWKS, SQS, PostgreSQL failover or physical-device behavior.
+
+## Driver controller review
+
+PR63 frozen `c256e75a1b58168925a8e9f760c3759ee33bfa0a` is a separate nonvisual
+controller. `driver.probes.mjs` uses its public export and independent synthetic
+responses; it does not import author test expectations or implement the controller.
+
+```sh
+ANDES_REVIEW_DRIVER_ROOT=/ABS/C256E75/ARCHIVE \
+  node tests/client-contract-review/driver.probes.mjs
+```
+
+Current result: **FIX**, six independent probes pass and one fails. After opening
+trip A and reading its location/active incident, the same instance accepts a new
+draft/confirmation for trip B without clearing A's cached facts. `requestHelp()`
+returns A's incident and makes no SOS request for B. The one-journey restriction
+in `openTrip` is bypassed by draft/confirmation. Reject that second journey or
+explicitly retire all previous facts/work before any supported switch. The probe
+accepts a blocked transition; it never requires inventing a new controller flow.
+
+Author unit tests 26/26 and strict TypeScript consumer checks pass on Node26.3.0 /
+TypeScript5.9.3. That does not override the independently reproduced scope failure.
+Preserve this probe unchanged for the corrected frozen head. The companion
+`run-driver-persisted.mjs` reuses lane46's owned cluster and built runtime for the
+four declared persisted tests, with no shared database or implementation edit.
+Those four persisted tests were independently executed against the frozen source:
+**4 passed, 0 failed**, PostgreSQL16.14 on this lane's owned cluster/port56447.
+The passing existing journeys do not exercise the newly reproduced overlap case.
