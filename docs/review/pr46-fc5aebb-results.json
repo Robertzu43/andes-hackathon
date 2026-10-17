@@ -867,30 +867,108 @@
     "evidence/data-dictionary.md": "2ca7532d4f807e8590681d387a96004c785320a3dc757f09c8dafa9957f2a4ae"
   },
   "retained_product_comparison": {
-    "sha": "5f42256997f15626500795b1fcf4c1c4efef59e7",
-    "runtime": "Python 3.9.6",
-    "native_tests": 63,
-    "native_exit": 0,
-    "preserved_controls": 40,
-    "passed": 25,
-    "failed_expectations": [
-      "self-report-contact-nonmessage-account",
-      "comma-coordinates",
-      "dms-coordinates",
-      "short-date",
-      "portuguese-date",
-      "lowercase-plate",
-      "argentine-plate",
-      "mexican-plate",
-      "bare-map-link",
-      "bare-short-link",
-      "id-plate",
-      "id-phone",
-      "id-date",
-      "invalid-id-diagnostic-private",
-      "complaint-filing-clock"
-    ],
-    "latest_six_author_regressions_failed": 6
+    "source_sha": "5f42256997f15626500795b1fcf4c1c4efef59e7",
+    "runtimes": {
+      "39": {
+        "version": "Python 3.9.6",
+        "native": {
+          "tests": 63,
+          "exit": 0,
+          "log": "...............................................................\n----------------------------------------------------------------------\nRan 63 tests in 0.248s\n\nOK\n"
+        },
+        "followups": {
+          "total": 40,
+          "passed": 25,
+          "failed": [
+            "self-report-contact-nonmessage-account",
+            "comma-coordinates",
+            "dms-coordinates",
+            "short-date",
+            "portuguese-date",
+            "lowercase-plate",
+            "argentine-plate",
+            "mexican-plate",
+            "bare-map-link",
+            "bare-short-link",
+            "id-plate",
+            "id-phone",
+            "id-date",
+            "invalid-id-diagnostic-private",
+            "complaint-filing-clock"
+          ]
+        },
+        "earlier": {
+          "total": 15,
+          "passed": 15
+        },
+        "latest_six_regressions": {
+          "total": 6,
+          "failed": 6,
+          "exit": 1
+        },
+        "raw_logs_sha256": {
+          "retained-native-39.log": "a509a3cc94fd95dac4df67ded09234016409fd92f7f48cb0cea5f4250ea71bc7",
+          "retained40-39.log": "1e408ab0e7aeb97665c3c6d18ed6c571469d343196b1a068159cf1e7e4ebda37",
+          "retained15-39/probe.py.log": "b59e71909bd0fcb66dea1fbb6d1c61bd5ccb55053af84993de5b40e5a10460e1",
+          "retained15-39/recall_basis_probe.py.log": "b5b11d665a4e1b6a1b7a3cc99e2fc0fb78d932dd5d4ca0c26d0a4af79f164623",
+          "retained-six-39.log": "9e507a060151e338cc0e89ff44c6786590106eafbc02c28136f78706ad7a1e9b"
+        }
+      },
+      "314": {
+        "version": "Python 3.14.7",
+        "native": {
+          "tests": 63,
+          "exit": 0,
+          "log": "...............................................................\n----------------------------------------------------------------------\nRan 63 tests in 0.215s\n\nOK\n"
+        },
+        "followups": {
+          "total": 40,
+          "passed": 25,
+          "failed": [
+            "self-report-contact-nonmessage-account",
+            "comma-coordinates",
+            "dms-coordinates",
+            "short-date",
+            "portuguese-date",
+            "lowercase-plate",
+            "argentine-plate",
+            "mexican-plate",
+            "bare-map-link",
+            "bare-short-link",
+            "id-plate",
+            "id-phone",
+            "id-date",
+            "invalid-id-diagnostic-private",
+            "complaint-filing-clock"
+          ]
+        },
+        "earlier": {
+          "total": 15,
+          "passed": 15
+        },
+        "latest_six_regressions": {
+          "total": 6,
+          "failed": 6,
+          "exit": 1
+        },
+        "raw_logs_sha256": {
+          "retained-native-314.log": "571ba434848ff1eec801fc74f69e2fcad0d6c4d5c0040f07032e48cfc3f81a9b",
+          "retained40-314.log": "1e408ab0e7aeb97665c3c6d18ed6c571469d343196b1a068159cf1e7e4ebda37",
+          "retained15-314/probe.py.log": "b59e71909bd0fcb66dea1fbb6d1c61bd5ccb55053af84993de5b40e5a10460e1",
+          "retained15-314/recall_basis_probe.py.log": "a89ed773ad52bd5de733b786df3962e7c973e258625c101029a80ed71f2ce1a4",
+          "retained-six-314.log": "63bacdfdb52b7cde76e7f8b6c2c9f62ea5d4cc2acf2a08eeb6fb791fb0c0392f"
+        }
+      }
+    },
+    "source_files_sha256": {
+      "evidence/incident_kit.py": "ad5e7e4447ca8acee9e3fed316b5faf273968947ab56d2e50a04611b30ba352c",
+      "evidence/test_incident_kit.py": "5d164e4979b1a7f7f2b96b338e8eab19cda11c4778754c6554aea6c28d3d475e",
+      "evidence/fixtures/synthetic/expected-export.json": "a55ddd5483b0341777f023698ec47a19b80634191957a3d3c0bcd0356099663c",
+      "evidence/README.md": "651d98f34e02438d61947750f07505459f5aafc7fedbee3998aa59aaba7bd058",
+      "evidence/data-dictionary.md": "2577b5a0ece580e9c12c4c11878f9fa5295b052db5237002240a3b30ebea2a6a"
+    },
+    "latest_six_test_source": "fc5aebba0bfb1eb0c5cd47ad28f36c96cc99b76c",
+    "latest_six_method": "Copied only the final test module into a disposable retained-source archive and selected the six new regression names; production code and fixtures remained from 5f42256"
   },
   "sensitivity": {
     "production_sha": "3827e91cca33f6ec8f9970a0501718c80e5d492c",

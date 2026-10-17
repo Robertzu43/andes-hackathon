@@ -30,7 +30,7 @@ Fresh `git archive` of exact `fc5aebb`, on both Python 3.9.6 and Python 3.14.7:
 - Original 13 occurrence/locale controls plus two recall-source controls: **15/15** per runtime. Only each runner's hardcoded candidate archive path was adapted; expectations and fixtures were preserved.
 - Whitespace check passed. The adjacent [machine-readable receipt](pr46-fc5aebb-results.json) records exact source hashes, commands/outcomes and per-control exits.
 
-A fresh archive of retained product head `5f42256` passed its 63 native tests on Python 3.9.6 but only **25/40** preserved follow-up expectations. The 15 failures still cover non-message self-report attribution, identifier formats/IDs/diagnostics and filing-clock provenance. The six newest regression tests also fail against that source. These are variant counts, not counts of distinct defects. This comparison is author-side reproduction, not independent acceptance.
+A fresh archive of retained product head `5f42256`, on both Python 3.9.6 and Python 3.14.7, passed **63 native tests** and **15/15 earlier controls**, but only **25/40** preserved follow-up expectations. The 15 failures still cover non-message self-report attribution, identifier formats/IDs/diagnostics and filing-clock provenance. All six newest regression tests also fail against that source on both runtimes. These are variant counts, not counts of distinct defects. This comparison is author-side reproduction, not independent acceptance.
 
 ## Standalone materials and remaining gates
 
