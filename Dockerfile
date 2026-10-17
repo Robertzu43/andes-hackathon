@@ -13,6 +13,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json package-lock.json ./
 COPY db ./db
+COPY public ./public
 COPY scripts/migrate.mjs scripts/bootstrap.mjs scripts/seed-demo.mjs ./scripts/
 COPY infra/rds-global-bundle.pem ./infra/rds-global-bundle.pem
 USER node

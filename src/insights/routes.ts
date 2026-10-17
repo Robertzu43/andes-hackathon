@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import type { FastifyInstance } from 'fastify';
 import { owner, problem } from '../contracts.js';
 import { transaction, withTripTransaction, type Context } from '../db.js';
@@ -18,6 +19,8 @@ const adviceText = {
   'pt-BR': (n: number, night: boolean) => `${n} relatos de roubo nesta região ${night ? 'à noite' : 'durante o dia'} (últimos 90 dias). Se puder, pare em um local movimentado e seguro.`
 };
 export function insightRoutes(app: FastifyInstance, ctx: Context) {
+  const map = readFileSync(new URL('../../public/mapa.html', import.meta.url)); // read once; a missing file fails at startup
+  app.get('/mapa', async (_request, reply) => reply.type('text/html; charset=utf-8').send(map));
   app.post('/v1/incidents/:id/label', { schema: { params: idParams, body: object({ label: { enum: ['robo', 'intento_robo', 'falsa_alarma', 'sin_senal', 'otro'] } }) } }, async request => {
     const id = (request.params as { id: string }).id;
     const row = (await ctx.pool.query('SELECT trip_id FROM incidents WHERE id=$1', [id])).rows[0];

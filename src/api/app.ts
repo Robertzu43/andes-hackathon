@@ -17,7 +17,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig }: Ap
   app.decorateRequest('actor');
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store');
-    if (request.routeOptions.url === '/health' || request.routeOptions.url === '/v1/insights/hotspots' || (callbackConfig && request.routeOptions.url === '/v1/callbacks/zavu')) return;
+    if (request.routeOptions.url === '/health' || request.routeOptions.url === '/v1/insights/hotspots' || request.routeOptions.url === '/mapa' || (callbackConfig && request.routeOptions.url === '/v1/callbacks/zavu')) return;
     const telemetry = request.routeOptions.url?.endsWith('/locations') || request.routeOptions.url?.endsWith('/snapshot');
     request.actor = await authenticate(request.headers.authorization, telemetry ? ctx.telemetryPool : ctx.pool);
   });

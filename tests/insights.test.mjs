@@ -116,3 +116,11 @@ test('advice needs distinct contributors in the current band, flags demo data an
   assert.equal((await advice('?lat=abc&lon=0')).status, 400);
   assert.equal((await f.app.inject({ method: 'GET', url: '/v1/insights/advice?lat=0&lon=0' })).statusCode, 401);
 });
+
+// Judges open the map from a private window: it must load without login, as HTML, wired to the public aggregate.
+test('public map page is served without auth and reads only the public hotspots endpoint', async t => {
+  const f = await fixture(t); const page = await f.app.inject({ method: 'GET', url: '/mapa' });
+  assert.equal(page.statusCode, 200); assert.match(page.headers['content-type'], /^text\/html/);
+  assert.match(page.body, /\/v1\/insights\/hotspots\?days=/); assert.match(page.body, /Incluye datos de demostración/);
+  assert.doesNotMatch(page.body, /\/v1\/(trips|incidents|reports|insights\/advice)/);
+});
