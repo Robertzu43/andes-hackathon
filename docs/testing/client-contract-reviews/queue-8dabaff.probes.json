@@ -1,0 +1,50 @@
+{
+  "schema": "andes.reviewer-queue-probes/1",
+  "claimedCandidateSha": "8dabafffa94a0609d86b23a7d832303d6e1da244",
+  "candidateIdentityVerifiedByRunner": false,
+  "backendContract": "ebc8fb1d36f441ef012ca585201cefabf61383d6",
+  "passed": false,
+  "checks": [
+    {
+      "id": "source-time",
+      "passed": true
+    },
+    {
+      "id": "capacity",
+      "passed": true
+    },
+    {
+      "id": "restart",
+      "passed": true
+    },
+    {
+      "id": "ambiguous-restart",
+      "passed": false
+    },
+    {
+      "id": "wrong-ack",
+      "passed": false
+    },
+    {
+      "id": "scope-switch",
+      "passed": true
+    },
+    {
+      "id": "stop-revocation",
+      "passed": true
+    },
+    {
+      "id": "signout",
+      "passed": false
+    },
+    {
+      "id": "retention",
+      "passed": true
+    },
+    {
+      "id": "storage-unavailable",
+      "passed": true
+    }
+  ],
+  "limitation": "Reviewer must inspect the collector and archived candidate. Normalized traces do not authenticate persistence, browser reload, identity or device/provider evidence."
+}

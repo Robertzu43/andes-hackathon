@@ -336,6 +336,28 @@ preserve the assertions for the next frozen head. Browser IndexedDB reload/quota
 signout host integration, physical capture and device/provider behavior remain
 unproved. No browser foundation was needed for these core reproductions.
 
+### Queue follow-up at 8dabaff
+
+Disposition remains **FIX** at
+`8dabafffa94a0609d86b23a7d832303d6e1da244`. The six-file delta adds per-trip
+occupancy/lifecycle observations and their tests, adjusts documentation and removes
+the competing `web/package.json`. The uploader Git blob is identical to original
+`0b1e7e6`; none of the four upload findings was repaired by that delta.
+
+Fresh Node26.3.0 execution: **42 author tests pass**; the original unchanged
+ten-case oracle remains **7 passed / 3 failed**, including the explicitly unsupported
+signout gap; original scheduling/protocol probes remain **1 passed / 6 failed**.
+Both retirement races, both receipt failures, changed ambiguous batch key/body
+and network retry exhaustion reproduce with the same observed results.
+
+The assertions were preserved unchanged: `queue-races.probes.mjs` SHA-256
+`41f2db6da493aad33b97f6ca623405e0dab6d0b1fdc45c4e11e0a1210e36d57a`,
+`queue-probes.mjs` SHA-256
+`8576e85070fd387361ac9b8e5738d7ce2a49aefc7f4a5ea9c8ebd7fa4ca65fe3`.
+Raw outputs are `client-contract-reviews/queue-8dabaff.probes.json` and
+`queue-8dabaff-races.probes.json`. A newer corrected frozen head needs a separate
+re-review; status observability and bridge checks do not clear these findings.
+
 ## Actual client-to-backend bridge
 
 `api-backend.probes.mjs` connects the frozen client **78efad0** to actual backend
