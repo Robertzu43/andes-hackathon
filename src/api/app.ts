@@ -1,4 +1,5 @@
 import { callbackRoutes } from '../notifications/callback.js';
+import { checkRoutes } from '../checks/routes.js';
 import type { CallbackConfig } from '../notifications/zavu.js';
 import Fastify, { type FastifyError } from 'fastify';
 import { authenticator, type AuthConfig } from '../auth.js';
@@ -30,6 +31,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig }: Ap
     try { await ctx.pool.query('SELECT 1'); return { status: 'ok' }; }
     catch { return reply.status(503).send({ status: 'unavailable' }); }
   });
+  checkRoutes(app, ctx);
   app.get('/v1/me', async request => ({ id: request.actor.id }));
   tripRoutes(app, ctx); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport);
   if (callbackConfig) callbackRoutes(app, ctx, callbackConfig);

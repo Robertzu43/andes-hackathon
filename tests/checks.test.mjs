@@ -146,3 +146,42 @@ test('one failing trip does not stop the sweep for the others', async t => {
   assert.deepEqual(await checksOf(f, broken), []);
   assert.deepEqual(await checksOf(f, healthy), [asking('silence')]);
 });
+
+test('sharing stopped opens a check at once; resume clears it; both are audited', async t => {
+  const f = await fixture(t); const trip = await f.trip(); f.advance(1000);
+  const stop = await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'page_hidden'}, f.driver, 'stop-1');
+  assert.deepEqual(stop, {status: 200, body: {id: trip, sharing: 'stopped'}});
+  assert.deepEqual(await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'page_hidden'}, f.driver, 'stop-1'), stop);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'bored'})).status, 400);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'user'}, f.stranger)).status, 403);
+  await sweep(f); assert.deepEqual(await checksOf(f, trip), [asking('sharing_stopped')]);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'resumed', reason: 'user'})).status, 200);
+  assert.equal((await f.ctx.pool.query('SELECT sharing_stopped_at FROM trips WHERE id=$1', [trip])).rows[0].sharing_stopped_at, null);
+  assert.deepEqual((await f.ctx.pool.query('SELECT kind FROM trip_events WHERE trip_id=$1 ORDER BY created_at,kind', [trip])).rows.map(r => r.kind), ['sharing_resumed', 'sharing_stopped:page_hidden']);
+  await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'arrived'});
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'user'})).status, 409);
+});
+
+test('status drives both screens without phone numbers and follows grant scopes', async t => {
+  const f = await fixture(t); const family = await contactFor(f, 'family'); const trip = await f.trip([family.grant]);
+  const path = `/v1/trips/${trip}/status`;
+  const quiet = await f.req('GET', path);
+  assert.deepEqual(quiet, {status: 200, body: {trip: {status: 'active', paused: false, expectedArrivalAt: null}, check: null, incident: null, deliveries: [],
+    location: {freshness: 'unavailable', ageMs: null, capturedAt: null, accuracy: null}}});
+  await f.req('POST', `/v1/trips/${trip}/locations`, {observations: [{capturedAt: f.ctx.clock().toISOString(), latitude: -12, longitude: -77, accuracy: 30}]});
+  f.advance(120001); await sweep(f);
+  const askingStatus = (await f.req('GET', path, undefined, family.jwt)).body;
+  assert.deepEqual(askingStatus.check, {status: 'asking', reason: 'silence', askUntil: '2026-10-17T12:03:00.001Z'});
+  assert.deepEqual(askingStatus.location, {freshness: 'stale', ageMs: 120001, capturedAt: '2026-10-17T12:00:00.000Z', accuracy: 30});
+  f.advance(60000); await sweep(f);
+  const alerted = (await f.req('GET', path, undefined, family.jwt)).body;
+  assert.equal(alerted.check, null);
+  assert.deepEqual({...alerted.incident, id: typeof alerted.incident.id}, {id: 'string', trigger: 'missed_check', checkReason: 'silence', status: 'active', createdAt: '2026-10-17T12:03:00.001Z'});
+  assert.deepEqual(alerted.deliveries.map(d => `${d.role}:${d.channel}:${d.status}`), ['family:sms:pending', 'family:voice:pending', 'family:whatsapp:pending', 'group:group:unavailable']);
+  assert.doesNotMatch(JSON.stringify(alerted), /\+55|contact|recipient/);
+  await f.ctx.pool.query('UPDATE contact_grants SET map_accepted=false');
+  assert.equal((await f.req('GET', path, undefined, family.jwt)).body.location, undefined);
+  assert.equal((await f.req('GET', path, undefined, f.stranger)).status, 403);
+  await f.req('POST', `/v1/trips/${trip}/contacts/${family.grant}/revoke`, {}, family.jwt);
+  assert.equal((await f.req('GET', path, undefined, family.jwt)).status, 403);
+});
