@@ -38,7 +38,7 @@ COMMENTED findings count. Original human confirmation is still required.
    explicit isolated synthetic capability/clock boundary, or otherwise reject
    global aliases instead of relying on direct object identity alone.
 4. **P2: blocked diagnostics still consume the shared ordinary event cap.**
-   `adapter.mjs:225`, Robert blocker3. L09 uses the valid configured cap10,
+   `adapter.mjs:220`, Robert blocker3. L09 uses the valid configured cap10,
    starts useful GPS and repeatedly requests unqualified motion. The blocked
    diagnostics stop the GPS watch. The higher new default moves the exhaustion
    threshold; this is not a claim that the old300-call default reproduction is
@@ -47,7 +47,7 @@ COMMENTED findings count. Original human confirmation is still required.
 5. **P2: platform faults escape their attribution boundary.** L11 reproduces a
    synchronous timer throw at `adapter.mjs:409`, leaving the motion token until
    cleanup; L13 observes one unhandled rejection when a permission monitor's
-   fulfilment path throws at `:185–200`. Both are explicit should-fix items in
+   fulfilment path throws at `:178–193`. Both are explicit should-fix items in
    Robert's second review. Return a bounded attributed failure, retire tokens,
    and handle errors from promise fulfilment as well as promise rejection.
 6. **P2: synchronous GPS denial reports success.** L12 uses an inert native spy
