@@ -549,6 +549,12 @@ def export_blockers(case: dict, members: list[dict]) -> list[str]:
     reasons = []
     if case["redaction_status"] != "reviewed":
         reasons.append(f"redaction_status is {case['redaction_status']}")
+    # Incomplete enrollment is allowed during collection, but cannot establish
+    # consent from both people required for a redacted handoff.
+    roles = {person["role"] for person in members}
+    for role in ("driver", "contact"):
+        if role not in roles:
+            reasons.append(f"no {role} enrolled")
     for person in sorted(members, key=lambda p: p["participant_id"]):
         if person["consent_share_redacted"] != "yes":
             reasons.append(f"{person['participant_id']} consent_share_redacted is {person['consent_share_redacted']}")

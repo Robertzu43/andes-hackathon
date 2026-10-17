@@ -341,6 +341,54 @@ class RuleTest(unittest.TestCase):
                       result["excluded_cases"])
         self.assertNotIn("SYN-B", json.dumps(result["participants"]))
 
+    def assert_incomplete_pair_excluded(self, missing_role):
+        # Keep only the enrolled person's ordinary-trip account for pair A.
+        # Pair B remains complete and consenting, so it must still export.
+        missing_id = {"driver": "SYN-A-D", "contact": "SYN-A-C"}[missing_role]
+        source_id, event_id = {
+            "driver": ("SYN-A-O-S2", "SYN-A-O-E02"),
+            "contact": ("SYN-A-O-S1", "SYN-A-O-E01"),
+        }[missing_role]
+        keep = {
+            "participants": lambda row: row["participant_id"] != missing_id,
+            "cases": lambda row: row["case_id"] != "SYN-A-W",
+            "sources": lambda row: row["case_id"] == "SYN-B-W" or row["source_id"] == source_id,
+            "timeline": lambda row: row["case_id"] == "SYN-B-W" or row["event_id"] == event_id,
+        }
+        for table, predicate in keep.items():
+            path = self.folder / f"{table}.csv"
+            reader = csv.DictReader(io.StringIO(path.read_text(encoding="utf-8")))
+            rows = [row for row in reader if predicate(row)]
+            out = io.StringIO()
+            writer = csv.DictWriter(out, fieldnames=reader.fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+            path.write_text(out.getvalue(), encoding="utf-8")
+        self.edit("cases", "SYN-A-O", redaction_status="reviewed",
+                  **{f"{missing_role}_review": "pending"})
+
+        data, report = kit.check(self.folder)
+        self.assertEqual(report.errors, [])  # Missing references must not mask the consent gap.
+        self.assertIn(f"pair SYN-A: has no {missing_role} enrolled", report.warnings)
+        target = self.folder / "out.json"
+        code, out, err = run_cli("export", self.folder, "--out", target)
+        self.assertEqual(code, 0, err)
+        result = json.loads(target.read_text(encoding="utf-8"))
+        self.assertEqual([case["case_id"] for case in result["cases"]], ["SYN-B-W"])
+        self.assertEqual(result["excluded_cases"], [
+            {"case_id": "SYN-A-O", "reasons": [f"no {missing_role} enrolled"]},
+        ])
+        self.assertEqual({person["pair_id"] for person in result["participants"]}, {"SYN-B"})
+        self.assertEqual(result["coverage"]["pairs"], 1)
+        self.assertIn(f"excluded SYN-A-O: no {missing_role} enrolled", out)
+        self.assertIn(f"export blocked: no {missing_role} enrolled", kit.summary(self.folder, data, report))
+
+    def test_export_excludes_driver_only_pair(self):
+        self.assert_incomplete_pair_excluded("contact")
+
+    def test_export_excludes_contact_only_pair(self):
+        self.assert_incomplete_pair_excluded("driver")
+
     def test_export_is_refused_while_errors_remain(self):
         self.edit("timeline", "SYN-A-W-E02", observed_time="")
         result, report = kit.export(self.folder)
