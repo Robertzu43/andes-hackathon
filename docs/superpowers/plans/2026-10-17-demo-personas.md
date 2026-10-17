@@ -88,7 +88,8 @@ import { empty } from './api/schemas.js';
 export interface DemoIssuer { auth: AuthConfig; sign(subject: string, phone: string): Promise<string> }
 const issuer = 'https://demo.andes.invalid', audience = 'andes-demo';
 // Synthetic numbers: demo mode refuses live sends, so they are never contacted.
-const people = [{ key: 'driver', phone: '+51900000101' }, { key: 'family', phone: '+51900000102' }, { key: 'colleague', phone: '+51900000103' }] as const;
+// Superseded in review: fictional +1555555010x numbers and the DEMO_LIVE_PHONE allowlist; see src/demo.ts.
+const people = [{ key: 'driver', phone: '+15555550101' }, { key: 'family', phone: '+15555550102' }, { key: 'colleague', phone: '+15555550103' }] as const;
 /** ponytail: in-memory key; tokens die on restart and the demo must run one instance. */
 export async function demoIssuer(env: NodeJS.ProcessEnv): Promise<DemoIssuer> {
   if (env.ZAVU_LIVE_SEND === 'true') throw new Error('DEMO_MODE never sends live messages; unset ZAVU_LIVE_SEND');

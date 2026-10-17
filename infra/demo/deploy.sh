@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # Judges' demo on ECS Express Mode: one Fargate task (API + control loop), RDS PostgreSQL, two SQS queues.
 # A "demo reducida" (single task, single AZ), not the ADR-002 HA deployment in infra/template.json.
-# Run one step at a time; steps marked $ cost money. Usage: AWS_PROFILE=<personal> infra/demo/deploy.sh <step>
+# Run one step at a time; steps marked $ cost money. Usage: AWS_PROFILE=<personal> ANDES_AWS_ACCOUNT=<its id> infra/demo/deploy.sh <step>
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 : "${AWS_PROFILE:?Set AWS_PROFILE to your personal account profile}"
+: "${ANDES_AWS_ACCOUNT:?Set ANDES_AWS_ACCOUNT to the account ID you intend to deploy into}"
 export AWS_REGION="${AWS_REGION:-us-east-1}" AWS_PAGER=""
 N=andes-demo
 TAGS="Key=project,Value=andes-hackathon"
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
-# Shared employer production account: never deploy the hackathon demo there.
-[ "$ACCOUNT" != "645868669589" ] || { echo "Refusing: $ACCOUNT is the shared AptsNY account" >&2; exit 1; }
+# Explicit opt-in per account: a wrong or default profile cannot deploy (or tear down) anything.
+[ "$ACCOUNT" = "$ANDES_AWS_ACCOUNT" ] || { echo "Refusing: profile account $ACCOUNT is not ANDES_AWS_ACCOUNT" >&2; exit 1; }
 REPO="$ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com/$N"
 queue_url() { aws sqs get-queue-url --queue-name "$N-$1" --query QueueUrl --output text; }
 queue_arn() { aws sqs get-queue-attributes --queue-url "$(queue_url "$1")" --attribute-names QueueArn --query Attributes.QueueArn --output text; }
@@ -98,5 +99,5 @@ teardown) # stops all charges; deletes demo data
   aws ecr delete-repository --repository-name "$N" --force >/dev/null 2>&1 || true
   aws secretsmanager delete-secret --secret-id "$N/app-db" --force-delete-without-recovery >/dev/null 2>&1 || true
   echo "Deleting; the database security group, roles, cluster and log group are free and can be removed after RDS is gone." ;;
-*) echo "usage: AWS_PROFILE=<profile> $0 prepare|image|database|bootstrap|lock|service|url|teardown" >&2; exit 2 ;;
+*) echo "usage: AWS_PROFILE=<profile> ANDES_AWS_ACCOUNT=<id> $0 prepare|image|database|bootstrap|lock|service|url|teardown" >&2; exit 2 ;;
 esac

@@ -119,10 +119,10 @@ Alert-text settings for the delivery workers: `EMERGENCY_NUMBERS` (JSON by trip 
 
 ## Demo mode
 
-For the judges' demo only. `DEMO_MODE=true` replaces OIDC with an in-process RS256 demo issuer (`src/demo.ts`). Real identity tokens are rejected, and every other route keeps the same JWT, ownership and consent checks. The API refuses to start when `ZAVU_LIVE_SEND=true`, so synthetic phone numbers can never receive a message. Never enable it on a deployment with real users.
+For the judges' demo only. `DEMO_MODE=true` replaces OIDC with an in-process RS256 demo issuer (`src/demo.ts`). Real identity tokens are rejected, and every other route keeps the same JWT, ownership and consent checks. Live sends are refused unless `DEMO_LIVE_PHONE` names the one consented E.164 number. The family persona then uses that number, and the Zavu qualification must set `allowedDestinations` (the API and workers refuse to start otherwise). `authorizeJob` marks every other destination `unavailable` / `destination_not_allowed` before any provider call, so the fictional numbers and other people can never be contacted. Never enable demo mode on a deployment with real users.
 
 `POST /v1/demo/session` with `{}` is unauthenticated and needs no Idempotency-Key (a deliberate exception: there is no actor yet). Each call creates an isolated synthetic world:
-- a driver, a `family` contact and a `colleague` contact, with synthetic `+519000001xx` numbers;
+- a driver, a `family` contact and a `colleague` contact, with fictional `+1555555010x` numbers;
 - a truck labelled `ABC-123 (demo)`;
 - accepted map+incident grants.
 

@@ -76,6 +76,9 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     if (!q.live || !q.entries.some(e => e.channel === job.channel && e.country === trip.country && e.locale === trip.locale)) {
       await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='country_channel_locale_unqualified' WHERE id=$1", [job.id]); return null;
     }
+    if (q.allowedDestinations && !q.allowedDestinations.includes(grant.phone)) {
+      await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='destination_not_allowed' WHERE id=$1", [job.id]); return null;
+    }
     // Account-row locking serializes reservations across channels and worker replicas.
     await client.query('INSERT INTO quota_accounts VALUES($1) ON CONFLICT DO NOTHING', [q.accountId]);
     await client.query('SELECT project_id FROM quota_accounts WHERE project_id=$1 FOR UPDATE', [q.accountId]);

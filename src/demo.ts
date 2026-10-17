@@ -5,22 +5,25 @@ import type { AuthConfig } from './auth.js';
 import { problem } from './contracts.js';
 import { transaction, type Context } from './db.js';
 import { empty } from './api/schemas.js';
-export interface DemoIssuer { auth: AuthConfig; sign(subject: string, phone: string): Promise<string> }
+export interface DemoIssuer { auth: AuthConfig; phones: Record<Persona, string>; sign(subject: string, phone: string): Promise<string> }
 const issuer = 'https://demo.andes.invalid', audience = 'andes-demo';
-// Synthetic numbers: demo mode refuses live sends, so they are never contacted.
-const people = { driver: '+51900000101', family: '+51900000102', colleague: '+51900000103' } as const;
-type Persona = keyof typeof people;
+// Fictional +1-555-01xx numbers; with live sends, only the consented DEMO_LIVE_PHONE replaces the family number.
+const synthetic = { driver: '+15555550101', family: '+15555550102', colleague: '+15555550103' } as const;
+type Persona = keyof typeof synthetic;
 /** ponytail: in-memory key; tokens die on restart and the demo must run one instance. */
 export async function demoIssuer(env: NodeJS.ProcessEnv): Promise<DemoIssuer> {
-  if (env.ZAVU_LIVE_SEND === 'true') throw new Error('DEMO_MODE never sends live messages; unset ZAVU_LIVE_SEND');
+  const live = env.DEMO_LIVE_PHONE;
+  if (env.ZAVU_LIVE_SEND === 'true' && !/^\+[1-9]\d{6,14}$/.test(live ?? '')) throw new Error('DEMO_MODE live sends need DEMO_LIVE_PHONE, the one consented E.164 number');
   const { publicKey, privateKey } = await generateKeyPair('RS256');
   return {
     auth: { issuer, audience, keyResolver: async () => publicKey },
+    phones: { ...synthetic, ...(env.ZAVU_LIVE_SEND === 'true' ? { family: live! } : {}) },
     sign: (subject, phone) => new SignJWT({ phone_number: phone, phone_number_verified: true }).setProtectedHeader({ alg: 'RS256' })
       .setIssuer(issuer).setAudience(audience).setSubject(subject).setIssuedAt().setExpirationTime('2h').sign(privateKey)
   };
 }
 export function demoRoutes(app: FastifyInstance, ctx: Context, demo: DemoIssuer) {
+  const people = demo.phones;
   let windowStart = 0, created = 0;
   app.post('/v1/demo/session', { schema: { body: empty } }, async () => {
     const now = ctx.clock().getTime();
