@@ -1,0 +1,466 @@
+{
+  "runtime": "v24.17.0",
+  "candidate": "e9df5cbfd5c2cfbb19698d46bb957b8561920e66",
+  "purpose": "Preserved failure behavior and bounded counterexamples; retired-unmerged is not fixed/ACCEPT",
+  "probes": 33,
+  "results": [
+    {
+      "id": "positive-control",
+      "location": {
+        "status": "recent",
+        "lastKnown": "point",
+        "reasons": []
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "B1-1Hz-2",
+      "location": {
+        "status": "unknown",
+        "lastKnown": null,
+        "reasons": [
+          "latest-source-time-uncertain"
+        ]
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "B1-1Hz-10",
+      "location": {
+        "status": "unknown",
+        "lastKnown": null,
+        "reasons": [
+          "latest-source-time-uncertain"
+        ]
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "B1-1Hz-60",
+      "location": {
+        "status": "unknown",
+        "lastKnown": null,
+        "reasons": [
+          "latest-source-time-uncertain"
+        ]
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "B2-overlapping-unusable-point",
+      "location": {
+        "status": "unknown",
+        "lastKnown": null,
+        "reasons": [
+          "latest-source-time-uncertain"
+        ]
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "B2-newer-nonoverlap-control",
+      "location": {
+        "status": "stale",
+        "lastKnown": "point",
+        "reasons": []
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "B3-duplicate-receipt",
+      "location": {
+        "status": "recent",
+        "lastKnown": "point",
+        "reasons": []
+      },
+      "response": {
+        "status": "unknown",
+        "lastKnown": null
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "B3-duplicate-timestamp-spelling",
+      "location": {
+        "status": "recent",
+        "lastKnown": "point",
+        "reasons": []
+      },
+      "response": {
+        "status": "unknown",
+        "lastKnown": null
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "B4-old-conflict-poisons-newer",
+      "location": {
+        "status": "unknown",
+        "lastKnown": null,
+        "reasons": [
+          "source-clock-reversal"
+        ]
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "F1-phone-ahead-300ms",
+      "location": {
+        "status": "unknown",
+        "lastKnown": "point",
+        "reasons": [
+          "event-in-server-future",
+          "source-after-server-receipt"
+        ]
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "F2-uncertainty-near-now",
+      "location": {
+        "status": "unknown",
+        "lastKnown": "point",
+        "reasons": [
+          "event-in-server-future"
+        ]
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "F3-overlap-3sec-2sec",
+      "location": {
+        "status": "unknown",
+        "lastKnown": null,
+        "reasons": [
+          "latest-source-time-uncertain"
+        ]
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "F3-old-null-uncertainty",
+      "location": {
+        "status": "unknown",
+        "lastKnown": null,
+        "reasons": [
+          "latest-source-time-uncertain"
+        ]
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "F4-remote-permission-unknown",
+      "location": {
+        "status": "unknown",
+        "lastKnown": "point",
+        "reasons": [
+          "location-permission-unknown"
+        ]
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "F5-notification-pending",
+      "throws": "TypeError"
+    },
+    {
+      "id": "F5-notification-claimed",
+      "throws": "TypeError"
+    },
+    {
+      "id": "F5-notification-authorized",
+      "throws": "TypeError"
+    },
+    {
+      "id": "F5-notification-rejected",
+      "throws": "TypeError"
+    },
+    {
+      "id": "F5-notification-unknown",
+      "throws": "TypeError"
+    },
+    {
+      "id": "F5-notification-unavailable",
+      "throws": "TypeError"
+    },
+    {
+      "id": "F5-missing-uncertainty",
+      "throws": "TypeError"
+    },
+    {
+      "id": "F5-backend-accuracy",
+      "throws": "TypeError"
+    },
+    {
+      "id": "F6-paused-clock-resume",
+      "location": {
+        "status": "unknown",
+        "lastKnown": "point",
+        "reasons": [
+          "server-time-unknown"
+        ]
+      },
+      "response": {
+        "status": "unknown",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "unknown",
+        "comparison": "unknown"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "K1-old-agreement-before",
+      "location": {
+        "status": "recent",
+        "lastKnown": "point",
+        "reasons": []
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "K1-old-agreement-reached",
+      "location": {
+        "status": "recent",
+        "lastKnown": "point",
+        "reasons": []
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "reached"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "K3-stale-anchor",
+      "location": {
+        "status": "unknown",
+        "lastKnown": "point",
+        "reasons": [
+          "server-time-stale"
+        ]
+      },
+      "response": {
+        "status": "unknown",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "unknown",
+        "comparison": "unknown"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "K4-open-and-closed-gap",
+      "location": {
+        "status": "unknown",
+        "lastKnown": "point",
+        "reasons": [
+          "source-overlaps-unobserved-interval"
+        ]
+      },
+      "response": {
+        "status": "unknown",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "K5-cross-message-event-id",
+      "location": {
+        "status": "recent",
+        "lastKnown": "point",
+        "reasons": []
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "K6-bad-deadline-revision",
+      "throws": "TypeError"
+    },
+    {
+      "id": "K7-unusable-in-two-evidence-fields",
+      "location": {
+        "status": "unknown",
+        "lastKnown": null,
+        "reasons": [
+          "conflicting-sequence"
+        ]
+      },
+      "response": {
+        "status": "recent",
+        "lastKnown": "report"
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "K8-empty-unknown-reasons",
+      "location": {
+        "status": "unknown",
+        "lastKnown": null,
+        "reasons": []
+      },
+      "response": {
+        "status": "unknown",
+        "lastKnown": null
+      },
+      "deadline": {
+        "status": "stale",
+        "comparison": "before"
+      },
+      "observation": "assertions confirmed the stated behavior; no repair or acceptance"
+    },
+    {
+      "id": "B5-matrix-insensitive",
+      "matrixGroupsPassed": 5,
+      "combinations": 80,
+      "deletedProductionGuards": [
+        "session changed",
+        "clock reversed",
+        "clock disagreement"
+      ],
+      "mutationControl": "restarted recent source changes unknown -> recent",
+      "rawOutput": "/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-pr53-mutation-cKcWDx/matrix-mutant.tap"
+    },
+    {
+      "id": "K9-complexity",
+      "source": "project.mjs:85-95",
+      "pairsFor3600Records": 6478200,
+      "timestampParsesForSameSession": 12956400,
+      "observation": "structural operation count, not a runtime benchmark"
+    }
+  ]
+}

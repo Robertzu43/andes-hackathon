@@ -1,0 +1,316 @@
+TAP version 13
+# Subtest: false-freshness matrix: reconnect x availability x duplicates/order
+ok 1 - false-freshness matrix: reconnect x availability x duplicates/order
+  ---
+  duration_ms: 5.38825
+  type: 'test'
+  ...
+# Subtest: false-freshness matrix: suspended x availability x duplicates/order
+ok 2 - false-freshness matrix: suspended x availability x duplicates/order
+  ---
+  duration_ms: 1.45625
+  type: 'test'
+  ...
+# Subtest: false-freshness matrix: pausedClock x availability x duplicates/order
+ok 3 - false-freshness matrix: pausedClock x availability x duplicates/order
+  ---
+  duration_ms: 1.283625
+  type: 'test'
+  ...
+# Subtest: false-freshness matrix: restart x availability x duplicates/order
+ok 4 - false-freshness matrix: restart x availability x duplicates/order
+  ---
+  duration_ms: 1.64525
+  type: 'test'
+  ...
+# Subtest: false-freshness matrix: missingServer x availability x duplicates/order
+ok 5 - false-freshness matrix: missingServer x availability x duplicates/order
+  ---
+  duration_ms: 1.344708
+  type: 'test'
+  ...
+# Subtest: a new point after reconnection may be recent while the older response and gap remain
+ok 6 - a new point after reconnection may be recent while the older response and gap remain
+  ---
+  duration_ms: 0.1495
+  type: 'test'
+  ...
+# Subtest: positive facts remain independently visible without asserting safety or interval coverage
+ok 7 - positive facts remain independently visible without asserting safety or interval coverage
+  ---
+  duration_ms: 2.50325
+  type: 'test'
+  ...
+# Subtest: empty and absent evidence remain explicit unknowns
+ok 8 - empty and absent evidence remain explicit unknowns
+  ---
+  duration_ms: 0.229459
+  type: 'test'
+  ...
+# Subtest: a local tick and online flag cannot replace missing server evidence
+ok 9 - a local tick and online flag cannot replace missing server evidence
+  ---
+  duration_ms: 0.212833
+  type: 'test'
+  ...
+# Subtest: delayed upload and reconnection age original source times, not receipt times
+ok 10 - delayed upload and reconnection age original source times, not receipt times
+  ---
+  duration_ms: 0.911375
+  type: 'test'
+  ...
+# Subtest: suspension with both clocks advancing leaves a local gap and stale server reference
+ok 11 - suspension with both clocks advancing leaves a local gap and stale server reference
+  ---
+  duration_ms: 0.249709
+  type: 'test'
+  ...
+# Subtest: paused monotonic clock during suspension makes time unknown
+ok 12 - paused monotonic clock during suspension makes time unknown
+  ---
+  duration_ms: 0.245541
+  type: 'test'
+  ...
+# Subtest: wallMs reversal cannot freshen evidence or decide the deadline
+ok 13 - wallMs reversal cannot freshen evidence or decide the deadline
+  ---
+  duration_ms: 0.105084
+  type: 'test'
+  ...
+# Subtest: monotonicMs reversal cannot freshen evidence or decide the deadline
+ok 14 - monotonicMs reversal cannot freshen evidence or decide the deadline
+  ---
+  duration_ms: 0.072667
+  type: 'test'
+  ...
+# Subtest: page restart invalidates old monotonic anchor
+ok 15 - page restart invalidates old monotonic anchor
+  ---
+  duration_ms: 0.266042
+  type: 'test'
+  ...
+# Subtest: fresh server evidence after restart permits a new fact but retains the missing interval
+ok 16 - fresh server evidence after restart permits a new fact but retains the missing interval
+  ---
+  duration_ms: 0.419292
+  type: 'test'
+  ...
+# Subtest: location permission denied retains last position and its own freshness
+ok 17 - location permission denied retains last position and its own freshness
+  ---
+  duration_ms: 0.142125
+  type: 'test'
+  ...
+# Subtest: location permission unavailable retains last position and its own freshness
+ok 18 - location permission unavailable retains last position and its own freshness
+  ---
+  duration_ms: 0.061375
+  type: 'test'
+  ...
+# Subtest: location permission prompt retains last position and its own freshness
+ok 19 - location permission prompt retains last position and its own freshness
+  ---
+  duration_ms: 0.051
+  type: 'test'
+  ...
+# Subtest: location permission unknown retains last position and its own freshness
+ok 20 - location permission unknown retains last position and its own freshness
+  ---
+  duration_ms: 0.053209
+  type: 'test'
+  ...
+# Subtest: availability {"visibility":"hidden"} cannot prove interval coverage
+ok 21 - availability {"visibility":"hidden"} cannot prove interval coverage
+  ---
+  duration_ms: 0.054042
+  type: 'test'
+  ...
+# Subtest: availability {"connection":"offline"} cannot prove interval coverage
+ok 22 - availability {"connection":"offline"} cannot prove interval coverage
+  ---
+  duration_ms: 0.044
+  type: 'test'
+  ...
+# Subtest: reported fatigue, help and crime remain attributed reports
+ok 23 - reported fatigue, help and crime remain attributed reports
+  ---
+  duration_ms: 0.721917
+  type: 'test'
+  ...
+# Subtest: no response never becomes sleep or robbery even after the deadline
+ok 24 - no response never becomes sleep or robbery even after the deadline
+  ---
+  duration_ms: 0.117375
+  type: 'test'
+  ...
+# Subtest: reordered uploads and duplicate events do not replace a later source observation
+ok 25 - reordered uploads and duplicate events do not replace a later source observation
+  ---
+  duration_ms: 0.3305
+  type: 'test'
+  ...
+# Subtest: responses conflicting identities and sequences preserve evidence without choosing a fresh winner
+ok 26 - responses conflicting identities and sequences preserve evidence without choosing a fresh winner
+  ---
+  duration_ms: 0.140959
+  type: 'test'
+  ...
+# Subtest: locations conflicting identities and sequences preserve evidence without choosing a fresh winner
+ok 27 - locations conflicting identities and sequences preserve evidence without choosing a fresh winner
+  ---
+  duration_ms: 0.106958
+  type: 'test'
+  ...
+# Subtest: source clock reversal against sequence retains contradictory reports
+ok 28 - source clock reversal against sequence retains contradictory reports
+  ---
+  duration_ms: 0.066875
+  type: 'test'
+  ...
+# Subtest: uncertain source order across sessions does not pick a latest response
+ok 29 - uncertain source order across sessions does not pick a latest response
+  ---
+  duration_ms: 0.06525
+  type: 'test'
+  ...
+# Subtest: unknown source-time uncertainty retains a single response with unknown age
+ok 30 - unknown source-time uncertainty retains a single response with unknown age
+  ---
+  duration_ms: 0.052583
+  type: 'test'
+  ...
+# Subtest: future source relative to server receipt cannot be recent
+ok 31 - future source relative to server receipt cannot be recent
+  ---
+  duration_ms: 0.050708
+  type: 'test'
+  ...
+# Subtest: future event or receipt relative to server evidence cannot be recent
+ok 32 - future event or receipt relative to server evidence cannot be recent
+  ---
+  duration_ms: 0.087916
+  type: 'test'
+  ...
+# Subtest: explicit observation gaps retain disagreement rather than freshening overlapping points
+ok 33 - explicit observation gaps retain disagreement rather than freshening overlapping points
+  ---
+  duration_ms: 0.075541
+  type: 'test'
+  ...
+# Subtest: open gap remains visible after an online signal and a new local tick
+ok 34 - open gap remains visible after an online signal and a new local tick
+  ---
+  duration_ms: 0.0605
+  type: 'test'
+  ...
+# Subtest: uncertainty bounds straddling a freshness budget stay unknown
+ok 35 - uncertainty bounds straddling a freshness budget stay unknown
+  ---
+  duration_ms: 0.062209
+  type: 'test'
+  ...
+# Subtest: tolerated wall/monotonic disagreement expands age bounds instead of inventing precision
+ok 36 - tolerated wall/monotonic disagreement expands age bounds instead of inventing precision
+  ---
+  duration_ms: 0.061292
+  type: 'test'
+  ...
+# Subtest: freshness budget has an explicit inclusive boundary
+ok 37 - freshness budget has an explicit inclusive boundary
+  ---
+  duration_ms: 0.076292
+  type: 'test'
+  ...
+# Subtest: unusable latest positions do not hide a stale usable location or invent accuracy
+ok 38 - unusable latest positions do not hide a stale usable location or invent accuracy
+  ---
+  duration_ms: 0.169458
+  type: 'test'
+  ...
+# Subtest: all unusable locations remain unknown with raw source evidence retained
+ok 39 - all unusable locations remain unknown with raw source evidence retained
+  ---
+  duration_ms: 0.0535
+  type: 'test'
+  ...
+# Subtest: server deadline revisions win over upload order and local activity
+ok 40 - server deadline revisions win over upload order and local activity
+  ---
+  duration_ms: 0.172958
+  type: 'test'
+  ...
+# Subtest: equivalent offsets and locale/zone changes cannot move agreed deadline
+ok 41 - equivalent offsets and locale/zone changes cannot move agreed deadline
+  ---
+  duration_ms: 0.121917
+  type: 'test'
+  ...
+# Subtest: deadline exact boundary and server uncertainty have distinct comparisons
+ok 42 - deadline exact boundary and server uncertainty have distinct comparisons
+  ---
+  duration_ms: 0.1515
+  type: 'test'
+  ...
+# Subtest: conflicting server revisions do not silently replace an agreed deadline
+ok 43 - conflicting server revisions do not silently replace an agreed deadline
+  ---
+  duration_ms: 0.338666
+  type: 'test'
+  ...
+# Subtest: notification acceptance, delivery, failure and per-message histories stay separate
+ok 44 - notification acceptance, delivery, failure and per-message histories stay separate
+  ---
+  duration_ms: 0.160292
+  type: 'test'
+  ...
+# Subtest: old notification evidence is retained as stale; it does not imply current delivery
+ok 45 - old notification evidence is retained as stale; it does not imply current delivery
+  ---
+  duration_ms: 0.07025
+  type: 'test'
+  ...
+# Subtest: notification conflicts remain unknown with both server records preserved
+ok 46 - notification conflicts remain unknown with both server records preserved
+  ---
+  duration_ms: 0.069875
+  type: 'test'
+  ...
+# Subtest: local-only events cannot own deadlines or notification status
+ok 47 - local-only events cannot own deadlines or notification status
+  ---
+  duration_ms: 0.287292
+  type: 'test'
+  ...
+# Subtest: trip mismatches fail explicitly instead of mixing evidence
+ok 48 - trip mismatches fail explicitly instead of mixing evidence
+  ---
+  duration_ms: 0.138917
+  type: 'test'
+  ...
+# Subtest: invalid calendar and timezone components are rejected rather than normalised
+ok 49 - invalid calendar and timezone components are rejected rather than normalised
+  ---
+  duration_ms: 0.118333
+  type: 'test'
+  ...
+# Subtest: caller supplies every provisional budget; malformed values never become reassuring output
+ok 50 - caller supplies every provisional budget; malformed values never become reassuring output
+  ---
+  duration_ms: 0.136667
+  type: 'test'
+  ...
+# Subtest: projection is deterministic, leaves inputs untouched and shares no mutable evidence
+ok 51 - projection is deterministic, leaves inputs untouched and shares no mutable evidence
+  ---
+  duration_ms: 0.336916
+  type: 'test'
+  ...
+1..51
+# tests 51
+# suites 0
+# pass 51
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 70.382375

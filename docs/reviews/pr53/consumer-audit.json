@@ -1,0 +1,80 @@
+{
+  "runtime": "v24.17.0",
+  "scope": "Tracked source/test dependency audit; no visual, integration or product acceptance",
+  "candidates": [
+    {
+      "name": "foundation-handoff",
+      "sha": "3283fe675ebeee04bb2be8a62f42ab5c475b4b0e",
+      "tree": "967a39bde5fe4ad0ef7c8bdb3d5f931182a9d05b",
+      "codeFilesScanned": 43,
+      "moduleFiles": [],
+      "references": [],
+      "inventorySha256": "a828bc35bfc8ea2b25c37ef04b2ab7c577ef8dc1e188224ea289d3b4708d0005"
+    },
+    {
+      "name": "foundation-current-PR56",
+      "sha": "6f8dc52a566d3880cf1f10bbfd5282a888725ca1",
+      "tree": "6778ffadd1458d90580543f41adb7eed207bca3f",
+      "codeFilesScanned": 43,
+      "moduleFiles": [],
+      "references": [],
+      "inventorySha256": "a828bc35bfc8ea2b25c37ef04b2ab7c577ef8dc1e188224ea289d3b4708d0005"
+    },
+    {
+      "name": "driver-current-PR63",
+      "sha": "80e9d45f9a234de54b1017e856e8349c097b8760",
+      "tree": "90f05b4c0246eba8ae7635dcf6159fca560d28b8",
+      "codeFilesScanned": 31,
+      "moduleFiles": [],
+      "references": [],
+      "inventorySha256": "11939e737b7b31ce7cbbc27b99ea3ed2af4589acee3476ede355f5a7f98b67b6"
+    },
+    {
+      "name": "contact-current-PR62",
+      "sha": "21cd50ac15c22a2a3cc71bf105336e8ebc77c285",
+      "tree": "fb454d62e87a7553fd25499b4865e607dacb3251",
+      "codeFilesScanned": 32,
+      "moduleFiles": [],
+      "references": [],
+      "inventorySha256": "1768b23a890fa196188b959d250a2e3fcd1af04551834f32594f1d62a9a8561c"
+    },
+    {
+      "name": "client-handoff",
+      "sha": "292d3c4e6ebe6831c3aec5d9db3824e17ee64be7",
+      "tree": "2a0e185f1f3fddef4490e262ffee28d6ce7ebcb0",
+      "codeFilesScanned": 42,
+      "moduleFiles": [],
+      "references": [],
+      "inventorySha256": "672e444e594f93559230ff1ef1f0e439d92fc36eb893904bb9504c93c29768a6"
+    },
+    {
+      "name": "client-current-PR59",
+      "sha": "7e241c39a31d4eaba5f8028fd977e06f6ca72d4d",
+      "tree": "a31ecf3b46aacaae36d8147c1ccf86039e0763a8",
+      "codeFilesScanned": 42,
+      "moduleFiles": [],
+      "references": [],
+      "inventorySha256": "672e444e594f93559230ff1ef1f0e439d92fc36eb893904bb9504c93c29768a6"
+    }
+  ],
+  "backend": {
+    "sha": "c752de8a3b424bcbc086764dc11052348b27e320",
+    "locationSourceBlob": "99298fb205f6a2010df506722b9952783c7c9530",
+    "snapshotPath": "/v1/trips/:id/snapshot",
+    "wire": "{tripId, location:null|{capturedAt,receivedAt,latitude,longitude,accuracy}, freshness, ageMs, readAt}",
+    "age": "max(0, serverNow - captured_at)",
+    "freshness": "fresh when ageMs <= 120000; synthetic engineering bound",
+    "unavailable": "location=null, freshness=unavailable, ageMs=null",
+    "noRouteAtInspectedHead": [
+      "/v1/contact/trips/:id/location",
+      "/v1/trips/:id/status",
+      "/v1/trips/:id/sharing"
+    ]
+  },
+  "limits": [
+    "No sourceAge wire field",
+    "Driver optional monitoringProjection callback defaults to null; not PR53 binding",
+    "Foundation main renders FoundationRoot without injected feature routes",
+    "No last-response, deadline, delivery or wellbeing authority follows from a location snapshot"
+  ]
+}

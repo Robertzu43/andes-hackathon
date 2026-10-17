@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: false-freshness matrix: reconnect x availability x duplicates/order
+ok 1 - false-freshness matrix: reconnect x availability x duplicates/order
+  ---
+  duration_ms: 14.554334
+  type: 'test'
+  ...
+# Subtest: false-freshness matrix: suspended x availability x duplicates/order
+ok 2 - false-freshness matrix: suspended x availability x duplicates/order
+  ---
+  duration_ms: 3.161459
+  type: 'test'
+  ...
+# Subtest: false-freshness matrix: pausedClock x availability x duplicates/order
+ok 3 - false-freshness matrix: pausedClock x availability x duplicates/order
+  ---
+  duration_ms: 6.920125
+  type: 'test'
+  ...
+# Subtest: false-freshness matrix: restart x availability x duplicates/order
+ok 4 - false-freshness matrix: restart x availability x duplicates/order
+  ---
+  duration_ms: 5.265166
+  type: 'test'
+  ...
+# Subtest: false-freshness matrix: missingServer x availability x duplicates/order
+ok 5 - false-freshness matrix: missingServer x availability x duplicates/order
+  ---
+  duration_ms: 5.961417
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 106.484291

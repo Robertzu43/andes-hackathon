@@ -1,0 +1,42 @@
+{
+  "runtime": "v24.17.0",
+  "candidate": "21cd50ac15c22a2a3cc71bf105336e8ebc77c285",
+  "result": "P2 source-age mismatch reproduced; original owner/reviewer confirmation required",
+  "source": "web/src/features/contacts/journey.ts:74-81",
+  "aligned": {
+    "ageMs": 240000,
+    "serverFreshnessAtRead": "fresh",
+    "readAt": "2026-10-17T12:00:00.000Z",
+    "live": false,
+    "currentAuthorization": "requires-server-check"
+  },
+  "behind": {
+    "ageMs": 180000,
+    "serverFreshnessAtRead": "fresh",
+    "readAt": "2026-10-17T12:00:00.000Z",
+    "live": false,
+    "currentAuthorization": "requires-server-check"
+  },
+  "ahead": {
+    "ageMs": 300000,
+    "serverFreshnessAtRead": "fresh",
+    "readAt": "2026-10-17T12:00:00.000Z",
+    "live": false,
+    "currentAuthorization": "requires-server-check"
+  },
+  "sameClientClockAfterBackwardStep": {
+    "ageMs": 150000,
+    "serverFreshnessAtRead": "fresh",
+    "readAt": "2026-10-17T12:00:00.000Z",
+    "live": false,
+    "currentAuthorization": "requires-server-check"
+  },
+  "accepted300msFutureCapture": {
+    "ageMs": null,
+    "serverFreshnessAtRead": "fresh",
+    "readAt": "2026-10-17T12:00:00.000Z",
+    "live": false,
+    "currentAuthorization": "requires-server-check"
+  },
+  "boundary": "No live/safe claim observed; these are source arithmetic probes, not UI or backend integration proof"
+}
