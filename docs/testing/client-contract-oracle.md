@@ -54,3 +54,39 @@ transactions, idempotency persistence, consent enforcement or provider delivery.
 Subsequent candidate probes and local reload/offline browser proof belong in this
 same reviewer lane once the authors' interfaces and frontend foundation exist.
 Physical-device, human, provider and product evidence gates remain open.
+
+## API driver probes
+
+`api-probes.mjs` contains 29 executable cases: the 16 cataloged operations, seven
+HTTP errors, ambiguous explicit replay, malformed write response, cancellation
+after a write starts, revoked snapshot access, signout cleanup and a late response
+crossing an account switch. Its self-tests accept a small synthetic control and
+reject seven planted defects, including blind retry and stale-session disclosure.
+Those self-tests are sensitivity evidence for the oracle, not an author verdict.
+
+A reviewer-owned adapter exports `createApiDriver({baseUrl, fetchImpl, store})` and
+returns `setSession({userId, token})`, `clearSession()`, `call(request)` and optional
+`dispose()`. `call` receives `{method,path,body?,idempotencyKey?,signal?}` for a
+cataloged operation and projects the candidate's result into the raw contract
+body. This is a test-driver seam, not a proposed application interface or API.
+Bind it to the frozen author's documented exports after reading the source.
+
+The driver projects existing candidate errors to `{kind,status?,code?,ambiguous?}`:
+`http` retains the actual status/code; `network`, `protocol` and `aborted` identify
+transport/response failures; `session` is a local retired/signed-out session error.
+It must not implement missing retry, privacy or ambiguity handling to make the
+candidate pass. Unsupported behavior is a finding or an explicit integration gap,
+not logic to hide inside the adapter. Only fabricated session tokens are allowed.
+
+```sh
+node tests/client-contract-review/run.mjs \
+  --driver /absolute/reviewer/candidate-driver.mjs \
+  --candidate AUTHOR_40_CHARACTER_FROZEN_SHA
+```
+
+The runner exits 0 only when all selected API assertions hold, 1 on an assertion
+or bounded probe failure, and 2 for a missing/invalid driver or SHA. Missing
+candidate code never produces a skipped or passing review. The SHA is an explicit
+claim: the runner does not attest module identity or archive provenance. Verify
+that separately and publish the exact binding, commands and limitations with a
+review. Reports omit candidate exception text to avoid reflecting sensitive data.
