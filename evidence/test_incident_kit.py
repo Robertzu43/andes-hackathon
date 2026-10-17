@@ -7,6 +7,8 @@ import csv
 import io
 import json
 import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -276,6 +278,19 @@ class RuleTest(unittest.TestCase):
         self.edit("timeline", "SYN-A-W-E10", event_type="dozed_off_report", actor="driver",
                   reported_by="SYN-A-C", occurrence="reported_second_hand")
         self.assertRejected("reported_second_hand needs a cited attributed account")
+
+    def test_second_hand_report_needs_the_reporting_participants_account(self):
+        self.edit("timeline", "SYN-A-W-E15", source_ids="SYN-A-W-S1")
+        self.assertRejected("reported_second_hand needs the reporting participant's own attributed account")
+        self.edit("timeline", "SYN-A-W-E15", source_ids="SYN-A-W-S2")
+        self.assertEqual(self.errors(), [])
+
+    def test_second_hand_nonmessage_account_cannot_borrow_another_provider(self):
+        self.add_source("SYN-A-W-S5", kind="other", provided_by="SYN-A-D", evidence_basis="attributed_account")
+        self.edit("timeline", "SYN-A-W-E15", source_ids="SYN-A-W-S5")
+        self.assertRejected("reported_second_hand needs the reporting participant's own attributed account")
+        self.edit("sources", "SYN-A-W-S5", provided_by="SYN-A-C")
+        self.assertEqual(self.errors(), [])
 
     def test_self_report_needs_own_nonmessage_account(self):
         self.add_source("SYN-A-W-S5", kind="independent_record", evidence_basis="attributed_account")
@@ -619,6 +634,37 @@ class RuleTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("CSV UTF-8", out)
 
+    def test_cp1252_stdout_can_print_the_utf8_instruction(self):
+        path = self.folder / "participants.csv"
+        path.write_bytes(path.read_bytes().replace(b"owner_operator", "owner_opérator".encode("cp1252")))
+        child = (
+            "import runpy,sys; sys.stdout.reconfigure(encoding='cp1252',errors='strict'); "
+            "sys.argv=sys.argv[1:]; runpy.run_path(sys.argv[0],run_name='__main__')"
+        )
+        process = subprocess.run([sys.executable, "-I", "-c", child, str(KIT / "incident_kit.py"),
+                                  "check", str(self.folder)], capture_output=True)
+        self.assertEqual(process.returncode, 1)
+        self.assertIn(b"CSV UTF-8", process.stdout)
+        self.assertNotIn(b"UnicodeEncodeError", process.stderr)
+        self.assertNotIn(b"Traceback", process.stderr)
+
+    def test_late_decode_error_discards_partial_table(self):
+        path = self.folder / "participants.csv"
+        lines = path.read_bytes().splitlines(keepends=True)
+        path.write_bytes(b"".join(lines) + lines[-1] * 250 + b"\xe9")
+        report = kit.Report()
+        tables = kit.read_tables(self.folder, report)
+        self.assertEqual(tables["participants"], [])
+        self.assertTrue(any("is not valid UTF-8" in error for error in report.errors), report.errors)
+
+    def test_csv_error_discards_partial_table(self):
+        path = self.folder / "participants.csv"
+        path.write_text(path.read_text(encoding="utf-8") + '"SYNTHETIC unclosed cell', encoding="utf-8")
+        report = kit.Report()
+        tables = kit.read_tables(self.folder, report)
+        self.assertEqual(tables["participants"], [])
+        self.assertTrue(any("could not parse CSV" in error for error in report.errors), report.errors)
+
     def test_latin_american_spanish_tag_is_accepted(self):
         self.edit("participants", "SYN-B-D", preferred_language="es-419")
         self.edit("participants", "SYN-B-C", preferred_language="es-419")
@@ -626,6 +672,12 @@ class RuleTest(unittest.TestCase):
         self.assertEqual(report.errors, [])
         self.assertEqual(result["coverage"]["languages"].get("es-419"), 2)
         self.assertNotIn("Spanish (es) not represented", result["coverage"]["gaps"])
+
+    def test_numeric_language_region_requires_ascii_digits(self):
+        self.edit("participants", "SYN-B-D", preferred_language="es-٤١٩")
+        self.assertRejected("preferred_language must be a language tag")
+        self.edit("participants", "SYN-B-D", preferred_language="es-419")
+        self.assertEqual(self.errors(), [])
 
     def test_missing_table_is_reported(self):
         (self.folder / "sources.csv").unlink()

@@ -1,6 +1,6 @@
 # Data dictionary · #8 freight trip reconstruction
 
-Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column names. Blank copies are in `templates/`. `incident_kit.py` holds the same schema and checks it, and the tests fail if this page, the templates and the code disagree.
+Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column names. Malformed CSV or decoding failures reject and discard the entire affected table, including rows read before a late error. Blank copies are in `templates/`. `incident_kit.py` holds the same schema and checks it, and the tests fail if this page, the templates and the code disagree.
 
 ## Conventions
 
@@ -18,7 +18,7 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 | `pair_id` | ID | yes | Shared by a driver and their trusted contact. A pair is one driver and one contact. |
 | `role` | `driver`, `contact` | yes | |
 | `country_of_residence` | two-letter code such as `BR`, `CO`, `MX` | yes | |
-| `preferred_language` | language tag such as `es`, `pt-BR` or `es-419` | yes | Language of the guides used with this person. |
+| `preferred_language` | language tag such as `es`, `pt-BR` or `es-419` (ASCII digits in numeric regions) | yes | Language of the guides used with this person. |
 | `phone_platform` | `iphone`, `android`, `other`, `unknown` | yes | Phone used on the reconstructed trips. Feeds the #9 device coverage. |
 | `work_arrangement` | `owner_operator`, `independent_driver`, `fleet_employed`, `other`, `unknown`; contacts use `not_applicable` | yes | How the driver works. `fleet_employed` is outside the target segment and raises a warning. |
 | `trucks_operated` | `1`, `2`, `3_or_more`, `unknown`; contacts use `not_applicable` | yes | Trucks the driver owns or operates. `3_or_more` raises a warning. |
@@ -106,7 +106,7 @@ The fatigue, security and rest types are reported states: they can never be `rec
 |---|---|
 | `recorded` | A timestamped record shows the act happened: a message was sent, a call was made, a truck stopped. Needs a cited timestamped record. A record can show that someone wrote that they were tired or robbed, or that a truck stopped. It cannot show tiredness, robbery or rest, so sensitive and rest types never use this value or `unknown`; they require `self_reported`, `reported_second_hand`, `suspected` or `corroborated`. |
 | `self_reported` | The person who did or experienced it says so, in an interview or in their own message. Requires that participant in `reported_by`, a role matching the actor, and a cited source with `evidence_basis=attributed_account`. A `whatsapp_export` or `sms` supplied by the other participant can contain the reporter's own words; the trace reviewer must check authorship in the original. Every other source kind must be supplied by `reported_by`. The tool checks these declarations, not the account's truth. |
-| `reported_second_hand` | Someone else says it happened. Requires the participant repeating the account in `reported_by` and a cited source with `evidence_basis=attributed_account`; that participant's role must differ from the actor. |
+| `reported_second_hand` | Someone else says it happened. Requires the participant repeating the account in `reported_by` and their own cited source with `evidence_basis=attributed_account`; that participant's role must differ from the actor. Non-message accounts must be supplied by `reported_by`; a WhatsApp/SMS export supplied by another participant needs the trace reviewer to verify the reporter's own words. |
 | `suspected` | A participant explicitly expressed a fear or suspicion, with their own cited account and stated basis in `basis_source_id` and `basis_note`. Requires that person in `reported_by`. An unanswered message alone does not create this classification. The suspicion is attributed, and the incident remains unverified. |
 | `corroborated` | Independent observations support this specific claim. Requires `basis_source_id` pointing to a cited `independent_record` with `evidence_basis=independent_observation`, and `basis_note` explaining the observations. A police complaint repeating the driver's allegation remains `self_reported` with attribution to the driver; a second-hand account remains `reported_second_hand`. |
 | `unknown` | Missing evidence leaves occurrence unverified. For no reply alone, use `contact_unconfirmed` with this value, without adding a fatigue, sleep or robbery label. A bounded follow-up under an agreed policy does not change that evidence status. |
