@@ -57,6 +57,7 @@ database) # $ ~0.45/day: db.t4g.micro single-AZ PostgreSQL 18.3, reachable from 
     --master-username andes_admin --manage-master-user-password --vpc-security-group-ids "$sg" --publicly-accessible --tags "$TAGS" >/dev/null
   aws rds wait db-instance-available --db-instance-identifier "$N"; db Endpoint.Address ;;
 bootstrap) # free: app login, migrations and demo seed, from this laptop while `database` left it reachable
+  # A fresh database has no stale active trips; on a reused one, cancel old trips before enabling checks or each will escalate.
   npm run build >/dev/null
   admin=$(aws secretsmanager get-secret-value --secret-id "$(db MasterUserSecret.SecretArn)" --query SecretString --output text)
   export PGHOST=$(db Endpoint.Address) PGPORT=5432 PGDATABASE=andes PGSSLROOTCERT=infra/rds-global-bundle.pem
