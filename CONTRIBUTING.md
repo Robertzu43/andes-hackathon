@@ -19,6 +19,6 @@ This rule applies equally to Sebastian (`sebasbimbi`), Robert (`Robertzu43`) and
 - Merge through a reviewed PR. Never push directly to `main`, use admin overrides, force-push or dismiss reviews to bypass feedback.
 - Repair misses already on `main` through a transparent corrective PR with reviewer confirmation, preserving unrelated history.
 
-The branch-protection API currently returns HTTP 403 for this private repository under its current plan. This is an explicit collaboration rule, not a claim of server enforcement. Do not change repository privacy or billing to work around it.
+The branch-protection API currently returns HTTP 403 for this private repository under its current plan. This is an explicit collaboration rule, not a claim of server enforcement. Changing repository visibility, including for submission requirements, is an explicit team decision; it must never bypass review. Any billing change also requires explicit team authorization.
 
 Preparatory tooling still needs its stated evidence gates. This policy change closes no issue and supplies no missing human/device evidence.
