@@ -22,60 +22,67 @@ Cheapest points: traction 1 → 3 is +12. A few consented driver/contact intervi
 - Pitch: 3 minutes plus 2 minutes of questions. Keep what works separate from what is still an idea.
 - Updates (`andes project update`): post after a decision, user test, working demo or blocker. Assume everything becomes public: no secrets, voucher codes or personal data.
 
-## Status — 2026-10-17 17:55 -05
+## Status — 2026-10-17 19:00 -05
 
 Team GOAT, track `security`, both members checked in. Submission: **none**. Mentor updates: **0**.
 
 | Deliverable | State | Blocker | Owner |
 |---|---|---|---|
-| GitHub URL | Repo is **private** (404 when signed out) | Must be public for organizers to open it. PR #54's privacy line conflicts. The backend is not on `main` (no PR from `codex/aws-durable-backend`). | Robert + Sebastian |
-| Deployment URL | None | No hosting. The API accepts only OIDC tokens and there is no browser sign-in. The web UI is waiting on Sebastian's design contract (PR #56). | Robert (API, hosting), Sebastian (web) |
-| Presentation URL | None | Drafts in progress | Robert |
-| Markdown description | None | Draft from verified facts only | Robert |
-| Traction evidence | None | No interviews yet | Sebastian (#8), both |
+| GitHub URL | Repo is **private** (404 when signed out) | Must be public for organizers to open it; PR #54's privacy line conflicts. The backend is not on `main`. | Robert + Sebastian |
+| Deployment URL | Deploy script ready ([`infra/demo/deploy.sh`](../infra/demo/deploy.sh)), nothing created | Needs Robert's personal AWS profile (`andes`). Web screens are in Sebastian's PRs, not merged yet. | Robert (API, hosting), Sebastian (web) |
+| Presentation URL | None | Script, slides and Q&A drafts in progress | Robert |
+| Markdown description | Draft: [`docs/submission/descripcion.md`](submission/descripcion.md) | `[[PENDIENTE]]` fields: URLs, interviews, real delivery | Robert |
+| Traction evidence | None | No interviews yet; Sebastian's #8 kit has the ES/PT interview guides | Sebastian (#8), both |
 
 ## What works today (verified)
 
-`codex/aws-durable-backend` @ `c752de8`, against a disposable PostgreSQL 18:
+`hackathon/delivery` @ HEAD, against a disposable PostgreSQL 18:
+- `npm test`: 67/67 pass. That covers the original 47 (API, durable dispatch, Zavu boundary, infrastructure) plus Part 1 security checks and demo personas.
+- `npm run demo`: unchanged synthetic journey covering confirmation, fresh → stale location, duplicate SOS, process kill/restart without resend, and revocation.
+- `DEMO_MODE=true node dist/server.js` was smoke-tested over HTTP: health, persona session, tokens, and a forged token returning 401.
 
-- `npm test`: 47/47 pass (trip/consent/location/SOS API, durable dispatch, Zavu boundary, infrastructure assertions).
-- `npm run demo`: synthetic journey covering:
-  - trip confirmation;
-  - location going fresh → stale;
-  - a duplicate SOS producing one incident and three independent channel jobs;
-  - a real process kill/restart that recovers work without resending;
-  - revocation blocking map reads.
+Part 1 has been through a plan review (applied and run on a scratch copy) and a code review; the review fixes are in `484e0f0`.
 
-Not done: live sends, deployment, phone capture, voice intake (returns 422), browser sign-in.
+Not done: live sends, deployment, phone capture, voice/free-text trip extraction (fields are entered), merged web screens.
+
+## Integration
+
+`codex/aws-durable-backend` is the integration branch: Sebastian's client and web PRs (#55–#65) target it. Plan:
+- `hackathon/delivery` (Part 1, personas, deploy, submission) goes in through a PR once Robert approves opening it.
+- Part 2 (`feat/incident-insights`, not pushed yet) goes in the same way.
+- After that, the integration branch merges to `main` for judging.
+
+Expected merge conflicts are trivial:
+- `src/api/app.ts`: Part 2 edits the auth-exemption line next to the demo exemption line.
+- `src/notifications/dispatch.ts`: #61 refreshes the clock in `authorizeJob` in a different hunk from the alert wording.
 
 ## Demo story (target for the 3-minute pitch)
 
-1. Driver types the haul, reviews the draft and confirms. Voice is out of scope for the demo.
-2. A trusted contact sees location with age and accuracy; it turns stale honestly.
-3. Driver taps SOS. Family gets SMS, WhatsApp and call jobs; the driver group shows as unavailable.
-4. *(Part 1)* Driver goes silent → app asks "Estoy bien" → no answer → contacts are told "no sabemos qué pasó".
-5. Contact acknowledges and records an action.
-6. Arrival ends map access.
-7. *(Part 2)* Hotspot map labelled "incluye datos de demostración".
+1. Judge presses "Entrar": an isolated synthetic driver, family contact and colleague are created.
+2. Driver enters the haul (origin, destination, expected arrival, truck), picks contacts and confirms.
+3. A contact sees location with age and accuracy; it turns stale honestly.
+4. Driver goes silent → the server opens a check → "Estoy bien" → no answer → family (SMS, WhatsApp, call) and colleague (SMS, WhatsApp) are alerted: "no sabemos qué pasó". Delivery shows per channel; without Zavu live it shows "not enabled".
+5. Contact acknowledges and records an action. Driver resolves; arrival ends map access.
+6. Public hotspot map at `/mapa`, labelled "incluye datos de demostración"; a real hotspot needs 3 distinct people.
 
-Parts 1 and 2 are specified in `docs/superpowers/specs/2026-10-17-security-checks-incident-data-design.md` (local branch `docs/voice-trip-live-sharing`, not pushed).
+Do not press SOS after a missed-check alert already went out: the incident upgrades but sends nothing new.
 
 ## Who is on what
 
 | Lane | Where | Scope |
 |---|---|---|
-| Codex (Robert's backend agent) | `codex/aws-durable-backend` | Backend base; not building Part 1 |
-| Claude `andes-hackathon-a4` | `hackathon/delivery` | Part 1 (migration 003, `src/checks/`), demo personas sign-in, AWS demo deploy, this board, submission package |
-| Claude `andes-hackathon-ef` | `feat/incident-insights` | Part 2: migration 004, `src/insights/`, demo seed |
+| Codex (Robert's backend agent) | `codex/aws-durable-backend` | Backend base and integration branch |
+| Claude `andes-hackathon-a4` | `hackathon/delivery` | Part 1, demo personas, ECS Express deploy, this board, submission package |
+| Claude `andes-hackathon-ef` | `feat/incident-insights` | Part 2: migration 004, `src/insights/`, `/mapa`, demo seed, architecture justification |
 | Claude `andes-hackathon-5d` | Its own scratchpad | Read-only review and merge of open PRs on behalf of Robert |
-| Sebastian | PRs #52–#60 | Web foundation, typed client, runtime harness, acceptance checks |
+| Sebastian | PRs #52–#72 | Web foundation, driver and contact flows, typed client, list reads (#65), runtime harness, visuals |
 
-## Decisions (Robert, 2026-10-17 18:00 -05)
+## Decisions (Robert, 2026-10-17)
 
-- **Hosting:** AWS fast path. The same Docker image runs on a single HTTPS service with a small RDS PostgreSQL and real SQS, labelled as a demo deployment. ADR-002's ECS/Multi-AZ template remains the production design shown in the pitch. Robert approves each paid step.
-- **Sign-in:** demo personas. With `DEMO_MODE` on, the server mints short-lived tokens for seeded synthetic people behind "Entrar como…" buttons. Off by default; never in production.
-- **Part 1:** built by `andes-hackathon-a4`, test-first, per the approved spec.
-- **Still open:** making the repo public (with Sebastian, PR #54), a backend → `main` PR, live Zavu sends to one consented test phone, first mentor update.
+- **Hosting:** AWS ECS Express Mode on Robert's **personal** AWS account (never the shared AptsNY account; the script refuses it). One Fargate task runs API + control, with RDS PostgreSQL 18.3 db.t4g.micro and two SQS queues, about $2/day. It is labelled a «demo reducida»; ADR-002's HA template remains the production design. Robert approves each paid step, and teardown follows judging.
+- **Sign-in:** demo personas (`DEMO_MODE`). Off by default; never with real users or live sends.
+- **Part 1:** built by `andes-hackathon-a4` (done).
+- **Still open:** opening PRs into the integration branch; making the repo public (with Sebastian, PR #54); live Zavu sends to one consented phone (demo mode currently refuses live sends); first mentor update.
 
 ## Rules for agents
 
