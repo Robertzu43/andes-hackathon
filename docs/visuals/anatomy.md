@@ -105,6 +105,7 @@ node web/tests/visuals/anatomy/serve.mjs
 # In another terminal, with the installed Anatomy browser tools and Chrome:
 node web/tests/visuals/anatomy/browser.mjs
 node web/tests/visuals/anatomy/lifecycle.mjs
+node web/tests/visuals/anatomy/legibility.mjs
 node web/tests/visuals/anatomy/typecheck.mjs /path/to/installed/foundation/web
 ```
 
@@ -129,6 +130,9 @@ Recorded checks:
   overflow, four visible named controls ≥44 px, working keyboard Home/End and
   correct flag selection. Source and fact rows remain legible below the figure.
 - Runtime text contrast: 12.57:1; selected control text: 6.38:1.
+- Longest acceptance readout: Spanish and Portuguese at 360/390 px, with no
+  overlap between the hint and readout, no horizontal overflow and the contact
+  flag still low. Four additional screenshots record these selected poses.
 - Real Chrome CDP touch input selected the acknowledged example. The native
   accessibility tree exposed four named buttons with the correct pressed state.
 - Zero initial autoplay, settled, offscreen and native background-tab frames;

@@ -1,0 +1,3 @@
+eval: {"locale":"es","width":360,"readout":"Aceptada por el servidor","overlap":false}
+shot /Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/longest-es-360.png · readout "Aceptada por el servidor"
+console: clean

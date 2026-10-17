@@ -1,0 +1,21 @@
+[
+  [
+    "key",
+    "ArrowRight",
+    "[data-example=local]"
+  ],
+  [
+    "wait",
+    450
+  ],
+  [
+    "eval",
+    "(()=>{const root=document.querySelector('.andes-relay');if(root.dataset.relayExample!=='accepted')throw new Error('acceptance selection');const labels=[...root.querySelectorAll('.ar-corners:last-child span')].map(n=>n.getBoundingClientRect());if(labels[0].right>labels[1].left-7)throw new Error('readout overlaps hint');if(document.documentElement.scrollWidth>innerWidth)throw new Error('overflow');if(document.querySelector('[data-relay-motion=flag]').getAttribute('transform')!=='translate(0 0)')throw new Error('acceptance raised flag');return{locale:root.lang,width:innerWidth,readout:root.querySelector('[data-readout]').textContent,overlap:false}})()"
+  ],
+  [
+    "shot",
+    "/Users/sebasbimbi/.codus/workspaces/andes-visual-anatomy/web/tests/visuals/anatomy/evidence/longest-es-360.png",
+    ".andes-relay",
+    1
+  ]
+]

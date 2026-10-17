@@ -102,7 +102,8 @@
       "noJavaScript": "actual Chrome script execution disabled at navigation; all four explanations present",
       "externalRequests": [],
       "console": "clean"
-    }
+    },
+    "longestReadout": "es and pt-BR accepted examples at360/390; no hint/readout overlap, flag stays low, console clean"
   },
   "captures": [
     {
@@ -188,6 +189,22 @@
     {
       "file": "lines-unconfirmed.png",
       "sha256": "a53ebc068dbc3e8110c8e949c416fca02b12b46fbe83078377308c6c08968c44"
+    },
+    {
+      "file": "longest-es-360.png",
+      "sha256": "0f3ade1e62e5c704a0bf2cad309e722094fbeadfb34f279d03d30ce15c6cccd2"
+    },
+    {
+      "file": "longest-es-390.png",
+      "sha256": "5790fc9002d68be74891c5a3875981c979f11a53bdafa821e4cd2da0e5aedb78"
+    },
+    {
+      "file": "longest-pt-BR-360.png",
+      "sha256": "ab37982bbf689da5fedaae7ad45dd1046f7dfafcf2d818dc050835df05033b33"
+    },
+    {
+      "file": "longest-pt-BR-390.png",
+      "sha256": "b3238cb3383bcfa15c90d7c6eef08cefc8239132361451c4f8006600815742d2"
     },
     {
       "file": "no-javascript-390.png",
