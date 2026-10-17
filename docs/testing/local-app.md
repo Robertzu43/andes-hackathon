@@ -145,9 +145,10 @@ authentication/API boundary; these HTTP tests do not count as UI/device proof.
 The adapter targets Q52's independently authored format
 `andes.app-acceptance.receipt/1`. The original-backend checker
 `e3ed9720ad1490a1797adbb3ed1a8c76eadffe50` (PR60) remains a rejecting control
-for the new backend; the matching source-reviewed checker is pending from Q52,
-so `ORACLE_SHA` is explicitly null. Its implementation is not copied into this
-lane. To export facts from an actual isolated run, select
+for the new backend. `ORACLE_SHA` identifies Q52's matching checker
+`7a7d28cbd711cfd6a1a86ec6d8a94ab6e044d366`, independently accepted by Q48 in
+[comment6243116212](https://github.com/Bimbi-Dev/andes-hackathon/pull/60#issuecomment-6243116212).
+Its implementation is not copied into this lane. To export facts from an actual isolated run, select
 a **new**, absolute local directory outside Git:
 
 ```sh
@@ -184,8 +185,7 @@ headers, phone values, coordinates and raw trip text are not captured. Source
 `observedAt` is a separate wall-clock field in the selected HTTP records; the
 server clock advances are still synthetic engineering controls.
 
-Only after Q52 publishes the matching source-reviewed checker, against its
-independently checked-out exact frozen head:
+Use the independently checked-out exact frozen checker head above:
 
 ```sh
 node "$(realpath /path/to/pr60/evidence/app-acceptance/check.mjs)" /tmp/andes-q46-receipts-unique/acceptance-receipt.json
@@ -194,7 +194,7 @@ node "$(realpath /path/to/pr60/evidence/app-acceptance/check.mjs)" /tmp/andes-q4
 Exit 0 means `backend-receipt-checks-pass` only. `wholeAppAccepted` remains false.
 Missing-case and altered-source-time controls must yield exits 2 and 1,
 respectively. Require nonempty, parseable JSON with that disposition as well as the
-exit code. The original PR60 CLI path-alias defect was corrected at this preferred
+exit code. The original PR60 CLI path-alias defect remains corrected in this
 checker revision; Q46 independently reran the actual receipt, missing/falsified
 controls and symlinked/noncanonical entrypoints with nonempty JSON. The actual journey
 includes confirmation replay/new-key conflict,
@@ -264,9 +264,11 @@ created; the unchanged non-export harness independently passed 74 checks in a
 scratch integration checkout. Those observations are preflight evidence, not a
 relabelled original receipt or an independent acceptance of this new branch.
 
-Matching Q52 oracle rebinding is coordinated separately. The older `e3ed972`
-checker is still an intentional rejecting control for a `5591c9b` receipt until
-the source-reviewed replacement is published. A backend label change alone must
+Matching Q52 oracle `7a7d28c` includes the missing-trip-identity and second-SOS
+state/capability predicate repairs, plus the explicitly reviewed `5591c9b` binding.
+Q48 independently confirmed the final checker; its review does not execute or
+authenticate the producer's runtime. The older `e3ed972` checker remains an
+intentional rejecting control for a `5591c9b` receipt. A backend label change alone must
 never convert old receipt data into new evidence. Additional root test forwarding
 changes `package.json`, so a later integration head must be explicitly reviewed
 and rebound again before its receipts can be accepted.
@@ -277,3 +279,12 @@ verifies clean source as a positive control, adds a migration that matches the
 actual runtime filename rule while excluded by that clone's Git rules, and
 requires both the source guard and real export command to reject it before any
 evidence directory is created. It changes no live source or shared Git excludes.
+
+A fresh export at producer `f1eb570` passed typecheck/build and 76 real local
+PostgreSQL/HTTP checks. Its twelve observed cases pass frozen `7a7d28c`; a missing
+case stays pending, and altered source age, replay key, invented delivery, missing
+trip identities and second-SOS state/capability each fail. Canonical/noncanonical
+and symlinked calls emit nonempty JSON. Old/new receipts reject across checker
+versions, and hashes confirm the source receipts remain unchanged. This is Q46's
+pairing observation. Q52's independent producer-fix and fresh-runtime confirmation
+remain separate from Q48's completed checker review. `wholeAppAccepted` is false.

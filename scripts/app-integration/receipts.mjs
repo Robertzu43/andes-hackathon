@@ -4,8 +4,8 @@ import {writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
 export const BACKEND_SHA = '5591c9b55fe7f4505e36ccee96d27aa913e0debf';
-// Q52 must publish a source-reviewed checker for this integrated backend.
-export const ORACLE_SHA = null;
+// Q48 independently accepted this source-reviewed integrated-backend checker.
+export const ORACLE_SHA = '7a7d28cbd711cfd6a1a86ec6d8a94ab6e044d366';
 export const CASE_LENGTHS = {'setup': 4, 'explicit-confirm': 2, 'duplicate-confirm': 3,
   'stale-snapshot': 2, 'unavailable-snapshot': 1, 'revocation': 3, 'sos-acceptance': 2,
   'acknowledgement-action': 2, 'arrival-preserves-sos': 4, 'owner-resolution': 2,
