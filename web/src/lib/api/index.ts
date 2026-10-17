@@ -10,4 +10,5 @@ export { createDriverTransport } from './driver.ts';
 export type { DriverRequest, DriverTransportResult } from './driver.ts';
 export { createSessionGateway } from './gateway.ts';
 export type { GatewaySnapshot, SessionGatewayConfig, SessionGateway } from './gateway.ts';
+export { createDemoSessionGateway } from './demo.ts';
 export type * from './types.ts';

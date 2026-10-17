@@ -1,5 +1,10 @@
 # Typed client API and session boundary
 
+This branch prepares the additive Robert PR74 contract at
+`4c138ca1d00742400a850cd72b0888cc59260a36`, separately from accepted PR59 at
+`7e241c39a31d4eaba5f8028fd977e06f6ca72d4d`. Its backend and client reviews remain
+separate requirements. The previously accepted branch and evidence are preserved.
+
 Lane45 owns `web/src/lib/api/**`, `web/tests/api/**` and this document. The base is
 Robert's refreshed `origin/codex/aws-durable-backend` at
 `ebc8fb1d36f441ef012ca585201cefabf61383d6`. Sources are
@@ -72,6 +77,9 @@ configuration. A browser base URL is public configuration, not a credential.
 | `createDraft` | POST `/v1/trip-drafts` with text and optional corrected fields; returned draft/missing fields stay explicit |
 | `confirmTrip` | POST `/v1/trip-drafts/:id/confirm`; literal `confirmed:true`, selected grant IDs and optional corrections |
 | `getTrip` | GET `/v1/trips/:id`; SQL wire names, including `time_zone`, are preserved |
+| `getTripStatus` | GET `/v1/trips/:id/status`; actual server check/incident/delivery facts and optional scope-filtered location summary |
+| `setSharing` | POST `/v1/trips/:id/sharing`; explicit state/reason and caller idempotency key |
+| `createDemoSession` | POST `/v1/demo/session` with `{}`; requires explicit `{demo:true}`, no bearer or idempotency key; sensitive synthetic world result |
 | `commandTrip` | POST `/v1/trips/:id/commands`; arrived/cancel/pause/resume/checkin_ok/rest_report only |
 | `uploadLocations` | POST `/v1/trips/:id/locations`; caller supplies capturedAt and qualified observations, no fabricated samples |
 | `getSnapshot` | GET `/v1/trips/:id/snapshot`; captured/received/read times, age and unavailable/stale/fresh remain distinct |
@@ -97,7 +105,7 @@ framework-independent exports are available for its adapter without changing its
 
 ## Writes, cancellation and errors
 
-Every write requires explicit `WriteOptions.idempotencyKey` (1–128 visible ASCII
+Every authenticated write requires explicit `WriteOptions.idempotencyKey` (1–128 visible ASCII
 characters) and accepts `signal`. Generate one key for one explicit intent and keep
 its exact payload/key until the result is reconciled. The payload is serialized before
 asynchronous work. The server scopes keys by actor, method, route and parameters;
@@ -325,3 +333,95 @@ published runtime seam for the browser integration owner; production entries hav
 no test hook. Actual browser rendering and server authorization remain to be tested.
 Current tests exercise the real gateway/client code with synthetic provider/HTTP
 fixtures; no production sign-in or configured external provider has been validated.
+
+## PR74 status, sharing and explicit demo candidate
+
+The added contract is sourced from `src/checks/routes.ts`, `src/demo.ts`,
+`src/api/{app,schemas}.ts`, `src/contracts.ts`, the numbered SQL migrations and
+`docs/contracts/runtime.md` at Robert's exact PR74 revision above. This client
+does not enable demo mode, check timings, notification workers or live sends.
+The backend supports a separately configured consented-phone allowlist for live
+demo delivery; none of this candidate's tests enable it (`ZAVU_LIVE_SEND=false`).
+Backend auth/privacy and integration review still precede adoption.
+
+`getTripStatus` preserves the server's trip state/expected arrival, nullable
+asking check and `askUntil`, latest active or resolved incident, and individual
+job delivery states. A SOS may retain an earlier missed-check reason after a
+server upgrade; it is not collapsed into one inferred risk state. Arrival can
+coexist with an active incident. A job's accepted/unknown/delivered status is not
+contact acknowledgement or proof of help. Roles/channels/statuses follow actual
+SQL constraints. The projected response excludes phones, recipient IDs and
+coordinates. Optional location is omitted
+when the route omits it; unavailable location retains its explicit null facts.
+
+This status response has no actor/trip identifier or read-time timestamp. Bind the
+result to the requested trip and current session at the consuming view. The SDK
+adds no `readAt`, browser deadline, polling policy, countdown or second monitoring
+projection. Snapshot `readAt` remains the separately sourced location contract.
+
+`setSharing(id,{state,reason},{idempotencyKey,signal?})` records stopped/resumed
+sharing under the owner identity. Allowed reasons are user/page_hidden/
+permission_denied/error. This event does not itself establish that a browser is
+capturing, that a sensor is qualified, or that a provider delivered anything.
+Closed-trip409 and ambiguous transport results remain distinct. An explicit
+reconciliation retains the original body/key; no retry is automatic.
+
+Draft/confirmation fields now preserve optional, explicit `expectedArrivalAt`.
+The six original regional/truck/text fields remain the required set. Invitation
+input also permits the source's optional family/colleague role. Existing Q41
+summary/list DTOs remain pinned to their own published field set; the new arrival
+field is not invented in those responses.
+
+`api.createDemoSession({demo:true,signal?})` makes exactly one unauthenticated
+POST with an empty object, no bearer, cookies or idempotency key. The server has
+no actor yet and deliberately exempts this route from keyed writes. Missing demo
+configuration/404, rate-limit429 (`demo_rate_limited`), cancellation, timeout and
+ambiguous loss stay actionable errors. They never trigger a fallback to a demo,
+automatic world creation or replacement of an existing session. Each explicit
+successful call creates a new isolated world; a lost response may already have
+created one and cannot be reconciled with a fabricated key.
+
+The returned `DemoWorld` contains sensitive tokens for driver/family/colleague,
+plus source IDs and the fixed7200-second lifetime. It is for a trusted demo host,
+never a rendered/logged/persisted view model. A host coordinating the same world's
+personas must explicitly retain and switch those tokens only in memory and verify
+each selection through `/v1/me`. The SDK does not grant authority from a persona
+name or a response-body UUID.
+
+For the simpler fixed-persona flow use:
+
+```ts
+const gateway = createDemoSessionGateway({session, api, persona: 'driver'});
+// Pass gateway to the existing FoundationRoot session prop.
+// Continue performs one demo POST, then real typed /me verification.
+```
+
+This gateway fixes mode to `demo`, requires an explicit persona, creates a fresh
+world per explicit begin and caches no other persona tokens. It reads unverified
+JWT claims only for source issuer/subject/lifetime metadata, constrains local
+expiry to the earlier token expiration or request-start plus declared lifetime,
+and still requires actual server verification and a matching `/me` UUID before
+authenticated. Parsing a token never authenticates it. Clear/end/dispose retire
+old acquisitions, drop the active memory credential and never silently mint a
+new world. There is no external identity-provider or production-login claim.
+
+`web/tests/api/runtime.test.mjs` exercises the new wire contract and lifecycle
+using synthetic HTTP. The separate real-backend test extracts the exact PR74
+source and Q46's disposable-resource helper at c2501a4, reuses existing locked
+dependencies read-only, and cleans up its isolated PostgreSQL cluster:
+
+```sh
+git fetch origin pull/74/head pull/73/head
+APP_INTEGRATION_PG_BIN=/absolute/path/to/postgresql/bin \
+APP_INTEGRATION_PG_PORT=<owned-free-port> \
+ANDES_BACKEND_NODE_MODULES=/absolute/path/to/existing/backend/node_modules \
+ANDES_TYPESCRIPT_TSC=/absolute/path/to/existing/typescript/bin/tsc \
+  node --test web/tests/api/runtime.integration.mjs
+```
+
+It runs the actual signed demo issuer, native HTTP and PostgreSQL for all three
+personas, explicit arrival, committed-response loss and same-key sharing replay,
+one persisted sharing event, changed-body409, stale location, active SOS after
+arrival and revoked-contact403. No external provider/worker runs. This proves
+those additive routes at that isolated source; it does not mount Q41's separate
+read routes, qualify browser demo acquisition or accept PR74's backend policy.

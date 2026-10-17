@@ -19,7 +19,7 @@ const knownCodes = new Set(['invalid_request', 'idempotency_key_required', 'idem
   'contact_not_accepted', 'trip_not_found', 'trip_closed', 'invalid_consent_request', 'contact_not_found',
   'contact_already_invited', 'grant_not_found', 'verified_phone_mismatch', 'invalid_consent_scope',
   'consent_revoked', 'already_accepted', 'location_stopped', 'capture_time_out_of_bounds', 'map_inactive',
-  'incident_not_found', 'incident_resolved']);
+  'incident_not_found', 'incident_resolved', 'demo_rate_limited']);
 
 function resource(id: string): string {
   if (typeof id !== 'string' || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)) {
@@ -47,7 +47,7 @@ export function createApiClient(config: ApiClientConfig) {
   const session = config.session;
 
   async function request<R>(operation: string, path: string, decoder: Decoder<R>,
-    options: T.RequestOptions = {}, mutation?: { body: unknown; key: string }): Promise<R> {
+    options: T.RequestOptions = {}, mutation?: { body: unknown; key?: string; demo?: true }): Promise<R> {
     const writing = mutation !== undefined;
     let sent = false;
     const outcome = (): WriteOutcome => writing ? sent ? 'unknown' : 'not_sent' : 'not_applicable';
@@ -55,29 +55,33 @@ export function createApiClient(config: ApiClientConfig) {
     // Freeze serialized content before asynchronous fetch/response work or caller mutation.
     let body: string | undefined;
     if (mutation) {
-      if (typeof mutation.key !== 'string' || !/^[\x21-\x7e]{1,128}$/.test(mutation.key)) throw error('invalid_input');
+      if (!mutation.demo && (typeof mutation.key !== 'string' || !/^[\x21-\x7e]{1,128}$/.test(mutation.key))) throw error('invalid_input');
       try { body = JSON.stringify(mutation.body); } catch { throw error('invalid_input'); }
       if (!body || new TextEncoder().encode(body).length > 128 * 1024) throw error('invalid_input');
     }
     if (options.signal?.aborted) throw error('cancelled');
-    const lease = session.capture();
+    const lease = mutation?.demo ? null : session.capture();
     let deadline: 'timeout' | 'session_expired' | null = null;
     const timerController = new AbortController();
-    const remaining = session.remainingMs(lease);
+    const remaining = lease ? session.remainingMs(lease) : Infinity;
     const timer = setTimeout(() => {
       deadline = remaining <= timeoutMs ? 'session_expired' : 'timeout';
       timerController.abort();
     }, Math.min(timeoutMs, remaining));
-    const signal = AbortSignal.any([lease.signal, timerController.signal, ...(options.signal ? [options.signal] : [])]);
+    const signal = AbortSignal.any([...(lease ? [lease.signal] : []), timerController.signal, ...(options.signal ? [options.signal] : [])]);
     function ensureActive() {
-      if (!session.isCurrent(lease)) throw error(session.snapshot().status === 'expired' ? 'session_expired' : 'session_changed');
+      if (lease && !session.isCurrent(lease)) throw error(session.snapshot().status === 'expired' ? 'session_expired' : 'session_changed');
       if (options.signal?.aborted) throw error('cancelled');
       if (deadline) throw error(deadline);
     }
     try {
       ensureActive();
-      const headers: Record<string, string> = { Accept: 'application/json', Authorization: lease.authorization };
-      if (mutation) { headers['Content-Type'] = 'application/json'; headers['Idempotency-Key'] = mutation.key; }
+      const headers: Record<string, string> = { Accept: 'application/json' };
+      if (lease) headers.Authorization = lease.authorization;
+      if (mutation) {
+        headers['Content-Type'] = 'application/json';
+        if (!mutation.demo) headers['Idempotency-Key'] = mutation.key!;
+      }
       sent = true;
       const response = await transport(new URL(path, base), {
         method: writing ? 'POST' : 'GET', headers, body, signal,
@@ -94,7 +98,7 @@ export function createApiClient(config: ApiClientConfig) {
           if (raw && typeof raw === 'object' && 'code' in raw && typeof raw.code === 'string' && knownCodes.has(raw.code)) code = raw.code;
         } catch { /* Error pages/transport details are never exposed to UI or logs. */ }
         ensureActive();
-        if (response.status === 401) session.invalidate(lease);
+        if (response.status === 401 && lease) session.invalidate(lease);
         throw new ApiError(kind, { status: response.status, operation, code,
           outcome: writing ? response.status >= 400 && response.status < 500 ? 'rejected' : 'unknown' : 'not_applicable' });
       }
@@ -116,6 +120,10 @@ export function createApiClient(config: ApiClientConfig) {
 
   return {
     getIdentity: (options?: T.RequestOptions) => request('getIdentity', 'v1/me', decode.id, options),
+    createDemoSession: (options: T.DemoSessionOptions) => {
+      if (options?.demo !== true) return Promise.reject(new ApiError('invalid_input', { operation: 'createDemoSession' }));
+      return request('createDemoSession', 'v1/demo/session', decode.demoWorld, options, { body: {}, demo: true });
+    },
     getProfile: (options?: T.RequestOptions) => request('getProfile', 'v1/profile', decode.profile, options),
     getBootstrap: (options?: T.RequestOptions) => request('getBootstrap', 'v1/bootstrap', decode.bootstrap, options),
     listTrucks: (options?: T.RequestOptions) => request('listTrucks', 'v1/trucks', decode.trucks, options),
@@ -130,6 +138,9 @@ export function createApiClient(config: ApiClientConfig) {
     confirmTrip: (id: T.UUID, body: T.ConfirmTripInput, options: T.WriteOptions) =>
       write('confirmTrip', `v1/trip-drafts/${resource(id)}/confirm`, body, decode.confirmed, options),
     getTrip: (id: T.UUID, options?: T.RequestOptions) => request('getTrip', `v1/trips/${resource(id)}`, decode.trip, options),
+    getTripStatus: (id: T.UUID, options?: T.RequestOptions) => request('getTripStatus', `v1/trips/${resource(id)}/status`, decode.tripStatus, options),
+    setSharing: (id: T.UUID, body: T.SharingInput, options: T.WriteOptions) =>
+      write('setSharing', `v1/trips/${resource(id)}/sharing`, body, decode.sharing, options),
     commandTrip: (id: T.UUID, type: T.TripCommand, options: T.WriteOptions) =>
       write('commandTrip', `v1/trips/${resource(id)}/commands`, { type }, decode.command, options),
     uploadLocations: (id: T.UUID, observations: T.LocationObservation[], options: T.WriteOptions) =>

@@ -32,7 +32,7 @@ function object<S extends Record<string, Decoder<unknown>>>(fields: S): Decoder<
 }
 const fullFields = { truckId: uuid, origin: text, destination: text, country: text, locale: text, timeZone: text };
 const fields: Decoder<Partial<T.TripFields>> = object({ truckId: optional(uuid), origin: optional(text),
-  destination: optional(text), country: optional(text), locale: optional(text), timeZone: optional(text) });
+  destination: optional(text), country: optional(text), locale: optional(text), timeZone: optional(text), expectedArrivalAt: optional(date) });
 const commands = choice<T.TripCommand>('arrived', 'cancel', 'pause', 'resume', 'checkin_ok', 'rest_report');
 
 export const id: Decoder<T.IdResponse> = object({ id: uuid });
@@ -41,12 +41,14 @@ export const accepted: Decoder<T.AcceptedInvitation> = object({ id: uuid, map: b
 export const revoked: Decoder<T.RevokedInvitation> = object({ id: uuid, revoked: literal(true) });
 export const tripRevoked: Decoder<T.RevokedTripGrant> = object({ id: uuid, tripId: uuid, revoked: literal(true) });
 export const draft: Decoder<T.TripDraft> = object({ id: uuid, status: literal('draft'), rawText: text, fields,
-  missingFields: array(choice<keyof T.TripFields>('truckId', 'origin', 'destination', 'country', 'locale', 'timeZone')) });
-export const confirmed: Decoder<T.ConfirmedTrip> = object({ id: uuid, status: literal('active'), fields: object(fullFields) });
+  missingFields: array(choice<Exclude<keyof T.TripFields, 'expectedArrivalAt'>>('truckId', 'origin', 'destination', 'country', 'locale', 'timeZone')) });
+export const confirmed: Decoder<T.ConfirmedTrip> = object({ id: uuid, status: literal('active'),
+  fields: object({ ...fullFields, expectedArrivalAt: optional(date) }) });
 export const command: Decoder<T.CommandResult> = object({ id: uuid, command: commands, automaticEscalation: literal(false) });
 export const trip: Decoder<T.Trip> = object({ id: uuid, driver_id: uuid, truck_id: uuid, origin: text, destination: text,
   country: text, locale: text, time_zone: text, status: choice('active', 'arrived', 'cancelled'), map_active: bool,
-  checkins_active: bool, paused: bool, version: number(1, Infinity, true), created_at: date, closed_at: nullable(date) });
+  checkins_active: bool, paused: bool, version: number(1, Infinity, true), created_at: date, closed_at: nullable(date),
+  expected_arrival_at: optional(nullable(date)), sharing_stopped_at: optional(nullable(date)) });
 export const uploaded: Decoder<T.IdResponse & { received: number }> = object({ id: uuid, received: number(1, 100, true) });
 export const sos: Decoder<T.SosResult> = object({ id: uuid, tripId: uuid, status: literal('active'), groupCapability: literal('unavailable') });
 export const incident: Decoder<T.IncidentSummary> = object({ id: uuid, tripId: uuid, status: choice('active', 'resolved'),
@@ -54,6 +56,42 @@ export const incident: Decoder<T.IncidentSummary> = object({ id: uuid, tripId: u
 export const acknowledgement: Decoder<T.AcknowledgementResult> = object({ id: uuid, status: literal('active'), recorded: literal('acknowledged') });
 export const action: Decoder<T.ActionResult> = object({ id: uuid, status: literal('active'), recorded: literal('action') });
 export const resolution: Decoder<T.ResolutionResult> = object({ id: uuid, status: literal('resolved') });
+export const sharing: Decoder<T.SharingResult> = object({ id: uuid, sharing: choice('stopped', 'resumed') });
+const checkReason = choice<T.CheckReason>('sharing_stopped', 'silence', 'arrival_overdue');
+const statusLocationWire = object({ freshness: choice('fresh', 'stale', 'unavailable'), ageMs: nullable(number(0)),
+  capturedAt: nullable(date), accuracy: nullable(number(0)) });
+const statusLocation: Decoder<NonNullable<T.TripStatus['location']>> = value => {
+  const parsed = statusLocationWire(value);
+  if (parsed.freshness === 'unavailable'
+    ? parsed.ageMs !== null || parsed.capturedAt !== null || parsed.accuracy !== null
+    : parsed.ageMs === null || parsed.capturedAt === null || parsed.accuracy === null) invalid();
+  return parsed;
+};
+const statusWire = object({
+  trip: object({ status: choice('active', 'arrived', 'cancelled'), paused: bool, expectedArrivalAt: nullable(date) }),
+  check: nullable(object({ status: literal('asking'), reason: checkReason, askUntil: date })),
+  incident: nullable(object({ id: uuid, trigger: choice('sos', 'missed_check'), checkReason: nullable(checkReason),
+    status: choice('active', 'resolved'), createdAt: date })),
+  deliveries: array(object({ role: choice('family', 'colleague', 'group'), channel: choice('sms', 'whatsapp', 'voice', 'group'),
+    status: choice('pending', 'claimed', 'authorized', 'accepted', 'rejected', 'unknown', 'delivered', 'cancelled', 'unavailable'),
+    unavailableReason: nullable(text) })),
+  location: optional(statusLocation),
+});
+export const tripStatus: Decoder<T.TripStatus> = value => {
+  const parsed = statusWire(value);
+  if (parsed.incident === null && parsed.deliveries.length !== 0) invalid();
+  return parsed;
+};
+const token: Decoder<string> = value => typeof value === 'string' && value.length <= 16384
+  && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value) ? value : invalid();
+const demoWorldWire = object({ synthetic: literal(true), expiresInSeconds: literal(7200),
+  driver: object({ id: uuid, token, truckId: uuid }), family: object({ id: uuid, token, grantId: uuid }),
+  colleague: object({ id: uuid, token, grantId: uuid }) });
+export const demoWorld: Decoder<T.DemoWorld> = value => {
+  const parsed = demoWorldWire(value);
+  if (new Set([parsed.driver.id, parsed.family.id, parsed.colleague.id].map(v => v.toLowerCase())).size !== 3) invalid();
+  return parsed;
+};
 const snapshotWire = object({ tripId: uuid, readAt: date, ageMs: nullable(number(0)),
   freshness: choice('fresh', 'stale', 'unavailable'), location: nullable(object({ capturedAt: date, receivedAt: date,
     latitude: number(-90, 90), longitude: number(-180, 180), accuracy: number(0) })) });
