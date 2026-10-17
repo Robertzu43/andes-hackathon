@@ -10,6 +10,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node --test tests/*.test.mjs",
+    "test:tooling": "node scripts/test-tooling.mjs",
+    "test:all": "npm test && npm run test:tooling",
     "start": "node dist/server.js",
     "migrate": "node scripts/migrate.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
