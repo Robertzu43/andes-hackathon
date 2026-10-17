@@ -1,0 +1,63 @@
+{
+  "verifiedAt": "2026-10-17T23:47:28.778Z",
+  "pr": {
+    "number": 53,
+    "url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/53",
+    "state": "closed",
+    "merged": false,
+    "closedAt": "2026-10-17T23:46:50Z",
+    "head": "e9df5cbfd5c2cfbb19698d46bb957b8561920e66",
+    "branch": "sebasbimbi/feat/andes-monitoring-state"
+  },
+  "retirementResponse": "https://github.com/Bimbi-Dev/andes-hackathon/pull/53#issuecomment-6243306293",
+  "evidenceCommit": "88832b27ba5ab8a6665576dd530ad51d20848eac",
+  "sourceBranchStillPresent": "e9df5cbfd5c2cfbb19698d46bb957b8561920e66\trefs/heads/sebasbimbi/feat/andes-monitoring-state",
+  "issues": [
+    {
+      "number": 22,
+      "state": "open"
+    },
+    {
+      "number": 21,
+      "state": "open"
+    },
+    {
+      "number": 3,
+      "state": "open"
+    }
+  ],
+  "reviews": [
+    {
+      "id": 5560333465,
+      "author": "sebasbimbi",
+      "state": "COMMENTED",
+      "commit": "e9df5cbfd5c2cfbb19698d46bb957b8561920e66"
+    },
+    {
+      "id": 5560453685,
+      "author": "Robertzu43",
+      "state": "COMMENTED",
+      "commit": "e9df5cbfd5c2cfbb19698d46bb957b8561920e66"
+    },
+    {
+      "id": 5560599519,
+      "author": "Robertzu43",
+      "state": "CHANGES_REQUESTED",
+      "commit": "e9df5cbfd5c2cfbb19698d46bb957b8561920e66"
+    }
+  ],
+  "disposition": "retired-unmerged; no fix, ACCEPT, dismissal, author merge or underlying product completion",
+  "ownerConfirmations": {
+    "foundation49": "Explicit retirement go-ahead after independent audit; no consumer at6f8dc52",
+    "api45": "No API/gateway/adapter import or injection at7e241c3; actual snapshot contract confirmed",
+    "driver50": "No live consumer at80e9d45; optional callback used only by synthetic fixtures, default unavailable; owns obsolete README correction"
+  },
+  "followOn": {
+    "pr": 62,
+    "head": "21cd50ac15c22a2a3cc71bf105336e8ebc77c285",
+    "owner": 51,
+    "originalReviewer": 43,
+    "finding": "locationAge client/server wall-clock mismatch and accepted future capture suppressed",
+    "state": "reported; owner/original-reviewer disposition pending; no source edit by59"
+  }
+}
