@@ -152,7 +152,7 @@ remain open; synthetic passing tests do not establish field safety or channel su
 ## Published controller integration
 
 `createContactApi(api)` supplies the structural `ContactApi` from PR62 at
-`a8466d50554238951570ec4a2949e5f8d7348541`. It maps `getTripSnapshot` to `getSnapshot`
+`b95bdbaa3f106f33d30b3aa8b0127ca3b691ee0e`. It maps `getTripSnapshot` to `getSnapshot`
 and `reportIncidentAction(id,{action},options)` to `reportAction(id,action,options)`.
 Other contact operations forward their exact arguments. The facade introduces no
 routes, keys, retries, error rewriting, role authority or local data cache.
@@ -176,7 +176,10 @@ await binding.activate();
 
 `createContactJourney` belongs to the feature lane and is not re-exported or copied
 into this library. Driver controllers can bind with `id => driver.setSession(id)`;
-their operation/result adapter stays with their feature owner. All controllers
+`createDriverTransport(api)` now supplies the driver descriptor/result adapter
+delegated by Q50. It maps all eight published operations, preserves original keys
+and bodies, and returns `ok`/`rejected`/`unknown` without replay. Errors lacking a
+confirmed terminal HTTP rejection remain unknown. All controllers
 using the same session must register their own binding. Local view changes require
 disposing/rebinding the old context; they never grant server permission.
 
@@ -205,11 +208,18 @@ these tests do not replace Q44/Q46's signed-JWT/PostgreSQL/native-HTTP integrati
 actual browser rendering. The standard client suite remains runnable without Git
 feature objects or a compiler.
 
-**Open external finding at PR62/a8466d5:** network loss leaves a revoke uncertain, but
+**Resolved external finding originally at PR62/a8466d5:** network loss left a revoke uncertain, but
 a same-key retry's409 changes the controller operation to rejected, dropping the
 original ambiguity. A direct frozen-source reproduction was sent to Q51 and Brain.
 The facade preserves both original ApiErrors and does not hide the HTTP status to
-work around feature state. Current integration checks establish mapping, successful
-same-key replay and normal cache invalidation only; they do not claim this unresolved
-retry-rejection axis passes. Re-test that case against Q51's published repair before
-claiming complete contact-journey integration. Q43's privacy review remains separate.
+work around feature state. Q51 repaired the controller at `b95bdbaa3f106f33d30b3aa8b0127ca3b691ee0e`.
+Integration tests now confirm that retry400/403/404/409/422 retain the uncertain
+revoke and block protected reads, first-attempt409 remains rejected, and retry401
+clears the shared session and invalidates the old context without replay. With a
+shared-session binding, that cleared context returns `superseded`, which does not
+mean its server write was cancelled. Q43's wider privacy review remains separate.
+
+The actual published driver controller is also exercised through the typed adapter:
+create truck, draft, explicit confirmation, trip/snapshot/incident reads, command,
+lost SOS response and rejected same-key retry. Synthetic selection evidence is
+clearly test-only; Q41 catalog reads and real backend/browser evidence remain open.
