@@ -1,4 +1,5 @@
 import { callbackRoutes } from '../notifications/callback.js';
+import { checkRoutes } from '../checks/routes.js';
 import type { CallbackConfig } from '../notifications/zavu.js';
 import Fastify, { type FastifyError } from 'fastify';
 import { authenticator, type AuthConfig } from '../auth.js';
@@ -8,14 +9,16 @@ import { tripRoutes } from '../trips/routes.js';
 import { contactRoutes } from '../contacts/routes.js';
 import { locationRoutes } from '../location/routes.js';
 import { incidentRoutes } from '../incidents/routes.js';
+import { demoRoutes, type DemoIssuer } from '../demo.js';
 declare module 'fastify' { interface FastifyRequest { actor: Actor } }
-export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig }
-export function createApp({ ctx, auth, channelSupport = [], callbackConfig }: AppOptions) {
+export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer }
+export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo }: AppOptions) {
   const authenticate = authenticator(auth);
   const app = Fastify({ logger: false, bodyLimit: 128 * 1024, requestTimeout: 10000, ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } } });
   app.decorateRequest('actor');
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store');
+    if (demo && request.routeOptions.url === '/v1/demo/session') return;
     if (request.routeOptions.url === '/health' || (callbackConfig && request.routeOptions.url === '/v1/callbacks/zavu')) return;
     const telemetry = request.routeOptions.url?.endsWith('/locations') || request.routeOptions.url?.endsWith('/snapshot');
     request.actor = await authenticate(request.headers.authorization, telemetry ? ctx.telemetryPool : ctx.pool);
@@ -30,6 +33,8 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig }: Ap
     try { await ctx.pool.query('SELECT 1'); return { status: 'ok' }; }
     catch { return reply.status(503).send({ status: 'unavailable' }); }
   });
+  checkRoutes(app, ctx);
+  if (demo) demoRoutes(app, ctx, demo);
   app.get('/v1/me', async request => ({ id: request.actor.id }));
   tripRoutes(app, ctx); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport);
   if (callbackConfig) callbackRoutes(app, ctx, callbackConfig);

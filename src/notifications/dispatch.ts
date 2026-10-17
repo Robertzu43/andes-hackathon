@@ -4,6 +4,7 @@ import type pg from 'pg';
 import { transaction, withTripTransaction, type Context } from '../db.js';
 import type { Channel, Job, Trip } from '../contracts.js';
 import type { CallbackEvent, Outcome, Payload, Provider } from './zavu.js';
+import { alertSummary } from './wording.js';
 export type WorkClass = 'emergency' | 'ordinary';
 export interface Envelope { jobId: string; version: number; class: WorkClass }
 export interface Delivery { body: Envelope; receipt: string }
@@ -75,6 +76,9 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     if (!q.live || !q.entries.some(e => e.channel === job.channel && e.country === trip.country && e.locale === trip.locale)) {
       await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='country_channel_locale_unqualified' WHERE id=$1", [job.id]); return null;
     }
+    if (q.allowedDestinations && !q.allowedDestinations.includes(grant.phone)) {
+      await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='destination_not_allowed' WHERE id=$1", [job.id]); return null;
+    }
     // Account-row locking serializes reservations across channels and worker replicas.
     await client.query('INSERT INTO quota_accounts VALUES($1) ON CONFLICT DO NOTHING', [q.accountId]);
     await client.query('SELECT project_id FROM quota_accounts WHERE project_id=$1 FOR UPDATE', [q.accountId]);
@@ -95,9 +99,9 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     }
     const id = randomUUID();
     const location = trip.map_active && grant.map_accepted ? (await client.query('SELECT * FROM latest_locations WHERE trip_id=$1', [trip.id])).rows[0] : null;
-    const locationText = location ? `última ubicación ${location.latitude},${location.longitude}; capturada ${location.captured_at.toISOString()}; precisión ${location.accuracy} m; ${now.getTime() - location.captured_at.getTime() <= 120000 ? 'reciente' : 'antigua'}` : 'ubicación no disponible';
-    const incidentTime = incident?.created_at ?? job.created_at;
-    const summary = `Viaje ${trip.id}; conductor ${trip.driver_id}; ${incident ? `Incidente ${incident.id}; ` : ''}creado ${incidentTime.toISOString()} (${trip.time_zone}); estado sin confirmar; ${locationText}.`;
+    const truck = (await client.query('SELECT label FROM trucks WHERE id=$1', [trip.truck_id])).rows[0]!.label as string;
+    const check = incident?.trigger === 'missed_check' ? (await client.query('SELECT signal_at FROM security_checks WHERE incident_id=$1 ORDER BY created_at LIMIT 1', [incident.id])).rows[0] : null;
+    const summary = alertSummary({ truck, country: trip.country, timeZone: trip.time_zone, now, signalAt: check?.signal_at ?? null, incident: incident ?? null, location: location ?? null, voice: job.channel === 'voice' });
     const payload = provider.payload({ attemptId: id, to: grant.phone, channel: job.channel, country: trip.country, locale: trip.locale, summary });
     const attempt = (await client.query(`INSERT INTO dispatch_attempts(id,job_id,job_version,owner,claim_token,project_id,sender_id,channel,state,payload,payload_hash,destination_hash,authorized_at,next_reconcile_at,evidence_expires_at)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'authorized',$9,$10,$11,$12,$13,$14) RETURNING *`, [id, job.id, job.version, claim.owner, claim.token, q.accountId, q.senderId, job.channel, payload, hash(JSON.stringify(payload)), hash(grant.phone), now, after(now, 30000), after(now, 86400000)])).rows[0] as Attempt;
