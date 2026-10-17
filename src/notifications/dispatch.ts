@@ -90,7 +90,7 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     const location = trip.map_active && grant.map_accepted ? (await client.query('SELECT * FROM latest_locations WHERE trip_id=$1', [trip.id])).rows[0] : null;
     const locationText = location ? `última ubicación ${location.latitude},${location.longitude}; capturada ${location.captured_at.toISOString()}; precisión ${location.accuracy} m; ${now.getTime() - location.captured_at.getTime() <= 120000 ? 'reciente' : 'antigua'}` : 'ubicación no disponible';
     const incidentTime = incident?.created_at ?? job.created_at;
-    const summary = `Viaje ${trip.id}; conductor ${trip.driver_id}; incidente ${incidentTime.toISOString()} (${trip.time_zone}); estado sin confirmar; ${locationText}.`;
+    const summary = `Viaje ${trip.id}; conductor ${trip.driver_id}; ${incident ? `Incidente ${incident.id}; ` : ''}creado ${incidentTime.toISOString()} (${trip.time_zone}); estado sin confirmar; ${locationText}.`;
     const payload = provider.payload({ attemptId: id, to: grant.phone, channel: job.channel, country: trip.country, locale: trip.locale, summary });
     const attempt = (await client.query(`INSERT INTO dispatch_attempts(id,job_id,job_version,owner,claim_token,project_id,sender_id,channel,state,payload,payload_hash,destination_hash,authorized_at,next_reconcile_at,evidence_expires_at)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'authorized',$9,$10,$11,$12,$13,$14) RETURNING *`, [id, job.id, job.version, claim.owner, claim.token, q.accountId, q.senderId, job.channel, payload, hash(JSON.stringify(payload)), hash(grant.phone), now, after(now, 30000), after(now, 86400000)])).rows[0] as Attempt;

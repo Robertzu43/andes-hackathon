@@ -5,6 +5,60 @@ import {randomUUID} from 'node:crypto';
 import {fixture} from './helpers/runtime.mjs';
 import {runtime,sos,provider,qualification,deferred} from './helpers/dispatch.mjs';
 
+test('recipient discovers incident from frozen alerts and can read and respond after arrival without stopping SOS channels', async t => {
+  const d=await runtime();const f=await fixture(t);const {jobs,trip,grant}=await sos(f);const p=provider();
+  await f.req('POST',`/v1/trips/${trip}/locations`,{observations:[{capturedAt:f.ctx.clock().toISOString(),latitude:-12,longitude:-77,accuracy:7}]});
+  const sms=jobs.find(j=>j.channel==='sms');
+  await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,sms,'recipient-alert'),p);
+  const frozen=(await f.ctx.pool.query('SELECT payload FROM dispatch_attempts WHERE job_id=$1',[sms.id])).rows[0].payload;
+  const match=frozen.text.match(/Incidente ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12});/);
+  assert.ok(match,'recipient-facing summary must identify the exact incident');
+  const id=match[1];const path=`/v1/incidents/${id}`;
+  const expected={id,tripId:trip,status:'active',createdAt:'2026-10-17T12:00:00.000Z',resolvedAt:null,groupCapability:'unavailable'};
+  assert.deepEqual(await f.req('GET',path,undefined,f.contact),{status:200,body:expected});
+  assert.deepEqual(await f.req('GET',path),{status:200,body:expected});
+  assert.equal((await f.req('GET',path,undefined,f.stranger)).status,403);
+  assert.equal((await f.app.inject({method:'GET',url:path})).statusCode,401);
+  const response=await f.app.inject({method:'GET',url:path,headers:{authorization:`Bearer ${f.contact}`}});
+  assert.equal(response.headers['cache-control'],'no-store');
+  assert.equal((await f.req('GET',`/v1/incidents/${randomUUID()}`,undefined,f.contact)).status,404);
+  assert.equal((await f.req('GET','/v1/incidents/invalid',undefined,f.contact)).status,400);
+  const before=(await f.ctx.pool.query('SELECT id,status,version FROM jobs ORDER BY id')).rows;
+  assert.equal((await f.req('POST',`${path}/acknowledgements`,{},f.contact)).status,200);
+  assert.equal((await f.req('POST',`${path}/actions`,{action:'called trusted support'},f.contact)).status,200);
+  assert.deepEqual((await f.ctx.pool.query('SELECT id,status,version FROM jobs ORDER BY id')).rows,before);
+  assert.deepEqual((await f.ctx.pool.query("SELECT kind,actor_id FROM incident_events WHERE kind IN ('acknowledged','action') ORDER BY kind")).rows,
+    [{kind:'acknowledged',actor_id:f.contactIdentity.id},{kind:'action',actor_id:f.contactIdentity.id}]);
+  assert.equal((await f.req('POST',`/v1/trips/${trip}/commands`,{type:'arrived'})).status,200);
+  assert.equal((await f.req('GET',`/v1/trips/${trip}/snapshot`,undefined,f.contact)).status,403);
+  assert.deepEqual(await f.req('GET',path,undefined,f.contact),{status:200,body:expected});
+  for(const job of jobs.filter(j=>j.channel!=='sms')) {
+    const attempt=await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,job,'after-arrival'),p);assert.ok(attempt);
+    const payload=(await f.ctx.pool.query('SELECT payload FROM dispatch_attempts WHERE id=$1',[attempt.id])).rows[0].payload;
+    const summary=payload.text ?? payload.content.templateVariables['1'];
+    assert.ok(summary.includes(`Incidente ${id};`));assert.match(summary,/ubicación no disponible/);assert.doesNotMatch(summary,/última ubicación/);
+  }
+  assert.deepEqual((await f.ctx.pool.query('SELECT payload FROM dispatch_attempts WHERE job_id=$1',[sms.id])).rows[0].payload,frozen);
+  assert.equal((await f.req('POST',`${path}/acknowledgements`,{},f.contact)).status,200);
+  assert.equal((await f.req('POST',`/v1/trips/${trip}/contacts/${grant}/revoke`,{},f.contact)).status,200);
+  assert.equal((await f.req('GET',path,undefined,f.contact)).status,403);
+  assert.equal((await f.req('POST',`${path}/acknowledgements`,{},f.contact)).status,403);
+  assert.equal((await f.req('POST',`${path}/actions`,{action:'called again'},f.contact)).status,403);
+  assert.deepEqual(await f.req('GET',path),{status:200,body:expected});
+  f.advance(1000);assert.equal((await f.req('POST',`${path}/resolve`,{})).status,200);
+  assert.deepEqual((await f.req('GET',path)).body,{...expected,status:'resolved',resolvedAt:'2026-10-17T12:00:01.000Z'});
+});
+test('incident reads and acknowledgements recheck both consent grants and accepted incident scope', async t => {
+  for(const change of ["UPDATE contact_grants SET revoked_at=now()", "UPDATE trip_grants SET revoked_at=now()", "UPDATE contact_grants SET incident_accepted=false", "UPDATE contact_grants SET accepted_at=NULL"]) {
+    const f=await fixture(t);const {incident}=await sos(f);const path=`/v1/incidents/${incident}`;
+    assert.equal((await f.req('GET',path,undefined,f.contact)).status,200);
+    await f.ctx.pool.query(change);
+    assert.equal((await f.req('GET',path,undefined,f.contact)).status,403,change);
+    assert.equal((await f.req('POST',`${path}/acknowledgements`,{},f.contact)).status,403,change);
+    assert.equal((await f.req('GET',path)).status,200);
+  }
+});
+
 test('outbox rollback publishes nothing, lost publish acknowledgement retries only transport with bounded backoff', async t => {
   const d=await runtime(); const f=await fixture(t); const {jobs}=await sos(f); let count=0;
   const c=await f.ctx.pool.connect(); await c.query('BEGIN');

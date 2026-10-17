@@ -29,18 +29,28 @@ export function incidentRoutes(app: FastifyInstance, ctx: Context, support: Chan
       return { id: incident.id, tripId: trip.id, status: 'active', groupCapability: 'unavailable' };
     });
   }));
-  async function mutateIncident(request: FastifyRequest, operation: (client: pg.PoolClient, trip: Trip, incident: pg.QueryResultRow) => Promise<unknown>) {
+  async function withIncidentTransaction(request: FastifyRequest, operation: (client: pg.PoolClient, trip: Trip, incident: pg.QueryResultRow) => Promise<unknown>) {
     const id = (request.params as { id: string }).id;
     const row = (await ctx.pool.query('SELECT trip_id FROM incidents WHERE id=$1', [id])).rows[0];
     if (!row) problem(404, 'incident_not_found');
     return withTripTransaction(ctx, row.trip_id, async (client, trip) => {
       const incident = (await client.query('SELECT * FROM incidents WHERE id=$1 FOR UPDATE', [id])).rows[0]!;
-      return idempotent(ctx, client, request, () => operation(client, trip, incident));
+      return operation(client, trip, incident);
     });
   }
+  async function incidentContact(client: pg.PoolClient, trip: Trip, request: FastifyRequest) {
+    if (!(await client.query(`SELECT 1 FROM trip_grants tg JOIN contact_grants cg ON cg.id=tg.grant_id WHERE tg.trip_id=$1 AND tg.revoked_at IS NULL AND cg.contact_id=$2 AND cg.accepted_at IS NOT NULL AND cg.revoked_at IS NULL AND cg.incident_accepted`, [trip.id, request.actor.id])).rowCount) problem(403, 'forbidden');
+  }
+  async function mutateIncident(request: FastifyRequest, operation: (client: pg.PoolClient, trip: Trip, incident: pg.QueryResultRow) => Promise<unknown>) {
+    return withIncidentTransaction(request, (client, trip, incident) => idempotent(ctx, client, request, () => operation(client, trip, incident)));
+  }
+  app.get('/v1/incidents/:id', { schema: { params: idParams } }, request => withIncidentTransaction(request, async (client, trip, incident) => {
+    if (trip.driver_id !== request.actor.id) await incidentContact(client, trip, request);
+    return { id: incident.id, tripId: trip.id, status: incident.status, createdAt: incident.created_at, resolvedAt: incident.resolved_at, groupCapability: 'unavailable' };
+  }));
   for (const kind of ['acknowledgements', 'actions'] as const) {
     app.post(`/v1/incidents/:id/${kind}`, { schema: { params: idParams, body: kind === 'actions' ? object({ action: text }) : empty } }, request => mutateIncident(request, async (client, trip, incident) => {
-      if (!(await client.query(`SELECT 1 FROM trip_grants tg JOIN contact_grants cg ON cg.id=tg.grant_id WHERE tg.trip_id=$1 AND tg.revoked_at IS NULL AND cg.contact_id=$2 AND cg.accepted_at IS NOT NULL AND cg.revoked_at IS NULL AND cg.incident_accepted`, [trip.id, request.actor.id])).rowCount) problem(403, 'forbidden');
+      await incidentContact(client, trip, request);
       if (incident.status !== 'active') problem(409, 'incident_resolved');
       const eventKind = kind === 'actions' ? 'action' : 'acknowledged';
       await client.query('INSERT INTO incident_events VALUES($1,$2,$3,$4,$5,$6)', [randomUUID(), incident.id, request.actor.id, eventKind, kind === 'actions' ? (request.body as { action: string }).action : null, ctx.clock()]);
