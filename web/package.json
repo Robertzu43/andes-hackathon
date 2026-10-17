@@ -1,8 +1,0 @@
-{
-  "name": "andes-web",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "node --test tests/observations/*.test.mjs"
-  }
-}
