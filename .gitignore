@@ -23,3 +23,6 @@ RUNBOOK.md
 
 # dependencies
 node_modules/
+
+# Real participant material stays outside Git
+evidence/private/

@@ -1,0 +1,1 @@
+case_id,pair_id,trip_kind,synthetic,concerns,trip_countries,interview_language,load_status,haul_type,corridor_label,connectivity,arrangement,arrangement_channels,actionable_window,someone_available_to_act,unmet_problem,window_start_event,window_end_event,driver_review,contact_review,trace_review,redaction_status
