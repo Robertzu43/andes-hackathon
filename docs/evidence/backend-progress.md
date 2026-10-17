@@ -7,8 +7,8 @@ Robert authorized implementation of [ADR-002](../architecture/ADR-002-aws-durabl
 | Block | Status | Evidence |
 | --- | --- | --- |
 | Architecture and execution plan | Published | `19e1e01`, `1503b01`; [execution plan](../superpowers/plans/2026-10-17-aws-backend-execution.md) |
-| Trip, consent, location and SOS API | In implementation | Real PostgreSQL tests; independent review pending |
-| Durable dispatch and Zavu boundary | Planned | Depends on reviewed API schema |
+| Trip, consent, location and SOS API | Implemented and independently reviewed | `d390ba7`, `8d9d289`; 12 real PostgreSQL/signed-JWT tests; two reproduced deadlocks fixed and re-reviewed; [runtime contract](../contracts/runtime.md) |
+| Durable dispatch and Zavu boundary | In implementation | Reviewed API schema; [official-contract research](../contracts/zavu-research.md) |
 | AWS artifacts, CI and local demo | Planned | Depends on runtime contracts |
 | Final integration review | Planned | Required before completion |
 

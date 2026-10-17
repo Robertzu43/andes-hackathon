@@ -58,6 +58,7 @@ Use official Zavu contract supplied in research report to implement optional dis
 
 - [ ] Add meaningful infrastructure assertions for exposure, TLS, state retention, IAM queue isolation and actual process/environment wiring; validate CloudFormation schema with cfn-lint.
 - [ ] Implement Docker and compose using pinned major runtime/DB; local PostgreSQL and external transport instructions are explicit. CI runs typecheck/build, actual database tests and infrastructure checks without credentials/live messages.
+- [ ] After reviewing actual infrastructure wiring, create a readable architecture diagram image plus editable source, showing operating flow and explicit deployment/provider evidence limits; commit and push as requested by Robert.
 - [ ] Add runnable local demonstration of confirmed trip, fresh/stale/revoked location, duplicate SOS and restart recovery using synthetic recipients/provider clearly labelled; no live send by default. Document commands, operational failures, secrets, costs, rollback and outstanding voice/mobile/provider evidence. Run full suite and demo. Commit report.
 
 ### Task 4: Final integration and independent whole-branch review
