@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development. Robert explicitly authorized implementation; execute and review the following engineering tasks without another architecture-selection prompt.
 
+**Execution status:** Engineering implementation, independent reviews and local verification completed on 2026-10-17; see [evidence](../../evidence/backend-implementation.md). Deployment, Docker execution and live-provider/device qualification remain unverified.
+
 **Goal:** Implement the runnable ADR-002 backend and reproducible AWS infrastructure, with real PostgreSQL fault/race tests and truthful integration boundaries.
 **Architecture:** One modular TypeScript codebase; SQL is authority; outbox relays job IDs to SQS; independent channel authorization precedes provider I/O. ECS API/control/emergency/ordinary roles share an image.
 **Tech Stack:** Node 24 target (local Node 26 must also pass), TypeScript strict/ESM, Fastify, pg, jose for verified OIDC, AWS SDK v3 SQS, native node:test. Plain CloudFormation avoids another runtime/tooling framework. Pin dependency versions and lockfile.
@@ -36,9 +38,9 @@ Drafts preserve voice/text-derived untrusted input without activation; structure
 
 Implement idempotent mutations, driver/truck scope, explicit accepted map/incident consent, latest observation/freshness and bounded upload/history. Trip close atomically stops map/checkins/ordinary work while retaining SOS. SOS transaction creates one active incident per trip, one job per accepted unique recipient/channel and outbox entries (or explicit unavailable-channel facts under configured support); repeat taps/keys cannot duplicate. Real send enablement stays off pending qualified support; synthetic tests configure channels explicitly. Persist group capability missing, never replace it with individual messages. Basic check-in responses/pause states may be recorded, but never infer fatigue or enable automatic nonresponse escalation.
 
-- [ ] Write tests first and record RED for ownership, contact acceptance, confirmation idempotency, location freshness/revoke, SOS rollback/duplicate active episode and independent trip/incident closure.
-- [ ] Implement the smallest complete SQL/API path with boundary validation, parameterized SQL and transaction errors that roll back; migrations repeat safely.
-- [ ] Run typecheck/build and node tests against disposable real PostgreSQL schemas; fail clearly if TEST_DATABASE_URL missing. Capture commands/results in Task 1 report. Commit only implemented scope.
+- [x] Write tests first and record RED for ownership, contact acceptance, confirmation idempotency, location freshness/revoke, SOS rollback/duplicate active episode and independent trip/incident closure.
+- [x] Implement the smallest complete SQL/API path with boundary validation, parameterized SQL and transaction errors that roll back; migrations repeat safely.
+- [x] Run typecheck/build and node tests against disposable real PostgreSQL schemas; fail clearly if TEST_DATABASE_URL missing. Capture commands/results in Task 1 report. Commit only implemented scope.
 
 ### Task 2: Durable transport, independent attempts and verified provider boundary
 
@@ -47,23 +49,23 @@ Implement idempotent mutations, driver/truck scope, explicit accepted map/incide
 
 Use official Zavu contract supplied in research report to implement optional disabled-by-default adapter and authenticated raw-body callback parsing. If an operation cannot be verified, fail closed for that operation and name capability missing. No generic invented endpoints/signatures. Disable send HTTP retries, classify network/5xx ambiguity conservatively, distinguish provider acceptance/delivery from contact action. Require explicit verified country/channel/locale manifest and live-send configuration. Synthetic transport/provider remain test-only, not startup defaults.
 
-- [ ] Write failing tests for rollback/publish-ack loss, duplicate SQS, stale lease, authorize-first/stop-first, paused WhatsApp with independent SMS/voice/read/close, acceptance timeout, callback-before-response, scanner recovery and no blind DLQ replay.
-- [ ] Implement and wire runtime control/emergency/ordinary commands, abortable shutdown and safe error handling. Scanner repairs SQL-tracked work if transport expires; no tight republish loop.
-- [ ] Run focused tests then full suite/typecheck/build with real PostgreSQL. Commit and report tests, provider-source limits and runtime configuration.
+- [x] Write failing tests for rollback/publish-ack loss, duplicate SQS, stale lease, authorize-first/stop-first, paused WhatsApp with independent SMS/voice/read/close, acceptance timeout, callback-before-response, scanner recovery and no blind DLQ replay.
+- [x] Implement and wire runtime control/emergency/ordinary commands, abortable shutdown and safe error handling. Scanner repairs SQL-tracked work if transport expires; no tight republish loop.
+- [x] Run focused tests then full suite/typecheck/build with real PostgreSQL. Commit and report tests, provider-source limits and runtime configuration.
 
 ### Task 3: Reproducible AWS deployment artifacts and local operation
 
 **Files:** infra/template.yaml or .json, infra/README.md, Dockerfile, .dockerignore, compose.yaml, .github/workflows/ci.yml, tests/infra.test.mjs, scripts/demo.*, README.md, docs/evidence/backend-implementation.md.
 **Interfaces:** Consume actual API/worker entrypoints and environment from Tasks 1–2. CloudFormation accepts explicit account-specific image URI, HTTPS certificate, OIDC settings, qualified provider secret/manifest inputs. ECS private tasks and RDS; public ALB HTTPS, HTTP redirect, health checks; no public database. Fargate roles API/control/emergency/ordinary, least privilege secrets/SQS access, distinct queues+DLQs, RDS encrypted Multi-AZ, bounded pools, logs/alarms, retained state/backups, audio S3 private encrypted lifecycle, and outputs. Two AZ target; cost-reduced demo must explicitly identify reduced availability. Do not create live resources. DB migration is a documented one-off task, never race-run at every app start. Protect credentials from template/env example/log output.
 
-- [ ] Add meaningful infrastructure assertions for exposure, TLS, state retention, IAM queue isolation and actual process/environment wiring; validate CloudFormation schema with cfn-lint.
-- [ ] Implement Docker and compose using pinned major runtime/DB; local PostgreSQL and external transport instructions are explicit. CI runs typecheck/build, actual database tests and infrastructure checks without credentials/live messages.
-- [ ] After reviewing actual infrastructure wiring, create a readable architecture diagram image plus editable source, showing operating flow and explicit deployment/provider evidence limits; commit and push as requested by Robert.
-- [ ] Add runnable local demonstration of confirmed trip, fresh/stale/revoked location, duplicate SOS and restart recovery using synthetic recipients/provider clearly labelled; no live send by default. Document commands, operational failures, secrets, costs, rollback and outstanding voice/mobile/provider evidence. Run full suite and demo. Commit report.
+- [x] Add meaningful infrastructure assertions for exposure, TLS, state retention, IAM queue isolation and actual process/environment wiring; validate CloudFormation schema with cfn-lint.
+- [x] Implement Docker and compose using pinned major runtime/DB; local PostgreSQL and external transport instructions are explicit. CI runs typecheck/build, actual database tests and infrastructure checks without credentials/live messages.
+- [x] After reviewing actual infrastructure wiring, create a readable architecture diagram image plus editable source, showing operating flow and explicit deployment/provider evidence limits; commit and push as requested by Robert.
+- [x] Add runnable local demonstration of confirmed trip, fresh/stale/revoked location, duplicate SOS and restart recovery using synthetic recipients/provider clearly labelled; no live send by default. Document commands, operational failures, secrets, costs, rollback and outstanding voice/mobile/provider evidence. Run full suite and demo. Commit report.
 
 ### Task 4: Final integration and independent whole-branch review
 
 **Files:** Only fixes identified in integration/review; final evidence/report.
-- [ ] Run complete local verification on final tree: install reproducibility, typecheck/build, PostgreSQL suite, infrastructure checks and demo.
-- [ ] Fresh reviewer checks cross-task authorization, shutdown/recovery, secret logging, migration/startup and infrastructure wiring; fix important findings with tests and scoped re-review.
-- [ ] Record engineering results separately from unverified AWS/device/provider operations. Leave issues open and branch/worktree reviewable; push each reviewed block to codex/aws-durable-backend under Robert’s subsequent explicit instruction. No deployment or merge.
+- [x] Run complete local verification on final tree: install reproducibility, typecheck/build, PostgreSQL suite, infrastructure checks and demo.
+- [x] Fresh reviewer checks cross-task authorization, shutdown/recovery, secret logging, migration/startup and infrastructure wiring; fix important findings with tests and scoped re-review.
+- [x] Record engineering results separately from unverified AWS/device/provider operations. Leave issues open and branch/worktree reviewable; push each reviewed block to codex/aws-durable-backend under Robert’s subsequent explicit instruction. No deployment or merge.

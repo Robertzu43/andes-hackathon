@@ -11,6 +11,6 @@ Robert authorized implementation of [ADR-002](../architecture/ADR-002-aws-durabl
 | Durable dispatch and Zavu boundary | Implemented and independently reviewed | `615969f`, `374d2aa`; 39 total tests; sends-off/read-only reconciliation regression fixed; [runtime contract](../contracts/runtime.md) |
 | AWS artifacts, CI and local demo | Implemented and independently reviewed | `406e5de`, `1e4ce24`; 45 tests, cfn-lint, Compose config and actual process restart demo; [evidence](backend-implementation.md) |
 | Architecture image | Complete | `3e5b95c`; [PNG and editable SVG](../architecture/diagrams/README.md), visually checked against actual wiring |
-| Final integration review | In progress | All three task gates passed; final cross-component review next |
+| Final integration review | Approved | `0eb515c` closes recipient incident discovery; fresh final review approved; root reran 47/47 tests, build/typecheck and restart demo |
 
 For other agents: fetch this branch and inspect the runtime contract when published before integrating. Engineering tests use synthetic identities and provider fixtures. Live delivery, Android capture, account qualification and AWS availability remain unverified; original issue blockers remain open.
