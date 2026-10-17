@@ -4,6 +4,12 @@ Phone-based safety support for independent Latin American freight truck drivers 
 
 Status: evidence tooling in progress (#8 evidence kit, preparatory #9 iPhone recorder). All 44 task issues remain open. No participant interviews or physical-device results are complete, Android is untested, and there is no production app or evidence of product efficacy.
 
+## Executable backend
+
+An engineering backend now implements confirmed trips, consented timestamped location, explicit SOS, durable SQL/outbox dispatch and independent provider-channel attempts. It is not deployed or qualified for live delivery. AWS [artifacts and runbook](infra/README.md) include zero-task bootstrap/live-send gates, local Docker/Compose instructions, CI and operational limits. The [architecture diagram](docs/architecture/diagrams/andes-infrastructure.png) shows the actual template topology. The [runtime contract](docs/contracts/runtime.md) describes actual API/process/environment behavior; [implementation evidence](docs/evidence/backend-implementation.md) records what was checked.
+
+With Node 24 and a disposable PostgreSQL database, run `npm ci`, set `TEST_DATABASE_URL`, then `npm test` and `npm run demo`. The demo uses signed synthetic identities and test-only provider/queue boundaries; it includes actual child-process restart with simulated lease time and makes no live sends. See the runbook for least-privilege local bootstrap and trusted OIDC setup. No audio interpretation, automatic nonresponse escalation, physical-device qualification or provider activation is implied.
+
 ## Start here
 
 [Reconstruct freight trip incidents](https://github.com/Bimbi-Dev/andes-hackathon/issues/8) is the first task. Follow the section gates and GitHub blocked-by links.

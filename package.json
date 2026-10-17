@@ -14,7 +14,10 @@
     "migrate": "node scripts/migrate.mjs",
     "worker:control": "node dist/worker.js control",
     "worker:emergency": "node dist/worker.js emergency",
-    "worker:ordinary": "node dist/worker.js ordinary"
+    "worker:ordinary": "node dist/worker.js ordinary",
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "demo": "npm run build && node scripts/demo.mjs",
+    "infra:check": "node --test tests/infra.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-sqs": "3.1152.0",

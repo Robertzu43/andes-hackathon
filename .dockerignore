@@ -1,0 +1,11 @@
+.git
+.github
+.superpowers
+node_modules
+dist
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+!infra/rds-global-bundle.pem

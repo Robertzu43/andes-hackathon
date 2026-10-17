@@ -1,0 +1,21 @@
+[
+  {"ParameterKey":"VpcId","ParameterValue":"vpc-REPLACE"},
+  {"ParameterKey":"PublicSubnetA","ParameterValue":"subnet-REPLACE-PUBLIC-A"},
+  {"ParameterKey":"PublicSubnetB","ParameterValue":"subnet-REPLACE-PUBLIC-B"},
+  {"ParameterKey":"PrivateSubnetA","ParameterValue":"subnet-REPLACE-PRIVATE-A"},
+  {"ParameterKey":"PrivateSubnetB","ParameterValue":"subnet-REPLACE-PRIVATE-B"},
+  {"ParameterKey":"CertificateArn","ParameterValue":"arn:aws:acm:REGION:ACCOUNT:certificate/REPLACE"},
+  {"ParameterKey":"ImageUri","ParameterValue":"ACCOUNT.dkr.ecr.REGION.amazonaws.com/REPOSITORY@sha256:REPLACE"},
+  {"ParameterKey":"EcrRepositoryArn","ParameterValue":"arn:aws:ecr:REGION:ACCOUNT:repository/REPLACE"},
+  {"ParameterKey":"OidcIssuer","ParameterValue":"https://YOUR-TRUSTED-ISSUER"},
+  {"ParameterKey":"OidcAudience","ParameterValue":"YOUR-TRUSTED-AUDIENCE"},
+  {"ParameterKey":"OidcJwksUrl","ParameterValue":"https://YOUR-TRUSTED-ISSUER/.well-known/jwks.json"},
+  {"ParameterKey":"AllowedClientCidr","ParameterValue":"0.0.0.0/0"},
+  {"ParameterKey":"DatabaseEngineVersion","ParameterValue":"REPLACE-WITH-REGION-SUPPORTED-17-PATCH"},
+  {"ParameterKey":"DatabaseInstanceClass","ParameterValue":"db.t4g.small"},
+  {"ParameterKey":"ServicesEnabled","ParameterValue":"false"},
+  {"ParameterKey":"LiveSendEnabled","ParameterValue":"false"},
+  {"ParameterKey":"ProviderSecretArn","ParameterValue":""},
+  {"ParameterKey":"QueuePrefix","ParameterValue":"REPLACE-UNIQUE-STABLE-PREFIX"},
+  {"ParameterKey":"AlarmTopicArn","ParameterValue":"arn:aws:sns:REGION:ACCOUNT:REPLACE"}
+]

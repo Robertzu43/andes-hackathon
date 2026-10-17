@@ -1,10 +1,26 @@
 import pg from 'pg';
+import { readFileSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { problem, type Trip } from './contracts.js';
 export interface Context { pool: pg.Pool; telemetryPool: pg.Pool; callbackPool: pg.Pool; clock: () => Date; close: () => Promise<void> }
-export function createContext(databaseUrl: string, clock: () => Date = () => new Date(), commandPoolSize = 6): Context {
-  const config = { connectionString: databaseUrl, connectionTimeoutMillis: 3000, idleTimeoutMillis: 30000,
+export function databaseConfig(env: NodeJS.ProcessEnv = process.env): pg.PoolConfig {
+  let connectionString = env.DATABASE_URL;
+  if (!connectionString) {
+    if (!env.PGHOST || !env.PGDATABASE || !env.PGUSER || !env.PGPASSWORD) throw new Error('Database URL or complete PostgreSQL components required');
+    const url = new URL('postgresql://database');
+    url.hostname = env.PGHOST; url.port = env.PGPORT ?? '5432';
+    url.pathname = `/${encodeURIComponent(env.PGDATABASE)}`;
+    url.username = encodeURIComponent(env.PGUSER); url.password = encodeURIComponent(env.PGPASSWORD);
+    connectionString = url.toString();
+  }
+  if (!env.PGSSLROOTCERT) return { connectionString };
+  // pg connection-string SSL options replace the explicit verified TLS object.
+  if (env.PGSSLMODE || [...new URL(connectionString).searchParams.keys()].some(key => key.toLowerCase().startsWith('ssl'))) throw new Error('SSL URL/environment options cannot override verified TLS');
+  return { connectionString, ssl: { ca: readFileSync(env.PGSSLROOTCERT, 'utf8'), rejectUnauthorized: true } };
+}
+export function createContext(databaseUrl: string | pg.PoolConfig, clock: () => Date = () => new Date(), commandPoolSize = 6): Context {
+  const config = { ...(typeof databaseUrl === 'string' ? { connectionString: databaseUrl } : databaseUrl), connectionTimeoutMillis: 3000, idleTimeoutMillis: 30000,
     statement_timeout: 5000, idle_in_transaction_session_timeout: 5000 };
   const pool = new pg.Pool({ ...config, max: commandPoolSize });
   const telemetryPool = new pg.Pool({ ...config, max: 2 });

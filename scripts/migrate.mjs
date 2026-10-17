@@ -1,6 +1,5 @@
-import { createContext, migrate } from '../dist/db.js';
-if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL required');
-const ctx = createContext(process.env.DATABASE_URL);
+import { createContext, databaseConfig, migrate } from '../dist/db.js';
+const ctx = createContext(databaseConfig(), undefined, 2);
 try { await migrate(ctx.pool); console.log('Migrations applied'); }
 catch { process.stderr.write('Migration failed\n'); process.exitCode = 1; }
 finally { await ctx.close(); }

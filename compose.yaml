@@ -1,0 +1,45 @@
+# Local synthetic data only. Start db, run bootstrap once, then start api.
+services:
+  db:
+    image: postgres:18-bookworm
+    environment:
+      POSTGRES_DB: andes
+      POSTGRES_USER: andes_admin
+      POSTGRES_PASSWORD: ${LOCAL_ADMIN_PASSWORD:?set a local-only admin password}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["postgres:/var/lib/postgresql"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andes_admin -d andes"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  bootstrap:
+    build: .
+    profiles: ["bootstrap"]
+    command: ["node", "scripts/bootstrap.mjs"]
+    environment:
+      PGHOST: db
+      PGDATABASE: andes
+      PGUSER: andes_admin
+      PGPASSWORD: ${LOCAL_ADMIN_PASSWORD:?set a local-only admin password}
+      APP_PGUSER: andes_app
+      APP_PGPASSWORD: ${LOCAL_APP_PASSWORD:?set a local-only app password}
+    depends_on:
+      db: {condition: service_healthy}
+  api:
+    build: .
+    profiles: ["api"]
+    ports: ["127.0.0.1:3000:3000"]
+    environment:
+      PGHOST: db
+      PGDATABASE: andes
+      PGUSER: andes_app
+      PGPASSWORD: ${LOCAL_APP_PASSWORD:?set a local-only app password}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_AUDIENCE: ${OIDC_AUDIENCE:-}
+      OIDC_JWKS_URL: ${OIDC_JWKS_URL:-}
+      ZAVU_LIVE_SEND: "false"
+    depends_on:
+      db: {condition: service_healthy}
+volumes:
+  postgres:

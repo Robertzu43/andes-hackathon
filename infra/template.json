@@ -1,0 +1,3334 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "ANDES durable backend: private Fargate and PostgreSQL with SQL authority, bounded SQS dispatch, bootstrap and explicit live-send gates.",
+  "Metadata": {
+    "AWSToolsMetrics": {
+      "AWSAgentToolkit": "aws-cloudformation@2"
+    },
+    "com.aws.cloudformation.Context": {
+      "ref": [
+        "infra/README.md",
+        "docs/contracts/runtime.md"
+      ],
+      "must": [
+        "Bootstrap success before ServicesEnabled=true",
+        "Live qualification before LiveSendEnabled=true",
+        "No autoscaler or manual capacity above documented pool budget"
+      ]
+    }
+  },
+  "Parameters": {
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "PublicSubnetA": {
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "PublicSubnetB": {
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "PrivateSubnetA": {
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "PrivateSubnetB": {
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "CertificateArn": {
+      "Type": "String",
+      "AllowedPattern": "arn:[^:]+:acm:[^:]+:[0-9]{12}:certificate/.+"
+    },
+    "ImageUri": {
+      "Type": "String",
+      "AllowedPattern": "[0-9]{12}\\.dkr\\.ecr\\.[a-z0-9-]+\\.amazonaws\\.com(\\.cn)?/.+@sha256:[a-f0-9]{64}",
+      "Description": "Existing ECR Linux/X86_64 image digest; same image for all roles."
+    },
+    "EcrRepositoryArn": {
+      "Type": "String",
+      "AllowedPattern": "arn:[^:]+:ecr:[^:]+:[0-9]{12}:repository/.+"
+    },
+    "OidcIssuer": {
+      "Type": "String",
+      "AllowedPattern": "https://.+"
+    },
+    "OidcAudience": {
+      "Type": "String",
+      "MinLength": 1
+    },
+    "OidcJwksUrl": {
+      "Type": "String",
+      "AllowedPattern": "https://.+"
+    },
+    "AllowedClientCidr": {
+      "Type": "String",
+      "Default": "0.0.0.0/0",
+      "Description": "Public API audience; tighten for a restricted pilot.",
+      "AllowedPattern": "[0-9./]+"
+    },
+    "DatabaseEngineVersion": {
+      "Type": "String",
+      "AllowedPattern": "17\\.[0-9]+",
+      "Description": "Region-supported PostgreSQL 17 patch, qualified before deployment; no guessed default."
+    },
+    "DatabaseInstanceClass": {
+      "Type": "String",
+      "Default": "db.t4g.small",
+      "AllowedValues": [
+        "db.t4g.small",
+        "db.t4g.medium",
+        "db.m7g.large"
+      ],
+      "Description": "Qualify region/version availability and measured memory/IO demand."
+    },
+    "ServicesEnabled": {
+      "Type": "String",
+      "Default": "false",
+      "AllowedValues": [
+        "false",
+        "true"
+      ],
+      "Description": "Set true only after exactly one successful bootstrap container exit 0."
+    },
+    "LiveSendEnabled": {
+      "Type": "String",
+      "Default": "false",
+      "AllowedValues": [
+        "false",
+        "true"
+      ],
+      "Description": "True only with verified provider/account/destination qualification."
+    },
+    "ProviderSecretArn": {
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern": "(^$|arn:[^:]+:secretsmanager:[^:]+:[0-9]{12}:secret:.+)",
+      "Description": "Optional JSON secret with exact ZAVU_* runtime keys; required when live. Usable for read-only callbacks/reconciliation when live=false."
+    },
+    "QueuePrefix": {
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 60,
+      "AllowedPattern": "[a-zA-Z0-9_-]+",
+      "Description": "Unique stable queue prefix; changing it replaces retained source queues."
+    },
+    "AlarmTopicArn": {
+      "Type": "String",
+      "AllowedPattern": "arn:[^:]+:sns:[^:]+:[0-9]{12}:.+",
+      "Description": "Existing monitored SNS topic; operators own subscriptions."
+    }
+  },
+  "Conditions": {
+    "ServicesActive": {
+      "Fn::Equals": [
+        {
+          "Ref": "ServicesEnabled"
+        },
+        "true"
+      ]
+    },
+    "LiveSend": {
+      "Fn::Equals": [
+        {
+          "Ref": "LiveSendEnabled"
+        },
+        "true"
+      ]
+    },
+    "HasProvider": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ProviderSecretArn"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "DeliveryActive": {
+      "Fn::And": [
+        {
+          "Condition": "ServicesActive"
+        },
+        {
+          "Condition": "LiveSend"
+        }
+      ]
+    }
+  },
+  "Rules": {
+    "LiveRequiresProvider": {
+      "RuleCondition": {
+        "Fn::Equals": [
+          {
+            "Ref": "LiveSendEnabled"
+          },
+          "true"
+        ]
+      },
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Equals": [
+                  {
+                    "Ref": "ProviderSecretArn"
+                  },
+                  ""
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "Live sending requires a qualified provider JSON secret."
+        }
+      ]
+    }
+  },
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Independent roles and task-shortage metrics; Container Insights has additional cost.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "ClusterSettings": [
+          {
+            "Name": "containerInsights",
+            "Value": "enabled"
+          }
+        ]
+      }
+    },
+    "Logs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Finite operational logs; application logs redact payloads and credentials.",
+          "must": [
+            "No raw phone/location/provider payload logging"
+          ]
+        }
+      },
+      "Properties": {
+        "RetentionInDays": 30
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "AlbSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Only intended public HTTP redirect and HTTPS entry.",
+          "must": [
+            "Do not widen task/database ingress"
+          ]
+        }
+      },
+      "Properties": {
+        "GroupDescription": "Only intended public HTTP redirect and HTTPS entry.",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": {
+              "Ref": "AllowedClientCidr"
+            }
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": {
+              "Ref": "AllowedClientCidr"
+            }
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 3000,
+            "ToPort": 3000,
+            "DestinationSecurityGroupId": {
+              "Ref": "ApiSecurityGroup"
+            }
+          }
+        ]
+      }
+    },
+    "ApiSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Only ALB reaches API; egress HTTPS plus private PostgreSQL.",
+          "must": [
+            "Do not widen task/database ingress"
+          ]
+        }
+      },
+      "Properties": {
+        "GroupDescription": "Only ALB reaches API; egress HTTPS plus private PostgreSQL.",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "SecurityGroupIngress": [],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 5432,
+            "ToPort": 5432,
+            "DestinationSecurityGroupId": {
+              "Ref": "DatabaseSecurityGroup"
+            }
+          }
+        ]
+      }
+    },
+    "WorkerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "No inbound listeners; private workers and one-off bootstrap.",
+          "must": [
+            "Do not widen task/database ingress"
+          ]
+        }
+      },
+      "Properties": {
+        "GroupDescription": "No inbound listeners; private workers and one-off bootstrap.",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "SecurityGroupIngress": [],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 5432,
+            "ToPort": 5432,
+            "DestinationSecurityGroupId": {
+              "Ref": "DatabaseSecurityGroup"
+            }
+          }
+        ]
+      }
+    },
+    "DatabaseSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Private database; only runtime and migration task groups.",
+          "must": [
+            "Do not widen task/database ingress"
+          ]
+        }
+      },
+      "Properties": {
+        "GroupDescription": "Private database; only runtime and migration task groups.",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "SecurityGroupIngress": [],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 1,
+            "ToPort": 1,
+            "CidrIp": "127.0.0.1/32"
+          }
+        ]
+      }
+    },
+    "ApiFromAlb": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Only ALB may call API.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "GroupId": {
+          "Ref": "ApiSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": 3000,
+        "ToPort": 3000,
+        "SourceSecurityGroupId": {
+          "Ref": "AlbSecurityGroup"
+        }
+      }
+    },
+    "DatabaseFromApi": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Only task groups may connect to PostgreSQL.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "GroupId": {
+          "Ref": "DatabaseSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": 5432,
+        "ToPort": 5432,
+        "SourceSecurityGroupId": {
+          "Ref": "ApiSecurityGroup"
+        }
+      }
+    },
+    "DatabaseFromWorker": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Only task groups may connect to PostgreSQL.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "GroupId": {
+          "Ref": "DatabaseSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": 5432,
+        "ToPort": 5432,
+        "SourceSecurityGroupId": {
+          "Ref": "WorkerSecurityGroup"
+        }
+      }
+    },
+    "DbSubnets": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "No public database placement.",
+          "must": [
+            "Subnets must span two AZs in supplied VPC"
+          ]
+        }
+      },
+      "Properties": {
+        "DBSubnetGroupDescription": "Two prequalified private AZ subnets",
+        "SubnetIds": [
+          {
+            "Ref": "PrivateSubnetA"
+          },
+          {
+            "Ref": "PrivateSubnetB"
+          }
+        ]
+      }
+    },
+    "DbParameters": {
+      "Type": "AWS::RDS::DBParameterGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Fail closed without TLS; pool ceiling includes deployments.",
+          "must": [
+            "Runtime 64 + bootstrap 2 + operations 14 <= 80; verify RDS reserve within 100"
+          ]
+        }
+      },
+      "Properties": {
+        "Family": "postgres17",
+        "Description": "Verified TLS and explicit connection ceiling",
+        "Parameters": {
+          "rds.force_ssl": "1",
+          "max_connections": "100"
+        }
+      }
+    },
+    "Database": {
+      "Type": "AWS::RDS::DBInstance",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Durable SQL authority; retained Multi-AZ state and backups.",
+          "must": [
+            "No public endpoint access",
+            "Keep retention on delete/replacement",
+            "Restore/failover evidence still required"
+          ]
+        }
+      },
+      "Properties": {
+        "Engine": "postgres",
+        "EngineVersion": {
+          "Ref": "DatabaseEngineVersion"
+        },
+        "DBInstanceClass": {
+          "Ref": "DatabaseInstanceClass"
+        },
+        "DBName": "andes",
+        "MasterUsername": "andes_admin",
+        "ManageMasterUserPassword": true,
+        "DBSubnetGroupName": {
+          "Ref": "DbSubnets"
+        },
+        "DBParameterGroupName": {
+          "Ref": "DbParameters"
+        },
+        "VPCSecurityGroups": [
+          {
+            "Ref": "DatabaseSecurityGroup"
+          }
+        ],
+        "PubliclyAccessible": false,
+        "StorageEncrypted": true,
+        "StorageType": "gp3",
+        "AllocatedStorage": "20",
+        "MaxAllocatedStorage": 100,
+        "MultiAZ": true,
+        "BackupRetentionPeriod": 7,
+        "DeletionProtection": true,
+        "CopyTagsToSnapshot": true,
+        "EnableCloudwatchLogsExports": [
+          "postgresql"
+        ],
+        "AutoMinorVersionUpgrade": true
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "AppSecret": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Separate app credential from migration administrator.",
+          "must": [
+            "Secret alone does not provision SQL role",
+            "Rotate SQL password and roll tasks together"
+          ]
+        }
+      },
+      "Properties": {
+        "Description": "ANDES DML-only application login; one-off bootstrap provisions SQL role",
+        "GenerateSecretString": {
+          "SecretStringTemplate": "{\"username\":\"andes_app\"}",
+          "GenerateStringKey": "password",
+          "PasswordLength": 40
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "EmergencyDLQ": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Failed transport retained for investigation, never automatic resend.",
+          "must": [
+            "Redrive must recheck SQL attempt facts"
+          ]
+        }
+      },
+      "Properties": {
+        "SqsManagedSseEnabled": true,
+        "MessageRetentionPeriod": 1209600,
+        "RedriveAllowPolicy": {
+          "redrivePermission": "byQueue",
+          "sourceQueueArns": [
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:${QueuePrefix}-emergency"
+            }
+          ]
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "EmergencyQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Bounded class-isolated Standard transport; SQL is authority.",
+          "must": [
+            "Queue carries job ID/version/class only"
+          ]
+        }
+      },
+      "Properties": {
+        "SqsManagedSseEnabled": true,
+        "VisibilityTimeout": 30,
+        "ReceiveMessageWaitTimeSeconds": 20,
+        "MessageRetentionPeriod": 345600,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "EmergencyDLQ",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 5
+        },
+        "QueueName": {
+          "Fn::Sub": "${QueuePrefix}-emergency"
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "OrdinaryDLQ": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Failed transport retained for investigation, never automatic resend.",
+          "must": [
+            "Redrive must recheck SQL attempt facts"
+          ]
+        }
+      },
+      "Properties": {
+        "SqsManagedSseEnabled": true,
+        "MessageRetentionPeriod": 1209600,
+        "RedriveAllowPolicy": {
+          "redrivePermission": "byQueue",
+          "sourceQueueArns": [
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:${QueuePrefix}-ordinary"
+            }
+          ]
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "OrdinaryQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Bounded class-isolated Standard transport; SQL is authority.",
+          "must": [
+            "Queue carries job ID/version/class only"
+          ]
+        }
+      },
+      "Properties": {
+        "SqsManagedSseEnabled": true,
+        "VisibilityTimeout": 30,
+        "ReceiveMessageWaitTimeSeconds": 20,
+        "MessageRetentionPeriod": 345600,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "OrdinaryDLQ",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 5
+        },
+        "QueueName": {
+          "Fn::Sub": "${QueuePrefix}-ordinary"
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "QueueTls": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "TLS-only queue transport.",
+          "must": [
+            "Runtime roles never receive DLQ privileges"
+          ]
+        }
+      },
+      "Properties": {
+        "Queues": [
+          {
+            "Ref": "EmergencyQueue"
+          },
+          {
+            "Ref": "EmergencyDLQ"
+          },
+          {
+            "Ref": "OrdinaryQueue"
+          },
+          {
+            "Ref": "OrdinaryDLQ"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "sqs:*",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "EmergencyQueue",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::GetAtt": [
+                    "EmergencyDLQ",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::GetAtt": [
+                    "OrdinaryQueue",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::GetAtt": [
+                    "OrdinaryDLQ",
+                    "Arn"
+                  ]
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ReservedAudio": {
+      "Type": "AWS::S3::Bucket",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Reserved only; no upload or audio processing feature.",
+          "must": [
+            "No application IAM access",
+            "Audio retention policy must precede collection"
+          ]
+        }
+      },
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "OwnershipControls": {
+          "Rules": [
+            {
+              "ObjectOwnership": "BucketOwnerEnforced"
+            }
+          ]
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "abort-incomplete",
+              "Status": "Enabled",
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 1
+              }
+            }
+          ]
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "AudioTls": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Deny non-HTTPS access to reserved state.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Bucket": {
+          "Ref": "ReservedAudio"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:*",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ReservedAudio",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Sub": "${ReservedAudio.Arn}/*"
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ApiRole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Runtime task identity separated from startup secret injection.",
+          "must": [
+            "No secret, audio or DLQ access in task role"
+          ]
+        }
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnLike": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ControlRole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Runtime task identity separated from startup secret injection.",
+          "must": [
+            "No secret, audio or DLQ access in task role"
+          ]
+        }
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnLike": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "class-transport",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:SendMessage"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "EmergencyQueue",
+                        "Arn"
+                      ]
+                    },
+                    {
+                      "Fn::GetAtt": [
+                        "OrdinaryQueue",
+                        "Arn"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "EmergencyRole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Runtime task identity separated from startup secret injection.",
+          "must": [
+            "No secret, audio or DLQ access in task role"
+          ]
+        }
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnLike": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "class-transport",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:ChangeMessageVisibility"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "EmergencyQueue",
+                      "Arn"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "OrdinaryRole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Runtime task identity separated from startup secret injection.",
+          "must": [
+            "No secret, audio or DLQ access in task role"
+          ]
+        }
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnLike": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "class-transport",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:ChangeMessageVisibility"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "OrdinaryQueue",
+                      "Arn"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "BootstrapRole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Runtime task identity separated from startup secret injection.",
+          "must": [
+            "No secret, audio or DLQ access in task role"
+          ]
+        }
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnLike": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "RuntimeExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "ECR/log/secrets startup permissions; never exposed as task credentials.",
+          "must": [
+            "Only bootstrap may read RDS master secret",
+            "Provider secret must use AWS-managed Secrets Manager key"
+          ]
+        }
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnLike": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "startup",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:GetAuthorizationToken"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Resource": {
+                    "Ref": "EcrRepositoryArn"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "Logs",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": [
+                    {
+                      "Ref": "AppSecret"
+                    },
+                    {
+                      "Fn::If": [
+                        "HasProvider",
+                        {
+                          "Ref": "ProviderSecretArn"
+                        },
+                        {
+                          "Ref": "AWS::NoValue"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "BootstrapExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "ECR/log/secrets startup permissions; never exposed as task credentials.",
+          "must": [
+            "Only bootstrap may read RDS master secret",
+            "Provider secret must use AWS-managed Secrets Manager key"
+          ]
+        }
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnLike": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "startup",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:GetAuthorizationToken"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Resource": {
+                    "Ref": "EcrRepositoryArn"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "Logs",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": [
+                    {
+                      "Ref": "AppSecret"
+                    },
+                    {
+                      "Fn::GetAtt": [
+                        "Database",
+                        "MasterUserSecret.SecretArn"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "ApiTask": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "One image with exact process command; no automatic startup migration.",
+          "must": [
+            "Do not put secret values in Environment",
+            "Keep CA and SQL files in image"
+          ]
+        }
+      },
+      "Properties": {
+        "Cpu": "256",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64",
+          "OperatingSystemFamily": "LINUX"
+        },
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "RuntimeExecutionRole",
+            "Arn"
+          ]
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "ApiRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "api",
+            "Image": {
+              "Ref": "ImageUri"
+            },
+            "Essential": true,
+            "Command": [
+              "node",
+              "dist/server.js"
+            ],
+            "Environment": [
+              {
+                "Name": "NODE_ENV",
+                "Value": "production"
+              },
+              {
+                "Name": "PGHOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "Database",
+                    "Endpoint.Address"
+                  ]
+                }
+              },
+              {
+                "Name": "PGPORT",
+                "Value": "5432"
+              },
+              {
+                "Name": "PGDATABASE",
+                "Value": "andes"
+              },
+              {
+                "Name": "PGSSLROOTCERT",
+                "Value": "/app/infra/rds-global-bundle.pem"
+              },
+              {
+                "Name": "AWS_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "ZAVU_LIVE_SEND",
+                "Value": {
+                  "Ref": "LiveSendEnabled"
+                }
+              },
+              {
+                "Name": "PORT",
+                "Value": "3000"
+              },
+              {
+                "Name": "OIDC_ISSUER",
+                "Value": {
+                  "Ref": "OidcIssuer"
+                }
+              },
+              {
+                "Name": "OIDC_AUDIENCE",
+                "Value": {
+                  "Ref": "OidcAudience"
+                }
+              },
+              {
+                "Name": "OIDC_JWKS_URL",
+                "Value": {
+                  "Ref": "OidcJwksUrl"
+                }
+              }
+            ],
+            "Secrets": [
+              {
+                "Name": "PGUSER",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "AppSecret"
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGPASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "AppSecret"
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_API_KEY",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_API_KEY::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_PROJECT_ID",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_PROJECT_ID::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_SENDER_ID",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_SENDER_ID::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_CALLBACK_SECRET",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_CALLBACK_SECRET::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_QUALIFICATION_JSON",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_QUALIFICATION_JSON::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              }
+            ],
+            "StopTimeout": 60,
+            "ReadonlyRootFilesystem": true,
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "Logs"
+                },
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                },
+                "awslogs-stream-prefix": "api",
+                "mode": "non-blocking",
+                "max-buffer-size": "1m"
+              }
+            },
+            "PortMappings": [
+              {
+                "ContainerPort": 3000,
+                "Protocol": "tcp"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ControlTask": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "One image with exact process command; no automatic startup migration.",
+          "must": [
+            "Do not put secret values in Environment",
+            "Keep CA and SQL files in image"
+          ]
+        }
+      },
+      "Properties": {
+        "Cpu": "256",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64",
+          "OperatingSystemFamily": "LINUX"
+        },
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "RuntimeExecutionRole",
+            "Arn"
+          ]
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "ControlRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "control",
+            "Image": {
+              "Ref": "ImageUri"
+            },
+            "Essential": true,
+            "Command": [
+              "node",
+              "dist/worker.js",
+              "control"
+            ],
+            "Environment": [
+              {
+                "Name": "NODE_ENV",
+                "Value": "production"
+              },
+              {
+                "Name": "PGHOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "Database",
+                    "Endpoint.Address"
+                  ]
+                }
+              },
+              {
+                "Name": "PGPORT",
+                "Value": "5432"
+              },
+              {
+                "Name": "PGDATABASE",
+                "Value": "andes"
+              },
+              {
+                "Name": "PGSSLROOTCERT",
+                "Value": "/app/infra/rds-global-bundle.pem"
+              },
+              {
+                "Name": "AWS_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "ZAVU_LIVE_SEND",
+                "Value": {
+                  "Ref": "LiveSendEnabled"
+                }
+              },
+              {
+                "Name": "SQS_EMERGENCY_URL",
+                "Value": {
+                  "Ref": "EmergencyQueue"
+                }
+              },
+              {
+                "Name": "SQS_ORDINARY_URL",
+                "Value": {
+                  "Ref": "OrdinaryQueue"
+                }
+              }
+            ],
+            "Secrets": [
+              {
+                "Name": "PGUSER",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "AppSecret"
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGPASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "AppSecret"
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_API_KEY",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_API_KEY::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_PROJECT_ID",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_PROJECT_ID::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_SENDER_ID",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_SENDER_ID::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_CALLBACK_SECRET",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_CALLBACK_SECRET::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_QUALIFICATION_JSON",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_QUALIFICATION_JSON::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              }
+            ],
+            "StopTimeout": 60,
+            "ReadonlyRootFilesystem": true,
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "Logs"
+                },
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                },
+                "awslogs-stream-prefix": "control",
+                "mode": "non-blocking",
+                "max-buffer-size": "1m"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "EmergencyTask": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "One image with exact process command; no automatic startup migration.",
+          "must": [
+            "Do not put secret values in Environment",
+            "Keep CA and SQL files in image"
+          ]
+        }
+      },
+      "Properties": {
+        "Cpu": "256",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64",
+          "OperatingSystemFamily": "LINUX"
+        },
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "RuntimeExecutionRole",
+            "Arn"
+          ]
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "EmergencyRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "emergency",
+            "Image": {
+              "Ref": "ImageUri"
+            },
+            "Essential": true,
+            "Command": [
+              "node",
+              "dist/worker.js",
+              "emergency"
+            ],
+            "Environment": [
+              {
+                "Name": "NODE_ENV",
+                "Value": "production"
+              },
+              {
+                "Name": "PGHOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "Database",
+                    "Endpoint.Address"
+                  ]
+                }
+              },
+              {
+                "Name": "PGPORT",
+                "Value": "5432"
+              },
+              {
+                "Name": "PGDATABASE",
+                "Value": "andes"
+              },
+              {
+                "Name": "PGSSLROOTCERT",
+                "Value": "/app/infra/rds-global-bundle.pem"
+              },
+              {
+                "Name": "AWS_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "ZAVU_LIVE_SEND",
+                "Value": {
+                  "Ref": "LiveSendEnabled"
+                }
+              },
+              {
+                "Name": "SQS_EMERGENCY_URL",
+                "Value": {
+                  "Ref": "EmergencyQueue"
+                }
+              },
+              {
+                "Name": "SQS_ORDINARY_URL",
+                "Value": {
+                  "Ref": "OrdinaryQueue"
+                }
+              }
+            ],
+            "Secrets": [
+              {
+                "Name": "PGUSER",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "AppSecret"
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGPASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "AppSecret"
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_API_KEY",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_API_KEY::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_PROJECT_ID",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_PROJECT_ID::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_SENDER_ID",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_SENDER_ID::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_CALLBACK_SECRET",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_CALLBACK_SECRET::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_QUALIFICATION_JSON",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_QUALIFICATION_JSON::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              }
+            ],
+            "StopTimeout": 60,
+            "ReadonlyRootFilesystem": true,
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "Logs"
+                },
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                },
+                "awslogs-stream-prefix": "emergency",
+                "mode": "non-blocking",
+                "max-buffer-size": "1m"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "OrdinaryTask": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "One image with exact process command; no automatic startup migration.",
+          "must": [
+            "Do not put secret values in Environment",
+            "Keep CA and SQL files in image"
+          ]
+        }
+      },
+      "Properties": {
+        "Cpu": "256",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64",
+          "OperatingSystemFamily": "LINUX"
+        },
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "RuntimeExecutionRole",
+            "Arn"
+          ]
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "OrdinaryRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "ordinary",
+            "Image": {
+              "Ref": "ImageUri"
+            },
+            "Essential": true,
+            "Command": [
+              "node",
+              "dist/worker.js",
+              "ordinary"
+            ],
+            "Environment": [
+              {
+                "Name": "NODE_ENV",
+                "Value": "production"
+              },
+              {
+                "Name": "PGHOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "Database",
+                    "Endpoint.Address"
+                  ]
+                }
+              },
+              {
+                "Name": "PGPORT",
+                "Value": "5432"
+              },
+              {
+                "Name": "PGDATABASE",
+                "Value": "andes"
+              },
+              {
+                "Name": "PGSSLROOTCERT",
+                "Value": "/app/infra/rds-global-bundle.pem"
+              },
+              {
+                "Name": "AWS_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "ZAVU_LIVE_SEND",
+                "Value": {
+                  "Ref": "LiveSendEnabled"
+                }
+              },
+              {
+                "Name": "SQS_EMERGENCY_URL",
+                "Value": {
+                  "Ref": "EmergencyQueue"
+                }
+              },
+              {
+                "Name": "SQS_ORDINARY_URL",
+                "Value": {
+                  "Ref": "OrdinaryQueue"
+                }
+              }
+            ],
+            "Secrets": [
+              {
+                "Name": "PGUSER",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "AppSecret"
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGPASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "AppSecret"
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_API_KEY",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_API_KEY::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_PROJECT_ID",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_PROJECT_ID::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_SENDER_ID",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_SENDER_ID::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_CALLBACK_SECRET",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_CALLBACK_SECRET::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              {
+                "Fn::If": [
+                  "HasProvider",
+                  {
+                    "Name": "ZAVU_QUALIFICATION_JSON",
+                    "ValueFrom": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "ProviderSecretArn"
+                          },
+                          ":ZAVU_QUALIFICATION_JSON::"
+                        ]
+                      ]
+                    }
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              }
+            ],
+            "StopTimeout": 60,
+            "ReadonlyRootFilesystem": true,
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "Logs"
+                },
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                },
+                "awslogs-stream-prefix": "ordinary",
+                "mode": "non-blocking",
+                "max-buffer-size": "1m"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "BootstrapTask": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "One image with exact process command; no automatic startup migration.",
+          "must": [
+            "Do not put secret values in Environment",
+            "Keep CA and SQL files in image"
+          ]
+        }
+      },
+      "Properties": {
+        "Cpu": "256",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64",
+          "OperatingSystemFamily": "LINUX"
+        },
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "BootstrapExecutionRole",
+            "Arn"
+          ]
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "BootstrapRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "bootstrap",
+            "Image": {
+              "Ref": "ImageUri"
+            },
+            "Essential": true,
+            "Command": [
+              "node",
+              "scripts/bootstrap.mjs"
+            ],
+            "Environment": [
+              {
+                "Name": "NODE_ENV",
+                "Value": "production"
+              },
+              {
+                "Name": "PGHOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "Database",
+                    "Endpoint.Address"
+                  ]
+                }
+              },
+              {
+                "Name": "PGPORT",
+                "Value": "5432"
+              },
+              {
+                "Name": "PGDATABASE",
+                "Value": "andes"
+              },
+              {
+                "Name": "PGSSLROOTCERT",
+                "Value": "/app/infra/rds-global-bundle.pem"
+              }
+            ],
+            "Secrets": [
+              {
+                "Name": "PGUSER",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Database",
+                          "MasterUserSecret.SecretArn"
+                        ]
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "PGPASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Database",
+                          "MasterUserSecret.SecretArn"
+                        ]
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "APP_PGUSER",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "AppSecret"
+                      },
+                      ":username::"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "APP_PGPASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "AppSecret"
+                      },
+                      ":password::"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "StopTimeout": 60,
+            "ReadonlyRootFilesystem": true,
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "Logs"
+                },
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                },
+                "awslogs-stream-prefix": "bootstrap",
+                "mode": "non-blocking",
+                "max-buffer-size": "1m"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "Alb": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Public HTTPS entry in two qualified public AZ subnets.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Scheme": "internet-facing",
+        "Type": "application",
+        "Subnets": [
+          {
+            "Ref": "PublicSubnetA"
+          },
+          {
+            "Ref": "PublicSubnetB"
+          }
+        ],
+        "SecurityGroups": [
+          {
+            "Ref": "AlbSecurityGroup"
+          }
+        ],
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "true"
+          }
+        ]
+      }
+    },
+    "ApiTarget": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Database readiness through API target; bootstrap gates schema availability.",
+          "must": [
+            "Health SELECT 1 does not certify migrations; require bootstrap exit 0"
+          ]
+        }
+      },
+      "Properties": {
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "TargetType": "ip",
+        "Port": 3000,
+        "Protocol": "HTTP",
+        "HealthCheckPath": "/health",
+        "HealthCheckIntervalSeconds": 30,
+        "HealthCheckTimeoutSeconds": 5,
+        "HealthyThresholdCount": 2,
+        "UnhealthyThresholdCount": 2,
+        "Matcher": {
+          "HttpCode": "200"
+        },
+        "TargetGroupAttributes": [
+          {
+            "Key": "deregistration_delay.timeout_seconds",
+            "Value": "30"
+          }
+        ]
+      }
+    },
+    "HttpsListener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Certificate and TLS termination; API group excludes public ingress.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "Alb"
+        },
+        "Port": 443,
+        "Protocol": "HTTPS",
+        "Certificates": [
+          {
+            "CertificateArn": {
+              "Ref": "CertificateArn"
+            }
+          }
+        ],
+        "SslPolicy": "ELBSecurityPolicy-TLS13-1-2-2021-06",
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "ApiTarget"
+            }
+          }
+        ]
+      }
+    },
+    "HttpRedirect": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "HTTP only redirects to HTTPS.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "Alb"
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+        "DefaultActions": [
+          {
+            "Type": "redirect",
+            "RedirectConfig": {
+              "Port": "443",
+              "Protocol": "HTTPS",
+              "StatusCode": "HTTP_301"
+            }
+          }
+        ]
+      }
+    },
+    "ApiService": {
+      "Type": "AWS::ECS::Service",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Fixed two-task HA once bootstrap/provider gates permit; On-Demand only.",
+          "must": [
+            "Do not bypass bootstrap with manual scaling",
+            "Recalculate pool and provider limits before changing count"
+          ]
+        }
+      },
+      "Properties": {
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "ApiTask"
+        },
+        "LaunchType": "FARGATE",
+        "PlatformVersion": "1.4.0",
+        "DesiredCount": {
+          "Fn::If": [
+            "ServicesActive",
+            2,
+            0
+          ]
+        },
+        "AvailabilityZoneRebalancing": "ENABLED",
+        "DeploymentConfiguration": {
+          "MinimumHealthyPercent": 100,
+          "MaximumPercent": 200,
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true
+          }
+        },
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "Subnets": [
+              {
+                "Ref": "PrivateSubnetA"
+              },
+              {
+                "Ref": "PrivateSubnetB"
+              }
+            ],
+            "SecurityGroups": [
+              {
+                "Ref": "ApiSecurityGroup"
+              }
+            ]
+          }
+        },
+        "HealthCheckGracePeriodSeconds": 60,
+        "LoadBalancers": [
+          {
+            "ContainerName": "api",
+            "ContainerPort": 3000,
+            "TargetGroupArn": {
+              "Ref": "ApiTarget"
+            }
+          }
+        ]
+      },
+      "DependsOn": [
+        "HttpsListener",
+        "ApiFromAlb",
+        "DatabaseFromApi"
+      ]
+    },
+    "ControlService": {
+      "Type": "AWS::ECS::Service",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Fixed two-task HA once bootstrap/provider gates permit; On-Demand only.",
+          "must": [
+            "Do not bypass bootstrap with manual scaling",
+            "Recalculate pool and provider limits before changing count"
+          ]
+        }
+      },
+      "Properties": {
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "ControlTask"
+        },
+        "LaunchType": "FARGATE",
+        "PlatformVersion": "1.4.0",
+        "DesiredCount": {
+          "Fn::If": [
+            "ServicesActive",
+            2,
+            0
+          ]
+        },
+        "AvailabilityZoneRebalancing": "ENABLED",
+        "DeploymentConfiguration": {
+          "MinimumHealthyPercent": 100,
+          "MaximumPercent": 200,
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true
+          }
+        },
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "Subnets": [
+              {
+                "Ref": "PrivateSubnetA"
+              },
+              {
+                "Ref": "PrivateSubnetB"
+              }
+            ],
+            "SecurityGroups": [
+              {
+                "Ref": "WorkerSecurityGroup"
+              }
+            ]
+          }
+        }
+      },
+      "DependsOn": [
+        "DatabaseFromWorker"
+      ]
+    },
+    "EmergencyService": {
+      "Type": "AWS::ECS::Service",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Fixed two-task HA once bootstrap/provider gates permit; On-Demand only.",
+          "must": [
+            "Do not bypass bootstrap with manual scaling",
+            "Recalculate pool and provider limits before changing count"
+          ]
+        }
+      },
+      "Properties": {
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "EmergencyTask"
+        },
+        "LaunchType": "FARGATE",
+        "PlatformVersion": "1.4.0",
+        "DesiredCount": {
+          "Fn::If": [
+            "DeliveryActive",
+            2,
+            0
+          ]
+        },
+        "AvailabilityZoneRebalancing": "ENABLED",
+        "DeploymentConfiguration": {
+          "MinimumHealthyPercent": 100,
+          "MaximumPercent": 200,
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true
+          }
+        },
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "Subnets": [
+              {
+                "Ref": "PrivateSubnetA"
+              },
+              {
+                "Ref": "PrivateSubnetB"
+              }
+            ],
+            "SecurityGroups": [
+              {
+                "Ref": "WorkerSecurityGroup"
+              }
+            ]
+          }
+        }
+      },
+      "DependsOn": [
+        "DatabaseFromWorker"
+      ]
+    },
+    "OrdinaryService": {
+      "Type": "AWS::ECS::Service",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Fixed two-task HA once bootstrap/provider gates permit; On-Demand only.",
+          "must": [
+            "Do not bypass bootstrap with manual scaling",
+            "Recalculate pool and provider limits before changing count"
+          ]
+        }
+      },
+      "Properties": {
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "OrdinaryTask"
+        },
+        "LaunchType": "FARGATE",
+        "PlatformVersion": "1.4.0",
+        "DesiredCount": {
+          "Fn::If": [
+            "DeliveryActive",
+            2,
+            0
+          ]
+        },
+        "AvailabilityZoneRebalancing": "ENABLED",
+        "DeploymentConfiguration": {
+          "MinimumHealthyPercent": 100,
+          "MaximumPercent": 200,
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true
+          }
+        },
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "Subnets": [
+              {
+                "Ref": "PrivateSubnetA"
+              },
+              {
+                "Ref": "PrivateSubnetB"
+              }
+            ],
+            "SecurityGroups": [
+              {
+                "Ref": "WorkerSecurityGroup"
+              }
+            ]
+          }
+        }
+      },
+      "DependsOn": [
+        "DatabaseFromWorker"
+      ]
+    },
+    "ApiUnhealthy": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Unhealthy API targets need operator review.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Namespace": "AWS/ApplicationELB",
+        "MetricName": "UnHealthyHostCount",
+        "Dimensions": [
+          {
+            "Name": "LoadBalancer",
+            "Value": {
+              "Fn::GetAtt": [
+                "Alb",
+                "LoadBalancerFullName"
+              ]
+            }
+          },
+          {
+            "Name": "TargetGroup",
+            "Value": {
+              "Fn::GetAtt": [
+                "ApiTarget",
+                "TargetGroupFullName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 2,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      },
+      "Condition": "ServicesActive"
+    },
+    "DatabaseConnections": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Conservative connection headroom warning.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Namespace": "AWS/RDS",
+        "MetricName": "DatabaseConnections",
+        "Dimensions": [
+          {
+            "Name": "DBInstanceIdentifier",
+            "Value": {
+              "Ref": "Database"
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 2,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Threshold": 80,
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      }
+    },
+    "DatabaseStorage": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Storage bound warning.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Namespace": "AWS/RDS",
+        "MetricName": "FreeStorageSpace",
+        "Dimensions": [
+          {
+            "Name": "DBInstanceIdentifier",
+            "Value": {
+              "Ref": "Database"
+            }
+          }
+        ],
+        "Statistic": "Minimum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 2,
+        "ComparisonOperator": "LessThanThreshold",
+        "Threshold": 5368709120,
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      }
+    },
+    "ApiShortage": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Missing or fewer than two tasks; enabled Container Insights required.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Namespace": "ECS/ContainerInsights",
+        "MetricName": "RunningTaskCount",
+        "Dimensions": [
+          {
+            "Name": "ClusterName",
+            "Value": {
+              "Ref": "Cluster"
+            }
+          },
+          {
+            "Name": "ServiceName",
+            "Value": {
+              "Fn::GetAtt": [
+                "ApiService",
+                "Name"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Minimum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 2,
+        "ComparisonOperator": "LessThanThreshold",
+        "Threshold": 2,
+        "TreatMissingData": "breaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      },
+      "Condition": "ServicesActive"
+    },
+    "ControlShortage": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Missing or fewer than two tasks; enabled Container Insights required.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Namespace": "ECS/ContainerInsights",
+        "MetricName": "RunningTaskCount",
+        "Dimensions": [
+          {
+            "Name": "ClusterName",
+            "Value": {
+              "Ref": "Cluster"
+            }
+          },
+          {
+            "Name": "ServiceName",
+            "Value": {
+              "Fn::GetAtt": [
+                "ControlService",
+                "Name"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Minimum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 2,
+        "ComparisonOperator": "LessThanThreshold",
+        "Threshold": 2,
+        "TreatMissingData": "breaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      },
+      "Condition": "ServicesActive"
+    },
+    "EmergencyShortage": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Missing or fewer than two tasks; enabled Container Insights required.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Namespace": "ECS/ContainerInsights",
+        "MetricName": "RunningTaskCount",
+        "Dimensions": [
+          {
+            "Name": "ClusterName",
+            "Value": {
+              "Ref": "Cluster"
+            }
+          },
+          {
+            "Name": "ServiceName",
+            "Value": {
+              "Fn::GetAtt": [
+                "EmergencyService",
+                "Name"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Minimum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 2,
+        "ComparisonOperator": "LessThanThreshold",
+        "Threshold": 2,
+        "TreatMissingData": "breaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      },
+      "Condition": "DeliveryActive"
+    },
+    "OrdinaryShortage": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Missing or fewer than two tasks; enabled Container Insights required.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Namespace": "ECS/ContainerInsights",
+        "MetricName": "RunningTaskCount",
+        "Dimensions": [
+          {
+            "Name": "ClusterName",
+            "Value": {
+              "Ref": "Cluster"
+            }
+          },
+          {
+            "Name": "ServiceName",
+            "Value": {
+              "Fn::GetAtt": [
+                "OrdinaryService",
+                "Name"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Minimum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 2,
+        "ComparisonOperator": "LessThanThreshold",
+        "Threshold": 2,
+        "TreatMissingData": "breaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      },
+      "Condition": "DeliveryActive"
+    },
+    "EmergencyAge": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Engineering backlog warning, not validated safety deadline.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Namespace": "AWS/SQS",
+        "MetricName": "ApproximateAgeOfOldestMessage",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "EmergencyQueue",
+                "QueueName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 2,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Threshold": 120,
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      }
+    },
+    "EmergencyDeadLetters": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Investigate DLQ facts before any SQL-aware recovery.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Namespace": "AWS/SQS",
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "EmergencyDLQ",
+                "QueueName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 2,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      }
+    },
+    "OrdinaryAge": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Engineering backlog warning, not validated safety deadline.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Namespace": "AWS/SQS",
+        "MetricName": "ApproximateAgeOfOldestMessage",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "OrdinaryQueue",
+                "QueueName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 2,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Threshold": 120,
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      }
+    },
+    "OrdinaryDeadLetters": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "Investigate DLQ facts before any SQL-aware recovery.",
+          "must": []
+        }
+      },
+      "Properties": {
+        "Namespace": "AWS/SQS",
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "OrdinaryDLQ",
+                "QueueName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 2,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlarmTopicArn"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "Cluster": {
+      "Value": {
+        "Ref": "Cluster"
+      }
+    },
+    "AlbDns": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Alb",
+          "DNSName"
+        ]
+      }
+    },
+    "BootstrapTaskDefinition": {
+      "Value": {
+        "Ref": "BootstrapTask"
+      }
+    },
+    "BootstrapSecurityGroup": {
+      "Value": {
+        "Ref": "WorkerSecurityGroup"
+      }
+    },
+    "PrivateSubnetA": {
+      "Value": {
+        "Ref": "PrivateSubnetA"
+      }
+    },
+    "PrivateSubnetB": {
+      "Value": {
+        "Ref": "PrivateSubnetB"
+      }
+    },
+    "AppSecretArn": {
+      "Value": {
+        "Ref": "AppSecret"
+      }
+    },
+    "AdminSecretArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "MasterUserSecret.SecretArn"
+        ]
+      }
+    },
+    "EmergencyQueueUrl": {
+      "Value": {
+        "Ref": "EmergencyQueue"
+      }
+    },
+    "OrdinaryQueueUrl": {
+      "Value": {
+        "Ref": "OrdinaryQueue"
+      }
+    },
+    "ReservedAudioBucket": {
+      "Value": {
+        "Ref": "ReservedAudio"
+      }
+    },
+    "LogGroup": {
+      "Value": {
+        "Ref": "Logs"
+      }
+    }
+  }
+}

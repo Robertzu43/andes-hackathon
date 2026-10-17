@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
-import { createContext, type Context } from './db.js';
+import { createContext, databaseConfig, type Context } from './db.js';
 import type { Channel } from './contracts.js';
 import { consume, recoverWork, reconcileOnce, relayOnce, type Transport, type WorkClass } from './notifications/dispatch.js';
 import { createSqsTransport } from './notifications/sqs.js';
@@ -28,11 +28,11 @@ export async function control(ctx: Context, transport: Transport, provider: Prov
 }
 export async function startWorker(role: string, env = process.env): Promise<void> {
   if (!['control', 'emergency', 'ordinary'].includes(role)) throw new Error('Worker role must be control, emergency or ordinary');
-  if (!env.DATABASE_URL || !env.AWS_REGION || !env.SQS_EMERGENCY_URL || !env.SQS_ORDINARY_URL) throw new Error('Database, AWS region and SQS queue URLs required');
+  if (!env.AWS_REGION || !env.SQS_EMERGENCY_URL || !env.SQS_ORDINARY_URL) throw new Error('Database, AWS region and SQS queue URLs required');
   const provider = configuredProvider(env);
   if (role !== 'control' && !provider?.qualification.live) throw new Error('Delivery disabled: complete evidenced live configuration required');
   const transport = createSqsTransport(env.AWS_REGION, { emergency: env.SQS_EMERGENCY_URL, ordinary: env.SQS_ORDINARY_URL });
-  const ctx = createContext(env.DATABASE_URL, undefined, 2);
+  const ctx = createContext(databaseConfig(env), undefined, 2);
   const abort = new AbortController();
   const shutdown = () => abort.abort();
   process.once('SIGTERM', shutdown); process.once('SIGINT', shutdown);

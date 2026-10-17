@@ -1,0 +1,41 @@
+name: Backend checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-bookworm
+        env:
+          POSTGRES_DB: andes_test
+          POSTGRES_USER: synthetic_ci
+          POSTGRES_PASSWORD: synthetic_ci_only
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U synthetic_ci -d andes_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgresql://synthetic_ci:synthetic_ci_only@localhost:5432/andes_test
+      ZAVU_LIVE_SEND: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run demo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install cfn-lint==1.57.2
+      - run: cfn-lint infra/template.json
+      - run: docker compose config --quiet
+        env:
+          LOCAL_ADMIN_PASSWORD: synthetic_ci_admin_only
+          LOCAL_APP_PASSWORD: synthetic_ci_app_only
+      - run: docker build --platform linux/amd64 -t andes-backend:ci .

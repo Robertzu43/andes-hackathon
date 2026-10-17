@@ -1,12 +1,12 @@
 import { configuredProvider } from './worker.js';
 import { loadCallbackConfig } from './notifications/callback.js';
-import { createContext } from './db.js';
+import { createContext, databaseConfig } from './db.js';
 import { createApp } from './api/app.js';
-const { DATABASE_URL, OIDC_ISSUER, OIDC_AUDIENCE, OIDC_JWKS_URL } = process.env;
-if (!DATABASE_URL || !OIDC_ISSUER || !OIDC_AUDIENCE || !OIDC_JWKS_URL) throw new Error('DATABASE_URL and trusted OIDC configuration required');
+const { OIDC_ISSUER, OIDC_AUDIENCE, OIDC_JWKS_URL } = process.env;
+if (!OIDC_ISSUER || !OIDC_AUDIENCE || !OIDC_JWKS_URL) throw new Error('Trusted OIDC configuration required');
 const provider = configuredProvider(process.env);
 const callbackConfig = loadCallbackConfig(process.env);
-const ctx = createContext(DATABASE_URL);
+const ctx = createContext(databaseConfig());
 const app = createApp({ ctx, channelSupport: provider?.qualification.live ? provider.qualification.entries : [], callbackConfig, auth: { issuer: OIDC_ISSUER, audience: OIDC_AUDIENCE, jwksUrl: OIDC_JWKS_URL } });
 let closing = false;
 async function shutdown() { if (closing) return; closing = true; await app.close(); }
