@@ -131,7 +131,9 @@ latitude, longitude, altitude, heading and speed are omitted by default. Precise
 latitude/longitude require, on that specific request, all of:
 `preciseConsent: { granted: true, purpose: 'bounded-purpose', reference: 'opaque-consent-reference' }`.
 Purpose/reference are snapshotted before acquisition; use opaque values with no
-personal data. Withdrawal stops the session. It cannot erase data already passed
+personal data. Withdrawal stops the session and purges buffered and pending
+coordinates, including after suspension or explicit stop. It clears retained
+consent/intents and prevents precise resume. It cannot erase copies already passed
 to the local consumer; host storage needs its own retention/deletion controls.
 Platform error messages and user agents are never emitted. Motion components are
 raw browser observations, potentially sensitive, and require the qualification,
@@ -142,8 +144,10 @@ detached JSON-safe copies. Restart discards the previous buffer, and page kill
 loses all unexported memory. A local sink is not server acceptance or durable
 storage. Any approved uploader remains a separate consumer with its own server contract,
 consent, authentication, durable queue and receipt handling.
-Sinks must return synchronously; exceptions/thenables count as `sinkErrors`, with
-no retry, queue or delivery claim. Acquisitions/start from within the sink are
+Events are captured into a bounded local delivery queue and flushed at settled
+transition boundaries; pre-acquisition phases still permit cancellation before
+native sensor work. Sinks must return synchronously; exceptions/thenables count
+as `sinkErrors`, with no retry or delivery claim. Acquisitions/start from within the sink are
 blocked; synchronous stop/consent withdrawal is supported.
 
 ## Provisional engineering budgets
@@ -207,6 +211,19 @@ This PR supplies the controller seam, not the shared app screen. Actual driver U
 binding awaits the committed Q49 foundation and is tracked separately in PR63.
 No qualifying physical packet exists yet; a host must not manufacture one.
 
+`createQueuedTripPhoneObservations({ pipeline, trip, reviewedContext, locationConsent })`
+composes this GPS-only controller with the existing Q42 observation pipeline.
+It delegates the sink, `drain()`, `flush()` and trip status to that pipeline;
+mapping, storage, authentication, retry identity and HTTP remain queue-owned.
+`stopSharing()` synchronously stops capture and retains queued samples according
+to queue policy. `revokeConsent()` synchronously stops/purges capture first, then
+deletes and revokes that trip's queue scope. Await its `{ ok, reason }` result.
+`snapshot().queueWithdrawal` and `status()` expose pending/complete/failed deletion;
+a failed deletion is retryable while capture and wrapper uploads remain blocked.
+Copies already transmitted cannot be recalled. A local stop is not server sharing
+acknowledgement. Raw motion is retained only as explicit opt-in qualification and
+confounder evidence outside this active-trip controller; no incident rule consumes it.
+
 Only location events with explicit qualified coordinates, finite accuracy no
 greater than 100000 and a valid original source epoch can map to the existing
 backend `/v1/trips/:id/locations` contract. Preserve `position.timestamp`; never
@@ -218,7 +235,7 @@ authoritative contract. This adapter adds no HTTP, server sharing fact or alert.
 
 ## Reproduce and remaining evidence
 
-Use Node **22.22.3**, built-in tests, no installation, server, DB or real device:
+Use Node **24.17.0**, built-in tests, no installation, server, DB or real device:
 
 ```sh
 node --test tests/phone-observations/adapter.test.mjs tests/phone-capability/recorder.test.mjs

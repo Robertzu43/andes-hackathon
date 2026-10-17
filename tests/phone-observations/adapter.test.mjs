@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createPhoneObservationAdapter, PROVISIONAL_BUDGET, QUALIFICATION_SCHEMA, EVENT_SCHEMA } from '../../src/phone-observations/adapter.mjs';
-import { createTripPhoneObservations } from '../../src/phone-observations/trip-sharing.mjs';
+import { createTripPhoneObservations, createQueuedTripPhoneObservations } from '../../src/phone-observations/trip-sharing.mjs';
 
 const WALL = Date.UTC(2026, 9, 17, 15);
 const context = (sessionId = 'synthetic-session-a') => ({ sessionId, tripId: 'synthetic-trip', revision: 'test-revision' });
@@ -109,6 +109,78 @@ test('B1 raw callback guard independently retires a motion flood without stoppin
 test('B1 raw callback budget requires its own positive finite bounded value', () => {
   for (const maxRawCallbacksPerStream of [0, Infinity, NaN, 100_000_001]) {
     assert.throws(() => fixture({ budget: { ...PROVISIONAL_BUDGET, maxRawCallbacksPerStream } }), RangeError);
+  }
+});
+
+function queuedTripFixture(pipelineOverrides = {}) {
+  const b = fixture();
+  const trace = [], pending = deferred();
+  const pipeline = {
+    sink(event) { b.events.push(event); trace.push(event.type); },
+    drain() { trace.push('drain'); return Promise.resolve(); },
+    flush() { trace.push('flush'); return Promise.resolve({ receipt: 'queue-owned' }); },
+    revokeTrip(tripId) { trace.push(`wipe:${tripId}`); return pending.promise; },
+    tripStatus(tripId) { return Promise.resolve({ tripId, queue: { unsent: 1 }, lifecycle: { intent: 'active' } }); },
+    ...pipelineOverrides,
+  };
+  const controller = createQueuedTripPhoneObservations({ ...b.config, pipeline,
+    trip: context(), reviewedContext: { key: b.config.contextKey,
+      qualification: b.config.qualification, budget: b.config.budget },
+    locationConsent: { granted: true, tripId: context().tripId, reference: 'synthetic-consent' },
+  });
+  return { ...b, controller, pipeline, trace, pending };
+}
+
+test('queued trip composes the supplied sink and upload API while acquiring GPS only', async () => {
+  const b = queuedTripFixture();
+  const started = b.controller.startSharing(); assert.equal(started.ok, true); await started.wakeLock;
+  b.latestWatch().success(fix());
+  assert.equal(b.last('geolocation').data.coordinates.latitude, -12.04318);
+  assert.equal(b.motionRequests.length + b.platform.count('devicemotion'), 0);
+  await b.controller.drain(); assert.deepEqual(await b.controller.flush(), { receipt: 'queue-owned' });
+  const status = await b.controller.status();
+  assert.equal(status.queue.queue.unsent, 1); assert.equal(status.queueWithdrawal, 'not-requested');
+  assert.equal(status.capture.state, 'started');
+  b.controller.stopSharing(); assert.equal(b.watches.size, 0);
+  assert.ok(b.trace.includes('session-stop'));
+});
+
+test('queued withdrawal stops and purges synchronously before asynchronous trip deletion', async () => {
+  const b = queuedTripFixture(); b.controller.startSharing(); const old = b.latestWatch(); old.success(fix());
+  const pending = b.controller.revokeConsent();
+  assert.equal(b.watches.size, 0); assert.equal(b.controller.snapshot().queueWithdrawal, 'pending');
+  assert.equal(b.controller.snapshot().events.some(event => event.data.coordinates?.latitude != null), false);
+  assert.equal(b.trace.some(value => value.startsWith('wipe:')), false);
+  old.success(fix()); assert.equal(b.controller.snapshot().events.some(event => event.data.coordinates?.latitude != null), false);
+  assert.equal(b.controller.startSharing().ok, false);
+  assert.equal((await b.controller.resumeSharing()).ok, false);
+  assert.equal((await b.controller.flush()).ok, false);
+  assert.equal(b.trace.filter(value => value === 'flush').length, 0);
+  await settle(); assert.ok(b.trace.includes(`wipe:${context().tripId}`));
+  b.pending.resolve(1); assert.deepEqual(await pending, { ok: true });
+  assert.equal(b.controller.snapshot().queueWithdrawal, 'complete');
+  await b.controller.revokeConsent(); assert.equal(b.trace.filter(value => value.startsWith('wipe:')).length, 1);
+});
+
+test('queued withdrawal exposes deletion failures and allows deletion retry without reopening consent', async () => {
+  let attempts = 0;
+  const b = queuedTripFixture({ revokeTrip() {
+    attempts += 1; if (attempts === 1) throw new Error('synthetic-storage-fault'); return 0;
+  } });
+  b.controller.startSharing();
+  assert.deepEqual(await b.controller.revokeConsent(), { ok: false, reason: 'queue-revocation-failed' });
+  assert.equal((await b.controller.status()).queueWithdrawal, 'failed');
+  assert.equal(b.controller.startSharing().ok, false);
+  assert.deepEqual(await b.controller.revokeConsent(), { ok: true });
+  assert.equal(attempts, 2); assert.equal(b.controller.snapshot().queueWithdrawal, 'complete');
+  assert.equal(b.controller.startSharing().ok, false);
+});
+
+test('queued status failure is explicit and a pipeline with missing capabilities is rejected', async () => {
+  const b = queuedTripFixture({ tripStatus() { throw new Error('synthetic-status-fault'); } });
+  assert.equal((await b.controller.status()).reason, 'queue-status-unavailable');
+  for (const method of ['sink', 'drain', 'flush', 'revokeTrip', 'tripStatus']) {
+    assert.throws(() => createQueuedTripPhoneObservations({ pipeline: { ...b.pipeline, [method]: null } }), TypeError);
   }
 });
 
