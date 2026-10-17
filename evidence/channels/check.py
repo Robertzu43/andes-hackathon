@@ -19,7 +19,7 @@ LIMITATION = "Consistency only: evidence authenticity, availability and safety a
 def timestamp(value):
     """Require an explicit offset; retain the original value in the input."""
     if not isinstance(value, str) or not re.fullmatch(
-        r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})", value
+        r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])", value
     ):
         raise ValueError("expected an offset-aware timestamp")
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -259,6 +259,8 @@ def check(document):
             observers = {e["attributed_to"] for e in facts["useful_action"]
                          if e["kind"] == "independent_action_observation"}
             reporters = {e["attributed_to"] for e in facts["recipient_observation"] + facts["acknowledgement"]}
+            reporters.update(e["attributed_to"] for e in facts["useful_action"]
+                             if e["kind"] == "action_report")
             if not observers or not observers.difference(reporters):
                 fail("corroborated action needs a distinct independent observer")
         if action["value"] == "unknown":

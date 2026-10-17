@@ -202,6 +202,28 @@ class MatrixChecks(unittest.TestCase):
         doc["rows"][0]["attempt"]["delivery"]["value"] = "failed"
         self.assert_bad(doc, "conflicts with recipient arrival")
 
+    def test_offset_components_are_validated_before_parsing(self):
+        for offset in ("+00:99", "+01:60", "-00:60", "-01:99", "+24:00", "-24:00"):
+            doc = claimed_support()
+            row = doc["rows"][0]
+            stamp = "2026-10-17T12:00:00" + offset
+            for e in row["evidence"]:
+                e["observed_at"] = e["recorded_at"] = stamp
+            row["terms"]["checked_at"] = stamp
+            with self.subTest(offset=offset):
+                self.assert_bad(doc, "invalid offset-aware timestamp")
+
+    def test_valid_offsets_remain_accepted(self):
+        for offset in ("Z", "+00:00", "-05:00", "+05:45", "+23:59", "-23:59"):
+            doc = claimed_support()
+            row = doc["rows"][0]
+            stamp = "2026-10-17T12:00:00" + offset
+            for e in row["evidence"]:
+                e["observed_at"] = e["recorded_at"] = stamp
+            row["terms"]["checked_at"] = stamp
+            with self.subTest(offset=offset):
+                self.assertTrue(check.check(doc)["consistent"])
+
     def test_corroborated_action_requires_separate_observer(self):
         doc = claimed_support()
         row = doc["rows"][0]
@@ -211,6 +233,20 @@ class MatrixChecks(unittest.TestCase):
         row["attempt"]["useful_action"] = {"value": "corroborated", "evidence_ids": ["action"]}
         self.assert_bad(doc, "distinct independent observer")
         e["attributed_to"] = "fake-independent-observer"
+        self.assertTrue(check.check(doc)["consistent"])
+
+    def test_action_reporter_cannot_be_the_only_corroborator(self):
+        doc = claimed_support()
+        row = doc["rows"][0]
+        report = copy.deepcopy(row["evidence"][-1])
+        report.update(id="action-report", kind="action_report", attributed_to="fake-reporter-B")
+        corroboration = copy.deepcopy(report)
+        corroboration.update(id="corroboration", kind="independent_action_observation")
+        row["evidence"].extend([report, corroboration])
+        row["attempt"]["useful_action"] = {
+            "value": "corroborated", "evidence_ids": ["action-report", "corroboration"]}
+        self.assert_bad(doc, "distinct independent observer")
+        corroboration["attributed_to"] = "fake-independent-C"
         self.assertTrue(check.check(doc)["consistent"])
 
     def test_cost_and_terms_cannot_lose_their_date_or_source(self):
