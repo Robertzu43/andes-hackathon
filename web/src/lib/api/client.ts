@@ -116,6 +116,11 @@ export function createApiClient(config: ApiClientConfig) {
 
   return {
     getIdentity: (options?: T.RequestOptions) => request('getIdentity', 'v1/me', decode.id, options),
+    getProfile: (options?: T.RequestOptions) => request('getProfile', 'v1/profile', decode.profile, options),
+    getBootstrap: (options?: T.RequestOptions) => request('getBootstrap', 'v1/bootstrap', decode.bootstrap, options),
+    listTrucks: (options?: T.RequestOptions) => request('listTrucks', 'v1/trucks', decode.trucks, options),
+    listContacts: (options?: T.RequestOptions) => request('listContacts', 'v1/contacts', decode.contacts, options),
+    listTrips: (options?: T.RequestOptions) => request('listTrips', 'v1/trips', decode.trips, options),
     createTruck: (body: { label: string }, options: T.WriteOptions) => write('createTruck', 'v1/trucks', body, decode.id, options),
     inviteContact: (body: T.InvitationInput, options: T.WriteOptions) => write('inviteContact', 'v1/contacts', body, decode.pending, options),
     acceptContact: (id: T.UUID, body: T.ConsentScopes, options: T.WriteOptions) =>

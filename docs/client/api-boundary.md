@@ -64,6 +64,8 @@ configuration. A browser base URL is public configuration, not a credential.
 | Client operation | HTTP contract |
 |---|---|
 | `getIdentity` | GET `/v1/me` → server identity UUID |
+| `getProfile`, `getBootstrap` | GET `/v1/profile`, `/v1/bootstrap`; additive owner read contract PR65/748d30c |
+| `listTrucks`, `listContacts`, `listTrips` | GET `/v1/trucks`, `/v1/contacts`, `/v1/trips`; bounded first-page reads, not discovery for another identity |
 | `createTruck` | POST `/v1/trucks` with `{label}` |
 | `inviteContact` | POST `/v1/contacts` with existing `contactId`, international `phone`, explicit map/incident scopes |
 | `acceptContact`, `revokeContact` | POST `/v1/contacts/:id/accept` or `/revoke`; acceptance cannot broaden requested scope |
@@ -87,9 +89,9 @@ server facts, not validated safety cadence. Snapshot age/freshness is preserved 
 than recomputed from the browser clock. Raw text is untrusted content for the future
 UI to escape; it is never rendered by this library.
 
-At this base there are no list-trucks, list-contacts, invitation/draft discovery or
-trip-list routes. Q41 owns the new read contract; only its actual published routes
-will be added. The client cannot invent a contact UUID from a phone number. Audio
+The original backend base lacked lists; Q41's published additive reads are now
+implemented below. Recipient invitation/draft discovery and incident action history
+are still absent from that contract. The client cannot invent a contact UUID from a phone number. Audio
 transcription is unsupported and has no client operation. Q49 owns the app foundation;
 framework-independent exports are available for its adapter without changing its files.
 
@@ -144,7 +146,7 @@ The compiler's absolute path is environment-specific; the normal command above u
 the backend's existing pinned dev dependency when available. The root backend suite
 requires its own disposable PostgreSQL/credentials and is not a client-only test.
 
-Q47 independently reviews the frozen client candidate. Q41 read APIs, Q49 UI wiring,
+Q47 independently reviews the frozen client candidate. Further Q41 status/time APIs, Q49 UI wiring,
 a real configured identity flow, trusted browser proxy/CORS, backend integration and
 physical/human/provider evidence remain separate dependencies. Existing product gates
 remain open; synthetic passing tests do not establish field safety or channel support.
@@ -222,4 +224,38 @@ mean its server write was cancelled. Q43's wider privacy review remains separate
 The actual published driver controller is also exercised through the typed adapter:
 create truck, draft, explicit confirmation, trip/snapshot/incident reads, command,
 lost SOS response and rejected same-key retry. Synthetic selection evidence is
-clearly test-only; Q41 catalog reads and real backend/browser evidence remain open.
+clearly test-only; catalog evidence normalisation and real backend/browser proof remain open.
+
+## Published owner reads
+
+Read API source: PR65 at `748d30c6e6c595fd1a2c2c648a045750de3dd9c8`, including
+[the frozen wire contract](https://github.com/Bimbi-Dev/andes-hackathon/blob/748d30c6e6c595fd1a2c2c648a045750de3dd9c8/docs/contracts/client-read.md)
+and `src/client-read/routes.ts`. The client adds those five actual GET operations
+without importing or changing the backend implementation. Use types `Profile`,
+`TruckList`, `ContactList`, `TripList`, `Bootstrap` and their entry types.
+
+Every read uses the current bearer; there is no owner/body/query selector. Profile
+retains nullable phone and its verified-claim flag. Contact rows preserve requested
+versus historical accepted scopes, pending/accepted/revoked status, acceptance and
+revocation timestamps and nullable revoker attribution. A revoked row may still
+contain historically accepted scopes; it grants no current read/dispatch authority.
+Trip summaries preserve regional fields, state, map/check-in flags, source timestamps
+and selected grant IDs, while excluding raw draft text and coordinates. The runtime
+decoder rejects malformed or contradictory required facts and projects only known fields.
+
+Lists are bounded first pages: 100 trucks, 100 standing contacts, 50 active trips and
+20 recent trips. Exact limits and every `hasMore` flag remain visible. There is no
+cursor, silent auto-pagination or claim of complete catalog coverage when truncated.
+Read failures remain errors, never fabricated empty lists. `/v1/contacts` is the
+driver's management list; it does not discover a contact's incoming invitations or
+authorised trips. Recipient discovery, `/status`, response/action history and other
+unpublished routes remain unavailable.
+
+These responses contain **no server readAt**. The client adds no browser timestamp
+and cannot yet manufacture the driver's `SelectionEvidence.readAt` from this wire
+contract. The missing source-time/normalisation seam was reported to Q41 and Brain.
+The backend must publish that meaning before a catalog adapter can claim server
+read-time provenance. The client also makes no stronger transaction-snapshot guarantee
+than the reviewed backend contract/implementation. Q44/Q46 must test these additions
+against their actual signed-JWT/PostgreSQL integration revision; mock read fixtures
+do not establish backend isolation or browser reload behaviour.

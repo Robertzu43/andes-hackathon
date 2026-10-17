@@ -42,3 +42,30 @@ export interface ResolutionResult extends IdResponse { status: 'resolved' }
 export interface RequestOptions { signal?: AbortSignal }
 /** Generate once per explicit intent; preserve the key and payload when reconciling ambiguity. */
 export interface WriteOptions extends RequestOptions { idempotencyKey: string }
+
+/** Owner-scoped read contract from PR65/748d30c; first-page bounds, no cursor or server readAt. */
+export interface Profile extends IdResponse { phone: string | null; phoneVerified: boolean }
+export interface TruckSummary extends IdResponse { label: string }
+export interface ContactSummary extends IdResponse {
+  contactId: UUID; phone: string;
+  map: { requested: boolean; accepted: boolean };
+  incident: { requested: boolean; accepted: boolean };
+  status: 'pending' | 'accepted' | 'revoked';
+  acceptedAt: string | null; revokedAt: string | null; revokedBy: 'driver' | 'contact' | null;
+}
+export interface TripSummary extends IdResponse, TripFields {
+  status: 'active' | 'arrived' | 'cancelled'; mapActive: boolean; checkinsActive: boolean;
+  paused: boolean; version: number; createdAt: string; closedAt: string | null; contactGrantIds: UUID[];
+}
+export interface TruckList { trucks: TruckSummary[]; limit: 100; hasMore: boolean }
+export interface ContactList { contacts: ContactSummary[]; limit: 100; hasMore: boolean }
+export interface TripList {
+  active: TripSummary[]; recent: TripSummary[];
+  limits: { active: 50; recent: 20 }; hasMore: { active: boolean; recent: boolean };
+}
+export interface Bootstrap {
+  profile: Profile; trucks: TruckSummary[]; contacts: ContactSummary[];
+  trips: { active: TripSummary[]; recent: TripSummary[] };
+  limits: { trucks: 100; contacts: 100; activeTrips: 50; recentTrips: 20 };
+  hasMore: { trucks: boolean; contacts: boolean; activeTrips: boolean; recentTrips: boolean };
+}

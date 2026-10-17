@@ -18,3 +18,15 @@ api.commandTrip('id', 'declare_safe', key);
 // @ts-expect-error provider delivery is never the contact acknowledgement result
 const delivered: 'delivered' = (await api.acknowledgeIncident('id', key)).recorded;
 void delivered;
+
+const loaded = await api.getBootstrap();
+const more: boolean = loaded.hasMore.contacts;
+const limit: 50 = loaded.limits.activeTrips;
+void more; void limit;
+// @ts-expect-error owner selection is authenticated, not an input parameter
+api.getBootstrap({ ownerId: 'another-actor' });
+// @ts-expect-error the published read contract supplies no server readAt
+const readAt: string = loaded.readAt;
+// @ts-expect-error summaries never include raw draft text
+const rawText: string = loaded.trips.active[0]?.rawText;
+void readAt; void rawText;

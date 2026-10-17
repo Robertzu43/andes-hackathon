@@ -12,7 +12,7 @@ const date: Decoder<string> = value => typeof value === 'string'
 const number = (min: number, max = Infinity, integer = false): Decoder<number> => value =>
   typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max
   && (!integer || Number.isInteger(value)) ? value : invalid();
-const literal = <T extends string | boolean>(expected: T): Decoder<T> => value => value === expected ? expected : invalid();
+const literal = <T extends string | boolean | number>(expected: T): Decoder<T> => value => value === expected ? expected : invalid();
 const choice = <T extends string>(...values: T[]): Decoder<T> => value =>
   values.includes(value as T) ? value as T : invalid();
 const nullable = <T>(decode: Decoder<T>): Decoder<T | null> => value => value === null ? null : decode(value);
@@ -66,3 +66,54 @@ export const snapshot: Decoder<T.LocationSnapshot> = value => {
   if (parsed.freshness === 'unavailable' || parsed.ageMs === null) invalid();
   return { tripId: parsed.tripId, readAt: parsed.readAt, location: parsed.location, freshness: parsed.freshness, ageMs: parsed.ageMs };
 };
+
+const phone: Decoder<string> = value => typeof value === 'string' && /^\+[1-9]\d{6,14}$/.test(value) ? value : invalid();
+const profileWire = object({ id: uuid, phone: nullable(phone), phoneVerified: bool });
+export const profile: Decoder<T.Profile> = value => {
+  const parsed = profileWire(value);
+  if (parsed.phoneVerified && parsed.phone === null) invalid();
+  return parsed;
+};
+const contactWire = object({ id: uuid, contactId: uuid, phone,
+  map: object({ requested: bool, accepted: bool }), incident: object({ requested: bool, accepted: bool }),
+  status: choice('pending', 'accepted', 'revoked'), acceptedAt: nullable(date), revokedAt: nullable(date),
+  revokedBy: nullable(choice('driver', 'contact')) });
+const contact: Decoder<T.ContactSummary> = value => {
+  const parsed = contactWire(value);
+  if ((parsed.map.accepted && !parsed.map.requested) || (parsed.incident.accepted && !parsed.incident.requested)) invalid();
+  if (parsed.status === 'revoked' ? parsed.revokedAt === null : parsed.revokedAt !== null || parsed.revokedBy !== null) invalid();
+  if (parsed.status === 'pending' && (parsed.acceptedAt !== null || parsed.map.accepted || parsed.incident.accepted)) invalid();
+  if (parsed.status === 'accepted' && (parsed.acceptedAt === null || (!parsed.map.accepted && !parsed.incident.accepted))) invalid();
+  return parsed;
+};
+const summary: Decoder<T.TripSummary> = object({ id: uuid, ...fullFields,
+  status: choice('active', 'arrived', 'cancelled'), mapActive: bool, checkinsActive: bool,
+  paused: bool, version: number(1, Infinity, true), createdAt: date, closedAt: nullable(date), contactGrantIds: array(uuid) });
+function bounded<T extends { id: string }>(decoder: Decoder<T>, max: number): Decoder<T[]> {
+  return value => {
+    if (!Array.isArray(value) || value.length > max) invalid();
+    const result = value.map(decoder);
+    if (new Set(result.map(row => row.id.toLowerCase())).size !== result.length) invalid();
+    return result;
+  };
+}
+const truckRows = bounded(object({ id: uuid, label: text }), 100);
+const contactRows = bounded(contact, 100);
+const activeRows: Decoder<T.TripSummary[]> = value => {
+  const result = bounded(summary, 50)(value);
+  if (result.some(row => row.status !== 'active')) invalid();
+  return result;
+};
+const recentRows: Decoder<T.TripSummary[]> = value => {
+  const result = bounded(summary, 20)(value);
+  if (result.some(row => row.status === 'active')) invalid();
+  return result;
+};
+export const trucks: Decoder<T.TruckList> = object({ trucks: truckRows, limit: literal(100), hasMore: bool });
+export const contacts: Decoder<T.ContactList> = object({ contacts: contactRows, limit: literal(100), hasMore: bool });
+export const trips: Decoder<T.TripList> = object({ active: activeRows, recent: recentRows,
+  limits: object({ active: literal(50), recent: literal(20) }), hasMore: object({ active: bool, recent: bool }) });
+export const bootstrap: Decoder<T.Bootstrap> = object({ profile, trucks: truckRows, contacts: contactRows,
+  trips: object({ active: activeRows, recent: recentRows }),
+  limits: object({ trucks: literal(100), contacts: literal(100), activeTrips: literal(50), recentTrips: literal(20) }),
+  hasMore: object({ trucks: bool, contacts: bool, activeTrips: bool, recentTrips: bool }) });
