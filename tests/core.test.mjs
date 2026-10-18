@@ -116,7 +116,7 @@ test('trip and incident closure are independent; contact receipt/action are attr
 // Omitting fail-closed defaults, scope checks or boundary validation would create unqualified jobs/read access.
 test('unqualified channels stay unavailable and accepted incident scope never grants map access', async t => {
   const f = await fixture(t, { channelSupport: [] });
-  const invitation = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+5511999990000', map: false, incident: true });
+  const invitation = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+5511999990033', map: false, incident: true });
   assert.equal((await f.req('POST', `/v1/contacts/${invitation.body.id}/accept`, { map: true, incident: true }, f.contact)).status, 400);
   assert.equal((await f.req('POST', `/v1/contacts/${invitation.body.id}/accept`, { map: false, incident: true }, f.contact)).status, 200);
   const trip = await f.trip([invitation.body.id]);
@@ -201,7 +201,7 @@ test('mixed-case grant UUID confirmations take one canonical lock order and reje
   const grantA = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'; const grantB = 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
   const initialA = await f.grant(); await f.ctx.pool.query('UPDATE contact_grants SET id=$1 WHERE id=$2', [grantA, initialA]);
   const contact2 = await f.token('contact-2'); const identity2 = (await f.req('GET', '/v1/me', undefined, contact2)).body.id;
-  const invitedB = await f.req('POST', '/v1/contacts', { contactId: identity2, phone: '+5511999990000', map: true, incident: true });
+  const invitedB = await f.req('POST', '/v1/contacts', { contactId: identity2, phone: f.phoneFor('contact-2'), map: true, incident: true });
   assert.equal((await f.req('POST', `/v1/contacts/${invitedB.body.id}/accept`, { map: true, incident: true }, contact2)).status, 200);
   await f.ctx.pool.query('UPDATE contact_grants SET id=$1 WHERE id=$2', [grantB, invitedB.body.id]);
   const draft1 = await f.draft(); const draft2 = await f.draft();
