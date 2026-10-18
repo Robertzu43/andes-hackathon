@@ -1,0 +1,115 @@
+[
+  {
+    "case": "baseline",
+    "expected": "accept",
+    "actual": "accept",
+    "cli_exit": 0,
+    "errors": []
+  },
+  {
+    "case": "no_reply_as_self_reported_robbery",
+    "expected": "reject",
+    "actual": "reject",
+    "cli_exit": 1,
+    "errors": [
+      "timeline.csv line 12 (SYN-A-W-E10): self_reported needs a cited attributed account",
+      "timeline.csv line 12 (SYN-A-W-E10): observed incident or rest time needs independent observations or the timestamp of an attributed message; a filing clock is not an incident time"
+    ]
+  },
+  {
+    "case": "no_reply_as_second_hand_sleep",
+    "expected": "reject",
+    "actual": "reject",
+    "cli_exit": 1,
+    "errors": [
+      "timeline.csv line 12 (SYN-A-W-E10): reported_second_hand needs a cited attributed account",
+      "timeline.csv line 12 (SYN-A-W-E10): observed incident or rest time needs independent observations or the timestamp of an attributed message; a filing clock is not an incident time"
+    ]
+  },
+  {
+    "case": "gps_as_recorded_rest",
+    "expected": "reject",
+    "actual": "reject",
+    "cli_exit": 1,
+    "errors": [
+      "timeline.csv line 12 (SYN-A-W-E10): rest_start needs a participant account; location or contact metadata can only record a stop",
+      "timeline.csv line 12 (SYN-A-W-E10): observed incident or rest time needs independent observations or the timestamp of an attributed message; a filing clock is not an incident time"
+    ]
+  },
+  {
+    "case": "missing_consent_reference",
+    "expected": "reject",
+    "actual": "reject",
+    "cli_exit": 1,
+    "errors": [
+      "participants.csv line 2 (SYN-A-D): consent_ref is required"
+    ]
+  },
+  {
+    "case": "metadata_as_suspicion",
+    "expected": "reject",
+    "actual": "reject",
+    "cli_exit": 1,
+    "errors": [
+      "timeline.csv line 12 (SYN-A-W-E10): suspicion needs a cited account supplied by the participant; no reply alone stays unknown",
+      "timeline.csv line 12 (SYN-A-W-E10): observed incident or rest time needs independent observations or the timestamp of an attributed message; a filing clock is not an incident time"
+    ]
+  },
+  {
+    "case": "complaint_as_corroboration",
+    "expected": "reject",
+    "actual": "reject",
+    "cli_exit": 1,
+    "errors": [
+      "timeline.csv line 28 (SYN-B-W-E04): corroboration needs independent observations supporting this event; a filed complaint repeating an allegation is an attributed account",
+      "timeline.csv line 28 (SYN-B-W-E04): observed incident or rest time needs independent observations or the timestamp of an attributed message; a filing clock is not an incident time"
+    ]
+  },
+  {
+    "case": "no_reply_remains_unknown",
+    "expected": "accept",
+    "actual": "accept",
+    "cli_exit": 0,
+    "errors": []
+  },
+  {
+    "case": "dst_gap",
+    "expected": "reject",
+    "actual": "reject",
+    "cli_exit": 1,
+    "errors": [
+      "timeline.csv line 12 (SYN-A-W-E10): observed_time offset does not match America/Santiago, which was at -03:00 at that moment"
+    ]
+  },
+  {
+    "case": "recalled_time_from_other_participant",
+    "expected": "reject",
+    "actual": "reject",
+    "cli_exit": 1,
+    "errors": [
+      "timeline.csv line 8 (SYN-A-W-E07): self_reported needs the participant's own attributed account (their interview or a message they wrote)",
+      "timeline.csv line 8 (SYN-A-W-E07): recalled times need the named participant's own attributed account (an untimestamped source)"
+    ]
+  },
+  {
+    "case": "driver_message_supplied_by_contact",
+    "expected": "accept",
+    "actual": "accept",
+    "cli_exit": 0,
+    "errors": []
+  },
+  {
+    "case": "gps_stop_remains_observation",
+    "expected": "accept",
+    "actual": "accept",
+    "cli_exit": 0,
+    "errors": []
+  },
+  {
+    "case": "pt_PT_does_not_cover_pt_BR",
+    "expected": "accept",
+    "actual": "accept",
+    "cli_exit": 0,
+    "errors": []
+  }
+]

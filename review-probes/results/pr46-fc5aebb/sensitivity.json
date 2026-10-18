@@ -1,0 +1,14 @@
+{
+  "candidate": "3827e91cca33f6ec8f9970a0501718c80e5d492c",
+  "total": 11,
+  "passed": 5,
+  "failed": [
+    "secondhand-other-person-interview",
+    "secondhand-other-person-nonmessage",
+    "cp1252-input-and-stdout",
+    "late-decode-discards-earlier-rows",
+    "late-csv-error-discards-earlier-rows",
+    "non-ascii-numeric-region"
+  ],
+  "runtime": "Python 3.14.7"
+}

@@ -1,0 +1,368 @@
+{
+  "runtime": "3.14.7 (main, Aug  5 2026, 10:29:49) [Clang 21.0.0 (clang-2100.1.1.101)]",
+  "archive": "fc5aebba0bfb1eb0c5cd47ad28f36c96cc99b76c",
+  "total": 40,
+  "passed": 40,
+  "failed": [],
+  "results": [
+    {
+      "case": "baseline",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/Python-3.14.7-followups40/baseline/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction\n",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\n"
+    },
+    {
+      "case": "self-report-contact-interview",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): self_reported needs the participant's own attributed account (their interview or a message they wrote)\n"
+    },
+    {
+      "case": "self-report-contact-interview-plus-metadata",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 33 (SYN-A-W-E99): self_reported needs the participant's own attributed account (their interview or a message they wrote)\n"
+    },
+    {
+      "case": "self-report-own-interview",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/Python-3.14.7-followups40/self-report-own-interview/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction\n",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\n"
+    },
+    {
+      "case": "self-report-contact-supplied-message",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/Python-3.14.7-followups40/self-report-contact-supplied-message/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction\n",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\n"
+    },
+    {
+      "case": "self-report-contact-nonmessage-account",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 33 (SYN-A-W-E99): self_reported needs the participant's own attributed account (their interview or a message they wrote)\n"
+    },
+    {
+      "case": "self-report-own-nonmessage-account-control",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/Python-3.14.7-followups40/self-report-own-nonmessage-account-control/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction\n",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\n"
+    },
+    {
+      "case": "metadata-unknown-dozed_off_report",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 33 (SYN-A-W-E99): a phone or message record cannot show dozed_off_report; use self_reported, reported_second_hand, suspected or corroborated\n"
+    },
+    {
+      "case": "metadata-unknown-rest_difficulty",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 33 (SYN-A-W-E99): rest_difficulty needs a participant account; location or contact metadata can only record a stop\n"
+    },
+    {
+      "case": "metadata-unknown-rest_end",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 33 (SYN-A-W-E99): rest_end needs a participant account; location or contact metadata can only record a stop\n"
+    },
+    {
+      "case": "metadata-unknown-rest_start",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 33 (SYN-A-W-E99): rest_start needs a participant account; location or contact metadata can only record a stop\n"
+    },
+    {
+      "case": "metadata-unknown-robbery",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 33 (SYN-A-W-E99): a phone or message record cannot show robbery; use self_reported, reported_second_hand, suspected or corroborated\n"
+    },
+    {
+      "case": "metadata-unknown-robbery_attempt",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 33 (SYN-A-W-E99): a phone or message record cannot show robbery_attempt; use self_reported, reported_second_hand, suspected or corroborated\n"
+    },
+    {
+      "case": "metadata-unknown-security_concern",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 33 (SYN-A-W-E99): a phone or message record cannot show security_concern; use self_reported, reported_second_hand, suspected or corroborated\n"
+    },
+    {
+      "case": "metadata-unknown-tiredness_report",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 33 (SYN-A-W-E99): a phone or message record cannot show tiredness_report; use self_reported, reported_second_hand, suspected or corroborated\n"
+    },
+    {
+      "case": "metadata-unknown-contact-control",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/Python-3.14.7-followups40/metadata-unknown-contact-control/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction\n",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\n"
+    },
+    {
+      "case": "consent-refusal-private",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 1 case(s) to <review-output>/Python-3.14.7-followups40/consent-refusal-private/actual-export.json; excluded 2.\n  excluded SYN-A-O: redaction\n  excluded SYN-B-W: consent\n",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\n"
+    },
+    {
+      "case": "redaction-status-private",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/Python-3.14.7-followups40/redaction-status-private/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction\n",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\n"
+    },
+    {
+      "case": "cp1252-diagnostic",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  participants.csv: is not valid UTF-8; save it again as CSV UTF-8 (Excel: Save As -> CSV UTF-8 (delimitado por comas))\n"
+    },
+    {
+      "case": "es-419-coverage",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/Python-3.14.7-followups40/es-419-coverage/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction\n",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\n"
+    },
+    {
+      "case": "comma-coordinates",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain coordinates; redact it before export\n"
+    },
+    {
+      "case": "space-coordinates",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain coordinates; redact it before export\n"
+    },
+    {
+      "case": "dms-coordinates",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain coordinates; redact it before export\n"
+    },
+    {
+      "case": "short-date",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain a calendar date; redact it before export\n"
+    },
+    {
+      "case": "portuguese-date",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain a calendar date; redact it before export\n"
+    },
+    {
+      "case": "lowercase-plate",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain a vehicle plate; redact it before export\n"
+    },
+    {
+      "case": "argentine-plate",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain a vehicle plate; redact it before export\n"
+    },
+    {
+      "case": "mexican-plate",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain a vehicle plate; redact it before export\n"
+    },
+    {
+      "case": "bare-map-link",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain a link; redact it before export\n"
+    },
+    {
+      "case": "bare-short-link",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain a link; redact it before export\n"
+    },
+    {
+      "case": "https-link-control",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  timeline.csv line 4 (SYN-A-W-E03): note_redacted seems to contain a link; redact it before export\n"
+    },
+    {
+      "case": "id-plate",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  participants.csv line 5: participant_id seems to contain a vehicle plate; redact it before export\n  sources.csv line 10 (SYN-B-W-S2): provided_by seems to contain a vehicle plate; redact it before export\n  sources.csv line 11 (SYN-B-W-S3): provided_by seems to contain a vehicle plate; redact it before export\n  timeline.csv line 30 (SYN-B-W-E06): reported_by seems to contain a vehicle plate; redact it before export\n  timeline.csv line 31 (SYN-B-W-E07): reported_by seems to contain a vehicle plate; redact it before export\n"
+    },
+    {
+      "case": "id-phone",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  participants.csv line 5: participant_id seems to contain a phone number; redact it before export\n  sources.csv line 10 (SYN-B-W-S2): provided_by seems to contain a phone number; redact it before export\n  sources.csv line 11 (SYN-B-W-S3): provided_by seems to contain a phone number; redact it before export\n  timeline.csv line 30 (SYN-B-W-E06): reported_by seems to contain a phone number; redact it before export\n  timeline.csv line 31 (SYN-B-W-E07): reported_by seems to contain a phone number; redact it before export\n"
+    },
+    {
+      "case": "id-date",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  participants.csv line 5: participant_id seems to contain a calendar date; redact it before export\n  sources.csv line 10 (SYN-B-W-S2): provided_by seems to contain a calendar date; redact it before export\n  sources.csv line 11 (SYN-B-W-S3): provided_by seems to contain a calendar date; redact it before export\n  timeline.csv line 30 (SYN-B-W-E06): reported_by seems to contain a calendar date; redact it before export\n  timeline.csv line 31 (SYN-B-W-E07): reported_by seems to contain a calendar date; redact it before export\n"
+    },
+    {
+      "case": "invalid-id-diagnostic-private",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  participants.csv line 5: participant_id must use capital letters, digits and hyphens, with at least one letter\n  sources.csv line 10 (SYN-B-W-S2): provided_by must use capital letters, digits and hyphens, with at least one letter\n  sources.csv line 11 (SYN-B-W-S3): provided_by must use capital letters, digits and hyphens, with at least one letter\n  timeline.csv line 30 (SYN-B-W-E06): reported_by must use capital letters, digits and hyphens, with at least one letter\n  timeline.csv line 31 (SYN-B-W-E07): reported_by must use capital letters, digits and hyphens, with at least one letter\n"
+    },
+    {
+      "case": "complaint-filing-clock",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  timeline.csv line 28 (SYN-B-W-E04): observed incident or rest time needs independent observations or the timestamp of an attributed message; a filing clock is not an incident time\n"
+    },
+    {
+      "case": "exclusive-none-channel",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Warning: pair SYN-B: has no ordinary-trip case\nExport refused. Fix these errors first:\n  cases.csv line 2 (SYN-A-W): arrangement_channels cannot combine none with other values\n"
+    },
+    {
+      "case": "oversized-csv-diagnostic",
+      "expected": "reject",
+      "passed": true,
+      "cli_exit": 1,
+      "wrote_export": false,
+      "stdout": "",
+      "stderr": "Export refused. Fix these errors first:\n  sources.csv: could not parse CSV; check quoting and cell size (maximum 131072 characters per cell)\n"
+    },
+    {
+      "case": "no-zone-database-export-warning",
+      "expected": "accept",
+      "passed": true,
+      "cli_exit": 0,
+      "wrote_export": true,
+      "stdout": "Wrote 2 case(s) to <review-output>/Python-3.14.7-followups40/no-zone-database-export-warning/actual-export.json; excluded 1.\n  excluded SYN-A-O: redaction\n",
+      "stderr": "Warning: time zones: no time-zone database found, so zone names and offsets were not checked\nWarning: pair SYN-B: has no ordinary-trip case\n"
+    },
+    {
+      "case": "author-baseline-without-zone-database",
+      "expected": "suite pass",
+      "passed": true,
+      "cli_exit": 0,
+      "stdout": "",
+      "stderr": ".\n----------------------------------------------------------------------\nRan 1 test in 0.002s\n\nOK\n"
+    }
+  ]
+}

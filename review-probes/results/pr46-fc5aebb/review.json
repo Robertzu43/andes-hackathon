@@ -1,0 +1,31 @@
+{
+  "sha": "fc5aebba0bfb1eb0c5cd47ad28f36c96cc99b76c",
+  "archive": "fresh git archive of fc5aebba0bfb1eb0c5cd47ad28f36c96cc99b76c",
+  "review": "independent synthetic-only evidence",
+  "unchanged_fixture_blobs": {
+    "evidence/fixtures/synthetic/participants.csv": "393485d29a77206d5e494c8bfd349d9abba89da9",
+    "evidence/fixtures/synthetic/cases.csv": "6909c4af4af667ba275bb06f92ae5148d892bdd0",
+    "evidence/fixtures/synthetic/sources.csv": "dfa36f14c3ba0b115125820a2152f4cd91019126",
+    "evidence/fixtures/synthetic/timeline.csv": "9296004414bb9d21d22af50d2a37eebd0a6b069a"
+  },
+  "followups_sha256": "2206fc807c6237b5a6a27b4a22e7d824ba669301921620cb7d6983d0f5a53878",
+  "author_tests_per_runtime": 75,
+  "independent_controls_per_runtime": 66,
+  "split": {
+    "preserved_original": 15,
+    "preserved_followups": 40,
+    "newest_review": 11
+  },
+  "latest_review": "5560681899",
+  "whitespace_exit": 0,
+  "new_probe_sha256": "4222d0514aa4465ea507c34e332d9dbe4798dcf5145693c4d03df7a903d9029f",
+  "no_expectation_edits": true,
+  "latest_control_sensitivity": "6 expected failures on prior3827, all11pass onfc5",
+  "human_confirmation": "not supplied",
+  "merge_or_application": "not performed",
+  "latest_reviews": [
+    "5560681899",
+    "5560734018"
+  ],
+  "retained5f": "63author+15original pass;25/40followups and4/11new controls pass on each runtime; not accepted"
+}

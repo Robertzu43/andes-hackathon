@@ -1,0 +1,108 @@
+{
+  "runtime": "3.9.6 (default, Aug 25 2026, 21:26:21) \n[Clang 21.0.0 (clang-2100.3.34.2)]",
+  "archive": "fc5aebba0bfb1eb0c5cd47ad28f36c96cc99b76c",
+  "total": 11,
+  "passed": 11,
+  "failed": [],
+  "results": [
+    {
+      "case": "secondhand-other-person-interview",
+      "expected_accept": false,
+      "passed": true,
+      "cli_exit": 1,
+      "partial_rows_retained": null,
+      "stdout": "ANDES #8 check: <review-output>/latest-3.9/secondhand-other-person-interview\n4 participants in 2 pairs, 3 cases, 12 sources, 31 events\n\nErrors: 1\n  timeline.csv line 12 (SYN-A-W-E10): reported_second_hand needs the reporting participant's own attributed account\nWarnings: 1\n  pair SYN-B: has no ordinary-trip case\n\nFix the errors before reading coverage and windows or exporting.\n",
+      "stderr": ""
+    },
+    {
+      "case": "secondhand-own-interview",
+      "expected_accept": true,
+      "passed": true,
+      "cli_exit": 0,
+      "partial_rows_retained": null,
+      "stdout": "ANDES #8 check: <review-output>/latest-3.9/secondhand-own-interview\n4 participants in 2 pairs, 3 cases, 12 sources, 31 events\n\nErrors: 0\nWarnings: 1\n  pair SYN-B: has no ordinary-trip case\n\nCoverage (exploratory; cannot show prevalence, regional demand or efficacy)\n  countries: BR=2, CO=2\n  languages: es=2, pt-BR=2\n  phone platforms: iphone=2, unknown=2\n  trucks operated by drivers: 1=1, 2=1\n  case concerns: fatigue=1, lost_contact=1, none=1, security=1\n  gaps: Android not represented\n\nCases\n  SYN-A-O ordinary: no window claimed; reviews driver confirmed, contact confirmed, trace pending; export blocked: redaction_status is in_progress\n  SYN-A-W worrying: window 44-74 min (start recalled, end both, not fully traceable to records); reviews driver confirmed, contact corrected, trace traced; export ready\n  SYN-B-W worrying: window 26-26 min (start observed, end both); reviews driver confirmed, contact confirmed, trace traced; export ready\n",
+      "stderr": ""
+    },
+    {
+      "case": "secondhand-other-person-nonmessage",
+      "expected_accept": false,
+      "passed": true,
+      "cli_exit": 1,
+      "partial_rows_retained": null,
+      "stdout": "ANDES #8 check: <review-output>/latest-3.9/secondhand-other-person-nonmessage\n4 participants in 2 pairs, 3 cases, 12 sources, 31 events\n\nErrors: 1\n  timeline.csv line 12 (SYN-A-W-E10): reported_second_hand needs the reporting participant's own attributed account\nWarnings: 1\n  pair SYN-B: has no ordinary-trip case\n\nFix the errors before reading coverage and windows or exporting.\n",
+      "stderr": ""
+    },
+    {
+      "case": "secondhand-own-nonmessage",
+      "expected_accept": true,
+      "passed": true,
+      "cli_exit": 0,
+      "partial_rows_retained": null,
+      "stdout": "ANDES #8 check: <review-output>/latest-3.9/secondhand-own-nonmessage\n4 participants in 2 pairs, 3 cases, 12 sources, 31 events\n\nErrors: 0\nWarnings: 1\n  pair SYN-B: has no ordinary-trip case\n\nCoverage (exploratory; cannot show prevalence, regional demand or efficacy)\n  countries: BR=2, CO=2\n  languages: es=2, pt-BR=2\n  phone platforms: iphone=2, unknown=2\n  trucks operated by drivers: 1=1, 2=1\n  case concerns: fatigue=1, lost_contact=1, none=1, security=1\n  gaps: Android not represented\n\nCases\n  SYN-A-O ordinary: no window claimed; reviews driver confirmed, contact confirmed, trace pending; export blocked: redaction_status is in_progress\n  SYN-A-W worrying: window 44-74 min (start recalled, end both, not fully traceable to records); reviews driver confirmed, contact corrected, trace traced; export ready\n  SYN-B-W worrying: window 26-26 min (start observed, end both); reviews driver confirmed, contact confirmed, trace traced; export ready\n",
+      "stderr": ""
+    },
+    {
+      "case": "secondhand-contact-words-supplied-by-driver-message",
+      "expected_accept": true,
+      "passed": true,
+      "cli_exit": 0,
+      "partial_rows_retained": null,
+      "stdout": "ANDES #8 check: <review-output>/latest-3.9/secondhand-contact-words-supplied-by-driver-message\n4 participants in 2 pairs, 3 cases, 12 sources, 31 events\n\nErrors: 0\nWarnings: 1\n  pair SYN-B: has no ordinary-trip case\n\nCoverage (exploratory; cannot show prevalence, regional demand or efficacy)\n  countries: BR=2, CO=2\n  languages: es=2, pt-BR=2\n  phone platforms: iphone=2, unknown=2\n  trucks operated by drivers: 1=1, 2=1\n  case concerns: fatigue=1, lost_contact=1, none=1, security=1\n  gaps: Android not represented\n\nCases\n  SYN-A-O ordinary: no window claimed; reviews driver confirmed, contact confirmed, trace pending; export blocked: redaction_status is in_progress\n  SYN-A-W worrying: window 44-74 min (start recalled, end both, not fully traceable to records); reviews driver confirmed, contact corrected, trace traced; export ready\n  SYN-B-W worrying: window 26-26 min (start observed, end both); reviews driver confirmed, contact confirmed, trace traced; export ready\n",
+      "stderr": ""
+    },
+    {
+      "case": "cp1252-input-and-stdout",
+      "expected_accept": false,
+      "passed": true,
+      "cli_exit": 1,
+      "partial_rows_retained": null,
+      "stdout": "ANDES #8 check: <review-output>/latest-3.9/cp1252-input-and-stdout\n0 participants in 0 pairs, 3 cases, 11 sources, 31 events\n\nErrors: 1\n  participants.csv: is not valid UTF-8; save it again as CSV UTF-8 (Excel: Save As -> CSV UTF-8 (delimitado por comas))\nWarnings: 0\n\nFix the errors before reading coverage and windows or exporting.\n",
+      "stderr": "encoding=cp1252\n"
+    },
+    {
+      "case": "late-decode-discards-earlier-rows",
+      "expected_accept": false,
+      "passed": true,
+      "cli_exit": 1,
+      "partial_rows_retained": 0,
+      "stdout": "ANDES #8 check: <review-output>/latest-3.9/late-decode-discards-earlier-rows\n0 participants in 0 pairs, 3 cases, 11 sources, 31 events\n\nErrors: 1\n  participants.csv: is not valid UTF-8; save it again as CSV UTF-8 (Excel: Save As -> CSV UTF-8 (delimitado por comas))\nWarnings: 0\n\nFix the errors before reading coverage and windows or exporting.\n",
+      "stderr": ""
+    },
+    {
+      "case": "late-csv-error-discards-earlier-rows",
+      "expected_accept": false,
+      "passed": true,
+      "cli_exit": 1,
+      "partial_rows_retained": 0,
+      "stdout": "ANDES #8 check: <review-output>/latest-3.9/late-csv-error-discards-earlier-rows\n0 participants in 0 pairs, 3 cases, 11 sources, 31 events\n\nErrors: 1\n  participants.csv: could not parse CSV; check quoting and cell size (maximum 131072 characters per cell)\nWarnings: 0\n\nFix the errors before reading coverage and windows or exporting.\n",
+      "stderr": ""
+    },
+    {
+      "case": "non-ascii-numeric-region",
+      "expected_accept": false,
+      "passed": true,
+      "cli_exit": 1,
+      "partial_rows_retained": null,
+      "stdout": "ANDES #8 check: <review-output>/latest-3.9/non-ascii-numeric-region\n4 participants in 0 pairs, 3 cases, 11 sources, 31 events\n\nErrors: 1\n  participants.csv line 4 (SYN-B-D): preferred_language must be a language tag such as es, pt-BR or es-419\nWarnings: 0\n\nFix the errors before reading coverage and windows or exporting.\n",
+      "stderr": ""
+    },
+    {
+      "case": "ascii-numeric-region-control",
+      "expected_accept": true,
+      "passed": true,
+      "cli_exit": 0,
+      "partial_rows_retained": null,
+      "stdout": "ANDES #8 check: <review-output>/latest-3.9/ascii-numeric-region-control\n4 participants in 2 pairs, 3 cases, 11 sources, 31 events\n\nErrors: 0\nWarnings: 1\n  pair SYN-B: has no ordinary-trip case\n\nCoverage (exploratory; cannot show prevalence, regional demand or efficacy)\n  countries: BR=2, CO=2\n  languages: es=1, es-419=1, pt-BR=2\n  phone platforms: iphone=2, unknown=2\n  trucks operated by drivers: 1=1, 2=1\n  case concerns: fatigue=1, lost_contact=1, none=1, security=1\n  gaps: Android not represented\n\nCases\n  SYN-A-O ordinary: no window claimed; reviews driver confirmed, contact confirmed, trace pending; export blocked: redaction_status is in_progress\n  SYN-A-W worrying: window 44-74 min (start recalled, end both, not fully traceable to records); reviews driver confirmed, contact corrected, trace traced; export ready\n  SYN-B-W worrying: window 26-26 min (start observed, end both); reviews driver confirmed, contact confirmed, trace traced; export ready\n",
+      "stderr": ""
+    },
+    {
+      "case": "duplicate-invalid-id-does-not-echo",
+      "expected_accept": false,
+      "passed": true,
+      "cli_exit": 1,
+      "partial_rows_retained": null,
+      "stdout": "ANDES #8 check: <review-output>/latest-3.9/duplicate-invalid-id-does-not-echo\n3 participants in 0 pairs, 3 cases, 11 sources, 31 events\n\nErrors: 3\n  participants.csv line 2: participant_id must use capital letters, digits and hyphens, with at least one letter\n  participants.csv line 3: participant_id must use capital letters, digits and hyphens, with at least one letter\n  participants.csv line 3: duplicate participant_id\nWarnings: 0\n\nFix the errors before reading coverage and windows or exporting.\n",
+      "stderr": ""
+    }
+  ]
+}

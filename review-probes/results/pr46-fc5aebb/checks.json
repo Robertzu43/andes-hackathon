@@ -1,0 +1,58 @@
+[
+  {
+    "runtime": "Python 3.14.7",
+    "check": "suite",
+    "exit": 0,
+    "stdout_tail": "",
+    "stderr_tail": "...........................................................................\n----------------------------------------------------------------------\nRan 75 tests in 0.519s\n\nOK\n"
+  },
+  {
+    "runtime": "Python 3.14.7",
+    "check": "existing13",
+    "exit": 0,
+    "stdout_tail": "over_pt_BR\", \"expected\": \"accept\", \"actual\": \"accept\", \"errors\": [], \"cli_exit\": 0}\n{\"case\": \"pt_PT_does_not_cover_pt_BR\", \"expected_gap\": \"Brazilian Portuguese (pt-BR) not represented\", \"actual_gaps\": [\"Brazilian Portuguese (pt-BR) not represented\", \"Android not represented\"], \"coverage_check_passed\": true}\n{\"total\": 13, \"unexpected_results\": []}\n",
+    "stderr_tail": ""
+  },
+  {
+    "runtime": "Python 3.14.7",
+    "check": "recall2",
+    "exit": 0,
+    "stdout_tail": "is\": \"recalled\", \"time_zone\": \"America/Sao_Paulo\", \"observed_offset_min\": null, \"observed_source_id\": null, \"recalled_offset_min\": {\"earliest\": 420, \"latest\": 450}, \"recall_gap_min\": null, \"conflicts_with\": [], \"knew\": \"SYNTHETIC: expected a message once the driver was back on the road after about an hour\", \"note\": null}, \"expected_outcome\": true}\n",
+    "stderr_tail": ""
+  },
+  {
+    "runtime": "Python 3.14.7",
+    "check": "followups40",
+    "exit": 0,
+    "stdout_tail": "it\": 1, \"wrote_export\": false}\n{\"case\": \"exclusive-none-channel\", \"passed\": true, \"cli_exit\": 1, \"wrote_export\": false}\n{\"case\": \"oversized-csv-diagnostic\", \"passed\": true, \"cli_exit\": 1, \"wrote_export\": false}\n{\"case\": \"no-zone-database-export-warning\", \"passed\": true, \"cli_exit\": 0, \"wrote_export\": true}\n{\"total\": 40, \"passed\": 40, \"failed\": []}\n",
+    "stderr_tail": ""
+  },
+  {
+    "runtime": "Python 3.9.6",
+    "check": "suite",
+    "exit": 0,
+    "stdout_tail": "",
+    "stderr_tail": "...........................................................................\n----------------------------------------------------------------------\nRan 75 tests in 0.730s\n\nOK\n"
+  },
+  {
+    "runtime": "Python 3.9.6",
+    "check": "existing13",
+    "exit": 0,
+    "stdout_tail": "over_pt_BR\", \"expected\": \"accept\", \"actual\": \"accept\", \"errors\": [], \"cli_exit\": 0}\n{\"case\": \"pt_PT_does_not_cover_pt_BR\", \"expected_gap\": \"Brazilian Portuguese (pt-BR) not represented\", \"actual_gaps\": [\"Brazilian Portuguese (pt-BR) not represented\", \"Android not represented\"], \"coverage_check_passed\": true}\n{\"total\": 13, \"unexpected_results\": []}\n",
+    "stderr_tail": ""
+  },
+  {
+    "runtime": "Python 3.9.6",
+    "check": "recall2",
+    "exit": 0,
+    "stdout_tail": "is\": \"recalled\", \"time_zone\": \"America/Sao_Paulo\", \"observed_offset_min\": null, \"observed_source_id\": null, \"recalled_offset_min\": {\"earliest\": 420, \"latest\": 450}, \"recall_gap_min\": null, \"conflicts_with\": [], \"knew\": \"SYNTHETIC: expected a message once the driver was back on the road after about an hour\", \"note\": null}, \"expected_outcome\": true}\n",
+    "stderr_tail": ""
+  },
+  {
+    "runtime": "Python 3.9.6",
+    "check": "followups40",
+    "exit": 0,
+    "stdout_tail": "it\": 1, \"wrote_export\": false}\n{\"case\": \"exclusive-none-channel\", \"passed\": true, \"cli_exit\": 1, \"wrote_export\": false}\n{\"case\": \"oversized-csv-diagnostic\", \"passed\": true, \"cli_exit\": 1, \"wrote_export\": false}\n{\"case\": \"no-zone-database-export-warning\", \"passed\": true, \"cli_exit\": 0, \"wrote_export\": true}\n{\"total\": 40, \"passed\": 40, \"failed\": []}\n",
+    "stderr_tail": ""
+  }
+]

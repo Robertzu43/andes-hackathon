@@ -1,0 +1,129 @@
+{
+  "retained_head": "5f42256997f15626500795b1fcf4c1c4efef59e7",
+  "author_tests_per_runtime": 63,
+  "checks": [
+    {
+      "runtime": "Python-3.14.7",
+      "check": "suite",
+      "exit": 0
+    },
+    {
+      "runtime": "Python-3.14.7",
+      "check": "existing13",
+      "exit": 0
+    },
+    {
+      "runtime": "Python-3.14.7",
+      "check": "recall2",
+      "exit": 0
+    },
+    {
+      "runtime": "Python-3.14.7",
+      "check": "followups40",
+      "exit": 1,
+      "total": 40,
+      "passed": 25,
+      "failed": [
+        "self-report-contact-nonmessage-account",
+        "comma-coordinates",
+        "dms-coordinates",
+        "short-date",
+        "portuguese-date",
+        "lowercase-plate",
+        "argentine-plate",
+        "mexican-plate",
+        "bare-map-link",
+        "bare-short-link",
+        "id-plate",
+        "id-phone",
+        "id-date",
+        "invalid-id-diagnostic-private",
+        "complaint-filing-clock"
+      ]
+    },
+    {
+      "runtime": "Python-3.14.7",
+      "check": "latest11",
+      "exit": 1,
+      "total": 11,
+      "passed": 4,
+      "failed": [
+        "secondhand-other-person-interview",
+        "secondhand-other-person-nonmessage",
+        "cp1252-input-and-stdout",
+        "late-decode-discards-earlier-rows",
+        "late-csv-error-discards-earlier-rows",
+        "non-ascii-numeric-region",
+        "duplicate-invalid-id-does-not-echo"
+      ]
+    },
+    {
+      "runtime": "Python-3.9.6",
+      "check": "suite",
+      "exit": 0
+    },
+    {
+      "runtime": "Python-3.9.6",
+      "check": "existing13",
+      "exit": 0
+    },
+    {
+      "runtime": "Python-3.9.6",
+      "check": "recall2",
+      "exit": 0
+    },
+    {
+      "runtime": "Python-3.9.6",
+      "check": "followups40",
+      "exit": 1,
+      "total": 40,
+      "passed": 25,
+      "failed": [
+        "self-report-contact-nonmessage-account",
+        "comma-coordinates",
+        "dms-coordinates",
+        "short-date",
+        "portuguese-date",
+        "lowercase-plate",
+        "argentine-plate",
+        "mexican-plate",
+        "bare-map-link",
+        "bare-short-link",
+        "id-plate",
+        "id-phone",
+        "id-date",
+        "invalid-id-diagnostic-private",
+        "complaint-filing-clock"
+      ]
+    },
+    {
+      "runtime": "Python-3.9.6",
+      "check": "latest11",
+      "exit": 1,
+      "total": 11,
+      "passed": 4,
+      "failed": [
+        "secondhand-other-person-interview",
+        "secondhand-other-person-nonmessage",
+        "cp1252-input-and-stdout",
+        "late-decode-discards-earlier-rows",
+        "late-csv-error-discards-earlier-rows",
+        "non-ascii-numeric-region",
+        "duplicate-invalid-id-does-not-echo"
+      ]
+    }
+  ],
+  "note": "Failure counts are control variants, not distinct defects; extra duplicate-invalid-ID check also detects diagnostic leakage.",
+  "raw_id_diagnostic_excerpts": {
+    "Python-3.14.7": [
+      "  participants.csv line 2 (SYNTHETIC PRIVATE NAME): participant_id must use capital letters, digits and hyphens, with at least one letter",
+      "  participants.csv line 3 (SYNTHETIC PRIVATE NAME): participant_id must use capital letters, digits and hyphens, with at least one letter",
+      "  participants.csv line 3 (SYNTHETIC PRIVATE NAME): duplicate participant_id SYNTHETIC PRIVATE NAME"
+    ],
+    "Python-3.9.6": [
+      "  participants.csv line 2 (SYNTHETIC PRIVATE NAME): participant_id must use capital letters, digits and hyphens, with at least one letter",
+      "  participants.csv line 3 (SYNTHETIC PRIVATE NAME): participant_id must use capital letters, digits and hyphens, with at least one letter",
+      "  participants.csv line 3 (SYNTHETIC PRIVATE NAME): duplicate participant_id SYNTHETIC PRIVATE NAME"
+    ]
+  }
+}
