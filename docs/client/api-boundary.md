@@ -236,8 +236,8 @@ ANDES_FOUNDATION_NODE_MODULES=/absolute/path/to/existing/foundation/web/node_mod
 The declared immutable Git objects must be fetched. Tests use Node built-ins,
 synthetic HTTP and actual extracted feature sources; missing dependencies fail
 rather than silently skip. Temporary sources are removed afterward. Current local
-results are115 native/view checks and19 controller/foundation checks, plus both
-strict TypeScript modes. They do not establish browser, backend isolation, physical
+results are138 native/view checks (including runtime.test.mjs),19 controller/foundation
+checks, both strict TypeScript modes and7 real HTTP/PostgreSQL runtime checks. They do not establish browser, backend isolation, physical
 iOS, provider delivery or complete-app acceptance.
 
 The frozen contact view store at e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6 confirms both
@@ -256,10 +256,11 @@ should-fix lifecycle issues have RED/GREEN cases for verifier401, installed sess
 late expiry, asynchronous read validation, definite refusals and dropped readAt.
 UUID validation is shared and demo_rate_limited is allowlisted.
 
-PR81 review5560922593's arrival-echo failure is repaired in the shared base. Its
-remaining world reuse, role switching, status freshness and demo-off401 controls
-belong to the child after this base. Backend reconciliation83 and current independent
-reviews/CI remain merge gates. No acceptance is inherited from old7e241c3 or81/75bdffa.
+PR81 review5560922593: the arrival echo, refresh/SOS retention, not_sent outcomes and
+AbortSignal.any fallback (including demo sign-in) come from the merged base. /status
+freshness must now agree with its age. One demo world is shared across personas and
+reused across begins (runtime.test.mjs). The demo-off401 case is covered by the
+demo status test. Current independent reviews/CI remain merge gates.
 
 Expected command revision and incident read time cannot be invented against
 PR74/27e4f94: its strict command body accepts only type, and incident GET has
