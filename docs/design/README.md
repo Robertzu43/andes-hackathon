@@ -1,6 +1,13 @@
 # Tándem · Design system
 
-Status: design direction and working agreement. The user selected **Tándem** as the product name and requested `Leonxlnx/taste-skill` for the whole design system. This document does not claim a finished component library, approved logo, implemented mobile UI or tested driving interaction. ANDES remains the existing hackathon/repository identifier; do not rename infrastructure identifiers as part of visual work.
+Status: **v1.0 design delivery**. The user selected **Tándem** and requested `Leonxlnx/taste-skill` for the whole design system. The identity assets, tokens, reusable visual components and reference screens are now delivered; mobile application integration and physical-device qualification are separate. ANDES remains the existing hackathon/repository identifier.
+
+- [Design specification and component contract](specification.md)
+- [Logo assets](assets/) · [JSON tokens](tokens.json) · [CSS tokens](tokens.css)
+- [Local HTML gallery](index.html) · [Verification evidence](evidence/verification.md)
+- [Figma: identity and flows](https://www.figma.com/design/RGVfq91b25JmWFuespSFbp/Tandem?node-id=6-156) · [23 native components](https://www.figma.com/design/RGVfq91b25JmWFuespSFbp/Tandem?node-id=6-3)
+
+Serve the gallery with `python3 -m http.server 8767 --bind 127.0.0.1 --directory docs/design`, then open `http://127.0.0.1:8767`.
 
 ## Skill source and scope
 
@@ -26,9 +33,9 @@ Existing installations should be inspected before updating. Record a new referen
 
 ## Product meaning
 
-Tándem connects an independent freight driver with the people they trust throughout a trip. The core visual idea under exploration is **two paths travelling together**, optionally forming a reduced T. The interface should feel calm, direct and dependable. Avoid police imagery, generic security shields and visual claims that someone is continuously watching or that rescue is guaranteed.
+Tándem connects an independent freight driver with the people they trust throughout a trip. The v1.0 visual idea is **two paths travelling together**, forming a reduced T. The interface should feel calm, direct and dependable. Avoid police imagery, generic security shields and visual claims that someone is continuously watching or that rescue is guaranteed.
 
-The earlier concept explored navy `#132C3A`, petrol `#087F8C`, ivory `#F7F5F0`, emergency red `#B42332`, and the line “Tu gente, contigo en ruta”. These are proposals, not approved or contrast-qualified tokens. The selected name does not imply trademark clearance. Do not derive exact fonts, geometry or color values by treating a generated image as a production specification.
+The earlier concept explored navy `#132C3A`, petrol `#087F8C`, ivory `#F7F5F0`, emergency red `#B42332`, and the line “Tu gente, contigo en ruta”. Version 1.0 adopts that direction with Manrope and a darker action petrol; the exact roles and checked contrast pairs are in the specification. The selected name does not imply trademark clearance. Do not derive exact fonts, geometry or color values by treating a generated image as a production specification.
 
 ## Product constraints take priority
 
@@ -66,4 +73,4 @@ Match actual backend evidence from [the runtime contract](../contracts/runtime.m
 5. Review rendered screens at actual phone sizes, with enlarged text, both languages and relevant accessibility settings. Measure contrast and target dimensions; record the results rather than inferring compliance from a mockup. Check physical-device interaction before claiming suitability for use on the road.
 6. Keep the same approved tokens and assets in Figma and code. For public web work, use the website skill's responsive inspection and critique loop. Follow the environment's browser-tool restrictions when choosing how to inspect.
 
-Current verification is limited to installing/reading the skills and recording this agreement. No Figma design-system library, production logo, contrast audit or device validation is completed by this change.
+Version 1.0 includes vector/PNG logos, tokens, 20 UI component samples, three native brand components in Figma and six editable screen references. Fourteen nominal contrast pairs and the responsive HTML controls were checked. See the [verification record](evidence/verification.md) for exact evidence and remaining device/integration limits. Figma remains a local component library; no cross-file publication or automatic token binding is claimed.
