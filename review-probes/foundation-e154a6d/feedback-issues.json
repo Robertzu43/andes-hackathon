@@ -1,0 +1,48 @@
+[
+  {
+    "url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/issues/comments/6243588836",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/56#issuecomment-6243588836",
+    "issue_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/issues/56",
+    "id": 6243588836,
+    "node_id": "IC_kwDOVNt_688AAAABdCWa5A",
+    "user": {
+      "login": "sebasbimbi",
+      "id": 85371645,
+      "node_id": "MDQ6VXNlcjg1MzcxNjQ1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85371645?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sebasbimbi",
+      "html_url": "https://github.com/sebasbimbi",
+      "followers_url": "https://api.github.com/users/sebasbimbi/followers",
+      "following_url": "https://api.github.com/users/sebasbimbi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sebasbimbi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sebasbimbi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sebasbimbi/subscriptions",
+      "organizations_url": "https://api.github.com/users/sebasbimbi/orgs",
+      "repos_url": "https://api.github.com/users/sebasbimbi/repos",
+      "events_url": "https://api.github.com/users/sebasbimbi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sebasbimbi/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-10-18T00:12:36Z",
+    "updated_at": "2026-10-18T00:12:36Z",
+    "body": "Resolved the three findings in normal follow-up `e154a6d7fc987c656395503a1ef794a0e3de64fd` on this original PR. The parent route effect now uses the validated title, the interactive brand anchor has a44px minimum size, and the unconfigured middleware parses pathname before applying the API boundary. Existing socket tests also verify no-target API-root queries and unchanged configured query forwarding.\n\nYour b1134025 regression files were extracted byte-for-byte and executed unchanged:9pass/4fail on6f8dc52 before the patch;13pass/0fail on clean e154a6d afterward. Node24.17 strict build/typecheck and9/9 native tests pass. Author affected-axis proof additionally captured80 actual pages across dev/production preview, five viewport sizes, ES/PT-BR and valid/invalid/unknown route states, with6 HTTP controls, matching title/H1 after language changes, actual brand minimum44px and no recorded overflow/runtime exception.\n\nRaw author evidence is outside source at `/private/tmp/andes49-fix56/` (before.json, after.json, matrix/report.json and captures); original source/evidence remains preserved. Source detector exits0 and planted control exits2; URL scan did not run because Puppeteer is absent. Please independently rerun your unchanged controls and confirm exact e154a6d for review5560715902. Complete UI-proof and full-app acceptance remain open. No merge or issue closure.\n",
+    "author_association": "MEMBER",
+    "reactions": {
+      "url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/issues/comments/6243588836/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

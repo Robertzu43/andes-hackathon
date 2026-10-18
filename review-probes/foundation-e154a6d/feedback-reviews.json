@@ -1,0 +1,42 @@
+[
+  {
+    "id": 5560715902,
+    "node_id": "PRR_kwDOVNt_688AAAABS3HKfg",
+    "user": {
+      "login": "sebasbimbi",
+      "id": 85371645,
+      "node_id": "MDQ6VXNlcjg1MzcxNjQ1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85371645?u=78b7dc660b779f77098b7ff8dffe4389f287fd3b&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sebasbimbi",
+      "html_url": "https://github.com/sebasbimbi",
+      "followers_url": "https://api.github.com/users/sebasbimbi/followers",
+      "following_url": "https://api.github.com/users/sebasbimbi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sebasbimbi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sebasbimbi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sebasbimbi/subscriptions",
+      "organizations_url": "https://api.github.com/users/sebasbimbi/orgs",
+      "repos_url": "https://api.github.com/users/sebasbimbi/repos",
+      "events_url": "https://api.github.com/users/sebasbimbi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sebasbimbi/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "Independent Q52 shared-foundation review: **FIX `6f8dc52a566d3880cf1f10bbfd5282a888725ca1`**.\n\nThree P2 findings reproduce in both development and the isolated production preview:\n\n1. **Invalid identifiers have the wrong tab title** \u2014 [`app.tsx:42\u201347`](https://github.com/Bimbi-Dev/andes-hackathon/blob/6f8dc52a566d3880cf1f10bbfd5282a888725ca1/web/src/foundation/app.tsx#L42). `/trips/invalid` displays \u201cNo encontramos esta p\u00e1gina\u201d but `document.title` is \u201cViaje en curso | ANDES\u201d; invalid invitation IDs similarly retain the invitation title. The parent's route effect overwrites `NotFound`'s title. A validated route identity should own the final heading/title, including after locale changes. Unknown paths and valid UUIDs are passing controls.\n2. **The brand home link is shorter than the approved44px target** \u2014 [`foundation.css:19`](https://github.com/Bimbi-Dev/andes-hackathon/blob/6f8dc52a566d3880cf1f10bbfd5282a888725ca1/web/src/styles/foundation.css#L19), [`app.tsx:27`](https://github.com/Bimbi-Dev/andes-hackathon/blob/6f8dc52a566d3880cf1f10bbfd5282a888725ca1/web/src/foundation/app.tsx#L27). Native390px measurement:124.453125\u00d738.796875 CSS pixels; the same height reproduces at all five viewports in ES/PT-BR. Enlarge the actual anchor hit box while retaining the mark. Other navigation targets pass. The44px requirement comes from the approved contract.\n3. **API-root queries escape the unconfigured boundary** \u2014 [`unconfigured-api.ts:3`](https://github.com/Bimbi-Dev/andes-hackathon/blob/6f8dc52a566d3880cf1f10bbfd5282a888725ca1/web/src/app/unconfigured-api.ts#L3). With no API target, `GET /v1?probe=1` returns200 SPA HTML, while `/v1` and `/v1/me?probe=1` correctly return503 JSON `{code:'api_unconfigured'}`. Match the parsed pathname rather than the raw query-bearing URL; preserve configured proxy forwarding.\n\n[Immutable report, portable native Chromium reproductions and exact actual/expected results](https://github.com/Bimbi-Dev/andes-hackathon/blob/b1134025a4ccb8857738988be3a8806bb3d9f97d/review-probes/foundation-6f8dc52/README.md), reviewer commit `b1134025a4ccb8857738988be3a8806bb3d9f97d`, branch `sebasbimbi/test/andes-foundation-review-6f8dc52`. The13-check source-bound command reports **9 pass /4 fail**, exit1; two failing title cases form finding1. Keep all red assertions intact for repair/re-review. Only reviewer evidence was added; all165 frozen author blobs still match and the Git fingerprint remains `ad9d881b33a77485efe29c3aeaa31f683225edf222a2532f2ca1c03b5ead1b0a`.\n\nIndependent Node24.17 results: strict build and **9/9 foundation tests pass**, including real loopback production-preview proxy/status/header checks. **15 native pointer/keyboard assertions pass** across field validation/retention, consent, save/deduplication, disabled action, retry, skip-to-main, locale persistence and token-free session begin/end. Native Enter produces exactly one session-fixture attempt. Source/unknown/observed-time distinctions remain visible.\n\nRetained **153 development and30 production captures**, five required viewports, ES/PT-BR and reduced motion. All183 PNG widths are independently verified against their actual viewport widths. No measured overflow, clipped control, sampled opaque-text contrast failure or runtime exception; minimum sampled text contrast5.912. Representative small Portuguese, long content, validation/focus, error/retry, expired demo and brand images were visually inspected. Production test hooks/fixture controls/private markers are absent, even when building with the explicit test flag;13 artifact files remain byte-identical. All six served brand PNG dimensions pass.\n\nThe embedded browser repeatedly returned a zero viewport/no screenshot after recovery, so the native runs used a private owned Chromium profile. Initial desktop captures excluded the scrollbar gutter; originals remain preserved and only the72 affected desktop rasters were repeated with full-width assertions. Vendored source detector exits0, planted side-tab control exits2; URL mode reports missing Puppeteer despite exit0, so its URL scan is explicitly **not-run**.\n\nThe version1.0.0 UI manifest retains the full original `andes-operate-v1` contract and remains **RED** for these findings, incomplete aggregate feature/state/interaction coverage and an unperformed complete-receipt sensitivity proof. No scope was weakened or missing state waived. This review covers the six shared foundation modules; real API authentication, combined driver/contact production journeys, physical/provider/human evidence and full-app acceptance remain with their respective evidence gates. No extra blanket hold is imposed on unrelated work.\n\nRead all paginated live PR56 issue comments, formal reviews, inline comments and threads before publishing; all were empty in the refreshed snapshot. Please publish the three corrections with exact SHA/regression evidence for original-reviewer confirmation. No author source edit, merge, issue closure or human-feedback override was performed.\n",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/56#pullrequestreview-5560715902",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/56",
+    "author_association": "MEMBER",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/56#pullrequestreview-5560715902"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/56"
+      }
+    },
+    "submitted_at": "2026-10-18T00:00:56Z",
+    "commit_id": "6f8dc52a566d3880cf1f10bbfd5282a888725ca1"
+  }
+]

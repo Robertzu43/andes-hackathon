@@ -1,0 +1,45 @@
+✔ a temporary port is default and explicit owned ports are validated (0.406375ms)
+✔ the dev proxy is disabled until an explicit loopback target is supplied (0.099041ms)
+✔ no credentials, remote service, pathname or redirect hint can enter the dev proxy (0.174625ms)
+✔ all shared semantic keys have nonempty Spanish and Brazilian Portuguese values (0.666166ms)
+✔ language follows explicit choice, including when preference storage is blocked (0.14825ms)
+✔ the router implements exactly the released utility route patterns without backend route invention (0.556667ms)
+✔ opaque UUID route identifiers are validated without adding user data to titles (0.364833ms)
+✖ production preview returns an honest unavailable API rather than SPA HTML (22.592291ms)
+✖ production preview proxies exact API paths, status and idempotency headers to an owned fixture (0.732666ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 7
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 122.9135
+
+✖ failing tests:
+
+test at tests/foundation/preview-proxy.test.mjs:9:1
+✖ production preview returns an honest unavailable API rather than SPA HTML (22.592291ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:1987:21)
+      at listenInCluster (node:net:2066:12)
+      at node:net:2275:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }
+
+test at tests/foundation/preview-proxy.test.mjs:26:1
+✖ production preview proxies exact API paths, status and idempotency headers to an owned fixture (0.732666ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:1987:21)
+      at listenInCluster (node:net:2066:12)
+      at node:net:2275:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }

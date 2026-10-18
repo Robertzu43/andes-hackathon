@@ -1,0 +1,17 @@
+✔ a temporary port is default and explicit owned ports are validated (0.398333ms)
+✔ the dev proxy is disabled until an explicit loopback target is supplied (0.08575ms)
+✔ no credentials, remote service, pathname or redirect hint can enter the dev proxy (0.153333ms)
+✔ all shared semantic keys have nonempty Spanish and Brazilian Portuguese values (0.68675ms)
+✔ language follows explicit choice, including when preference storage is blocked (0.145583ms)
+✔ the router implements exactly the released utility route patterns without backend route invention (0.598667ms)
+✔ opaque UUID route identifiers are validated without adding user data to titles (0.376542ms)
+✔ production preview returns an honest unavailable API rather than SPA HTML (48.818458ms)
+✔ production preview proxies exact API paths, status and idempotency headers to an owned fixture (19.462917ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 179.714959

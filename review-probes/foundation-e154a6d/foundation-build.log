@@ -1,0 +1,14 @@
+
+> andes-web@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 31 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.42 kB │ gzip:  0.57 kB
+dist/assets/index-Cfsm2bru.css    8.04 kB │ gzip:  2.41 kB
+dist/assets/index-CW6dPmaa.js   270.52 kB │ gzip: 85.95 kB
+
+✓ built in 276ms

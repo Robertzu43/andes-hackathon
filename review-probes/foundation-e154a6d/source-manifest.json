@@ -1,0 +1,154 @@
+{
+  "head": "e154a6d7fc987c656395503a1ef794a0e3de64fd",
+  "verifiedBlobs": 37,
+  "files": [
+    {
+      "path": "web/.env.example",
+      "blob": "99a89d665b71e49dff37778a03b89fd1efbb69c6"
+    },
+    {
+      "path": "web/README.md",
+      "blob": "2bada8288e49e15c03cd453b8b52109d0cd15b01"
+    },
+    {
+      "path": "web/index.html",
+      "blob": "89d9fac051a3b7423fab91826c74ca801d8c0762"
+    },
+    {
+      "path": "web/package-lock.json",
+      "blob": "171803ef2a0bcf067dfbc9015ccabbfa9dd6cfd2"
+    },
+    {
+      "path": "web/package.json",
+      "blob": "ef43d0ae996b6059b1662d69e62be5321b944c4b"
+    },
+    {
+      "path": "web/public/brand/apple-touch-icon.png",
+      "blob": "12319cb7cdd36159c8989d831d0ace822cf66af8"
+    },
+    {
+      "path": "web/public/brand/icon.png",
+      "blob": "763e4c0a5ca635ec20e3f09379c71691694b5921"
+    },
+    {
+      "path": "web/public/brand/mark-16.png",
+      "blob": "b9107bbf4592cb59ed45995881582b5617426c77"
+    },
+    {
+      "path": "web/public/brand/mark-32.png",
+      "blob": "1b92d49ee4f685e4212d6854b93304d8415e70bf"
+    },
+    {
+      "path": "web/public/brand/mark-48.png",
+      "blob": "3887df896076eb95a45075a524e9aa5da6a86dcf"
+    },
+    {
+      "path": "web/public/brand/mark.svg",
+      "blob": "891292f0df804e6d6874d6a5419e3a29a8f64fc4"
+    },
+    {
+      "path": "web/public/brand/share.png",
+      "blob": "57090d43112c7433bb373e009e5313335aec5654"
+    },
+    {
+      "path": "web/public/brand/share.svg",
+      "blob": "337b80defae050bd628aae3612ebdf9d02983648"
+    },
+    {
+      "path": "web/public/favicon.ico",
+      "blob": "14b17db5858b5646d87b1d0b2b30ef56a79f5d16"
+    },
+    {
+      "path": "web/public/robots.txt",
+      "blob": "1f53798bb4fe33c86020be7f10c44f29486fd190"
+    },
+    {
+      "path": "web/src/app/config.ts",
+      "blob": "940c38ea64bd37ac54c67eb72fbb072b3d3ffa3e"
+    },
+    {
+      "path": "web/src/app/unconfigured-api.ts",
+      "blob": "531b87a6b7da155e35da9681fdc06a14aab2978e"
+    },
+    {
+      "path": "web/src/foundation/app.tsx",
+      "blob": "953606b328d80efb1f65059ab18150555f1fe66d"
+    },
+    {
+      "path": "web/src/foundation/i18n.tsx",
+      "blob": "1d44265b5f4f8f906ca09ecc099ea3248ea0b381"
+    },
+    {
+      "path": "web/src/foundation/index.ts",
+      "blob": "59bf9fb7107f399aac347e0d7ceada964645dac6"
+    },
+    {
+      "path": "web/src/foundation/messages.ts",
+      "blob": "9ff437e3f8ba11a3b7934e7a67ec70e64fdd030b"
+    },
+    {
+      "path": "web/src/foundation/primitives.tsx",
+      "blob": "ec0ca62738aab4bc3652468db5d9bede4e059507"
+    },
+    {
+      "path": "web/src/foundation/routes.ts",
+      "blob": "b0d0ce6dda5b4dd516a022e038e23aab8d3b016e"
+    },
+    {
+      "path": "web/src/foundation/session.ts",
+      "blob": "2ecfe6318cbc6185ba4caa1a81a0f2fbf0d596fd"
+    },
+    {
+      "path": "web/src/main.tsx",
+      "blob": "7c54c67e9dff8c2fe0db7cc6e8fb58233d8b06c9"
+    },
+    {
+      "path": "web/src/styles/foundation.css",
+      "blob": "d6b3d1d8a9f352964c0334b38d9fe00b2d03f08f"
+    },
+    {
+      "path": "web/src/styles/tokens.css",
+      "blob": "599582035e11067afcecef4c82926610899f0f7a"
+    },
+    {
+      "path": "web/src/vite-env.d.ts",
+      "blob": "3d35edaa44c8bdc50dbc04fc67f2975f2e8ec660"
+    },
+    {
+      "path": "web/tests/fixtures/preview.html",
+      "blob": "e8533f7ef11468e3322773bf14626f3d2d8cc404"
+    },
+    {
+      "path": "web/tests/fixtures/preview.tsx",
+      "blob": "a0454c4b2297072203f5f85ffb7852c620df98e2"
+    },
+    {
+      "path": "web/tests/fixtures/session.html",
+      "blob": "bcd5bad11f159e121673fbc64ce2e4637f6ef179"
+    },
+    {
+      "path": "web/tests/fixtures/session.tsx",
+      "blob": "7c66ac3e2ca47879450ba17224d20165375b5c12"
+    },
+    {
+      "path": "web/tests/foundation/config.test.mjs",
+      "blob": "27ef355693de5f44f5247990c76b5f0451a95944"
+    },
+    {
+      "path": "web/tests/foundation/messages-routes.test.mjs",
+      "blob": "1605d61d3ceac086adde9ad9d2f9a335e9ce4262"
+    },
+    {
+      "path": "web/tests/foundation/preview-proxy.test.mjs",
+      "blob": "fcc77e83afa23244b6be842f4810d158370cc932"
+    },
+    {
+      "path": "web/tsconfig.json",
+      "blob": "3c6d48ed4071b42a0fdefc928a753752c2afff00"
+    },
+    {
+      "path": "web/vite.config.ts",
+      "blob": "6ba9c22010d57fa5210178cd1dca1d3e30b48d00"
+    }
+  ]
+}

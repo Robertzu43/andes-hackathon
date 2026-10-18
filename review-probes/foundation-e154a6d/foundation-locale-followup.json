@@ -1,0 +1,110 @@
+{
+  "candidate": "e154a6d7fc987c656395503a1ef794a0e3de64fd",
+  "results": [
+    {
+      "width": 360,
+      "path": "/trips/invalid",
+      "title": "Não encontramos esta página | ANDES",
+      "h1": "Não encontramos esta página",
+      "locale": "pt-BR",
+      "brand": {
+        "width": 124.453125,
+        "height": 44
+      },
+      "overflow": false,
+      "pass": true
+    },
+    {
+      "width": 360,
+      "path": "/trips/invalid",
+      "title": "No encontramos esta página | ANDES",
+      "h1": "No encontramos esta página",
+      "locale": "es",
+      "brand": {
+        "width": 124.453125,
+        "height": 44
+      },
+      "overflow": false,
+      "pass": true
+    },
+    {
+      "width": 360,
+      "path": "/contact/invitations/invalid",
+      "title": "Não encontramos esta página | ANDES",
+      "h1": "Não encontramos esta página",
+      "locale": "pt-BR",
+      "brand": {
+        "width": 124.453125,
+        "height": 44
+      },
+      "overflow": false,
+      "pass": true
+    },
+    {
+      "width": 360,
+      "path": "/contact/invitations/invalid",
+      "title": "No encontramos esta página | ANDES",
+      "h1": "No encontramos esta página",
+      "locale": "es",
+      "brand": {
+        "width": 124.453125,
+        "height": 44
+      },
+      "overflow": false,
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "path": "/trips/invalid",
+      "title": "Não encontramos esta página | ANDES",
+      "h1": "Não encontramos esta página",
+      "locale": "pt-BR",
+      "brand": {
+        "width": 124.453125,
+        "height": 44
+      },
+      "overflow": false,
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "path": "/trips/invalid",
+      "title": "No encontramos esta página | ANDES",
+      "h1": "No encontramos esta página",
+      "locale": "es",
+      "brand": {
+        "width": 124.453125,
+        "height": 44
+      },
+      "overflow": false,
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "path": "/contact/invitations/invalid",
+      "title": "Não encontramos esta página | ANDES",
+      "h1": "Não encontramos esta página",
+      "locale": "pt-BR",
+      "brand": {
+        "width": 124.453125,
+        "height": 44
+      },
+      "overflow": false,
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "path": "/contact/invitations/invalid",
+      "title": "No encontramos esta página | ANDES",
+      "h1": "No encontramos esta página",
+      "locale": "es",
+      "brand": {
+        "width": 124.453125,
+        "height": 44
+      },
+      "overflow": false,
+      "pass": true
+    }
+  ],
+  "runtime": []
+}

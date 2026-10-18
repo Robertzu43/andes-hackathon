@@ -1,0 +1,112 @@
+{
+  "head": "e154a6d7fc987c656395503a1ef794a0e3de64fd",
+  "origin": "http://127.0.0.1:64137",
+  "kind": "independent local browser/HTTP controls; no authenticated backend/device/provider claims",
+  "output": "/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-q52-foundation-probes-9ClmHT",
+  "results": [
+    {
+      "id": "unconfigured session is truthful and disabled",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "valid trip ID retains active-trip title",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "unknown path title matches not-found heading",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "invalid trip identifier title matches not-found heading",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "invalid invitation identifier title matches not-found heading",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "brand home hit target reaches approved44px minimum",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "navigation positive targets reach44px minimum",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "API root without target returns JSON503",
+      "expected": {
+        "status": 503,
+        "json": true,
+        "unconfigured": true
+      },
+      "actual": {
+        "status": 503,
+        "json": true,
+        "unconfigured": true
+      },
+      "passed": true
+    },
+    {
+      "id": "API root query without target returns JSON503",
+      "expected": {
+        "status": 503,
+        "json": true,
+        "unconfigured": true
+      },
+      "actual": {
+        "status": 503,
+        "json": true,
+        "unconfigured": true
+      },
+      "passed": true
+    },
+    {
+      "id": "registered API-path query positive returns JSON503",
+      "expected": {
+        "status": 503,
+        "json": true,
+        "unconfigured": true
+      },
+      "actual": {
+        "status": 503,
+        "json": true,
+        "unconfigured": true
+      },
+      "passed": true
+    },
+    {
+      "id": "production mount hook is absent",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "production fixture entry does not expose fixture controls",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "generic noindex metadata retains privacy",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    }
+  ],
+  "passed": 13,
+  "failed": 0
+}
