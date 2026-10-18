@@ -1,25 +1,20 @@
-// Isolated foundation + actual signed backend. No application/production login.
+// The checkout's own web app + actual signed backend. No application/production login.
 import assert from 'node:assert/strict';
-import {fork, spawnSync} from 'node:child_process';
+import {fork} from 'node:child_process';
 import {once} from 'node:events';
-import {realpathSync} from 'node:fs';
-import {copyFile, mkdir, mkdtemp, readFile, rm, symlink, writeFile} from 'node:fs/promises';
+import {existsSync, realpathSync} from 'node:fs';
+import {mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
-import {dirname, isAbsolute, join} from 'node:path';
+import {join} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {exportJWK, generateKeyPair, SignJWT} from 'jose';
 import pg from 'pg';
 import {command, stop, testEnvironment} from './runtime.mjs';
-import {verifiedBackendSource} from './source-pin.mjs';
 
-export const FOUNDATION_SHA = '6f8dc52a566d3880cf1f10bbfd5282a888725ca1';
-export const BROWSER_CLIENT_SHA = 'db7034fc9e1dba035b87368117376e9730d6b830';
+// One web app and one client: web/ and web/src/lib/api in this checkout. Nothing is copied or pinned.
 const repo = fileURLToPath(new URL('../../', import.meta.url));
-function blob(revision, path) {
-  const result = spawnSync('git', ['show', `${revision}:${path}`], {cwd: repo, maxBuffer: 2 * 1024 * 1024});
-  assert.equal(result.status, 0, 'Fetch the frozen foundation/client Git objects');
-  return result.stdout;
-}
+const web = join(repo, 'web');
+const bootstrap = '/__andes_fixture__/bootstrap.mjs';
 
 async function ownedResources(directory) {
   const extra = {};
@@ -48,17 +43,12 @@ async function ownedResources(directory) {
   finally {clearTimeout(timer); abort.abort();}
 }
 
-export async function startBrowserFixture(dependencyRoot) {
+export async function startBrowserFixture() {
   assert.ok(Number(process.versions.node.split('.')[0]) >= 24 && Number(process.versions.node.split('.')[0]) < 27, 'Use Node 24–26');
   process.chdir(repo);
-  verifiedBackendSource();
-  assert.ok(dependencyRoot && isAbsolute(dependencyRoot), 'Set APP_INTEGRATION_WEB_ROOT to an explicit installed web package');
-  // Borrow only dependencies; render a fresh exact-source extraction, never the donor app.
-  for (const name of ['package.json', 'package-lock.json']) {
-    assert.deepEqual(await readFile(join(dependencyRoot, name)), blob(FOUNDATION_SHA, `web/${name}`), 'Dependency package must match the frozen foundation lock');
-  }
+  assert.ok(existsSync(join(web, 'node_modules/vite/package.json')), 'Install the web app first: cd web && npm ci');
+  // Private run directory: Vite cache and production output only, never the checkout.
   const directory = await mkdtemp(join(tmpdir(), 'andes-q46-browser-'));
-  const web = join(directory, 'web');
   const previousEnvironment = process.env;
   let runtime, pool, api, server, vite, closed = false;
   const previews = new Set();
@@ -79,24 +69,6 @@ export async function startBrowserFixture(dependencyRoot) {
   }
   try {
     runtime = await ownedResources(directory);
-    const inventory = spawnSync('git', ['ls-tree', '-r', '--name-only', FOUNDATION_SHA, 'web'], {cwd: repo, encoding: 'utf8'});
-    assert.equal(inventory.status, 0);
-    for (const path of inventory.stdout.trim().split('\n')) {
-      assert.ok(path.startsWith('web/') && !path.split('/').includes('..'));
-      const target = join(directory, path);
-      await mkdir(dirname(target), {recursive: true});
-      await writeFile(target, blob(FOUNDATION_SHA, path));
-    }
-    await symlink(join(dependencyRoot, 'node_modules'), join(web, 'node_modules'), 'dir');
-    const fixture = join(web, '__andes_fixture__');
-    await mkdir(join(fixture, 'api'), {recursive: true});
-    for (const name of ['index', 'client', 'session', 'errors', 'responses', 'types', 'journeys', 'driver', 'gateway']) {
-      await writeFile(join(fixture, 'api', `${name}.ts`), blob(BROWSER_CLIENT_SHA, `web/src/lib/api/${name}.ts`));
-    }
-    await copyFile(fileURLToPath(new URL('./browser-bootstrap.mjs', import.meta.url)), join(fixture, 'bootstrap.mjs'));
-    await writeFile(join(directory, 'package.json'), '{"type":"module"}\n');
-    // Node's native TypeScript loader uses this explicit module boundary too.
-    await writeFile(join(fixture, 'package.json'), '{"type":"module"}\n');
     pool = new pg.Pool({connectionString: runtime.url, max: 2});
     const {migrate} = await import(pathToFileURL(join(repo, 'dist/db.js')));
     await migrate(pool);
@@ -131,6 +103,9 @@ export async function startBrowserFixture(dependencyRoot) {
       cacheDir: join(directory, 'vite-cache'), logLevel: 'error'};
     server = await vite.createServer({...config, server: {host: '127.0.0.1', port: 0, cors: false}, plugins: [{
       name: 'q46-synthetic-credentials',
+      // Dev server only: the test bootstrap is a virtual module, so it never lands in web/ or a build.
+      resolveId(id) {return id === bootstrap ? '\0' + bootstrap : undefined;},
+      load(id) {return id === '\0' + bootstrap ? readFile(new URL('./browser-bootstrap.mjs', import.meta.url), 'utf8') : undefined;},
       configureServer(value) {value.middlewares.use('/__andes_fixture__/credentials', async (req, res) => {
         const expected = `http://127.0.0.1:${value.httpServer.address().port}`;
         res.setHeader('Cache-Control', 'no-store'); res.setHeader('Content-Type', 'application/json');
@@ -155,17 +130,17 @@ export async function startBrowserFixture(dependencyRoot) {
         return `http://127.0.0.1:${preview.httpServer.address().port}`;
       } finally {process.env.ANDES_API_PROXY_TARGET = apiOrigin;}
     }
-    return {origin, directory, pool, clientModule: join(fixture, 'api/index.ts'), productionPreview, close};
+    return {origin, directory, pool, clientModule: join(web, 'src/lib/api/index.ts'), productionPreview, close};
   } catch (error) {await close(); throw error;}
 }
 
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   let fixture;
   try {
-    process.chdir(repo); verifiedBackendSource();
+    process.chdir(repo);
     await command('npm', ['run', 'typecheck']); await command('npm', ['run', 'build']);
-    fixture = await startBrowserFixture(process.env.APP_INTEGRATION_WEB_ROOT);
-    console.log(`SYNTHETIC browser fixture: foundation ${FOUNDATION_SHA}; client ${BROWSER_CLIENT_SHA}; real local signed API/PostgreSQL`);
+    fixture = await startBrowserFixture();
+    console.log('SYNTHETIC browser fixture: this checkout\'s web/ app and client; real local signed API/PostgreSQL');
     console.log(`Local: ${fixture.origin}/session`);
     console.log('Mount: import /__andes_fixture__/bootstrap.mjs and call mountSession(); synthetic credentials stay in memory');
     // IPC is only for the bounded lifecycle test; it contains no credentials.
@@ -182,7 +157,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
     process.once('disconnect', () => void shutdown());
   } catch (error) {
     await fixture?.close();
-    console.error('Synthetic browser fixture failed; check frozen source, dependency root and documented prerequisites');
+    console.error('Synthetic browser fixture failed; check web/ dependencies and documented prerequisites');
     if (error.message.startsWith('Integration database setup failed (')) {
       console.error(error.message + '; set APP_INTEGRATION_PG_BIN to the intended PostgreSQL 15+ binary directory');
     }

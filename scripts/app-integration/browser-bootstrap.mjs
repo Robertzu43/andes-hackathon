@@ -1,5 +1,6 @@
-// Test-only module served by the isolated fixture, never a production entry.
-import {MemorySession, createApiClient, createSessionGateway} from './api/index.ts';
+// Test-only virtual module served by the fixture's dev server, never a production entry.
+// Root-relative import: the checkout's own client in web/src/lib/api.
+import {MemorySession, createApiClient, createSessionGateway} from '/src/lib/api/index.ts';
 
 export function mountSession() {
   if (typeof window.__ANDES_TEST_MOUNT__ !== 'function') throw Error('Development fixture hook required');

@@ -11,8 +11,8 @@ import {createServer} from 'node:net';
 import {startBrowserFixture} from '../../scripts/app-integration/browser-fixture.mjs';
 import {stop, testEnvironment} from '../../scripts/app-integration/runtime.mjs';
 
-test('frozen foundation proxy and accepted gateway reach the actual signed SQL backend', {timeout: 60000}, async t => {
-  const fixture = await startBrowserFixture(process.env.APP_INTEGRATION_WEB_ROOT);
+test('checkout web proxy and its client gateway reach the actual signed SQL backend', {timeout: 60000}, async t => {
+  const fixture = await startBrowserFixture();
   t.after(() => fixture.close());
   const {MemorySession, createApiClient, createSessionGateway, createIdempotencyKey} = await import(pathToFileURL(fixture.clientModule));
   const credentialUrl = fixture.origin + '/__andes_fixture__/credentials';
@@ -51,14 +51,17 @@ test('frozen foundation proxy and accepted gateway reach the actual signed SQL b
     assert.ok(html.includes('/src/main.tsx'));
     const hook = await (await fetch(fixture.origin + '/src/main.tsx')).text();
     assert.ok(hook.includes('__ANDES_TEST_MOUNT__'));
-    assert.equal((await fetch(fixture.origin + '/__andes_fixture__/bootstrap.mjs')).status, 200);
+    const bootstrap = await fetch(fixture.origin + '/__andes_fixture__/bootstrap.mjs');
+    assert.equal(bootstrap.status, 200);
+    assert.match(await bootstrap.text(), /from ['"]\/src\/lib\/api\/index\.ts['"]/, 'Bootstrap must mount the checkout client');
+    assert.equal((await fetch(fixture.origin + '/src/lib/api/index.ts')).status, 200);
   });
   await t.test('production-build preview forwards actual signed reads and idempotent writes without development hooks', async () => {
     const preview = await fixture.productionPreview();
     assert.equal((await fetch(preview + '/v1/me')).status, 401);
     const builtApi = createApiClient({baseUrl: preview, session});
     assert.equal((await builtApi.getIdentity()).id, identity);
-    const write = {idempotencyKey: createIdempotencyKey()}, body = {label: 'SYNTHETIC foundation proxy control'};
+    const write = {idempotencyKey: createIdempotencyKey()}, body = {label: 'SYNTHETIC web proxy control'};
     const created = await builtApi.createTruck(body, write);
     assert.equal((await builtApi.createTruck(body, write)).id, created.id);
     assert.equal((await fixture.pool.query('SELECT count(*)::int n FROM trucks WHERE driver_id=$1', [identity])).rows[0].n, 1);
@@ -82,18 +85,18 @@ test('frozen foundation proxy and accepted gateway reach the actual signed SQL b
     assert.equal(gateway.getSnapshot().state, 'signed-out');
     await assert.rejects(api.getIdentity(), error => error.kind === 'unauthenticated');
     const invalid = createSessionGateway({session, api, mode: 'demo', acquire: async () => ({...credentials, accessToken: 'synthetic.invalid.signature'})});
-    // An actual401 invalidates MemorySession and publishes signed-out via its subscription.
-    try {await invalid.begin(); assert.equal(invalid.getSnapshot().state, 'signed-out');}
+    // An actual 401 invalidates MemorySession; main's gateway reports that refusal as 'error' (b5bc921).
+    try {await invalid.begin(); assert.equal(invalid.getSnapshot().state, 'error');}
     finally {invalid.dispose();}
     assert.equal(session.snapshot().status, 'anonymous');
   });
   gateway.dispose();
   await fixture.close();
-  assert.equal(existsSync(fixture.directory), false, 'Owned frontend extraction and database resources must be cleaned');
+  assert.equal(existsSync(fixture.directory), false, 'Owned run directory and database resources must be cleaned');
 });
 
 for (const shutdownSignal of ['SIGHUP', 'SIGKILL']) test(`interactive CLI resource owner cleans after ${shutdownSignal}`, {timeout: 30000}, async t => {
-  const extra = {APP_INTEGRATION_WEB_ROOT: process.env.APP_INTEGRATION_WEB_ROOT};
+  const extra = {};
   for (const key of ['APP_INTEGRATION_PG_BIN', 'APP_INTEGRATION_PG_PORT', 'APP_INTEGRATION_ADMIN_URL']) {
     if (process.env[key]) extra[key] = process.env[key];
   }

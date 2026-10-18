@@ -1,11 +1,9 @@
-// Explicit opt-in: this needs frozen foundation dependencies, unlike backend tests.
+// Browser seam: this checkout's web/ app and client against its own backend. Needs `cd web && npm ci`.
 import {fileURLToPath} from 'node:url';
 import {command, testEnvironment} from './runtime.mjs';
-import {verifiedBackendSource} from './source-pin.mjs';
 
 process.chdir(fileURLToPath(new URL('../../', import.meta.url)));
-verifiedBackendSource();
-const extra = {APP_INTEGRATION_WEB_ROOT: process.env.APP_INTEGRATION_WEB_ROOT};
+const extra = {};
 for (const key of ['APP_INTEGRATION_PG_BIN', 'APP_INTEGRATION_PG_PORT', 'APP_INTEGRATION_ADMIN_URL']) {
   if (process.env[key]) extra[key] = process.env[key];
 }

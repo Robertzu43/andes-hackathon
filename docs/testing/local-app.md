@@ -158,81 +158,64 @@ source in a private clone (checked out with `--no-overlay`, so backend files
 added after the pin are removed): clean source passes, and an ignored migration is
 refused before any evidence directory exists.
 
-## Real browser fixture and proxy preparation
+## Browser seam: the web app's proxy against the real backend
 
-The opt-in browser fixture extracts exact foundation
-`6f8dc52a566d3880cf1f10bbfd5282a888725ca1` and accepted API/gateway
-`db7034fc9e1dba035b87368117376e9730d6b830` into a private directory. The backend
-remains pinned to `5591c9b`. It reuses an explicitly supplied installed web package
-whose package and lockfile match the frozen foundation, with caches in the private
-run directory. It installs nothing and changes no shared frontend source.
-
-```sh
-git fetch origin 6f8dc52a566d3880cf1f10bbfd5282a888725ca1
-git fetch origin db7034fc9e1dba035b87368117376e9730d6b830
-APP_INTEGRATION_WEB_ROOT=/absolute/frozen-foundation/web node scripts/app-integration/check-browser-seam.mjs
-```
-
-This runs backend typecheck/build plus eight checks over actual development and
-production-preview HTTP sockets, signed `/v1/me`, SQL identity persistence,
-production-proxy idempotent truck creation, missing-target JSON503, rejected
-authorization and owned-resource cleanup. It consumes the existing API45 gateway;
-the gateway only authenticates after actual server identity verification. Its
-token-free snapshot and duplicate-begin behavior are checked. This does not
-exercise the newer owner-read routes or any driver/contact feature controller.
-
-For an interactive local fixture, start this command through Codus's dev aux slot:
+`scripts/app-integration/check-browser-seam.mjs` serves this checkout's own
+`web/` (its `vite.config.ts`, `package.json`, lock and the client in
+`web/src/lib/api`) against this checkout's backend on a disposable PostgreSQL.
+Nothing is copied or pinned, so a change to the web app or backend on `main` is
+what this check tests. It runs in CI in the `app-integration` job.
 
 ```sh
-APP_INTEGRATION_WEB_ROOT=/absolute/frozen-foundation/web node scripts/app-integration/browser-fixture.mjs
+npm ci && (cd web && npm ci)
+node scripts/app-integration/check-browser-seam.mjs
 ```
 
-The printed `/session` URL is the actual loopback server. After it loads, use the
-development browser console or browser automation to mount the existing shell:
+It builds the backend, then runs `tests/app-integration/browser-proxy.mjs`. That
+file has no `.test.mjs` suffix because it needs `web/node_modules`, which
+`run.mjs` does not install. Its eight checks:
+
+- The fixture-only credential POST rejects GET, a missing header and foreign origins.
+- The Vite dev proxy passes real `/v1/me` authentication. The client gateway
+  authenticates only after that real read, sends once for a duplicate `begin()`
+  and persists one SQL identity. The dev server serves the test mount hook and
+  the bootstrap, which imports the checkout's client.
+- A production build behind `vite preview` forwards signed reads and idempotent
+  truck writes, and its bundles contain neither the mount hook nor fixture modules.
+- The unconfigured production proxy answers JSON 503 `api_unconfigured`, not SPA HTML.
+- Signout and a server-refused credential (gateway state `error`) leave the session anonymous.
+- The interactive CLI removes its database and run directory after SIGHUP, and
+  after SIGKILL of its whole process group.
+
+### Interactive fixture
+
+```sh
+node scripts/app-integration/browser-fixture.mjs
+```
+
+It prints the loopback `/session` URL. In the browser console or automation:
 
 ```js
 const fixture = await import('/__andes_fixture__/bootstrap.mjs');
 const session = fixture.mountSession();
 ```
 
-Clicking Continue obtains an explicitly synthetic, short-lived signed credential
-from a same-origin fixture-only POST and verifies it through the real `/v1` proxy.
-Credentials stay in memory, never build environment, URL, storage or logs. The
-fixture POST requires the exact local origin/host and a custom header; CORS is
-disabled. This is a test credential issuer, not production login or provider
-revocation. Signout clears the memory session. The shared demo notice remains
-visible, and no feature journey or notification outcome is invented.
+Continue then gets a short-lived synthetic signed credential from a same-origin
+fixture-only POST (exact origin and host plus a custom header, CORS off) and
+verifies it through the real `/v1` proxy. Credentials stay in memory, never in a
+URL, storage or logs, and the token's phone claim is fictional
+(`+1 555 555 0146`). This is a test credential issuer, not production login.
+The bootstrap is a virtual module of the fixture's dev server, so it is never
+written into `web/` or a production build. Vite's cache and build output go to a
+private `andes-q46-browser-*` temp directory; the checkout stays clean.
 
-Production builds omit the test mount hook and fixture modules. The separate
-production-preview proxy is exercised by the explicit check, without browser-hook
-injection. The interactive process stops after ten minutes or SIGINT/SIGTERM,
-closing its web/API children and dropping only its owned database/temporary files.
-Terminal SIGHUP triggers cleanup too. A separate IPC resource owner holds the
-disposable database and removes the extraction after parent disconnect, including
-forced SIGKILL that cannot run a foreground signal handler. That owner uses a
-separate process group, private IPC and a ten-minute deadline, so a PTY group kill
-cannot skip its cleanup. Real CLI-child regressions cover both hangup and forced
-process-group exit, requiring removed extraction and a
-freed owned PostgreSQL port. The original aux-stop failure remains preserved in
-the provisional browser observation record.
-Do not run it concurrently with another owned cluster on port56446; select an
-explicit spare `APP_INTEGRATION_PG_PORT` when needed.
+A separate resource-owner process (its own process group, private IPC and a
+ten-minute deadline) holds the database and run directory. They are removed on
+normal close, SIGINT, SIGTERM, SIGHUP, parent disconnect, or SIGKILL of the
+foreground process group. PostgreSQL uses port 56446 by default; set
+`APP_INTEGRATION_PG_PORT` to run beside another owned cluster, and
+`APP_INTEGRATION_PG_BIN` when `pg_config` belongs to another installation.
 
-Select the intended PostgreSQL installation explicitly with
-`APP_INTEGRATION_PG_BIN=/absolute/postgresql/bin` when the aux shell's `pg_config`
-belongs to another runtime. The observed Conda shell selected `/opt/anaconda3/bin`
-and failed cluster initialization; the explicit local PostgreSQL16.14 directory
-worked. No source guard or database isolation was weakened to resolve it.
-
-The prior fixture `c2501a4` remains frozen against foundation `3283fe6`. Its native
-agent-Chrome observations include actual Continue → signed `/v1/me` → authenticated,
-ES/PT-BR, signout, locale-only storage and a persisted synthetic SQL identity.
-The new foundation binding changes only the reviewed header CSS for readable
-Portuguese labels at narrow widths; it preserves package/session/proxy exports.
-Old captures retain their original source identity and are not relabelled.
-
-The released `andes-operate-v1` contract and foundation scope remain the visual
-oracle. Browser observations of this fixture are provisional server/session seam
-evidence. A Git-bound UI Evidence Manifest and independent review are still
-required for complete UI proof; this harness does not accept all twelve routes,
-all five viewports, accessibility, provider delivery or whole-app readiness.
+This is server and session seam evidence, not UI acceptance: it covers no
+feature routes, viewports, accessibility, OIDC, provider delivery or whole-app
+readiness.
