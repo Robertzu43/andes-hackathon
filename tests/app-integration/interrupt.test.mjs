@@ -34,7 +34,10 @@ async function freePort() {
   return port;
 }
 
-for (const signal of ['SIGINT', 'SIGTERM']) test(`${signal} on an owned-cluster run stops its PostgreSQL and removes its directory`, {timeout: 90000}, async t => {
+// One file-level test. These four cases start PostgreSQL and write APP_INTEGRATION_PG_PORT;
+// the runner would otherwise overlap them and one shutdown would kill the other's connection.
+test('an interrupted integration run removes only its own resources', {timeout: 360000, concurrency: 1}, async t => {
+for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on an owned-cluster run stops its PostgreSQL and removes its directory`, {timeout: 90000}, async (t) => {
   const discovery = process.env.APP_INTEGRATION_PG_BIN ? null : spawnSync('pg_config', ['--bindir'], {encoding: 'utf8'});
   const bin = process.env.APP_INTEGRATION_PG_BIN ?? (discovery.status === 0 ? discovery.stdout.trim() : '');
   if (!existsSync(join(bin, 'initdb'))) return t.skip('No PostgreSQL server binaries for an owned cluster');
@@ -57,7 +60,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) test(`${signal} on an owned-cluster 
   await new Promise(resolve => probe.close(resolve));
 });
 
-for (const signal of ['SIGINT', 'SIGTERM']) test(`${signal} on a shared-server run drops only its own database`, {timeout: 90000}, async t => {
+for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on a shared-server run drops only its own database`, {timeout: 90000}, async t => {
   // Own the entire control server: other test files create/drop databases concurrently.
   // Never infer ownership from a prefix or sweep databases belonging to sibling tests.
   const discovery = process.env.APP_INTEGRATION_PG_BIN ? null : spawnSync('pg_config', ['--bindir'], {encoding: 'utf8'});
@@ -88,4 +91,5 @@ for (const signal of ['SIGINT', 'SIGTERM']) test(`${signal} on a shared-server r
   assert.deepEqual((await pool.query('SELECT value FROM interruption_control')).rows,
     [{value: 'synthetic-do-not-reset'}], 'The shared input database must retain its sentinel');
   assert.deepEqual(readdirSync(temp), []);
+});
 });
