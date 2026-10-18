@@ -70,6 +70,44 @@ export const incident: Decoder<T.IncidentSummary> = object({ id: uuid, tripId: u
 export const acknowledgement: Decoder<T.AcknowledgementResult> = object({ id: uuid, status: literal('active'), recorded: literal('acknowledged') });
 export const action: Decoder<T.ActionResult> = object({ id: uuid, status: literal('active'), recorded: literal('action') });
 export const resolution: Decoder<T.ResolutionResult> = object({ id: uuid, status: literal('resolved') });
+export const sharing: Decoder<T.SharingResult> = object({ id: uuid, sharing: choice('stopped', 'resumed') });
+const checkReason = choice<T.CheckReason>('sharing_stopped', 'silence', 'arrival_overdue');
+const statusLocationWire = object({ freshness: choice('fresh', 'stale', 'unavailable'), ageMs: nullable(number(0)),
+  capturedAt: nullable(date), accuracy: nullable(number(0)) });
+const statusLocation: Decoder<NonNullable<T.TripStatus['location']>> = value => {
+  const parsed = statusLocationWire(value);
+  if (parsed.freshness === 'unavailable'
+    ? parsed.ageMs !== null || parsed.capturedAt !== null || parsed.accuracy !== null
+    : parsed.ageMs === null || parsed.capturedAt === null || parsed.accuracy === null) invalid();
+  // No readAt here, so age is the only anchor: freshness must follow the server's 120000ms bound.
+  if (parsed.ageMs !== null && parsed.freshness !== (parsed.ageMs <= 120_000 ? 'fresh' : 'stale')) invalid();
+  return parsed;
+};
+const statusWire = object({
+  trip: object({ status: choice('active', 'arrived', 'cancelled'), paused: bool, expectedArrivalAt: nullable(date) }),
+  check: nullable(object({ status: literal('asking'), reason: checkReason, askUntil: date })),
+  incident: nullable(object({ id: uuid, trigger: choice('sos', 'missed_check'), checkReason: nullable(checkReason),
+    status: choice('active', 'resolved'), createdAt: date })),
+  deliveries: array(object({ role: choice('family', 'colleague', 'group'), channel: choice('sms', 'whatsapp', 'voice', 'group'),
+    status: choice('pending', 'claimed', 'authorized', 'accepted', 'rejected', 'unknown', 'delivered', 'cancelled', 'unavailable'),
+    unavailableReason: nullable(text) })),
+  location: optional(statusLocation),
+});
+export const tripStatus: Decoder<T.TripStatus> = value => {
+  const parsed = statusWire(value);
+  if (parsed.incident === null && parsed.deliveries.length !== 0) invalid();
+  return parsed;
+};
+const token: Decoder<string> = value => typeof value === 'string' && value.length <= 16384
+  && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value) ? value : invalid();
+const demoWorldWire = object({ synthetic: literal(true), expiresInSeconds: literal(7200),
+  driver: object({ id: uuid, token, truckId: uuid }), family: object({ id: uuid, token, grantId: uuid }),
+  colleague: object({ id: uuid, token, grantId: uuid }) });
+export const demoWorld: Decoder<T.DemoWorld> = value => {
+  const parsed = demoWorldWire(value);
+  if (new Set([parsed.driver.id, parsed.family.id, parsed.colleague.id].map(v => v.toLowerCase())).size !== 3) invalid();
+  return parsed;
+};
 const snapshotWire = object({ tripId: uuid, readAt: date, ageMs: nullable(number(0)),
   freshness: choice('fresh', 'stale', 'unavailable'), location: nullable(object({ capturedAt: date, receivedAt: date,
     latitude: number(-90, 90), longitude: number(-180, 180), accuracy: number(0) })) });
