@@ -4,4 +4,4 @@
 
 <!-- Give validation results and limits: commands/runtime, exact reviewed SHA, and failed, unknown or missing evidence. State explicitly if no remote checks are configured. -->
 
-<!-- Follow [Review before merge](../CONTRIBUTING.md#review-before-merge). Keep each feedback disposition in its original review thread/discussion: fix SHA and regression/valid-input evidence, plus confirmation from the other side's labelled independent review agent on the exact head when required. The author never merges their own PR; the non-author reviewer merges with --match-head-commit. -->
+<!-- Follow [Review before merge](../CONTRIBUTING.md#review-before-merge). Keep each feedback disposition in its original review thread/discussion: fix SHA and regression/valid-input evidence. Robert (Robertzu43) merges every PR, including his own, with --match-head-commit. -->
