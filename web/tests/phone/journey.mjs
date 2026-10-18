@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { existsSync } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -13,10 +14,21 @@ import { copyPhoneCaptures } from './captures.mjs';
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const phone = /\+[1-9]\d{6,14}/;
 
+async function reserveLoopbackPort() {
+  const probe = createServer();
+  await new Promise((resolve, reject) => {
+    probe.once('error', reject);
+    probe.listen(0, '127.0.0.1', resolve);
+  });
+  const { port } = probe.address();
+  await new Promise((resolve) => probe.close(resolve));
+  return port;
+}
+
 test('a private window can register a trip, raise SOS, and read the contact alert', { timeout: 180000 }, async t => {
   assert.ok(existsSync(join(root, 'dist/api/app.js')), 'Build the backend before this journey');
   assert.ok(existsSync(join(root, 'web/dist/index.html')), 'Build the web app before this journey');
-  process.env.APP_INTEGRATION_PG_PORT ??= '56448';
+  if (!process.env.APP_INTEGRATION_PG_PORT) process.env.APP_INTEGRATION_PG_PORT = String(await reserveLoopbackPort());
   const { disposableDatabase } = await import(pathToFileURL(join(root, 'scripts/app-integration/runtime.mjs')));
   const { createContext, migrate } = await import(pathToFileURL(join(root, 'dist/db.js')));
   const { createApp } = await import(pathToFileURL(join(root, 'dist/api/app.js')));
