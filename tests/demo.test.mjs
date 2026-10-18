@@ -102,7 +102,7 @@ test('demo personas can invite only personas from their own world', async t => {
 test('live demo sends stop at the per-incident and per-session budgets, checked at authorization', async t => {
   const d = await runtime(); const f = await fixture(t); const grant = await f.grant();
   let sends = 0;
-  const limited = provider({qualification: {...qualification, allowedDestinations: ['+5511999990000'], demoLimits: {perIncident: 2, perSession: 3}}, async send() { sends++; return {state: 'accepted', messageId: 'msg_x', status: 'queued'}; }});
+  const limited = provider({qualification: {...qualification, allowedDestinations: ['+15555550100'], demoLimits: {perIncident: 2, perSession: 3}}, async send() { sends++; return {state: 'accepted', messageId: 'msg_x', status: 'queued'}; }});
   const sosAndAuthorize = async () => {
     const incident = (await f.req('POST', `/v1/trips/${await f.trip([grant])}/sos`, {})).body.id;
     const jobs = (await f.ctx.pool.query("SELECT id,version,class FROM jobs WHERE incident_id=$1 AND channel<>'group' ORDER BY channel", [incident])).rows;
@@ -124,7 +124,7 @@ test('dispatch refuses any destination outside a configured allowlist without ca
   const blocked = provider({qualification: {...qualification, allowedDestinations: ['+15555550123']}, async send() { sends++; return {state: 'accepted', messageId: 'msg_x', status: 'queued'}; }});
   assert.equal(await d.authorizeJob(f.ctx, await d.claimJob(f.ctx, jobs[0], 'allowlist'), blocked), null);
   assert.deepEqual((await f.ctx.pool.query('SELECT status,unavailable_reason FROM jobs WHERE id=$1', [jobs[0].id])).rows, [{status: 'unavailable', unavailable_reason: 'destination_not_allowed'}]);
-  const allowed = provider({qualification: {...qualification, allowedDestinations: ['+5511999990000']}});
+  const allowed = provider({qualification: {...qualification, allowedDestinations: ['+15555550100']}});
   assert.ok(await d.authorizeJob(f.ctx, await d.claimJob(f.ctx, jobs[1], 'allowlist'), allowed));
   assert.equal(sends, 0);
   assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM dispatch_attempts')).rows[0].n, 1);

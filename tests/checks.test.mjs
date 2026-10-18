@@ -12,7 +12,7 @@ test('drafts keep an optional expected arrival; invitations take a family or col
   assert.deepEqual(roles, [{id: colleague.grant, role: 'colleague'}, {id: family.grant, role: 'family'}]);
   const other = await f.token('other');
   const otherId = (await f.req('GET', '/v1/me', undefined, other)).body.id;
-  assert.equal((await f.req('POST', '/v1/contacts', {contactId: otherId, phone: '+5511999990000', map: true, incident: true, role: 'boss'})).status, 400);
+  assert.equal((await f.req('POST', '/v1/contacts', {contactId: otherId, phone: '+15555550100', map: true, incident: true, role: 'boss'})).status, 400);
   const draft = await f.draft({expectedArrivalAt: '2026-10-17T18:00:00Z'});
   assert.equal(draft.status, 200);
   const trip = await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: [family.grant]});
@@ -170,7 +170,7 @@ test('status drives both screens without phone numbers and follows grant scopes'
   assert.equal(alerted.check, null);
   assert.deepEqual({...alerted.incident, id: typeof alerted.incident.id}, {id: 'string', trigger: 'missed_check', checkReason: 'silence', status: 'active', createdAt: '2026-10-17T12:03:00.001Z'});
   assert.deepEqual(alerted.deliveries.map(d => `${d.role}:${d.channel}:${d.status}`), ['family:sms:pending', 'family:voice:pending', 'family:whatsapp:pending', 'group:group:unavailable']);
-  assert.doesNotMatch(JSON.stringify(alerted), /\+55|contact|recipient/);
+  assert.doesNotMatch(JSON.stringify(alerted), /\+1555|contact|recipient/);
   await f.ctx.pool.query('UPDATE contact_grants SET map_accepted=false');
   assert.equal((await f.req('GET', path, undefined, family.jwt)).body.location, undefined);
   assert.equal((await f.req('GET', path, undefined, f.stranger)).status, 403);
@@ -325,7 +325,7 @@ test('status shows the open check only to the driver and incident-scope contacts
   const f = await fixture(t);
   const scoped = async (subject, scope) => {
     const jwt = await f.token(subject); const id = (await f.req('GET', '/v1/me', undefined, jwt)).body.id;
-    const invitation = (await f.req('POST', '/v1/contacts', {contactId: id, phone: '+5511999990000', map: true, incident: true})).body.id;
+    const invitation = (await f.req('POST', '/v1/contacts', {contactId: id, phone: '+15555550100', map: true, incident: true})).body.id;
     assert.equal((await f.req('POST', `/v1/contacts/${invitation}/accept`, scope, jwt)).status, 200);
     return {jwt, grant: invitation};
   };
