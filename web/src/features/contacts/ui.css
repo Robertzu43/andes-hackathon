@@ -9,4 +9,5 @@
 .andes-contact-report { margin-block-start: 1.5rem; }
 .andes-contact-resolution { margin-block-start: 1rem; }
 .andes-contact-receipts { margin-block-start: 2rem; }
+.andes-contact-deliveries { margin: 0; padding-inline-start: 1.25rem; }
 @media (min-width: 60rem) { .andes-contact-layout { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 3rem; } }

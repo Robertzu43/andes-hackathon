@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createContactJourney, locationAge } from '../../src/features/contacts/journey.ts';
-import { ids, hint, point, incident, deferred, httpError, apiFixture } from './fixtures.mjs';
+import { ids, hint, point, incident, deferred, httpError, apiFixture, tripStatus, mapOnlyStatus } from './fixtures.mjs';
 
 function setup(view = 'contact', overrides) {
   const transport = apiFixture(overrides);
@@ -405,4 +405,56 @@ test('gatekeeper incident time: a separate device receipt never masquerades as s
   assert.equal('readAt' in journey.getState().incident.data, false);
   journey.setSession(null);
   assert.equal(journey.getState().incident.observation, null);
+});
+
+// Fix pass (R6): main's #74 status contract and contact role.
+test('R6: status gives the contact the open check, the latest incident with its label and the current alert wave', async () => {
+  const { journey, calls } = setup('contact', { getTripStatus: () => ({ ...tripStatus(),
+    incident: { ...tripStatus().incident, label: 'intento_robo' } }) });
+  journey.selectContactTrip(ids.trip);
+  assert.equal(await journey.loadStatus(), 'recorded');
+  assert.deepEqual(calls.at(-1).args[0], ids.trip);
+  const { data, observation } = journey.getState().status;
+  assert.deepEqual(data.check, tripStatus().check);
+  assert.equal(data.incident.id, ids.incident); assert.equal(data.incident.trigger, 'missed_check');
+  assert.equal(data.incident.label, 'intento_robo');
+  assert.deepEqual(data.deliveries, tripStatus().deliveries);
+  assert.equal(observation.source, 'this-device');
+});
+test('R6: a map-only contact gets no incident data; null means not visible, never a reassurance', async () => {
+  const { journey } = setup('contact', { getTripStatus: () => mapOnlyStatus() });
+  assert.equal(await journey.loadStatus(), 'recorded');
+  const { data } = journey.getState().status;
+  assert.equal(data.incident, null); assert.equal(data.check, null); assert.deepEqual(data.deliveries, []);
+});
+test('R6: contradictory or unknown status values fail closed', async () => {
+  for (const bad of [{ ...mapOnlyStatus(), deliveries: tripStatus().deliveries },
+    { ...tripStatus(), incident: { ...tripStatus().incident, label: 'robbery' } },
+    { ...tripStatus(), check: { ...tripStatus().check, reason: 'tired' } },
+    { ...tripStatus(), deliveries: [{ role: 'family', channel: 'sms', status: 'sent', unavailableReason: null }] }]) {
+    const { journey } = setup('contact', { getTripStatus: () => bad });
+    assert.equal(await journey.loadStatus(), 'unavailable');
+    assert.equal(journey.getState().status.data, null);
+  }
+});
+test('R6: a status denial leaves the separately authorized incident and map; revoke conceals status too', async () => {
+  const { journey } = setup('contact', { getTripStatus: () => { throw httpError(403); } });
+  await journey.loadLocation(); await journey.loadIncident(ids.incident);
+  await journey.loadStatus();
+  assert.equal(journey.getState().status.status, 'denied');
+  assert.equal(journey.getState().incident.data.status, 'active');
+  assert.deepEqual(journey.getState().location.data, point());
+  const other = setup('contact');
+  await other.journey.loadStatus(); assert.ok(other.journey.getState().status.data);
+  await other.journey.revokeTrip(ids.grant);
+  assert.equal(other.journey.getState().status.data, null);
+});
+test('R6: the driver can invite a colleague; role is sent only when chosen and must be known', async () => {
+  const { journey, calls } = setup('driver');
+  await journey.inviteContact({ contactId: ids.contact, phone: '+15555550100', map: true, incident: true, role: 'colleague' });
+  assert.equal(calls[0].args[0].role, 'colleague');
+  const other = setup('driver');
+  await other.journey.inviteContact({ contactId: ids.contact, phone: '+15555550100', map: true, incident: true });
+  assert.equal('role' in other.calls[0].args[0], false);
+  assert.throws(() => other.journey.inviteContact({ contactId: ids.contact, phone: '+15555550100', map: true, incident: true, role: 'boss' }));
 });

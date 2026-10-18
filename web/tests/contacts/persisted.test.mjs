@@ -23,6 +23,7 @@ function browser(f, getToken) {
     revokeTripContact: (tripId, id, o) => request('POST', `/v1/trips/${tripId}/contacts/${id}/revoke`, {}, o),
     getTripSnapshot: (id, o) => request('GET', `/v1/trips/${id}/snapshot`, undefined, o),
     getIncident: (id, o) => request('GET', `/v1/incidents/${id}`, undefined, o),
+    getTripStatus: (id, o) => request('GET', `/v1/trips/${id}/status`, undefined, o),
     acknowledgeIncident: (id, o) => request('POST', `/v1/incidents/${id}/acknowledgements`, {}, o),
     reportIncidentAction: (id, body, o) => request('POST', `/v1/incidents/${id}/actions`, body, o),
     resolveIncident: (id, o) => request('POST', `/v1/incidents/${id}/resolve`, {}, o),
@@ -146,4 +147,39 @@ persisted('persisted: local role/identity claims never replace authenticated cre
   await reloaded.loadIncident(incidentId);
   assert.equal(reloaded.getState().incident.data.status, 'resolved');
   assert.throws(() => reloaded.acknowledge());
+});
+
+async function acceptedTrip(f, journey, setToken, scope, role) {
+  signIn(journey, f.me.id, 'driver');
+  assert.equal(await journey.inviteContact({ contactId: f.contactIdentity.id, phone: '+15555550100', ...scope, ...(role ? { role } : {}) }), 'recorded');
+  const invitation = journey.getState().invitation;
+  setToken(f.contact); signIn(journey, f.contactIdentity.id, 'contact');
+  assert.equal(await journey.acceptInvitation(invitation, scope), 'recorded');
+  return f.trip([invitation.id]);
+}
+
+persisted('R6: status lets an incident-scope colleague find and answer the SOS, with role and label from the server', async t => {
+  const f = await fixture(t); let token = f.driver; const journey = browser(f, () => token);
+  const tripId = await acceptedTrip(f, journey, value => { token = value; }, { map: true, incident: true }, 'colleague');
+  const incidentId = await sos(f, tripId);
+  journey.selectContactTrip(tripId);
+  assert.equal(await journey.loadStatus(), 'recorded');
+  const status = journey.getState().status.data;
+  assert.equal(status.incident.id, incidentId); assert.equal(status.incident.trigger, 'sos'); assert.equal(status.incident.label, null);
+  assert.deepEqual(status.deliveries.map(d => `${d.role}:${d.channel}`).sort(), ['colleague:sms', 'colleague:whatsapp', 'group:group']);
+  assert.equal(await journey.loadIncident(status.incident.id), 'recorded');
+  assert.equal(await journey.acknowledge(), 'recorded');
+  assert.equal((await f.req('POST', `/v1/incidents/${incidentId}/label`, { label: 'falsa_alarma' })).status, 200);
+  assert.equal(await journey.loadStatus(), 'recorded');
+  assert.equal(journey.getState().status.data.incident.label, 'falsa_alarma');
+});
+
+persisted('R6: a map-only contact gets no incident, check or deliveries through status while an SOS is active', async t => {
+  const f = await fixture(t); let token = f.driver; const journey = browser(f, () => token);
+  const tripId = await acceptedTrip(f, journey, value => { token = value; }, { map: true, incident: false });
+  await sos(f, tripId);
+  journey.selectContactTrip(tripId);
+  assert.equal(await journey.loadStatus(), 'recorded');
+  const status = journey.getState().status.data;
+  assert.equal(status.incident, null); assert.equal(status.check, null); assert.deepEqual(status.deliveries, []);
 });

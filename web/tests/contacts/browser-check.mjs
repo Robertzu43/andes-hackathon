@@ -79,7 +79,7 @@ try {
     await page.evaluate(() => { const b = document.querySelector('form button[type="submit"]'); b.click(); b.click(); });
     await wait(() => !!document.querySelector('[data-contact-state="recorded"]'));
     const posts = await page.evaluate(() => window.__CONTACT_FIXTURE__.calls.filter(c => c.method === 'POST'));
-    assert.equal(posts.length, 1); assert.deepEqual(JSON.parse(posts[0].body), { contactId: '00000000-0000-4000-8000-000000000006', phone: '+5511000000001', map: true, incident: false });
+    assert.equal(posts.length, 1); assert.deepEqual(JSON.parse(posts[0].body), { contactId: '00000000-0000-4000-8000-000000000006', phone: '+5511000000001', map: true, incident: false, role: 'family' });
     assert.ok(posts[0].key); await wait(() => document.activeElement?.dataset.action === 'invite-open');
     await capture('invitation-receipt');
   });

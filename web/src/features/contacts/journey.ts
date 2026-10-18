@@ -4,17 +4,19 @@ import { narrowScope, operationalPrivacy, sharingScope, type SharingScope } from
 export interface ReadOptions { signal: AbortSignal }
 export interface WriteOptions extends ReadOptions { idempotencyKey: string }
 export interface ContactApi {
-  inviteContact(body: SharingScope & { contactId: string; phone: string }, options: WriteOptions): Promise<unknown>;
+  inviteContact(body: SharingScope & { contactId: string; phone: string; role?: ContactRole }, options: WriteOptions): Promise<unknown>;
   acceptContact(id: string, body: SharingScope, options: WriteOptions): Promise<unknown>;
   revokeContact(id: string, options: WriteOptions): Promise<unknown>;
   revokeTripContact(tripId: string, grantId: string, options: WriteOptions): Promise<unknown>;
   getTripSnapshot(tripId: string, options: ReadOptions): Promise<unknown>;
   getIncident(id: string, options: ReadOptions): Promise<unknown>;
+  getTripStatus(tripId: string, options: ReadOptions): Promise<unknown>;
   acknowledgeIncident(id: string, options: WriteOptions): Promise<unknown>;
   reportIncidentAction(id: string, body: { action: string }, options: WriteOptions): Promise<unknown>;
   resolveIncident(id: string, options: WriteOptions): Promise<unknown>;
 }
 export interface Session { actorId: string; view: 'driver' | 'contact' }
+export type ContactRole = 'family' | 'colleague';
 /** A caller-supplied invitation hint, NOT a grant read or proof of current consent. */
 export interface Invitation {
   id: string; driverId: string; contactId: string; requested: SharingScope;
@@ -32,13 +34,26 @@ interface Incident {
   id: string; tripId: string; status: 'active' | 'resolved'; createdAt: string;
   resolvedAt: string | null; groupCapability: 'unavailable';
 }
+const CHECK_REASONS = ['arrival_overdue', 'silence', 'sharing_stopped'] as const;
+const LABELS = ['robo', 'intento_robo', 'falsa_alarma', 'sin_senal', 'otro'] as const;
+const DELIVERY_STATUSES = ['pending', 'claimed', 'authorized', 'accepted', 'rejected', 'unknown', 'delivered', 'cancelled', 'unavailable'] as const;
+/** GET /v1/trips/:id/status (main, #74). Map-only contacts get check/incident null and no deliveries. */
+export interface TripStatus {
+  trip: { status: 'active' | 'arrived' | 'cancelled'; paused: boolean; expectedArrivalAt: string | null };
+  check: { status: 'asking'; reason: typeof CHECK_REASONS[number]; askUntil: string } | null;
+  /** `label` is absent when the transport's decoder drops it, which is not the same as no label (null). */
+  incident: { id: string; trigger: 'sos' | 'missed_check'; checkReason: typeof CHECK_REASONS[number] | null;
+    status: 'active' | 'resolved'; label?: typeof LABELS[number] | null; createdAt: string } | null;
+  deliveries: { role: 'family' | 'colleague' | 'group'; channel: 'sms' | 'whatsapp' | 'voice' | 'group';
+    status: typeof DELIVERY_STATUSES[number]; unavailableReason: string | null }[];
+}
 type ReadState<T> = { status: 'unread' | 'loading' | 'recorded' | 'denied' | 'unknown'; data: T | null;
   observation: { receivedAt: string; source: 'this-device'; current: false } | null };
 type Operation = { kind: string; status: 'idle' | 'pending' | 'recorded' | 'rejected' | 'uncertain';
   failure: 'authentication' | 'forbidden' | 'missing' | 'conflict' | 'invalid' | 'unsupported' | 'server' | 'network' | null };
 interface State {
   session: Session | null; trip: TripSelection | null; invitation: Invitation | null;
-  location: ReadState<Snapshot>; incident: ReadState<Incident>;
+  location: ReadState<Snapshot>; incident: ReadState<Incident>; status: ReadState<TripStatus>;
   receipts: { actorId: string; incidentId: string; recorded: 'acknowledged' | 'action'; action: string | null }[];
   tripRevoked: boolean; operation: Operation;
 }
@@ -59,6 +74,10 @@ const instant = (value: unknown): string => {
     || new Date(value).toISOString() !== value) throw new TypeError('Expected the API ISO timestamp');
   return value;
 };
+function choice<T extends string>(value: unknown, values: readonly T[]): T {
+  if (!values.includes(value as T)) throw new TypeError('Unexpected API value');
+  return value as T;
+}
 function match(value: unknown, expected: unknown) {
   if (value !== expected) throw new TypeError('API response does not match the request');
 }
@@ -82,17 +101,17 @@ export function locationAge(snapshot: Snapshot) {
 export function createContactJourney(api: ContactApi, keyFactory: () => string = () => crypto.randomUUID(),
   receiptTime: () => string = () => new Date().toISOString()) {
   let state: State = { session: null, trip: null, invitation: null, location: unread(),
-    incident: unread(), receipts: [], tripRevoked: false, operation: idle() };
+    incident: unread(), status: unread(), receipts: [], tripRevoked: false, operation: idle() };
   let epoch = 0;
   const requests = new Set<AbortController>();
   const readRequests = new Set<AbortController>();
-  const reads = { location: 0, incident: 0 };
+  const reads = { location: 0, incident: 0, status: 0 };
   let retry: (() => Promise<'recorded' | 'superseded' | 'rejected' | 'uncertain'>) | null = null;
   function conceal() {
-    reads.location++; reads.incident++;
+    reads.location++; reads.incident++; reads.status++;
     for (const request of readRequests) { request.abort(); requests.delete(request); }
     readRequests.clear();
-    state.location = unread(); state.incident = unread(); state.receipts = [];
+    state.location = unread(); state.incident = unread(); state.status = unread(); state.receipts = [];
   }
   function invalidate(preserveUncertain = false) {
     const uncertain = preserveUncertain && state.operation.status === 'uncertain'
@@ -155,7 +174,7 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
       return uncertain ? 'uncertain' as const : 'rejected' as const;
     } finally { requests.delete(controller); }
   }
-  async function read<T>(slot: 'location' | 'incident', request: (options: ReadOptions) => Promise<unknown>,
+  async function read<T>(slot: 'location' | 'incident' | 'status', request: (options: ReadOptions) => Promise<unknown>,
     parse: (body: Record<string, unknown>) => T) {
     session();
     if (state.operation.kind.startsWith('revoke') && ['pending', 'uncertain'].includes(state.operation.status)) {
@@ -171,7 +190,8 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
       const data = parse(object(raw));
       const observation = { receivedAt: receiptTime(), source: 'this-device', current: false } as const;
       if (slot === 'location') state.location = { status: 'recorded', data: data as Snapshot, observation };
-      else state.incident = { status: 'recorded', data: data as Incident, observation };
+      else if (slot === 'incident') state.incident = { status: 'recorded', data: data as Incident, observation };
+      else state.status = { status: 'recorded', data: data as TripStatus, observation };
       return 'recorded' as const;
     } catch (error) {
       if (started !== epoch || sequence !== reads[slot]) return 'superseded' as const;
@@ -210,9 +230,11 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
       const next = { id: uuid(id), driverId: null };
       invalidate(); state.trip = next; state.tripRevoked = false;
     },
-    inviteContact(value: SharingScope & { contactId: string; phone: string }) {
+    inviteContact(value: SharingScope & { contactId: string; phone: string; role?: ContactRole }) {
       const actor = session('driver');
-      const body = { contactId: uuid(value.contactId), phone: value.phone, ...sharingScope(value) };
+      // Without a role the server stores family (SMS, WhatsApp and voice); colleagues get SMS and WhatsApp.
+      const role = value.role === undefined ? undefined : choice(value.role, ['family', 'colleague'] as const);
+      const body = { contactId: uuid(value.contactId), phone: value.phone, ...sharingScope(value), ...(role ? { role } : {}) };
       if (body.contactId === actor.actorId || !/^\+[1-9]\d{6,14}$/.test(body.phone)) throw new TypeError('Invalid invitation destination');
       return write('invite', options => api.inviteContact(structuredClone(body), options), response => {
         match(response.status, 'pending');
@@ -278,6 +300,34 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
         if ((response.status === 'resolved') !== (resolvedAt !== null)) throw new TypeError('Contradictory incident status');
         return { id, tripId: selected.id, status: response.status, createdAt: instant(response.createdAt),
           resolvedAt, groupCapability: 'unavailable' } as Incident;
+      });
+    },
+    /** Status is the contact's way to discover a trip's incident and open check without a host reference. */
+    loadStatus() {
+      const selected = trip();
+      return read('status', options => api.getTripStatus(selected.id, options), response => {
+        const tripFacts = object(response.trip); const check = response.check === null ? null : object(response.check);
+        const incident = response.incident === null ? null : object(response.incident);
+        if (typeof tripFacts.paused !== 'boolean' || !Array.isArray(response.deliveries)
+          || (!incident && response.deliveries.length)) throw new TypeError('Invalid trip status');
+        return {
+          trip: { status: choice(tripFacts.status, ['active', 'arrived', 'cancelled'] as const), paused: tripFacts.paused,
+            expectedArrivalAt: tripFacts.expectedArrivalAt === null ? null : instant(tripFacts.expectedArrivalAt) },
+          check: check && { status: choice(check.status, ['asking'] as const), reason: choice(check.reason, CHECK_REASONS),
+            askUntil: instant(check.askUntil) },
+          incident: incident && { id: uuid(incident.id), trigger: choice(incident.trigger, ['sos', 'missed_check'] as const),
+            checkReason: incident.checkReason === null ? null : choice(incident.checkReason, CHECK_REASONS),
+            status: choice(incident.status, ['active', 'resolved'] as const),
+            ...(incident.label === undefined ? {} : { label: incident.label === null ? null : choice(incident.label, LABELS) }),
+            createdAt: instant(incident.createdAt) },
+          deliveries: response.deliveries.map(row => {
+            const delivery = object(row);
+            if (delivery.unavailableReason !== null && typeof delivery.unavailableReason !== 'string') throw new TypeError('Invalid delivery');
+            return { role: choice(delivery.role, ['family', 'colleague', 'group'] as const),
+              channel: choice(delivery.channel, ['sms', 'whatsapp', 'voice', 'group'] as const),
+              status: choice(delivery.status, DELIVERY_STATUSES), unavailableReason: delivery.unavailableReason as string | null };
+          }),
+        } satisfies TripStatus;
       });
     },
     acknowledge() {

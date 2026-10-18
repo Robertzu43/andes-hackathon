@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createApiClient, createSessionGateway, MemorySession } from '../../src/lib/api/index.ts';
 import { createContactView } from '../../src/features/contacts/view-store.ts';
-import { ids, point, incident, deferred } from './fixtures.mjs';
+import { ids, point, incident, deferred, tripStatus } from './fixtures.mjs';
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const row = () => ({ id: ids.grant, contactId: ids.contact, phone: '+5511000000000', status: 'accepted',
@@ -22,7 +22,8 @@ function fixture(handler) {
     const replacement = await handler?.(call);
     if (replacement) return replacement;
     if (path === '/v1/me') return json({ id: ids.contact });
-    if (path === '/v1/contacts') return json({ contacts: [row()], limit: 100, hasMore: false });
+    if (path === '/v1/contacts') return json({ contacts: [row()], limit: 100, hasMore: false, readAt: '2026-10-17T12:03:00.000Z' });
+    if (path === `/v1/trips/${ids.trip}/status`) return json(tripStatus());
     if (path.endsWith('/snapshot')) return json(point());
     if (path === `/v1/incidents/${ids.incident}`) return json(incident());
     if (path.endsWith('/acknowledgements')) return json({ id: ids.incident, status: 'active', recorded: 'acknowledged' });
@@ -148,4 +149,29 @@ test('gatekeeper R4: catalog denial preserves an uncertain invitation and its un
       assert.equal(writes[0].key, writes[1].key); assert.equal(writes[0].body, writes[1].body);
     } finally { view.stop(); f.cleanup(); }
   }
+});
+
+// Fix pass (R6): status discovery on the contact trip page.
+test('R6: without a host incident reference the contact view finds the incident through status and can respond', async () => {
+  const f = fixture(); delete f.host.incidentReference;
+  const view = createContactView(f.host, 'contact', ids.trip);
+  try { view.start(); await f.host.gateway.begin();
+    await until(() => view.getSnapshot().journey.incident.data);
+    assert.equal(view.getSnapshot().journey.status.data.check.reason, 'sharing_stopped');
+    assert.equal(view.getSnapshot().journey.incident.data.id, ids.incident);
+    await view.acknowledge();
+    assert.equal(view.getSnapshot().journey.receipts[0]?.recorded, 'acknowledged');
+  } finally { view.stop(); f.cleanup(); }
+});
+test('R6: a map 403 does not hide the SOS that status discovered', async () => {
+  const f = fixture(call => call.path.endsWith('/snapshot') ? json({ code: 'map_inactive' }, 403) : undefined);
+  delete f.host.incidentReference;
+  const view = createContactView(f.host, 'contact', ids.trip);
+  try { view.start(); await f.host.gateway.begin();
+    await until(() => view.getSnapshot().journey.incident.data);
+    await view.loadLocation();
+    assert.equal(view.getSnapshot().journey.location.status, 'denied');
+    assert.equal(view.getSnapshot().journey.incident.data.status, 'active');
+    assert.equal(view.getSnapshot().journey.status.data.incident.id, ids.incident);
+  } finally { view.stop(); f.cleanup(); }
 });

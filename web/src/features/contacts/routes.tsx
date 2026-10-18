@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ActionGroup, AsyncState, AttributedUpdate, ConsentScope, EmptyState, ErrorRecovery,
-  FactRow, Field, PermissionState, PrimaryAction, TripIdentity, useMessages,
+  FactRow, Field, PermissionState, PrimaryAction, SelectField, TripIdentity, useI18n, useMessages,
   type FeatureRoutes } from '../../foundation/index.ts';
+import { formattedTimestamp } from '../../foundation/time.ts';
 import type { ContactSummary } from '../../lib/api/index.ts';
 import { PrivacyContent } from '../privacy/page.tsx';
 import { contactMessages, type ContactMessage } from './messages.ts';
@@ -80,6 +81,7 @@ function InviteForm({ store, snapshot, onClose }: { store: ContactView; snapshot
   const t = useMessages(contactMessages);
   const [contactId, setId] = useState(''); const [phone, setPhone] = useState('');
   const [map, setMap] = useState(false); const [incident, setIncident] = useState(false); const [submitted, setSubmitted] = useState(false);
+  const [role, setRole] = useState<'family' | 'colleague'>('family');
   const locked = ['pending', 'uncertain'].includes(snapshot.journey.operation.status);
   const validId = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(contactId)
     && contactId.toLowerCase() !== snapshot.journey.session?.actorId;
@@ -88,7 +90,7 @@ function InviteForm({ store, snapshot, onClose }: { store: ContactView; snapshot
   return <form className="andes-section" noValidate onSubmit={event => {
     event.preventDefault(); if (locked) return; setSubmitted(true);
     if (!validId || !validPhone || !map && !incident) return;
-    void store.invite({ contactId, phone, map, incident }).then(() => {
+    void store.invite({ contactId, phone, map, incident, role }).then(() => {
       if (store.getSnapshot().journey.operation.status === 'recorded') onClose();
     });
   }}><h2>{t('invite')}</h2><p className="andes-hint">{t('inviteHint')}</p>
@@ -96,6 +98,9 @@ function InviteForm({ store, snapshot, onClose }: { store: ContactView; snapshot
       disabled={locked} onChange={e => setId(e.target.value)} error={submitted && !validId ? t('invalidId') : undefined} />
     <Field label={t('phone')} hint={t('phoneHint')} type="tel" autoComplete="off" value={phone} disabled={locked}
       onChange={e => setPhone(e.target.value)} error={submitted && !validPhone ? t('invalidPhone') : undefined} />
+    <SelectField id="invite-contact-role" label={t('role')} hint={t('roleHint')} value={role} disabled={locked}
+      onChange={e => setRole(e.target.value === 'colleague' ? 'colleague' : 'family')}>
+      <option value="family">{t('family')}</option><option value="colleague">{t('colleague')}</option></SelectField>
     <ConsentScope legend={t('chooseScopes')} disabled={locked} options={[
       { id: 'map', label: t('map'), description: t('mapHint'), checked: map, onChange: setMap },
       { id: 'incident', label: t('incident'), description: t('incidentHint'), checked: incident, onChange: setIncident },
@@ -169,25 +174,44 @@ function ResponseForm({ store, snapshot }: { store: ContactView; snapshot: Snaps
 }
 function TripPage({ host, tripId }: { host: ContactHost; tripId: string }) {
   const t = useMessages(contactMessages); const { store, snapshot } = useView(host, 'contact', tripId);
-  const incident = snapshot.journey.incident;
+  const { locale } = useI18n();
+  const incident = snapshot.journey.incident; const status = snapshot.journey.status.data;
+  // Trigger and label of the incident on screen, from the status read that found it.
+  const summary = status?.incident && status.incident.id === incident.data?.id ? status.incident : null;
+  const check = status?.check ?? null;
   const locked = ['pending', 'uncertain'].includes(snapshot.journey.operation.status);
-  const knownIncident = !!host.incidentReference?.(tripId); const knownGrant = !!host.grantReference?.(tripId);
+  const knownGrant = !!host.grantReference?.(tripId);
   return <><h1>{t('tripTitle')}</h1><Gate store={store} snapshot={snapshot}>
     <OperationFeedback store={store} snapshot={snapshot} />
     <div className="andes-contact-layout" data-tour="contact-trip"><div><section className="andes-section" aria-labelledby="incident-title" data-tour={incident.data ? 'incident-status' : undefined}>
       <h2 id="incident-title">{t('incidentTitle')}</h2>
       {incident.status === 'loading' ? <AsyncState state="loading" /> : incident.data ? <>
         <TripIdentity label={t(incident.data.status === 'active' ? 'active' : 'resolved')} />
+        {summary && <dl className="andes-fact-list">
+          <FactRow label={t('trigger')} source={t('sourceServer')}>{t(summary.trigger === 'sos' ? 'triggerSos' : 'triggerMissedCheck')}
+            {summary.checkReason && ` (${t(`reason_${summary.checkReason}`)})`}</FactRow>
+          {summary.label && <FactRow label={t('labelTitle')}>{t(`label_${summary.label}`)}</FactRow>}
+        </dl>}
         {incident.observation && <dl className="andes-fact-list" data-contact-observation="incident">
           <FactRow label={t('incidentRead')} timestamp={incident.observation.receivedAt} source={t('sourceDevice')}>{t('incidentObservation')}</FactRow>
         </dl>}<p className="andes-hint">{t('incidentLimit')}</p>
-      </> : <EmptyState title={t(incident.status === 'denied' ? 'incidentDenied' : 'incidentUnknown')}><p>{t('incidentUnknownBody')}</p></EmptyState>}
-      {knownIncident && <PrimaryAction tone="secondary" busy={incident.status === 'loading'} disabled={locked} onClick={() => void store.loadIncident()}>{t('refresh')}</PrimaryAction>}
+      </> : status && !status.incident ? <EmptyState title={t('incidentNoneVisible')}><p>{t('incidentNoneVisibleBody')}</p></EmptyState>
+        : <EmptyState title={t(incident.status === 'denied' ? 'incidentDenied' : 'incidentUnknown')}><p>{t('incidentUnknownBody')}</p></EmptyState>}
+      <PrimaryAction tone="secondary" busy={incident.status === 'loading' || snapshot.journey.status.status === 'loading'} disabled={locked}
+        onClick={() => void store.loadIncident()}>{t('refresh')}</PrimaryAction>
     </section><ResponseForm key={snapshot.journey.session?.actorId ?? 'none'} store={store} snapshot={snapshot} /></div><aside><Location store={store} snapshot={snapshot} />
       <section className="andes-section andes-secondary-section"><h2>{t('facts')}</h2><dl className="andes-fact-list">
         {incident.data && <FactRow label={t('incidentCreated')} timestamp={incident.data.createdAt} source={t('sourceServer')}>{t('incidentTitle')}</FactRow>}
         {incident.data?.resolvedAt && <FactRow label={t('incidentResolved')} timestamp={incident.data.resolvedAt} source={t('sourceServer')}>{t('resolved')}</FactRow>}
-        <FactRow label={t('lastResponse')}>{t('unknown')}</FactRow><FactRow label={t('deadline')}>{t('unknown')}</FactRow><FactRow label={t('delivery')}>{t('unknown')}</FactRow>
+        {snapshot.journey.status.observation && <FactRow label={t('statusRead')} timestamp={snapshot.journey.status.observation.receivedAt}
+          source={t('sourceDevice')}>{t('statusObservation')}</FactRow>}
+        <FactRow label={t('deadline')} source={check ? t('sourceServer') : undefined}>{check ? <>
+          {t('checkOpen')} ({t(`reason_${check.reason}`)}). {t('deadlineAt')}: <time dateTime={check.askUntil}>
+            {formattedTimestamp(check.askUntil, locale) ?? t('unknown')}</time></> : t(status ? 'checkNoneVisible' : 'unknown')}</FactRow>
+        <FactRow label={t('delivery')} source={status?.deliveries.length ? t('sourceServer') : undefined}>{status?.deliveries.length
+          ? <ul className="andes-contact-deliveries">{status.deliveries.map((row, index) => <li key={index}>
+            {t(row.role)} · {t(`channel_${row.channel}`)}: {t(`delivery_${row.status}`)}</li>)}</ul>
+          : t(status ? 'deliveriesNoneVisible' : 'unknown')}</FactRow>
       </dl></section></aside></div>
     <section className="andes-section andes-secondary-section"><h2>{t('permissions')}</h2>
       {knownGrant ? <Revoke title={t('revokeTrip')} hint={t('revokeTripHint')} busy={snapshot.journey.operation.status === 'pending'}

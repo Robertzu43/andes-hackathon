@@ -33,7 +33,9 @@ only already-known UUID hints from the host. They are not discovery APIs or evid
 of consent. An incident reference is re-read and checked against the selected trip
 before any response control becomes usable. A grant reference can request only a
 server-authorized trip revoke. There is no default UUID, source fact or fabricated
-lookup. Without references, incident actions/revocation show their actual limits.
+lookup. The trip page finds the incident through `GET /v1/trips/:id/status` (see
+below); an incident reference is only a fallback when status shows none. Without a
+grant reference, trip revocation shows its actual limit.
 Incoming invitation metadata still has no published read contract, so its page
 cannot accept or display invented requested scopes; the known route grant ID can
 request participant-authorized withdrawal. Existing headless acceptance/narrowing
@@ -43,7 +45,7 @@ Management uses PR65's actual owner `listContacts` contract, keeping historical
 accepted scopes, revoked state and truncation visible. It supports explicit invitation
 inputs and inline standing revocation. Privacy reuses that catalog and distinguishes
 driver management from unavailable recipient consent management. Contact response
-keeps source/capture/receipt/read times, unknown response/deadline/delivery facts,
+keeps source/capture/receipt/read times, the server's open check/deadline and alert-wave facts,
 acknowledgement, reported action and driver-only resolution separate. Revocation
 conceals before sending. Lost replies and refused same-key retries remain unknown;
 only the explicit unchanged-key retry is offered. Route disposal clears local
@@ -294,7 +296,7 @@ access. Each write below uses the existing authenticated Idempotency-Key contrac
 | `/contact/invitations/:grantId`: withdraw | Known grant ID; existing standing revoke | No invented reject/restore/acceptance-notification action. |
 | `/contact/trips/:tripId`: discover | Trip ID needs driver/grant/effective permissions and active incident binding | PR65 trip list is driver-only; contact shared-trip discovery is missing. Selected grant IDs do not prove current authorization. |
 | `/contact/trips/:tripId`: location | Existing snapshot GET rechecks current map consent/map-active | Preserve capture/receipt/read times and age. Map403 does not deny a separately permitted incident. |
-| `/contact/trips/:tripId`: incident | Existing incident GET with known incident UUID | UUID discovery from a shared trip is missing. Read returns only ID/trip/status/createdAt/resolvedAt/group capability; open SOS survives arrival under incident consent. |
+| `/contact/trips/:tripId`: incident | Status GET returns the latest incident UUID to incident-scope contacts; the incident GET then rechecks it | Map-only contacts get no incident from status, and the page never reads that as "no incident". Read returns only ID/trip/status/createdAt/resolvedAt/group capability; open SOS survives arrival under incident consent. |
 | `/contact/trips/:tripId`: acknowledge | Read active incident; existing acknowledgement POST with empty body | Receipt is not action, delivery, help or resolution. |
 | `/contact/trips/:tripId`: action/cannot assist | Active incident plus explicit 1–300-character report; existing actions POST | Free-text attributed reports only; other participants' history and structured inability/conflict reconciliation are absent. |
 | `/contact/trips/:tripId`: revoke trip | Known trip/grant IDs; existing trip revoke POST | Other trips may retain standing consent; ambiguous revoke keeps reads blocked; authorized prior work may complete. |
@@ -305,8 +307,8 @@ access. Each write below uses the existing authenticated Idempotency-Key contrac
 PR65 profile GET exposes only the current actor's id/phone/verification, not a
 user directory. Driver trip summaries retain selected grant IDs,50active/20recent
 bounds and truncation flags; they expose no effective per-trip-grant revocation,
-incident discovery, coordinates or provider facts. Forthcoming response/deadline/
-channel status remains a separate actual-contract dependency; PR53 stays unwired.
+incident discovery, coordinates or provider facts. Check/deadline and alert-wave
+facts come from the status read below; PR53 stays unwired.
 
 ### Retrieval request and backend ownership
 
@@ -339,5 +341,26 @@ revoke then reload, arrived trip with active SOS. Shared phone values cannot pro
 identity/consent. Driver per-trip-grant-state reload, structured inability, report
 history, directory enrollment, deletion and channel/deadline status remain explicit
 separate gaps outside this minimal request. No scaffold or success fixture is added.
+
+## Trip status (#74 on main) and contact role
+
+The contact trip page reads `GET /v1/trips/:id/status` (driver, or a contact with an
+accepted, unrevoked grant). For incident-scope contacts it returns the open check
+(reason and `askUntil`), the latest incident (trigger, check reason, `label`,
+creation time) and the current alert wave's deliveries, and the page loads that
+incident by the UUID status gives. Map-only contacts get `check:null`,
+`incident:null` and no deliveries; the page then says nothing is visible to this
+account and that this does not mean the driver is fine. A status denial does not
+hide the separately authorized incident or map, and a map 403 does not hide an
+incident that status found. Status has no "last driver response" field, so that row
+was removed. Invitations can set `role` (`family` by default, or `colleague`).
+
+The view uses the typed client from #59/#81 (`web/src/lib/api`), which is not on
+main yet. `compose-ui.mjs` overlays #81's client on this branch. In that tree,
+`view.integration.mjs` runs with node, and `status.browser.mjs` runs against the
+Vite dev fixture (`node web/tests/contacts/status.browser.mjs http://127.0.0.1:PORT`,
+using `web/tests/foundation/cdp.mjs`). #81's status decoder drops `label` today, so
+the label reaches the page only once that client keeps it. The journey keeps it when
+it is present.
 
 Refs #15, #35, #14. No issue completion is implied.

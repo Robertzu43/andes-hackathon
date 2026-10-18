@@ -9,6 +9,16 @@ export const point = () => ({ tripId: ids.trip, freshness: 'stale', ageMs: 180_0
     receivedAt: '2026-10-17T12:02:59.000Z', latitude: 0, longitude: 0, accuracy: 15 } });
 export const incident = () => ({ id: ids.incident, tripId: ids.trip, status: 'active',
   createdAt: '2026-10-17T12:00:00.000Z', resolvedAt: null, groupCapability: 'unavailable' });
+// GET /v1/trips/:id/status as main's #74 returns it to the driver or an incident-scope contact.
+export const tripStatus = () => ({ trip: { status: 'active', paused: false, expectedArrivalAt: null },
+  check: { status: 'asking', reason: 'sharing_stopped', askUntil: '2026-10-17T12:06:00.000Z' },
+  incident: { id: ids.incident, trigger: 'missed_check', checkReason: 'silence', status: 'active', label: null,
+    createdAt: '2026-10-17T12:00:00.000Z' },
+  deliveries: [{ role: 'colleague', channel: 'sms', status: 'pending', unavailableReason: null },
+    { role: 'group', channel: 'group', status: 'unavailable', unavailableReason: 'group_support_unverified' }],
+  location: { freshness: 'stale', ageMs: 180_000, capturedAt: '2026-10-17T12:00:00.000Z', accuracy: 15 } });
+// What a map-only contact gets: no check, incident or deliveries, whatever is happening.
+export const mapOnlyStatus = () => ({ ...tripStatus(), check: null, incident: null, deliveries: [] });
 export function deferred() {
   let resolve; let reject;
   const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
@@ -22,7 +32,7 @@ export function apiFixture(overrides = {}) {
     acceptContact: (id, body) => ({ id, ...body, status: 'accepted' }),
     revokeContact: id => ({ id, revoked: true }),
     revokeTripContact: (tripId, id) => ({ id, tripId, revoked: true }),
-    getTripSnapshot: () => point(), getIncident: () => incident(),
+    getTripSnapshot: () => point(), getIncident: () => incident(), getTripStatus: () => tripStatus(),
     acknowledgeIncident: id => ({ id, status: 'active', recorded: 'acknowledged' }),
     reportIncidentAction: id => ({ id, status: 'active', recorded: 'action' }),
     resolveIncident: id => ({ id, status: 'resolved' }), ...overrides,

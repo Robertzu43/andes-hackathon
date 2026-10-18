@@ -21,7 +21,9 @@ function classify(error: unknown): ViewFailure {
 
 /** Feature-owned observation bridge. HTTP, credentials and verified actor binding remain in45. */
 export function createContactView(host: ContactHost, view: 'driver' | 'contact', tripId?: string) {
-  const journey = createContactJourney(createContactApi(host.api));
+  // The client binds GET /v1/trips/:id/status; its contact facade predates it.
+  const journey = createContactJourney({ ...createContactApi(host.api),
+    getTripStatus: (id, options) => host.api.getTripStatus(id, options) });
   type Journey = ReturnType<typeof journey.getState>;
   type Snapshot = {
     status: 'closed' | 'verifying' | 'ready' | 'error';
@@ -84,6 +86,14 @@ export function createContactView(host: ContactHost, view: 'driver' | 'contact',
       if (!stopped && started === generation) publish({ failure: classify(error) });
     } finally { if (!stopped && started === generation) publish(); }
   }
+  // Status discovers the trip's latest incident (SOS or missed check) for incident-scope contacts.
+  // A host reference is only a fallback when status shows none, e.g. while status is unavailable.
+  async function loadIncident() {
+    if (!tripId) return;
+    await perform(() => journey.loadStatus());
+    const reference = journey.getState().status.data?.incident?.id ?? host.incidentReference?.(tripId);
+    if (reference) await perform(() => journey.loadIncident(reference));
+  }
   function start() {
     if (!stopped) return;
     stopped = false;
@@ -108,8 +118,7 @@ export function createContactView(host: ContactHost, view: 'driver' | 'contact',
         else if (tripId) {
           await perform(() => journey.loadLocation());
           if (stopped || binding !== current) return;
-          const reference = host.incidentReference?.(tripId);
-          if (reference) await perform(() => journey.loadIncident(reference));
+          await loadIncident();
         }
       }).catch(error => {
         if (stopped || binding !== current) return;
@@ -136,10 +145,7 @@ export function createContactView(host: ContactHost, view: 'driver' | 'contact',
       return reference ? perform(() => journey.revokeTrip(reference), true) : Promise.resolve();
     },
     loadLocation: () => perform(() => journey.loadLocation()),
-    loadIncident: () => {
-      const reference = tripId ? host.incidentReference?.(tripId) : null;
-      return reference ? perform(() => journey.loadIncident(reference)) : Promise.resolve();
-    },
+    loadIncident,
     acknowledge: () => perform(() => journey.acknowledge()),
     reportAction: (action: string) => perform(() => journey.reportAction(action)),
     retry: () => perform(() => journey.retryUncertainCommand()),
