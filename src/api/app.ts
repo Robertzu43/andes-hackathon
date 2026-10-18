@@ -12,8 +12,8 @@ import { incidentRoutes } from '../incidents/routes.js';
 import { demoRoutes, type DemoIssuer } from '../demo.js';
 import { insightRoutes } from '../insights/routes.js';
 declare module 'fastify' { interface FastifyRequest { actor: Actor } }
-export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer }
-export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo }: AppOptions) {
+export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer; automaticChecks?: boolean }
+export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo, automaticChecks = false }: AppOptions) {
   const authenticate = authenticator(auth);
   const app = Fastify({ logger: false, bodyLimit: 128 * 1024, requestTimeout: 10000, ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } } });
   app.decorateRequest('actor');
@@ -37,7 +37,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
   checkRoutes(app, ctx);
   if (demo) demoRoutes(app, ctx, demo);
   app.get('/v1/me', async request => ({ id: request.actor.id }));
-  tripRoutes(app, ctx); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport); insightRoutes(app, ctx, Boolean(demo));
+  tripRoutes(app, ctx, automaticChecks); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport); insightRoutes(app, ctx, Boolean(demo));
   if (callbackConfig) callbackRoutes(app, ctx, callbackConfig);
   return app;
 }

@@ -381,3 +381,12 @@ test('expected arrival accepts any RFC 3339 instant and status returns it normal
   f.advance(1); await sweep(f, quiet);
   assert.equal((await f.ctx.pool.query("SELECT count(*)::int n FROM security_checks WHERE reason='arrival_overdue'")).rows[0].n, 1);
 });
+
+test('commands report truthfully whether the sweeper can still escalate the trip', async t => {
+  const command = async (f, trip, type) => (await f.req('POST', `/v1/trips/${trip}/commands`, {type})).body.automaticEscalation;
+  const off = await fixture(t); const quiet = await off.trip();
+  assert.equal(await command(off, quiet, 'checkin_ok'), false, 'no check timings configured');
+  const f = await fixture(t, {automaticChecks: true}); const trip = await f.trip();
+  assert.deepEqual([await command(f, trip, 'checkin_ok'), await command(f, trip, 'pause'), await command(f, trip, 'rest_report'), await command(f, trip, 'resume'), await command(f, trip, 'arrived')],
+    [true, false, false, true, false]);
+});
