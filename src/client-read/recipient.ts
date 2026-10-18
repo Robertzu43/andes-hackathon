@@ -1,14 +1,10 @@
 import type { FastifyInstance } from 'fastify';
-import type pg from 'pg';
 import type { Context } from '../db.js';
-import { readSnapshot } from './routes.js';
+import { iso, readSnapshot, type Row } from './routes.js';
 
 const INVITATION_LIMIT = 100;
 const SHARED_TRIP_LIMIT = 100;
 
-type Row = pg.QueryResultRow;
-
-const iso = (value: Date | null | undefined) => value ? value.toISOString() : null;
 // Same as the owner catalogs: telemetry pool (never the SOS command pool), snapshot pinned before readAt.
 const options = { config: { clientRead: true } };
 

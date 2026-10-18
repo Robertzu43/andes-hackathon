@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import {readdir} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {command, disposableDatabase, onInterrupt, testEnvironment} from './runtime.mjs';
 
@@ -15,13 +14,8 @@ try {
     APP_INTEGRATION_DATABASE_URL: runtime.url, APP_INTEGRATION_RUN_DIR: runtime.directory,
     // The interrupt test starts its own owned cluster with the same server binaries.
     ...(process.env.APP_INTEGRATION_PG_BIN ? {APP_INTEGRATION_PG_BIN: process.env.APP_INTEGRATION_PG_BIN} : {})});
-  await command('npm', ['run', 'typecheck'], {env});
-  await command('npm', ['run', 'build'], {env});
-  const paths = [];
-  for (const folder of ['tests', 'tests/app-integration']) {
-    for (const name of (await readdir(folder)).sort()) if (name.endsWith('.test.mjs')) paths.push(`${folder}/${name}`);
-  }
-  await command(process.execPath, ['--test', ...paths], {env});
+  await command('npm', ['run', 'build'], {env}); // tsc with noEmitOnError: also the typecheck
+  await command(process.execPath, ['--test', 'tests/*.test.mjs', 'tests/app-integration/*.test.mjs'], {env});
   passed = true;
 } catch (error) {
   // Child tests print assertion evidence. Never print connection strings/environment.

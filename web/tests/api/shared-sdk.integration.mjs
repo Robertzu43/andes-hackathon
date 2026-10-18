@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { fixture } from '../../../tests/helpers/runtime.mjs';
 import { MemorySession, createApiClient, createDriverTransport, decodeDriverResponse, bindJourneySession } from '../../src/lib/api/index.ts';
 import { createDriverJourney } from '../../src/features/driver/controller.mjs';
-const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
+const deferred = () => Promise.withResolvers();
 
 test('published shared SDK decoder and transport retain real SOS/OK facts across credential refresh', { timeout: 10000 }, async t => {
   const f = await fixture(t, { channelSupport: [] });

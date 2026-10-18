@@ -2,12 +2,11 @@ import pg from 'pg';
 import { randomUUID } from 'node:crypto';
 import { generateKeyPair, SignJWT } from 'jose';
 import assert from 'node:assert/strict';
+import { createApp } from '../../dist/api/app.js';
+import { createContext, migrate } from '../../dist/db.js';
 
 export async function fixture(t, options = {}) {
   assert.ok(process.env.TEST_DATABASE_URL, 'TEST_DATABASE_URL is required (use a disposable PostgreSQL database)');
-  const { createApp } = await import('../../dist/api/app.js').catch(() => ({}));
-  assert.equal(typeof createApp, 'function', 'missing executable API foundation');
-  const { createContext, migrate } = await import('../../dist/db.js');
   const schema = `test_${randomUUID().replaceAll('-', '')}`;
   const admin = new pg.Pool({ connectionString: process.env.TEST_DATABASE_URL, max: 1 });
   await admin.query(`CREATE SCHEMA ${schema}`);

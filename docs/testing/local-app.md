@@ -22,7 +22,7 @@ APP_INTEGRATION_PG_BIN=/opt/homebrew/opt/postgresql@16/bin \
 APP_INTEGRATION_PG_PORT=56446 node scripts/app-integration/run.mjs
 ```
 
-The command typechecks and builds the backend, runs every `tests/*.test.mjs` and
+The command builds (and so typechecks) the backend, runs every `tests/*.test.mjs` and
 `tests/app-integration/*.test.mjs` check, then cleans up. It exits nonzero on any
 setup, check or cleanup failure. A missing dependency or occupied port is a
 failure, never a skipped or simulated run. The harness never reads `.env`, never
@@ -73,8 +73,6 @@ Only `postgres:`/`postgresql:` URLs with a loopback host and no query options ar
 accepted. Never pass a production or shared-data URL. The role must be able to
 create databases and run the bootstrap privilege tests. The input database is
 not reset or migrated, and the server is not stopped.
-`node scripts/app-integration/check-ci-seam.mjs` runs the suite this way against
-a second owned server and checks that its input data and database list survive.
 
 ## Scenario coverage and limits
 
