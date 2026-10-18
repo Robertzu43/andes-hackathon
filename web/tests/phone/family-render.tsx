@@ -1,5 +1,6 @@
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
+import { MemoryRouter } from 'react-router-dom';
 import { I18nProvider } from '../../src/foundation/index.ts';
 import { createPhoneRoutes } from '../../src/app/phone-routes.tsx';
 import type { PhoneDemoRuntime } from '../../src/app/runtime.ts';
@@ -23,11 +24,13 @@ export async function renderContactGate(runtime: PhoneDemoRuntime) {
   const page = createPhoneRoutes(runtime).contactTrip;
   if (!page) throw new Error('contactTrip route is not mounted');
   await act(async () => {
-    root.render(createElement(I18nProvider, { initialLocale: 'es' },
-      createElement(page, { params: { tripId } })));
+    root.render(createElement(MemoryRouter, null, createElement(I18nProvider, { initialLocale: 'es' },
+      createElement(page, { params: { tripId } }))));
   });
   return {
     text: () => host.textContent ?? '',
+    flush: async (fn: () => unknown) => { await act(async () => { await fn(); }); },
+    hasButton: () => Boolean(findButton(host)),
     button: () => {
       const button = findButton(host);
       if (!button) throw new Error('missing start-contact');

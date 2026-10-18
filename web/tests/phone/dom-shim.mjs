@@ -85,7 +85,9 @@ function element(tag, document) {
 }
 function text(data, document) {
   const node = { nodeType: 3, nodeName: '#text', data, ownerDocument: document, parentNode: null, childNodes: [], nextSibling: null, previousSibling: null };
-  Object.defineProperty(node, 'textContent', { get() { return node.data; }, set(value) { node.data = String(value); } });
+  for (const key of ['textContent', 'nodeValue']) Object.defineProperty(node, key, {
+    get() { return node.data; }, set(value) { node.data = String(value); },
+  });
   return node;
 }
 
