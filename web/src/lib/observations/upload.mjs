@@ -71,14 +71,21 @@ export function createLocationUploader({
   maxBatchesPerFlush = DEFAULTS.maxBatchesPerFlush,
 }) {
   if (!queue) throw new TypeError('queue is required');
-  if (typeof baseUrl !== 'string' || !baseUrl.startsWith('https://')) throw new TypeError('baseUrl must be an https URL');
+  let base;
+  try {
+    if (typeof baseUrl !== 'string') throw new Error();
+    base = new URL(baseUrl);
+    const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(base.hostname);
+    if (base.username || base.password || base.search || base.hash ||
+        (base.protocol !== 'https:' && !(base.protocol === 'http:' && loopback))) throw new Error();
+  } catch { throw new TypeError('baseUrl must be credential-free HTTPS or loopback HTTP'); }
   if (typeof getAccessToken !== 'function') throw new TypeError('getAccessToken is required');
   if (typeof fetchImpl !== 'function') throw new TypeError('fetchImpl is required');
   for (const [name, value] of Object.entries({ batchSize, maxAttempts, baseBackoffMs, maxBackoffMs, requestTimeoutMs, maxBatchesPerFlush })) {
     if (!Number.isSafeInteger(value) || value < 1) throw new RangeError(`${name} must be a positive integer`);
   }
   if (batchSize > QUEUE_LIMITS.batchMax) throw new RangeError(`batchSize cannot exceed the server maximum ${QUEUE_LIMITS.batchMax}`);
-  const origin = baseUrl.replace(/\/+$/, '');
+  const origin = base.href.replace(/\/+$/, '');
 
   let inFlight = null;
   let stopped = false;
@@ -209,6 +216,7 @@ export function createLocationUploader({
         },
         body: JSON.stringify({ observations: samples }),
         signal: controller.signal,
+        credentials: 'omit', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer',
       }), aborted]);
       if (response === ABORTED) response = null;
       else body = await Promise.race([Promise.resolve().then(() => response.json()).catch(() => null), aborted.then(() => null)]);

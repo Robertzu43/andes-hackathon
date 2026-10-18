@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'node:url';
 import { localApiTarget, webPort } from './src/app/config.ts';
 import { unconfiguredApi } from './src/app/unconfigured-api.ts';
 
@@ -9,6 +10,7 @@ export default defineConfig(({ mode }) => {
   const target = localApiTarget(process.env.ANDES_API_PROXY_TARGET);
   const proxy = target ? { '^/v1(?:/|\\?|$)': { target, changeOrigin: false } } : undefined;
   return {
+    resolve: { alias: { '@phone-observations': fileURLToPath(new URL('../src/phone-observations', import.meta.url)) } },
     plugins: [react(), {
       name: 'andes-local-boundary',
       transformIndexHtml(_html, context) {

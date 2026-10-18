@@ -708,3 +708,17 @@ test('should-fix: a captive-portal 200 counts attempts and backs off instead of 
   assert.equal(counts.failed, 1, 'the attempt budget applies to unverifiable receipts');
   assert.equal((await uploader.state()).unacknowledgedBatches, 0);
 });
+
+// Catch remote cleartext, credential/query leakage, and a local-only integration
+// becoming impossible because production HTTPS policy was applied to loopback.
+test('upload origins permit loopback HTTP and reject credential-bearing or remote cleartext URLs', async () => {
+  for (const baseUrl of ['http://localhost:1234', 'http://127.0.0.1:1234', 'http://[::1]:1234']) {
+    const { uploader, calls } = await setup({ uploaderOptions: { baseUrl } });
+    await uploader.flush({ userId: 'user-1' });
+    assert.equal(calls[0].url, `${baseUrl}/v1/trips/trip-1/locations`);
+  }
+  for (const baseUrl of ['http://example.invalid', 'https://user:password@example.invalid',
+    'https://example.invalid?token=synthetic', 'https://example.invalid/#synthetic', 'https://[broken']) {
+    await assert.rejects(setup({ uploaderOptions: { baseUrl } }), TypeError);
+  }
+});
