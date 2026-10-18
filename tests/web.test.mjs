@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import {existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
+import {existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
-import {join} from 'node:path';
+import {dirname, join} from 'node:path';
 import {fixture} from './helpers/runtime.mjs';
 import {spawn, spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
@@ -59,6 +59,58 @@ test('paths that climb out of the build are refused, even unnormalized over real
     // 404 from our guard; the router may reject a malformed path with 400 first. Either way the secret never leaves.
     assert.ok([400, 404].includes(response.status), `${path}: ${response.status}`); assert.doesNotMatch(response.body, /SYNTHETIC secret/, path);
   }
+});
+
+test('decoded traversal and NUL segments are refused before the SPA fallback', async t => {
+  const f = await fixture(t, {webRoot: build(t)});
+  const origin = new URL(await f.app.listen({port: 0, host: '127.0.0.1'}));
+  const raw = path => new Promise((resolve, reject) => http.get({host: origin.hostname, port: origin.port, path}, response => {
+    let body = ''; response.setEncoding('utf8');
+    response.on('data', chunk => { body += chunk; }); response.on('end', () => resolve({status: response.statusCode, body}));
+  }).on('error', reject));
+  const deep = await raw('/trips/11111111-1111-4111-8111-111111111111');
+  assert.equal(deep.status, 200); assert.match(deep.body, /SYNTHETIC app/);
+  for (const path of ['/../private', '/%2e%2e/private', '/assets/%2e%2e%2f%2e%2e/private', '/trips/%00', '/assets/app-SYNTH.js%00']) {
+    const response = await raw(path);
+    assert.ok([400, 404].includes(response.status), `${path}: ${response.status}`);
+    assert.doesNotMatch(response.body, /SYNTHETIC app/, path);
+  }
+});
+
+test('symlinks under the web root cannot serve bytes from outside it', async t => {
+  const root = build(t); const base = dirname(root);
+  mkdirSync(join(base, 'dist-sibling'));
+  writeFileSync(join(base, 'dist-sibling', 'secret.txt'), 'SYNTHETIC secret in a sibling');
+  symlinkSync(join(base, 'secret.txt'), join(root, 'assets', 'leak.txt'));
+  symlinkSync(base, join(root, 'outside'));
+  symlinkSync(join(base, 'dist-sibling'), join(root, 'sibling'));
+  symlinkSync(join(root, 'robots.txt'), join(root, 'alias.txt'));
+  const f = await fixture(t, {webRoot: root});
+  assert.equal((await get(f, '/alias.txt')).body, 'User-agent: *', 'an in-root alias stays readable');
+  for (const url of ['/assets/leak.txt', '/outside/secret.txt', '/sibling/secret.txt']) {
+    const response = await get(f, url);
+    assert.equal(response.statusCode, 404, url); assert.deepEqual(response.json(), {code: 'not_found'}, url);
+    assert.doesNotMatch(response.body, /SYNTHETIC secret/, url);
+  }
+  const escaped = build(t); rmSync(join(escaped, 'index.html'));
+  symlinkSync(join(dirname(escaped), 'secret.txt'), join(escaped, 'index.html'));
+  const {createApp} = await import('../dist/api/app.js'); const {createContext} = await import('../dist/db.js');
+  const ctx = createContext(f.ctx.pool.options.connectionString, f.ctx.clock);
+  try { assert.throws(() => createApp({ctx, auth: {issuer: 'https://synthetic.test', audience: 'andes-test', keyResolver: async () => { throw new Error('unused'); }}, webRoot: escaped}), /index\.html/); }
+  finally { await ctx.close(); }
+});
+
+test('encoded /v1 paths stay authenticated JSON', async t => {
+  const f = await fixture(t, {webRoot: build(t)});
+  for (const url of ['/%76%31/unknown', '/v1%2funknown', '/v1%2funknown.js', '/v1/unknown']) {
+    const anonymous = await get(f, url);
+    assert.equal(anonymous.statusCode, 401, url); assert.deepEqual(anonymous.json(), {code: 'unauthorized'}, url);
+    assert.deepEqual(await f.req('GET', url), {status: 404, body: {code: 'not_found'}}, url);
+  }
+  assert.equal((await f.req('GET', '/v1/me')).status, 200);
+  assert.equal((await get(f, '/mapa')).statusCode, 200);
+  assert.deepEqual((await get(f, '/health')).json(), {status: 'ok'});
+  assert.equal((await get(f, '/v1/insights/hotspots')).statusCode, 200);
 });
 
 test('without a web build the API refuses to start instead of serving 404s', async t => {
@@ -149,6 +201,21 @@ test('an unset TRUST_PROXY_HOPS ignores a client-written X-Forwarded-For', async
   const hook = proxyProbe(t);
   assert.equal((await listen(t, hook, undefined)).ip, '127.0.0.1', 'a direct client cannot choose request.ip');
   assert.equal((await listen(t, hook, '1')).ip, '198.51.100.7', 'one configured hop still trusts the proxy');
+});
+
+test('empty or whitespace TRUST_PROXY_HOPS is refused at startup', () => {
+  const server = fileURLToPath(new URL('../dist/server.js', import.meta.url));
+  const start = hops => spawnSync(process.execPath, [server], {encoding: 'utf8', timeout: 20000, env: {PATH: process.env.PATH, DEMO_MODE: 'true', ...(hops === undefined ? {} : {TRUST_PROXY_HOPS: hops})}});
+  for (const hops of ['', ' ', '\t', '\n']) {
+    const run = start(hops);
+    assert.equal(run.status, 1, JSON.stringify(hops)); assert.match(run.stderr, /TRUST_PROXY_HOPS must be an integer from 0 to 3/, JSON.stringify(hops));
+  }
+  for (const hops of [undefined, '0', '1', '2', '3']) {
+    const run = start(hops);
+    assert.equal(run.status, 1, String(hops));
+    assert.match(run.stderr, /Database URL or complete PostgreSQL components required/, String(hops));
+    assert.doesNotMatch(run.stderr, /TRUST_PROXY_HOPS/, String(hops));
+  }
 });
 
 test('the server refuses a TRUST_PROXY_HOPS that is not a small integer', () => {
