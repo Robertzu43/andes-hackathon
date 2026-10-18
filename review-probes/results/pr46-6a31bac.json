@@ -1,0 +1,1070 @@
+{
+  "scope": "Independent preparatory-tooling verification of Robert review5560885028",
+  "at": "2026-10-18T01:44:50.999380+00:00",
+  "heads": {
+    "586": "586e12752c9077e8bbb98707af73e9283811ceae",
+    "bebe": "bebeae22d6e9dcad9461d3b9240566c41c03d950",
+    "final": "6a31bac832461e8a4ca5068ce3ae313e3fcf4c29"
+  },
+  "main": "414b69b394b89e0fb2b4a5e0cf6e2a95a6580e5e",
+  "runtimes": [
+    "Python 3.14.7",
+    "Python 3.9.6"
+  ],
+  "probeSHA256": "d06bd027fec2e4b81409d557c41877ec06d935a35671861ddbad06a8d152dc52",
+  "native": {
+    "bebe": 88,
+    "final": 89,
+    "perRuntime": true
+  },
+  "independent": {
+    "586-py314": {
+      "total": 41,
+      "passed": 6,
+      "failed": [
+        "duplicate-participants",
+        "duplicate-cases",
+        "duplicate-sources",
+        "duplicate-timeline",
+        "duplicate-consent-whitespace",
+        "aggregate-exclusions-json-and-cli",
+        "driver_review-pending",
+        "driver_review-declined",
+        "driver_review-disputed",
+        "contact_review-pending",
+        "contact_review-declined",
+        "contact_review-disputed",
+        "trace_review-pending",
+        "trace_review-not_traceable",
+        "trace_review-inconclusive",
+        "tracker-alone-is-not-rest",
+        "corroborated-message-authorship-warning",
+        "zone-timeline-0",
+        "zone-timeline-1",
+        "zone-timeline-2",
+        "zone-sources-0",
+        "zone-sources-1",
+        "zone-sources-2",
+        "missing-source-value-private",
+        "ordinary-tank at 1/2",
+        "ordinary-open 24/7",
+        "ordinary-stopped.Then",
+        "reserved-SYN-1234",
+        "reserved-CAS-0001",
+        "short-date-coordinate-0",
+        "short-date-coordinate-1",
+        "short-date-coordinate-2",
+        "short-date-coordinate-3",
+        "short-date-coordinate-4",
+        "cell-error-preserves-other-provenance-diagnostic"
+      ],
+      "cases": [
+        {
+          "case": "duplicate-participants",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "duplicate-cases",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "duplicate-sources",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "duplicate-timeline",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "duplicate-consent-whitespace",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "aggregate-exclusions-json-and-cli",
+          "passed": false,
+          "assertion": "SYN-B leaked"
+        },
+        {
+          "case": "driver_review-pending",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "driver_review-declined",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "driver_review-disputed",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "contact_review-pending",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "contact_review-declined",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "contact_review-disputed",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "trace_review-pending",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "trace_review-not_traceable",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "trace_review-inconclusive",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "completed-reviews-positive",
+          "passed": true
+        },
+        {
+          "case": "tracker-alone-is-not-rest",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "tracker-plus-own-account-positive",
+          "passed": true
+        },
+        {
+          "case": "corroborated-message-authorship-warning",
+          "passed": false,
+          "assertion": "corroborated message account has no authorship warning"
+        },
+        {
+          "case": "zone-timeline-0",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "zone-timeline-1",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "zone-timeline-2",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "zone-timeline-positive",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-0",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "zone-sources-1",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "zone-sources-2",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "zone-sources-positive",
+          "passed": true
+        },
+        {
+          "case": "missing-source-value-private",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "ordinary-300 km de serra",
+          "passed": true
+        },
+        {
+          "case": "ordinary-1500 kg",
+          "passed": true
+        },
+        {
+          "case": "ordinary-tank at 1/2",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "ordinary-open 24/7",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "ordinary-stopped.Then",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "reserved-SYN-1234",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "reserved-CAS-0001",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "short-date-coordinate-0",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "short-date-coordinate-1",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "short-date-coordinate-2",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "short-date-coordinate-3",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "short-date-coordinate-4",
+          "passed": false,
+          "assertion": ""
+        },
+        {
+          "case": "cell-error-preserves-other-provenance-diagnostic",
+          "passed": false,
+          "assertion": ""
+        }
+      ]
+    },
+    "bebe-py314": {
+      "total": 41,
+      "passed": 40,
+      "failed": [
+        "corroborated-message-authorship-warning"
+      ],
+      "cases": [
+        {
+          "case": "duplicate-participants",
+          "passed": true
+        },
+        {
+          "case": "duplicate-cases",
+          "passed": true
+        },
+        {
+          "case": "duplicate-sources",
+          "passed": true
+        },
+        {
+          "case": "duplicate-timeline",
+          "passed": true
+        },
+        {
+          "case": "duplicate-consent-whitespace",
+          "passed": true
+        },
+        {
+          "case": "aggregate-exclusions-json-and-cli",
+          "passed": true
+        },
+        {
+          "case": "driver_review-pending",
+          "passed": true
+        },
+        {
+          "case": "driver_review-declined",
+          "passed": true
+        },
+        {
+          "case": "driver_review-disputed",
+          "passed": true
+        },
+        {
+          "case": "contact_review-pending",
+          "passed": true
+        },
+        {
+          "case": "contact_review-declined",
+          "passed": true
+        },
+        {
+          "case": "contact_review-disputed",
+          "passed": true
+        },
+        {
+          "case": "trace_review-pending",
+          "passed": true
+        },
+        {
+          "case": "trace_review-not_traceable",
+          "passed": true
+        },
+        {
+          "case": "trace_review-inconclusive",
+          "passed": true
+        },
+        {
+          "case": "completed-reviews-positive",
+          "passed": true
+        },
+        {
+          "case": "tracker-alone-is-not-rest",
+          "passed": true
+        },
+        {
+          "case": "tracker-plus-own-account-positive",
+          "passed": true
+        },
+        {
+          "case": "corroborated-message-authorship-warning",
+          "passed": false,
+          "assertion": "corroborated message account has no authorship warning"
+        },
+        {
+          "case": "zone-timeline-0",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-1",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-2",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-positive",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-0",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-1",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-2",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-positive",
+          "passed": true
+        },
+        {
+          "case": "missing-source-value-private",
+          "passed": true
+        },
+        {
+          "case": "ordinary-300 km de serra",
+          "passed": true
+        },
+        {
+          "case": "ordinary-1500 kg",
+          "passed": true
+        },
+        {
+          "case": "ordinary-tank at 1/2",
+          "passed": true
+        },
+        {
+          "case": "ordinary-open 24/7",
+          "passed": true
+        },
+        {
+          "case": "ordinary-stopped.Then",
+          "passed": true
+        },
+        {
+          "case": "reserved-SYN-1234",
+          "passed": true
+        },
+        {
+          "case": "reserved-CAS-0001",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-0",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-1",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-2",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-3",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-4",
+          "passed": true
+        },
+        {
+          "case": "cell-error-preserves-other-provenance-diagnostic",
+          "passed": true
+        }
+      ]
+    },
+    "bebe-py39": {
+      "total": 41,
+      "passed": 40,
+      "failed": [
+        "corroborated-message-authorship-warning"
+      ],
+      "cases": [
+        {
+          "case": "duplicate-participants",
+          "passed": true
+        },
+        {
+          "case": "duplicate-cases",
+          "passed": true
+        },
+        {
+          "case": "duplicate-sources",
+          "passed": true
+        },
+        {
+          "case": "duplicate-timeline",
+          "passed": true
+        },
+        {
+          "case": "duplicate-consent-whitespace",
+          "passed": true
+        },
+        {
+          "case": "aggregate-exclusions-json-and-cli",
+          "passed": true
+        },
+        {
+          "case": "driver_review-pending",
+          "passed": true
+        },
+        {
+          "case": "driver_review-declined",
+          "passed": true
+        },
+        {
+          "case": "driver_review-disputed",
+          "passed": true
+        },
+        {
+          "case": "contact_review-pending",
+          "passed": true
+        },
+        {
+          "case": "contact_review-declined",
+          "passed": true
+        },
+        {
+          "case": "contact_review-disputed",
+          "passed": true
+        },
+        {
+          "case": "trace_review-pending",
+          "passed": true
+        },
+        {
+          "case": "trace_review-not_traceable",
+          "passed": true
+        },
+        {
+          "case": "trace_review-inconclusive",
+          "passed": true
+        },
+        {
+          "case": "completed-reviews-positive",
+          "passed": true
+        },
+        {
+          "case": "tracker-alone-is-not-rest",
+          "passed": true
+        },
+        {
+          "case": "tracker-plus-own-account-positive",
+          "passed": true
+        },
+        {
+          "case": "corroborated-message-authorship-warning",
+          "passed": false,
+          "assertion": "corroborated message account has no authorship warning"
+        },
+        {
+          "case": "zone-timeline-0",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-1",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-2",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-positive",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-0",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-1",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-2",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-positive",
+          "passed": true
+        },
+        {
+          "case": "missing-source-value-private",
+          "passed": true
+        },
+        {
+          "case": "ordinary-300 km de serra",
+          "passed": true
+        },
+        {
+          "case": "ordinary-1500 kg",
+          "passed": true
+        },
+        {
+          "case": "ordinary-tank at 1/2",
+          "passed": true
+        },
+        {
+          "case": "ordinary-open 24/7",
+          "passed": true
+        },
+        {
+          "case": "ordinary-stopped.Then",
+          "passed": true
+        },
+        {
+          "case": "reserved-SYN-1234",
+          "passed": true
+        },
+        {
+          "case": "reserved-CAS-0001",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-0",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-1",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-2",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-3",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-4",
+          "passed": true
+        },
+        {
+          "case": "cell-error-preserves-other-provenance-diagnostic",
+          "passed": true
+        }
+      ]
+    },
+    "final-py314": {
+      "total": 41,
+      "passed": 41,
+      "failed": [],
+      "cases": [
+        {
+          "case": "duplicate-participants",
+          "passed": true
+        },
+        {
+          "case": "duplicate-cases",
+          "passed": true
+        },
+        {
+          "case": "duplicate-sources",
+          "passed": true
+        },
+        {
+          "case": "duplicate-timeline",
+          "passed": true
+        },
+        {
+          "case": "duplicate-consent-whitespace",
+          "passed": true
+        },
+        {
+          "case": "aggregate-exclusions-json-and-cli",
+          "passed": true
+        },
+        {
+          "case": "driver_review-pending",
+          "passed": true
+        },
+        {
+          "case": "driver_review-declined",
+          "passed": true
+        },
+        {
+          "case": "driver_review-disputed",
+          "passed": true
+        },
+        {
+          "case": "contact_review-pending",
+          "passed": true
+        },
+        {
+          "case": "contact_review-declined",
+          "passed": true
+        },
+        {
+          "case": "contact_review-disputed",
+          "passed": true
+        },
+        {
+          "case": "trace_review-pending",
+          "passed": true
+        },
+        {
+          "case": "trace_review-not_traceable",
+          "passed": true
+        },
+        {
+          "case": "trace_review-inconclusive",
+          "passed": true
+        },
+        {
+          "case": "completed-reviews-positive",
+          "passed": true
+        },
+        {
+          "case": "tracker-alone-is-not-rest",
+          "passed": true
+        },
+        {
+          "case": "tracker-plus-own-account-positive",
+          "passed": true
+        },
+        {
+          "case": "corroborated-message-authorship-warning",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-0",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-1",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-2",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-positive",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-0",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-1",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-2",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-positive",
+          "passed": true
+        },
+        {
+          "case": "missing-source-value-private",
+          "passed": true
+        },
+        {
+          "case": "ordinary-300 km de serra",
+          "passed": true
+        },
+        {
+          "case": "ordinary-1500 kg",
+          "passed": true
+        },
+        {
+          "case": "ordinary-tank at 1/2",
+          "passed": true
+        },
+        {
+          "case": "ordinary-open 24/7",
+          "passed": true
+        },
+        {
+          "case": "ordinary-stopped.Then",
+          "passed": true
+        },
+        {
+          "case": "reserved-SYN-1234",
+          "passed": true
+        },
+        {
+          "case": "reserved-CAS-0001",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-0",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-1",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-2",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-3",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-4",
+          "passed": true
+        },
+        {
+          "case": "cell-error-preserves-other-provenance-diagnostic",
+          "passed": true
+        }
+      ]
+    },
+    "final-py39": {
+      "total": 41,
+      "passed": 41,
+      "failed": [],
+      "cases": [
+        {
+          "case": "duplicate-participants",
+          "passed": true
+        },
+        {
+          "case": "duplicate-cases",
+          "passed": true
+        },
+        {
+          "case": "duplicate-sources",
+          "passed": true
+        },
+        {
+          "case": "duplicate-timeline",
+          "passed": true
+        },
+        {
+          "case": "duplicate-consent-whitespace",
+          "passed": true
+        },
+        {
+          "case": "aggregate-exclusions-json-and-cli",
+          "passed": true
+        },
+        {
+          "case": "driver_review-pending",
+          "passed": true
+        },
+        {
+          "case": "driver_review-declined",
+          "passed": true
+        },
+        {
+          "case": "driver_review-disputed",
+          "passed": true
+        },
+        {
+          "case": "contact_review-pending",
+          "passed": true
+        },
+        {
+          "case": "contact_review-declined",
+          "passed": true
+        },
+        {
+          "case": "contact_review-disputed",
+          "passed": true
+        },
+        {
+          "case": "trace_review-pending",
+          "passed": true
+        },
+        {
+          "case": "trace_review-not_traceable",
+          "passed": true
+        },
+        {
+          "case": "trace_review-inconclusive",
+          "passed": true
+        },
+        {
+          "case": "completed-reviews-positive",
+          "passed": true
+        },
+        {
+          "case": "tracker-alone-is-not-rest",
+          "passed": true
+        },
+        {
+          "case": "tracker-plus-own-account-positive",
+          "passed": true
+        },
+        {
+          "case": "corroborated-message-authorship-warning",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-0",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-1",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-2",
+          "passed": true
+        },
+        {
+          "case": "zone-timeline-positive",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-0",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-1",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-2",
+          "passed": true
+        },
+        {
+          "case": "zone-sources-positive",
+          "passed": true
+        },
+        {
+          "case": "missing-source-value-private",
+          "passed": true
+        },
+        {
+          "case": "ordinary-300 km de serra",
+          "passed": true
+        },
+        {
+          "case": "ordinary-1500 kg",
+          "passed": true
+        },
+        {
+          "case": "ordinary-tank at 1/2",
+          "passed": true
+        },
+        {
+          "case": "ordinary-open 24/7",
+          "passed": true
+        },
+        {
+          "case": "ordinary-stopped.Then",
+          "passed": true
+        },
+        {
+          "case": "reserved-SYN-1234",
+          "passed": true
+        },
+        {
+          "case": "reserved-CAS-0001",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-0",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-1",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-2",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-3",
+          "passed": true
+        },
+        {
+          "case": "short-date-coordinate-4",
+          "passed": true
+        },
+        {
+          "case": "cell-error-preserves-other-provenance-diagnostic",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "frozenPriorControls": {
+    "source": "3a27c481499986f3add0441f027d367842fa09e8",
+    "candidate": "bebeae22d6e9dcad9461d3b9240566c41c03d950",
+    "perRuntime": {
+      "followups": 40,
+      "latestReview": 11
+    },
+    "rerunAtFinal": false,
+    "reason": "Final delta changes only authorship-warning coverage and native regression expectations; current-head 89+41 executed separately"
+  },
+  "authorRegressions": {
+    "inspectedAuthorReplayHelper": true,
+    "old586": {
+      "methods": 13,
+      "failingMethods": 12,
+      "subtestFailures": 37
+    },
+    "bebe": {
+      "methods": 13,
+      "failures": 0
+    },
+    "note": "ID-scanner test is already green on old source; sensitivity is the disabled-scanner mutant"
+  },
+  "mutation": {
+    "candidate": "6a31bac832461e8a4ca5068ce3ae313e3fcf4c29",
+    "disabledFunction": "_id",
+    "tests": 1,
+    "failingSubtests": 3,
+    "expectedExit": 1,
+    "rawSHA256": "4d54cf3d6b892608cbd12e2bf9408a7ba10936fa9d5eb2338adaf01c4b74d6c8"
+  },
+  "mainPreservation": {
+    "evidence/cohort-brief.md": true,
+    "evidence/guides/interview.es.md": true,
+    "evidence/guides/interview.pt-BR.md": true,
+    "evidence/guides/review.es.md": true,
+    "evidence/guides/review.pt-BR.md": true,
+    "evidence/templates/cases.csv": true,
+    "evidence/templates/participants.csv": true,
+    "evidence/templates/sources.csv": true,
+    "evidence/templates/timeline.csv": true,
+    "input/participants.csv": true,
+    "input/cases.csv": true,
+    "input/sources.csv": true,
+    "input/timeline.csv": true,
+    "mergeExit": 0,
+    "mergeTree": "725ef51a6545c1608f574c73b6a963d1ff2bfc3c",
+    "mainAncestor": true
+  },
+  "finalUnchangedFromBebeFiles": 16,
+  "ci": [
+    {
+      "job": 117556938851,
+      "summary": [
+        "Ran 89 tests in 2.154s",
+        "OK"
+      ],
+      "logSHA256": "6b37fe485d9c595b0d425ad23494dfaa44a62d03ad3f09c4c5e5b39a647a2f28"
+    },
+    {
+      "job": 117556925371,
+      "summary": [
+        "Ran 89 tests in 1.507s",
+        "OK"
+      ],
+      "logSHA256": "1ecb8f80cce28e1709145bf9170de12c68a6cae3c45625a4c23f7dbd72aa7bcc"
+    },
+    {
+      "job": 117556938750,
+      "summary": [
+        "Ran 89 tests in 0.802s",
+        "OK"
+      ],
+      "logSHA256": "ffe01d6eacb0fc7527b40aa6f992f5e1f28c4df0afa1887907bbc33e3f828353"
+    },
+    {
+      "job": 117556925254,
+      "summary": [
+        "Ran 89 tests in 1.513s",
+        "OK"
+      ],
+      "logSHA256": "39df4643377b783088324fed9ba25d5278331b73b3731142165da58c0081f2e6"
+    }
+  ],
+  "remainingBoundedFindings": [],
+  "formalApproval": false,
+  "participantEvidenceAccepted": false,
+  "originalWarningFailure": {
+    "case": "corroborated-message-authorship-warning",
+    "errors": [],
+    "warnings": [
+      "pair SYN-B: has no ordinary-trip case",
+      "timeline.csv line 18 (SYN-A-W-E16): verify message authorship against reported_by in the original during independent trace review",
+      "timeline.csv line 24 (SYN-A-O-E05): verify message authorship against reported_by in the original during independent trace review",
+      "timeline.csv line 31 (SYN-B-W-E07): verify message authorship against reported_by in the original during independent trace review"
+    ],
+    "passed": false,
+    "assertion": "corroborated message account has no authorship warning"
+  },
+  "rawHashes": {
+    "final-native-py39.log": "9e67735b48495ffcccc656e0b27dc6a5aa7cdddf56573118e8fa406904441a6b",
+    "final-job-117556925371.log": "1ecb8f80cce28e1709145bf9170de12c68a6cae3c45625a4c23f7dbd72aa7bcc",
+    "author-regressions-586e127.log": "4e3273dfdfa13caf2075819980ca20e0e9c5e04f90b415c581d8febc7b41e40c",
+    "final-gatekeeper-py314.log": "758708d7bcc4d514f0eff34461663424e15b0769fad15a637ac55d9d0f433d52",
+    "final-gatekeeper-py39.log": "9a46bd4f3f03b6e2b3e82e7058ee72140c831b45a47ae150d2d6aafc16ea0346",
+    "id-mutant.log": "1342d3ea9757b1787387cf1ecd3f280a7732523d2d5819690190c2c8c5e06275",
+    "final-job-117556938750.log": "ffe01d6eacb0fc7527b40aa6f992f5e1f28c4df0afa1887907bbc33e3f828353",
+    "author-py39.log": "5c8f8e982496fa3e016ff01250563330a28a3284d1ea8e1c4b456d57c4c17e2e",
+    "final-native-py314.log": "0328e24b176b2462cfafee3a74d2b49510e135f31485198cd54260f03e3e66c0",
+    "final-job-117556925254.log": "39df4643377b783088324fed9ba25d5278331b73b3731142165da58c0081f2e6",
+    "final-id-mutant.log": "4d54cf3d6b892608cbd12e2bf9408a7ba10936fa9d5eb2338adaf01c4b74d6c8",
+    "final-job-117556938851.log": "6b37fe485d9c595b0d425ad23494dfaa44a62d03ad3f09c4c5e5b39a647a2f28",
+    "author-py314.log": "0d82f8df85913ebc4d2a9d814cc31fd1892edc6819ac01d83ce7a24753c3936e",
+    "author-regressions-bebeae2.log": "3dac467f94f1e09f12f66b6bdd6686c7f70fd6b754bbc5d0406f8357515c35c4"
+  }
+}
+
