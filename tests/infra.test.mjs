@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import {createServer} from 'node:net';
+import {tmpdir} from 'node:os';
+import {join, resolve} from 'node:path';
 const t=JSON.parse(readFileSync('infra/template.json','utf8'));
 const r=t.Resources;
 const text=path=>readFileSync(path,'utf8');
@@ -86,6 +90,9 @@ test('image contains migration SQL/CA and CI runs real PostgreSQL tests without 
   assert.match(docker,/FROM node:24-bookworm-slim/g);assert.match(docker,/COPY db \.\/db/);
   assert.match(docker,/scripts\/bootstrap\.mjs/);assert.match(docker,/COPY infra\/rds-global-bundle\.pem/);assert.match(docker,/USER node/);assert.match(docker,/COPY public \.\/public/);
   assert.match(text('.dockerignore'),/!infra\/rds-global-bundle\.pem/);
+  assert.match(docker,/COPY web \.\//);assert.match(docker,/RUN npm run build/);assert.match(docker,/COPY --from=web \/app\/web\/dist \.\/web\/dist/);
+  // Host node_modules (macOS binaries) must never overwrite the image's own install.
+  assert.match(text('.dockerignore'),/^\*\*\/node_modules$/m);assert.match(text('.dockerignore'),/^\*\*\/dist$/m);
   const ci=text('.github/workflows/ci.yml');
   assert.match(ci,/postgres:18-bookworm/);assert.match(ci,/ZAVU_LIVE_SEND: "false"/);assert.ok(!ci.includes('aws-actions/configure-aws-credentials'));
   assert.match(text('compose.yaml'),/127\.0\.0\.1:5432:5432/);
@@ -97,4 +104,67 @@ test('app-integration CI job runs the isolated harness and the receipt oracle te
   const steps=job.split('\n').map(line=>line.trim());
   for(const step of ['- run: npm ci','- run: node scripts/app-integration/run.mjs','- run: node --test evidence/app-acceptance/oracle.test.mjs'])assert.ok(steps.includes(step),step);
   assert.ok(steps.includes('fetch-depth: 0'),'The source gate needs the pinned backend commit');
+});
+
+// Exercise the smoke oracle over real HTTP, without needing Docker or a web dependency install.
+async function smokeFixture(t, fault = '') {
+  const root=mkdtempSync(join(tmpdir(),'andes-image-smoke-'));
+  t.after(()=>rmSync(root,{recursive:true,force:true}));
+  mkdirSync(join(root,'web/dist/assets'),{recursive:true});mkdirSync(join(root,'dist'));
+  writeFileSync(join(root,'web/dist/index.html'),'<!doctype html><title>SYNTHETIC shell</title>');
+  writeFileSync(join(root,'web/dist/assets/app-SYNTH.js'),'export const synthetic = true;');
+  writeFileSync(join(root,'web/dist/assets/app-SYNTH.css'),'body { color: black; }');
+  if(fault==='missing-index')rmSync(join(root,'web/dist/index.html'));
+  writeFileSync(join(root,'dist/server.js'),`
+    const http = require('node:http');
+    const {readFileSync, writeFileSync} = require('node:fs');
+    writeFileSync('server.pid', String(process.pid));
+    const fault = ${JSON.stringify(fault)};
+    if (fault === 'exit') process.exit(7);
+    http.createServer((request, response) => {
+      if (fault === 'timeout') return;
+      const path = request.url;
+      if (path.startsWith('/v1') && fault !== 'api-html') {
+        response.writeHead(401, {'Content-Type':'application/json'});
+        response.end('{"code":"unauthorized"}');return;
+      }
+      if (path.startsWith('/assets/')) {
+        response.writeHead(200, {'Content-Type':path.endsWith('.js')?'text/javascript':'text/css',
+          'Cache-Control':'public, max-age=31536000, immutable'});
+        response.end(readFileSync(fault === 'asset-html' ? 'web/dist/index.html' : 'web/dist'+path));return;
+      }
+      response.writeHead(200, {'Content-Type':'text/html', 'Cache-Control':'no-store'});
+      response.end(readFileSync('web/dist/index.html'));
+    }).listen(Number(process.env.PORT), process.env.HOST);
+  `);
+  const socket=createServer();await new Promise(resolve=>socket.listen(0,'127.0.0.1',resolve));
+  const port=socket.address().port;await new Promise(resolve=>socket.close(resolve));
+  const run=spawnSync(process.execPath,[resolve('scripts/smoke-image.mjs')],{
+    cwd:root,encoding:'utf8',timeout:20000,env:{PATH:process.env.PATH,PORT:String(port)}
+  });
+  assert.equal(run.error,undefined,run.error?.message);assert.equal(run.signal,null,run.stderr);
+  if(existsSync(join(root,'server.pid'))) {
+    const pid=Number(readFileSync(join(root,'server.pid'),'utf8'));
+    assert.throws(()=>process.kill(pid,0),{code:'ESRCH'},'smoke must reap its server on success and failure');
+  }
+  return run;
+}
+
+test('image smoke accepts readable shell/assets, deep links and JSON API auth, then stops the server',async t=>{
+  const run=await smokeFixture(t);
+  assert.equal(run.status,0,run.stderr);assert.match(run.stdout,/Image smoke passed/);
+});
+
+test('image smoke rejects missing artifacts and incorrect HTTP responses with a nonzero exit',async t=>{
+  for(const [fault,reason] of [['missing-index',/index\.html/],['asset-html',/asset .* contents/],
+    ['api-html',/\/v1\/me status/],['exit',/server exited/]])await t.test(fault,async t=>{
+    const run=await smokeFixture(t,fault);
+    assert.equal(run.status,1,run.stderr);assert.doesNotMatch(run.stdout,/Image smoke passed/);
+    assert.match(run.stderr,reason);
+  });
+});
+
+test('image smoke times out an unresponsive server and reaps it',async t=>{
+  const run=await smokeFixture(t,'timeout');
+  assert.equal(run.status,1,run.stderr);assert.match(run.stderr,/timed out/i);
 });

@@ -86,3 +86,5 @@ jobs:
           LOCAL_ADMIN_PASSWORD: synthetic_ci_admin_only
           LOCAL_APP_PASSWORD: synthetic_ci_app_only
       - run: docker build --platform linux/amd64 -t andes-backend:ci .
+      - name: Smoke built web and compiled server in the runtime image
+        run: docker run --rm -i --network none andes-backend:ci node --input-type=module < scripts/smoke-image.mjs
