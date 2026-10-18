@@ -194,5 +194,23 @@
     "populated CSV rejected",
     "removing private ignore rule exposes synthetic path"
   ],
-  "result": "AI ACCEPT of standalone manual-material scope; original Robert/human review still required"
+  "result": "AI ACCEPT of standalone manual-material scope; original Robert/human review still required",
+  "formalReview": {
+    "id": 5560711083,
+    "url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/79#pullrequestreview-5560711083",
+    "state": "COMMENTED",
+    "commit": "975e48b74173245dc02e5c20f553021203d1649a"
+  },
+  "duplicate78Comparison": {
+    "head": "ea2e547770a1e990412a173a58317be6ce8cbdf5",
+    "identicalOriginalGuideTemplateBlobs": 8,
+    "onlyDifferences": [
+      ".gitignore",
+      "evidence/README.md",
+      "evidence/cohort-brief.md",
+      "evidence/data-dictionary.md"
+    ],
+    "canonicalOwner": 44,
+    "noPRMutationBy59": true
+  }
 }

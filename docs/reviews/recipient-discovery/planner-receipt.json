@@ -5,7 +5,7 @@
   "rootWorkflowNodes": 8,
   "rootNotes": 1,
   "verificationNodes": 7,
-  "firstImplementationPrerequisite": "Owner44 confirms read partition",
+  "firstImplementationPrerequisite": "satisfied: owner44 froze two routes; next41 implements canonical DTO",
   "sourceScope": "contract proposal only; no route implementation",
   "checks": [
     "Re-read all root and child nodes after creation; every workflow node connected, notes exempt",
@@ -14,5 +14,16 @@
     "Capture exporter hides edge chip text; repeated meaning in destination titles, reported tool bug"
   ],
   "visualLimit": "Edge-label chip export remains imperfect; proposal structure and destinations are readable",
-  "ownerPartition": "pending; publication does not wait for internal acknowledgement"
+  "ownerPartition": "frozen explicitly by44 with41; implementation not yet established",
+  "routes": [
+    "GET /v1/contact/invitations",
+    "GET /v1/contact/trips"
+  ],
+  "frozenBounds": {
+    "limit": 100,
+    "hasMore": true,
+    "filterBeforeLimit101": true
+  },
+  "transactionDecision": "new reads and planned65 repair: read-only REPEATABLE READ; ctx.clock inside acquired transaction",
+  "recordedAt": "2026-10-18T00:07:25.974Z"
 }

@@ -1,16 +1,18 @@
 # Recipient invitation and shared-trip discovery proposal
 
-**Reviewable contract proposal, not implemented routes.** Q44 owns the interface
-partition and route names; Q41 owns owner catalogs, Q45 typed transport, Q51 contact
-UI and Robert the known-trip status/sharing contract. Q59 changes review artifacts
-only. Internal owner acknowledgement is pending and does not prevent publication
-of this proposal. No competing route, schema, adapter or foundation is added.
+**Source-bound proposal with the route partition now frozen by owner44.** Q44 owns
+the canonical interface document; Q41 implements the agreed recipient reads on a
+separate branch, Q45 typed transport, Q51 contact UI and Robert known-trip
+status/sharing. Q59 changes review artifacts only. The frozen decision below is
+not evidence that recipient routes or the planned transaction repair exist yet.
+No competing route, schema, adapter or foundation is added.
 
 Codus planner: **pl_mvd1u5yz_f780e7**, “Recipient invitations and shared trips”.
-The first implementation prerequisite is **Confirm the read partition**. The
-planner has eight connected workflow steps, one scope note and a source/consent
-verification sub-plan. It is a contract map; its terminal is proposal handoff,
-not a completed product journey.
+Owner44 satisfied **Freeze the recipient read partition** with the two-route
+decision below. The next owner action is Q41 implementation against44's canonical
+DTO revision. The planner has eight connected workflow steps, one scope note and
+a source/consent verification sub-plan. Its terminal is contract handoff, not a
+completed product journey.
 
 ## Actual source at review intake
 
@@ -55,29 +57,38 @@ still performs sequential statements in a read-committed transaction, not one
 repeatable-read snapshot. Preserve this documented timing/isolation limit when
 binding current owner catalogs; do not manufacture a new timestamp in the client.
 
-## Minimal proposed capabilities
+## Minimal capabilities and owner-frozen route partition
 
-These are semantic capability names, **not published HTTP paths or DTOs**. Q44
-chooses separate names or explicit response partitions with Q41 before code.
-Neither accepts a caller-selected recipient, driver UUID or phone search key.
-Identity always comes from the authenticated request.actor.id.
+Q44 explicitly froze **GET /v1/contact/invitations** and
+**GET /v1/contact/trips** with Q41. There are no new detail routes. These are agreed
+implementation targets, not registered routes in the inspected heads. Canonical
+DTO spelling remains Q44's document; the table records the information contract.
+Neither accepts a caller-selected recipient, driver UUID or phone search key;
+identity comes from authenticated request.actor.id.
 
 | Capability | Minimum proposed information | Boundaries |
 | --- | --- | --- |
-| List received invitation/grant references | grantId, driverId, requested map/incident scopes, accepted scopes or null, pending/accepted/revoked state, server readAt, fixed page bound and hasMore | Query contact_grants.contact_id=actor. Do not return other contacts, phone numbers, raw trip text, coordinates or guessed inviter names/times. Accepted scopes can remain historical after revocation; they are not current authorization |
-| List currently shared trip references | tripId, grantId, driverId, accepted map/incident scopes, trip status, server readAt, fixed page bound and hasMore; optional approved truckLabel from the existing truck row | Join trip_grants and contact_grants for actor; standing accepted, both revocations absent, at least one accepted scope. Return identifiers needed for current protected reads and trip revoke, not copied status/location/delivery projections |
+| GET /v1/contact/invitations | Own grant/driver references, requested and accepted map/incident boolean scopes, pending/accepted/revoked state, accepted/revoked times, server readAt, limit100 and hasMore | Query contact_grants.contact_id=actor. Grant ID ascending; filter before fetching101. No invented createdAt/name/phone, other contacts, raw trip text or coordinates. Accepted scopes after revocation are historical, not current authority |
+| GET /v1/contact/trips | Trip/grant/driver references, accepted and effective scopes, trip status, activeIncidentId only with incident scope, server readAt, limit100 and hasMore; approved truck label if in canonical DTO | Accepted standing consent, explicit trip attachment, both revocations absent and at least one accepted scope. Include active trips; closed trips only when incident-consented with an active incident. Effective map requires accepted map plus active trip/map_active; effective incident follows accepted incident. Map-only activeIncidentId stays null |
 
-An invitation lookup for a known grant ID may be a filtered use of the same
-recipient-owned read, if Q44 chooses it. It must enforce the same actor predicate;
-being given a grant UUID is never authority. Empty results, unavailable reads and
-truncated results must remain distinct in the UI. Use stable order plus an
-explicit bound; hasMore=true must not be labelled “all invitations/trips”. Cursor
-pagination or exhaustive retrieval is a further owner decision, not claimed here.
+The invitation page obtains its metadata from the recipient inbox, with no new
+detail endpoint. Being given a grant UUID is never authority; missing from a
+truncated page does not prove absent or revoked. Empty, unavailable and truncated
+results remain distinct. Both lists use fixed100 plus hasMore, fetching101 only
+after authorization filters. Cursor/exhaustive retrieval is not claimed.
+
+Q44 froze shared-trip ordering: authorized active-incident priority, then
+trip.created_at DESC, trip ID DESC and grant ID ASC. A hidden incident must never
+alter map-only ordering or hasMore. The new reads and planned PR65 consistency
+repair use read-only REPEATABLE READ, with ctx.clock sampled inside the acquired
+transaction; this is distinct from the existing3ea6e1b read-committed implementation.
 
 The two reads should carry a server-owned readAt for their own query result.
-The owner must specify its sampling point; PR65's current convention is server
-route entry. It is not invitation creation time, location capture time, a whole
-catalog snapshot guarantee, or a promise that later authorization is unchanged.
+Q44's frozen sampling point is inside the acquired transaction; older PR65/3ea6e1b
+samples at route entry. readAt is not invitation creation time, location capture
+time, an anchor for a later status response, or a promise that later authorization
+is unchanged. The chosen repeatable-read guarantee must be established by the new
+implementation and its independent checks, not inferred from this review document.
 Do not copy a browser timestamp into readAt. Current contact_grants has no
 created_at column, so invitedAt cannot be supplied without a separately approved
 source/schema change. Existing accepted_at/revoked_at may be exposed if needed,
@@ -105,7 +116,7 @@ trip_grants row must not acquire shared-trip discovery from driver_id alone.
 | Bound account, pending invitation | Pending requested scopes only | No trip access from pending consent |
 | Phone unverified or does not match | Do not treat discovery as acceptance | Existing accept refuses; no manufactured grant |
 | Accepted standing grant, no trip attachment | Accepted standing state | No shared trip |
-| Accepted map only, attached and unrevoked | Historical accepted scopes | Current trip reference/status; snapshot only while map_active; no incident ID or deliveries |
+| Accepted map only, attached and unrevoked | Historical accepted scopes | Active trip reference/status; effective map only while map_active; no incident ID/deliveries or incident-dependent ordering |
 | Accepted incident only, attached and unrevoked | Historical accepted scopes | Current trip reference/status/incident reads; no location/coordinates |
 | Both accepted, attached and unrevoked | Historical accepted scopes | Both independently authorized fact domains |
 | Standing revoke | Own revoked state may remain historical | No new shared-trip reference or protected read |
@@ -153,8 +164,9 @@ equate a list/acceptance receipt with delivery, assistance, safety or wellbeing.
 
 ## Owner handoff and future verification
 
-Q44 freezes capability names, response partition, list ordering and ownership;
-Q41 implements only the agreed owned read seam. Q45 normalizes the published DTOs
+Q44 has frozen paths, scopes, ordering, bounds and transaction requirements and is
+publishing the canonical DTO document. Q41 implements only that owned read seam.
+Q45 normalizes the published DTOs
 and preserves server readAt; Q51 binds UI selection/session retirement and honest
 empty/error/truncation states. Robert confirms any changed privacy/lifecycle
 policy. Current reviewer/human confirmation remains separate from this proposal.

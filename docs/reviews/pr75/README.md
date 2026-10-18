@@ -53,7 +53,7 @@ These sources do not establish a device guarantee, safe-to-prompt inference,
 regional coverage or selected/activated provider. The forward-curve limitation is
 explicitly a design inference, not a provider API guarantee.
 
-## Nonblocking freshness notes sent to owner60
+## Nonblocking freshness notes routed to author/integrator44
 
 1. Opening line8 still calls security/status/sharing “forthcoming”, despite the
    correct publication update at11–15. Qualify it as the reviewed successor/policy
@@ -66,8 +66,9 @@ explicitly a design inference, not a provider API guarantee.
    does not add readAt to PR74 status. This is not a request for a new stronger
    database isolation requirement or changed runtime semantics.
 
-These source-freshness clarifications do not block the bounded proposal. Owner60
-owns any edits; Q59 did not edit that branch or mark their PR accepted by Robert.
+These source-freshness clarifications do not block the bounded proposal. The
+coordinator/author owns any edits; Q59 did not edit that branch or mark their PR
+accepted by Robert.
 
 ## Validation and remaining gates
 
