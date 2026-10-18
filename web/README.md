@@ -16,4 +16,4 @@ ANDES_API_PROXY_TARGET=http://127.0.0.1:<api-port> npm --prefix web run dev
 - **Metadata.** `ANDES_PUBLIC_ORIGIN` sets the share-image origin at build time.
 - **Test hook.** In development only, `ANDES_ENABLE_TEST_HOOKS=1` exposes `window.__ANDES_TEST_MOUNT__` for the app-integration browser seam. Production builds compile it out.
 
-`src/main.tsx` mounts the driver screens and the contact routes on one in-memory demo session (`POST /v1/demo/session`, no OTP). Live sending stays off. The typed API client lives in `src/lib/api/` ([boundary](../docs/client/api-boundary.md)); tokens are in `src/styles/tokens.css`.
+`src/main.tsx` mounts the driver screens and the contact routes on one in-memory demo session (`POST /v1/demo/session`, no OTP). Whether an SOS reaches a real phone is the backend's decision (`ZAVU_LIVE_SEND` and the `DEMO_LIVE_PHONE` allowlist); the client gets no live-send signal. The typed API client lives in `src/lib/api/` ([boundary](../docs/client/api-boundary.md)); tokens are in `src/styles/tokens.css`.
