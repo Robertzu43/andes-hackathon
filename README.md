@@ -23,6 +23,10 @@ Hoy funciona y está probado el backend completo. La app del conductor en el tel
 
 ANDES es el nombre del repositorio y del proyecto; Tándem es la app; GOAT es el equipo.
 
+## Demo visual
+
+https://github.com/user-attachments/assets/e61305c9-1cba-4d34-8cfa-dabb34a9266d
+
 ## Para el jurado: cómo entrar
 
 > [!IMPORTANT]
