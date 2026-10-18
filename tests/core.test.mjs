@@ -142,12 +142,14 @@ test('migration is repeat-safe and transaction failures release clients without 
   assert.throws(() => createApp({ ctx: f.ctx, auth: { issuer: 'x', audience: 'x', jwksUrl: 'http://unsafe.test/jwks' } }), /HTTPS/);
 });
 
-// Two branches each added a 006-* migration; schema_migrations keys the full file name, so both must apply exactly once, in order.
-test('a fresh database applies every migration once in file-name order, including both 006 files', async t => {
+// schema_migrations keys the filename stem. Numeric prefixes must be unique and strictly increasing so a later runner cannot skip one of two files that share a number.
+test('migration numbers are unique and strictly increasing, and each file applies once', async t => {
   const f = await fixture(t); const { migrate } = await import('../dist/db.js');
   const { readdirSync } = await import('node:fs');
   const files = readdirSync(new URL('../db/migrations/', import.meta.url)).filter(name => /^\d{3}-[a-z-]+\.sql$/.test(name)).sort().map(name => name.slice(0, -4));
-  assert.ok(files.includes('006-dispatch-retry') && files.includes('006-insights-provenance'));
+  const numbers = files.map(name => Number(name.slice(0, 3)));
+  assert.equal(new Set(numbers).size, numbers.length, `migration numbers must be unique: ${files.join(' ')}`);
+  for (let i = 1; i < numbers.length; i++) assert.ok(numbers[i] > numbers[i - 1], `${files[i - 1]} then ${files[i]}`);
   const applied = async () => (await f.ctx.pool.query('SELECT version FROM schema_migrations ORDER BY version')).rows.map(row => row.version);
   assert.deepEqual(await applied(), files);
   await migrate(f.ctx.pool);
@@ -156,6 +158,14 @@ test('a fresh database applies every migration once in file-name order, includin
     AND (table_name,column_name) IN (('jobs','retry_count'),('identities','synthetic'),('jobs','trigger'),('identities','last_seen_at')) ORDER BY 1`)).rows.map(row => row.c);
   assert.deepEqual(columns, ['identities.last_seen_at', 'identities.synthetic', 'jobs.retry_count', 'jobs.trigger']);
   assert.equal((await f.ctx.pool.query("SELECT count(*)::int n FROM pg_constraint WHERE conname='dispatch_attempts_job_version_key' AND connamespace=current_schema()::regnamespace")).rows[0].n, 1);
+  // 006-insights-provenance was renamed to 010. Its SQL is not idempotent, so a database that already recorded the old stem must not run it again.
+  const current = '010-insights-provenance', legacy = '006-insights-provenance';
+  assert.ok(files.includes(current) && !files.includes(legacy));
+  await f.ctx.pool.query('UPDATE schema_migrations SET version=$1 WHERE version=$2', [legacy, current]);
+  await migrate(f.ctx.pool);
+  assert.deepEqual(await applied(), files, 'the old stem is recognized and the SQL is not applied again');
+  await f.ctx.pool.query('UPDATE schema_migrations SET version=$1, hash=$2 WHERE version=$3', [legacy, 'not-the-file-hash', current]);
+  await assert.rejects(migrate(f.ctx.pool), /Applied migration changed/);
 });
 
 // Resolving an SOS must not close an otherwise active trip or silently disable its map.
