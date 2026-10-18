@@ -1,8 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash, createHmac } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { qualification } from './helpers/dispatch.mjs';
 async function api() {
   const m = await import('../dist/notifications/zavu.js').catch(() => ({}));
@@ -92,8 +90,13 @@ test('a one-way SMS sender: internal sms goes out and reads back as sms_oneway, 
   const twoWay = createZavuProvider(qualification, 'fixture-key', async () => reply('sms_oneway', 200));
   assert.equal(twoWay.payload(input).channel, 'sms');
   assert.equal((await twoWay.read('msg_oneway', undefined, {channel: 'sms', destinationHash})).state, 'unknown', 'a two-way account never accepts the one-way form');
-  assert.equal(textPayload, undefined, 'OTP text payloads belong to the deferred phone-code tasks');
-  assert.equal(readFileSync(fileURLToPath(new URL('../dist/notifications/zavu.js', import.meta.url)), 'utf8').includes('andes:otp:'), false);
+  const otp = textPayload(oneway, input.to, 'Demo de Tándem: tu código es 123456', 'otp-fixture');
+  assert.deepEqual(otp, {to: input.to, channel: 'sms_oneway', messageType: 'text',
+    text: 'Demo de Tándem: tu código es 123456', fallbackEnabled: false,
+    idempotencyKey: 'andes:otp:otp-fixture', metadata: {attemptId: 'otp-fixture'}});
+  assert.equal((await p.send(otp)).state, 'accepted');
+  assert.deepEqual(sent.at(-1), otp, 'OTP keeps the channel and correlation at the provider boundary');
+  assert.equal(textPayload(qualification, input.to, otp.text, 'two-way-otp').channel, 'sms');
   const config = {projectId: 'prj_fixture', senderId: 'snd_fixture', secret: 'fixture-secret-not-a-credential'};
   const signed = channel => {
     const raw = Buffer.from(JSON.stringify({id: 'evt_oneway', type: 'message.delivered', timestamp: 1792238400000, senderId: 'snd_fixture', projectId: 'prj_fixture',

@@ -14,9 +14,10 @@ import { recipientReadRoutes } from '../client-read/recipient.js';
 import { demoRoutes, type DemoIssuer } from '../demo.js';
 import { insightRoutes } from '../insights/routes.js';
 import { isWebRoute, webRoutes } from './web.js';
+import { demoPhoneRoutes, type DemoPhoneConfig } from '../demo-phone.js';
 declare module 'fastify' { interface FastifyRequest { actor: Actor } }
-export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer; automaticChecks?: boolean; webRoot?: string; trustProxyHops?: number }
-export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo, automaticChecks = false, webRoot, trustProxyHops = 0 }: AppOptions) {
+export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer; demoPhone?: DemoPhoneConfig; automaticChecks?: boolean; webRoot?: string; trustProxyHops?: number }
+export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo, demoPhone, automaticChecks = false, webRoot, trustProxyHops = 0 }: AppOptions) {
   const authenticate = authenticator(auth);
   // Exactly this many proxies (0 = none), so request.ip is the address the nearest trusted proxy saw. Never `true`.
   // shortcut: Fastify 5.12 ignores a numeric hop count, so this function trusts exactly that many hops. Revisit if the proxy addresses are known.
@@ -43,7 +44,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
     catch { return reply.status(503).send({ status: 'unavailable' }); }
   });
   checkRoutes(app, ctx);
-  if (demo) demoRoutes(app, ctx, demo);
+  if (demo) { demoRoutes(app, ctx, demo); if (demoPhone) demoPhoneRoutes(app, ctx, demoPhone); } // DEMO_MODE only
   app.get('/v1/me', async request => ({ id: request.actor.id }));
   clientReadRoutes(app, ctx); recipientReadRoutes(app, ctx);
   tripRoutes(app, ctx, automaticChecks); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport); insightRoutes(app, ctx, Boolean(demo));

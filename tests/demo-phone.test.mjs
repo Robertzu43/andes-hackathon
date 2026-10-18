@@ -1,5 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHmac} from 'node:crypto';
+import {fixture} from './helpers/runtime.mjs';
+import {qualification} from './helpers/dispatch.mjs';
+import {waitForBlockedQueries} from './helpers/db-barriers.mjs';
 
 const pepper = 'syntheticfixture-pepper-not-a-secret-000';
 const live = {
@@ -88,4 +92,259 @@ test('demo phone settings never read or return a fixed code from the environment
   const env = {...live};
   Object.defineProperty(env, 'DEMO_OTP_CODE', {get() { throw new Error('fixed OTP must never be read'); }});
   assert.deepEqual(demoLimits(env), demoLimits(live));
+});
+
+// Fictional numbers only: +1 555 555 01xx is NANP ('US' below); +51 0… is not an assigned Peruvian mobile range.
+const phone = '+15555550142', other = '+15555550143', code = '123456';
+function phoneConfig(overrides = {}) {
+  const sent = [];
+  const config = {pepper, allowedCountries: ['US'], perNumberHourly: 3, perIpHourly: 5, smsDailyCap: 20, alertsPerNumberDaily: 6, code: () => code,
+    send: async (to, text) => { sent.push({to, text}); return {state: 'accepted', messageId: `msg_${sent.length}`, status: 'queued'}; }, ...overrides};
+  return {sent, config};
+}
+// The fake sender and the fixed code reach the app only as this in-process createApp option.
+async function demoWorld(t, overrides) {
+  const {demoIssuer} = await import('../dist/demo.js');
+  const demo = await demoIssuer({});
+  const {sent, config} = phoneConfig(overrides);
+  const f = await fixture(t, {auth: demo.auth, demo, demoPhone: config, trustProxyHops: 1});
+  async function session() { return (await f.app.inject({method: 'POST', url: '/v1/demo/session', payload: {}})).json(); }
+  async function call(path, body, token, ip = '198.51.100.7') {
+    const response = await f.app.inject({method: 'POST', url: `/v1/demo/phone/${path}`, payload: body, headers: {authorization: `Bearer ${token}`, 'x-forwarded-for': ip}});
+    return {status: response.statusCode, body: response.json()};
+  }
+  return {f, sent, session, call, demo, config};
+}
+async function challenges(f) { return (await f.ctx.pool.query('SELECT count(*)::int n FROM demo_phone_challenges')).rows[0].n; }
+
+test('a code request sends one demo-prefixed SMS without URLs and stores only HMACs of the number and the IP', async t => {
+  const w = await demoWorld(t); const world = await w.session();
+  assert.deepEqual(await w.call('start', {phone}, world.family.token), {status: 202, body: {expiresAt: '2026-10-17T12:10:00.000Z'}});
+  assert.deepEqual(w.sent, [{to: phone, text: 'Demo de Tándem: tu código es 123456'}]);
+  assert.doesNotMatch(w.sent[0].text, /http/, 'Zavu holds SMS with unverified URLs');
+  const rows = (await w.f.ctx.pool.query('SELECT identity_id,phone_hmac,ip_hmac,code_hash,attempts FROM demo_phone_challenges')).rows;
+  assert.equal(rows.length, 1); assert.equal(rows[0].identity_id, world.family.id); assert.equal(rows[0].attempts, 0);
+  for (const key of ['phone_hmac', 'ip_hmac', 'code_hash']) assert.match(rows[0][key], /^[0-9a-f]{64}$/, key);
+  const row = (await w.f.ctx.pool.query('SELECT * FROM demo_phone_challenges')).rows[0];
+  const mac = value => createHmac('sha256', pepper).update(value).digest('hex');
+  assert.equal(row.phone_hmac, mac(`phone:${phone}`));
+  assert.equal(row.ip_hmac, mac('ip:198.51.100.7'));
+  assert.equal(row.code_hash, mac(`code:${row.id}:${code}`));
+  assert.equal(row.created_at.toISOString(), '2026-10-17T12:00:00.000Z');
+  assert.equal(row.expires_at.toISOString(), '2026-10-17T12:10:00.000Z');
+  assert.equal((await w.f.ctx.pool.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [world.family.id])).rows[0].phone, null);
+  assert.equal((await w.f.ctx.pool.query('SELECT count(*)::int n FROM demo_phone_verifications')).rows[0].n, 0);
+  const stored = JSON.stringify(rows);
+  for (const secret of [phone.slice(1), '198.51.100.7']) assert.ok(!stored.includes(secret), secret);
+  assert.equal((await w.f.app.inject({method: 'POST', url: '/v1/demo/phone/start', payload: {phone}})).statusCode, 401, 'the actor is the token persona');
+});
+
+test('malformed numbers and countries outside DEMO_ALLOWED_COUNTRIES are refused before any SMS', async t => {
+  const w = await demoWorld(t); const world = await w.session();
+  for (const bad of ['15555550142', '+0155555501', '+1555', 'tel:+15555550142', '+15555550142 ', '+1 555 555 0142']) {
+    assert.deepEqual(await w.call('start', {phone: bad}, world.family.token), {status: 400, body: {code: 'invalid_phone'}}, bad);
+  }
+  assert.deepEqual(await w.call('start', {phone: '+51000000001'}, world.family.token), {status: 403, body: {code: 'country_not_allowed'}});
+  assert.equal((await w.call('start', {}, world.family.token)).status, 400);
+  assert.deepEqual([w.sent.length, await challenges(w.f)], [0, 0]);
+});
+
+test('with live sends off the code request answers 503 demo_sms_disabled and is never counted', async t => {
+  const w = await demoWorld(t, {send: null}); const world = await w.session();
+  for (let i = 0; i < 8; i++) assert.deepEqual(await w.call('start', {phone}, world.family.token), {status: 503, body: {code: 'demo_sms_disabled'}});
+  assert.equal(await challenges(w.f), 0);
+});
+
+test('a number gets at most DEMO_OTP_PER_NUMBER_HOURLY codes per hour, across worlds and IPs', async t => {
+  const w = await demoWorld(t);
+  for (let i = 0; i < 3; i++) assert.equal((await w.call('start', {phone}, (await w.session()).family.token, `198.51.100.${10 + i}`)).status, 202);
+  assert.deepEqual(await w.call('start', {phone}, (await w.session()).family.token, '198.51.100.20'), {status: 429, body: {code: 'rate_limited'}});
+  w.f.advance(3600001);
+  assert.equal((await w.call('start', {phone}, (await w.session()).family.token, '198.51.100.21')).status, 202);
+  assert.equal(w.sent.length, 4);
+});
+
+test('an IP gets at most DEMO_OTP_PER_IP_HOURLY codes per hour, and a forged X-Forwarded-For entry does not reset it', async t => {
+  const w = await demoWorld(t); const token = (await w.session()).family.token;
+  for (let i = 0; i < 5; i++) assert.equal((await w.call('start', {phone: `+1555555016${i}`}, token, '203.0.113.9')).status, 202);
+  assert.deepEqual(await w.call('start', {phone: '+15555550165'}, token, '203.0.113.9'), {status: 429, body: {code: 'rate_limited'}});
+  assert.deepEqual(await w.call('start', {phone: '+15555550166'}, token, '192.0.2.1, 203.0.113.9'), {status: 429, body: {code: 'rate_limited'}}, 'the client-written entry is ignored');
+  assert.equal((await w.call('start', {phone: '+15555550167'}, token, '203.0.113.10')).status, 202);
+  assert.equal(w.sent.length, 6);
+});
+
+test('DEMO_SMS_DAILY_CAP stops every code request for 24 hours with demo_budget_exhausted', async t => {
+  const w = await demoWorld(t, {smsDailyCap: 2}); const token = (await w.session()).family.token;
+  assert.equal((await w.call('start', {phone}, token)).status, 202);
+  assert.equal((await w.call('start', {phone: other}, token)).status, 202);
+  const exhausted = {status: 429, body: {code: 'demo_budget_exhausted'}};
+  assert.deepEqual(await w.call('start', {phone: '+15555550144'}, token), exhausted);
+  w.f.advance(3600001); assert.deepEqual(await w.call('start', {phone: '+15555550144'}, token), exhausted, 'not an hourly window');
+  w.f.advance(23 * 3600000); assert.equal((await w.call('start', {phone: '+15555550144'}, token)).status, 202);
+  assert.equal(w.sent.length, 3);
+});
+
+test('a provider refusal answers 503 and still counts; an ambiguous provider result answers 202', async t => {
+  let result = {state: 'rejected', code: 'invalid_destination'};
+  const w = await demoWorld(t, {send: async () => result}); const token = (await w.session()).family.token;
+  assert.deepEqual(await w.call('start', {phone}, token), {status: 503, body: {code: 'demo_sms_disabled'}});
+  result = {state: 'unknown'};
+  assert.equal((await w.call('start', {phone}, token)).status, 202);
+  assert.equal(await challenges(w.f), 2);
+});
+
+test('without demo mode the phone routes do not exist', async t => {
+  const f = await fixture(t, {demoPhone: phoneConfig().config});
+  assert.equal((await f.req('POST', '/v1/demo/phone/start', {phone})).status, 404);
+  assert.equal((await f.req('POST', '/v1/demo/phone/verify', {phone, code})).status, 404);
+});
+
+test('codes go out through the Zavu adapter on the one-way SMS sender', async () => {
+  const {zavuSender} = await import('../dist/demo-phone.js');
+  const {createZavuProvider} = await import('../dist/notifications/zavu.js');
+  const bodies = [];
+  const p = createZavuProvider({...qualification, smsMode: 'oneway'}, 'syntheticfixture-key', async (_url, init) => {
+    const body = JSON.parse(init.body); bodies.push(body);
+    return new Response(JSON.stringify({message: {id: 'msg_code', channel: body.channel, to: body.to, status: 'queued', direction: 'outbound'}}), {status: 202});
+  });
+  const send = zavuSender(p);
+  assert.equal((await send(phone, 'Demo de Tándem: tu código es 123456')).state, 'accepted');
+  assert.equal((await send(phone, 'Demo de Tándem: tu código es 123456')).state, 'accepted');
+  assert.equal(bodies.length, 2);
+  const {channel, messageType, text, to, fallbackEnabled} = bodies[0];
+  assert.deepEqual({channel, messageType, text, to, fallbackEnabled}, {channel: 'sms_oneway', messageType: 'text', text: 'Demo de Tándem: tu código es 123456', to: phone, fallbackEnabled: false});
+  for (const body of bodies) {
+    assert.match(body.metadata.attemptId, /^[0-9a-f-]{36}$/);
+    assert.equal(body.idempotencyKey, `andes:otp:${body.metadata.attemptId}`);
+  }
+  assert.notEqual(bodies[0].idempotencyKey, bodies[1].idempotencyKey);
+});
+
+test('malformed request shapes never echo the phone or create a challenge', async t => {
+  const w = await demoWorld(t); const token = (await w.session()).family.token;
+  for (const body of [null, [], [phone], phone, 42, true, {}, {phone: null}, {phone: 15555550142}, {phone: []}, {phone, extra: phone}]) {
+    const response = await w.f.app.inject({method: 'POST', url: '/v1/demo/phone/start',
+      headers: {authorization: `Bearer ${token}`, 'content-type': 'application/json'}, payload: JSON.stringify(body)});
+    assert.deepEqual({status: response.statusCode, body: response.json()}, {status: 400, body: {code: 'invalid_request'}});
+  }
+  assert.deepEqual([w.sent.length, await challenges(w.f)], [0, 0]);
+});
+
+test('an unconfigured demo phone sender leaves both phone routes absent', async t => {
+  const {demoIssuer} = await import('../dist/demo.js'); const demo = await demoIssuer({});
+  const f = await fixture(t, {auth: demo.auth, demo});
+  const token = (await f.app.inject({method: 'POST', url: '/v1/demo/session', payload: {}})).json().family.token;
+  assert.equal((await f.req('POST', '/v1/demo/phone/start', {phone}, token)).status, 404);
+  assert.equal((await f.req('POST', '/v1/demo/phone/verify', {phone, code}, token)).status, 404);
+});
+
+test('the allowed calling prefixes are configurable and +1 admits the whole NANP', async t => {
+  const w = await demoWorld(t, {allowedCountries: ['PE', 'BR', 'US'], perIpHourly: 10});
+  const token = (await w.session()).family.token;
+  for (const to of ['+51000000001', '+55000000001', '+15555550142']) {
+    assert.equal((await w.call('start', {phone: to}, token)).status, 202);
+  }
+  assert.deepEqual(await w.call('start', {phone: '+56000000001'}, token), {status: 403, body: {code: 'country_not_allowed'}});
+  assert.equal(w.sent.length, 3);
+});
+
+test('the sender observes a committed challenge and holds no transaction lock while waiting', async t => {
+  const {deferred} = await import('./helpers/dispatch.mjs');
+  const entered = deferred(), release = deferred();
+  let w;
+  w = await demoWorld(t, {perNumberHourly: 1, send: async () => {
+    entered.resolve(await challenges(w.f));
+    await release.promise;
+    return {state: 'accepted', messageId: 'msg_postcommit', status: 'queued'};
+  }});
+  const token = (await w.session()).family.token;
+  const pending = w.call('start', {phone}, token);
+  try {
+    assert.equal(await Promise.race([entered.promise, pending.then(() => 'sender not reached')]), 1);
+    const client = await w.f.ctx.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const lock = await client.query("SELECT pg_try_advisory_xact_lock(hashtextextended('demo_phone_start',0)) AS acquired");
+      assert.equal(lock.rows[0].acquired, true, 'sending must release the cap transaction lock');
+    } finally { await client.query('ROLLBACK'); client.release(); }
+    assert.deepEqual(await w.call('start', {phone}, token), {status: 429, body: {code: 'rate_limited'}});
+  } finally { release.resolve(); await pending; }
+});
+
+for (const cap of ['number', 'IP', 'daily']) {
+  test(`concurrent starts across two app instances cannot exceed the ${cap} cap`, async t => {
+    const limits = {perNumberHourly: 20, perIpHourly: 20, smsDailyCap: 20,
+      ...({number: {perNumberHourly: 2}, IP: {perIpHourly: 2}, daily: {smsDailyCap: 2}}[cap])};
+    const w = await demoWorld(t, limits);
+    const {createApp} = await import('../dist/api/app.js');
+    const {createContext} = await import('../dist/db.js');
+    const ctx = createContext(w.f.ctx.pool.options.connectionString, w.f.ctx.clock);
+    const second = createApp({ctx, auth: w.demo.auth, demo: w.demo, demoPhone: w.config, trustProxyHops: 1});
+    await second.ready(); t.after(() => second.close());
+    const worlds = [await w.session(), await w.session()];
+    const holder = await w.f.ctx.pool.connect();
+    await holder.query('BEGIN');
+    await holder.query("SELECT pg_advisory_xact_lock(hashtextextended('demo_phone_start',0))");
+    const requests = Array.from({length: 10}, (_, i) => (i % 2 ? second : w.f.app).inject({
+      method: 'POST', url: '/v1/demo/phone/start', payload: {phone: cap === 'number' ? phone : `+155555501${70 + i}`},
+      headers: {authorization: `Bearer ${worlds[i % 2].family.token}`,
+        'x-forwarded-for': cap === 'IP' ? '198.51.100.7' : `198.51.100.${20 + i}`},
+    }).then(response => ({status: response.statusCode, body: response.json()})));
+    try {
+      await waitForBlockedQueries(w.f.ctx.telemetryPool, '%pg_advisory_xact_lock%', 2);
+    } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+    const replies = await Promise.all(requests);
+    assert.equal(replies.filter(r => r.status === 202).length, 2);
+    assert.deepEqual(replies.filter(r => r.status !== 202), Array(8).fill({status: 429,
+      body: {code: cap === 'daily' ? 'demo_budget_exhausted' : 'rate_limited'}}));
+    assert.deepEqual([w.sent.length, await challenges(w.f)], [2, 2]);
+  });
+}
+
+test('exact hourly and daily window boundaries admit a new issuance', async t => {
+  for (const [limits, elapsed] of [[{perNumberHourly: 1}, 3600000], [{perIpHourly: 1}, 3600000], [{smsDailyCap: 1}, 86400000]]) {
+    const w = await demoWorld(t, limits); let token = (await w.session()).family.token;
+    assert.equal((await w.call('start', {phone}, token)).status, 202);
+    w.f.advance(elapsed - 1);
+    const error = limits.smsDailyCap ? 'demo_budget_exhausted' : 'rate_limited';
+    assert.deepEqual(await w.call('start', {phone}, token), {status: 429, body: {code: error}});
+    w.f.advance(1); token = (await w.session()).family.token;
+    assert.equal((await w.call('start', {phone}, token)).status, 202);
+  }
+});
+
+test('latest issuance stays deterministic at tied timestamps and a spent latest row never reveals an older code', async t => {
+  let next = 0; const codes = ['111111', '222222', '333333'];
+  const w = await demoWorld(t, {code: () => codes[next++], perIpHourly: 10});
+  const a = await w.session(), b = await w.session();
+  for (const world of [a, a, b]) assert.equal((await w.call('start', {phone}, world.family.token)).status, 202);
+  const rows = (await w.f.ctx.pool.query('SELECT * FROM demo_phone_challenges ORDER BY issuance_order')).rows;
+  assert.equal(rows.length, 3);
+  assert.equal(new Set(rows.map(row => row.created_at.toISOString())).size, 1);
+  for (let i = 0; i < rows.length; i++) {
+    assert.equal(rows[i].code_hash, createHmac('sha256', pepper).update(`code:${rows[i].id}:${codes[i]}`).digest('hex'));
+    if (i) assert.ok(BigInt(rows[i].issuance_order) > BigInt(rows[i - 1].issuance_order));
+  }
+  const latest = async identity => (await w.f.ctx.pool.query(`SELECT * FROM demo_phone_challenges
+    WHERE identity_id=$1 AND phone_hmac=$2 ORDER BY issuance_order DESC LIMIT 1`, [identity, rows[0].phone_hmac])).rows[0];
+  assert.equal((await latest(a.family.id)).id, rows[1].id);
+  assert.equal((await latest(b.family.id)).id, rows[2].id, 'persona binding beats the global sequence');
+  await w.f.ctx.pool.query('UPDATE demo_phone_challenges SET expires_at=$2 WHERE id=$1', [rows[1].id, w.f.ctx.clock()]);
+  assert.equal((await latest(a.family.id)).id, rows[1].id, 'Task 9 must retain and select the spent latest row');
+  assert.equal((await latest(a.family.id)).expires_at.getTime(), w.f.ctx.clock().getTime());
+  assert.equal((await w.call('verify', {phone, code: codes[0]}, a.family.token)).status, 404, 'Task 9 route is deliberately not implemented');
+});
+
+test('Zavu timeout ambiguity counts once and returns a private 202 through the start route', async t => {
+  const {zavuSender} = await import('../dist/demo-phone.js');
+  const {createZavuProvider} = await import('../dist/notifications/zavu.js');
+  let calls = 0;
+  const p = createZavuProvider({...qualification, smsMode: 'oneway'}, 'syntheticfixture-key', async (_url, init) => {
+    calls++; assert.ok(init.signal instanceof AbortSignal);
+    throw new Error(`acceptance unknown for ${phone}`);
+  });
+  const w = await demoWorld(t, {send: zavuSender(p), perNumberHourly: 1}); const token = (await w.session()).family.token;
+  assert.deepEqual(await w.call('start', {phone}, token), {status: 202, body: {expiresAt: '2026-10-17T12:10:00.000Z'}});
+  assert.deepEqual(await w.call('start', {phone}, token), {status: 429, body: {code: 'rate_limited'}});
+  assert.deepEqual([calls, await challenges(w.f)], [1, 1]);
 });
