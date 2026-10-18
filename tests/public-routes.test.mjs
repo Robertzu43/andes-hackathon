@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fixture } from './helpers/runtime.mjs';
 
 // printRoutes is a tree. Reconstruct method + URL so a new route cannot skip this allowlist.
@@ -60,4 +63,18 @@ test('unauthenticated requests are accepted only on the public route allowlist',
   const withExtras = await openRoutes(opened.app);
   assert.deepEqual(withExtras.open, [...alwaysPublic, 'POST /v1/callbacks/zavu', 'POST /v1/demo/session'].sort());
   assert.equal((await opened.app.inject({ method: 'POST', url: '/v1/callbacks/zavu', payload: {} })).json().code, 'invalid_callback');
+});
+
+test('webRoot adds only the built app to the public allowlist', async t => {
+  const root = mkdtempSync(join(tmpdir(), 'andes-web-'));
+  mkdirSync(join(root, 'assets'));
+  writeFileSync(join(root, 'index.html'), '<!doctype html><title>SYNTHETIC app</title>');
+  writeFileSync(join(root, 'assets', 'app-SYNTH.js'), 'export const synthetic = true;');
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const f = await fixture(t, { webRoot: root });
+  const shell = ['GET /', 'HEAD /', 'GET /*', 'HEAD /*'];
+  assert.deepEqual((await openRoutes(f.app)).open, [...alwaysPublic, ...shell].sort());
+  assert.equal((await f.app.inject({ method: 'GET', url: '/' })).body, '<!doctype html><title>SYNTHETIC app</title>');
+  assert.equal((await f.app.inject({ method: 'GET', url: '/assets/app-SYNTH.js' })).body, 'export const synthetic = true;');
+  assert.equal((await f.app.inject({ method: 'GET', url: '/v1/me' })).json().code, 'unauthorized');
 });
