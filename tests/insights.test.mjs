@@ -145,11 +145,31 @@ test('advice only sums published cells, so it cannot locate or time a hidden rep
 });
 
 // Demo personas are free to mint, so in demo mode every report is demo data and every view must say so.
-test('demo mode stores reports as synthetic and flags every published cell as demo data', async t => {
-  process.env.DEMO_MODE = 'true'; t.after(() => { delete process.env.DEMO_MODE; });
-  const f = await fixture(t); const night = '2026-10-16T04:30:00Z';
-  for (let i = 0; i < 3; i++) assert.equal((await report(f, 'robo', -12.325, -76.775, night)).status, 200);
+test('demo sign-in stores reports as synthetic and flags every published cell as demo data', async t => {
+  const { demoIssuer } = await import('../dist/demo.js'); const demo = await demoIssuer({});
+  const f = await fixture(t, { auth: demo.auth, demo }); const night = '2026-10-16T04:30:00Z';
+  const driver = (await f.app.inject({ method: 'POST', url: '/v1/demo/session', payload: {} })).json().driver.token;
+  for (let i = 0; i < 3; i++) assert.equal((await report(f, 'robo', -12.325, -76.775, night, driver)).status, 200);
   assert.equal((await f.ctx.pool.query('SELECT count(*)::int AS n FROM reports WHERE synthetic')).rows[0].n, 3);
   const map = (await hotspots(f)).body;
   assert.equal(map.includesSynthetic, true); assert.deepEqual(map.cells.map(c => [c.total, c.synthetic]), [[3, 3]]);
+});
+
+// Insights must follow whether demo sign-in is actually on, not a separately read variable.
+test('the DEMO_MODE variable alone never marks real reports as demo data', async t => {
+  process.env.DEMO_MODE = 'true'; t.after(() => { delete process.env.DEMO_MODE; });
+  const f = await fixture(t);
+  assert.equal((await report(f, 'robo', -12.325, -76.775, '2026-10-16T04:30:00Z')).status, 200);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int AS n FROM reports WHERE synthetic')).rows[0].n, 0);
+});
+
+// The driver UI learns which incident to label, and whether it already is, from the trip status.
+test('trip status shows the latest incident label, also after resolution', async t => {
+  const f = await fixture(t); const trip = await f.trip();
+  const sos = (await f.req('POST', `/v1/trips/${trip}/sos`, {})).body.id;
+  const incident = async () => (await f.req('GET', `/v1/trips/${trip}/status`)).body.incident;
+  assert.equal((await incident()).label, null);
+  assert.equal((await f.req('POST', `/v1/incidents/${sos}/resolve`, {})).status, 200);
+  assert.equal((await f.req('POST', `/v1/incidents/${sos}/label`, { label: 'falsa_alarma' })).status, 200);
+  const shown = await incident(); assert.deepEqual([shown.id, shown.status, shown.label], [sos, 'resolved', 'falsa_alarma']);
 });

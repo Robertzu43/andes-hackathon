@@ -37,7 +37,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
   checkRoutes(app, ctx);
   if (demo) demoRoutes(app, ctx, demo);
   app.get('/v1/me', async request => ({ id: request.actor.id }));
-  tripRoutes(app, ctx); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport); insightRoutes(app, ctx);
+  tripRoutes(app, ctx); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport); insightRoutes(app, ctx, Boolean(demo));
   if (callbackConfig) callbackRoutes(app, ctx, callbackConfig);
   return app;
 }
