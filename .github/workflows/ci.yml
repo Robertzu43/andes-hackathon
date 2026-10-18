@@ -40,10 +40,16 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
       - run: npm ci
+      - run: npm ci
+        working-directory: web
       - name: Use the runner's PostgreSQL server binaries for owned clusters
         run: echo "APP_INTEGRATION_PG_BIN=$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -n 1)" >> "$GITHUB_ENV"
       - run: node scripts/app-integration/run.mjs
+      - run: node scripts/app-integration/check-browser-seam.mjs
       - run: node --test evidence/app-acceptance/oracle.test.mjs
   backend:
     runs-on: ubuntu-latest
