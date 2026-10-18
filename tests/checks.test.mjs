@@ -52,6 +52,8 @@ test('check timings are all-or-nothing and positive', async () => {
   assert.throws(() => checkConfig({SILENCE_MS: '120000'}), /Complete check timing/);
   assert.throws(() => checkConfig({SILENCE_MS: '0', ASK_GRACE_MS: '1', ARRIVAL_GRACE_MS: '1', CHECK_SWEEP_MS: '1'}), /Complete check timing/);
   assert.deepEqual(checkConfig({SILENCE_MS: '120000', ASK_GRACE_MS: '60000', ARRIVAL_GRACE_MS: '120000', CHECK_SWEEP_MS: '5000'}), cfg);
+  assert.deepEqual(checkConfig({SILENCE_MS: '120000', ASK_GRACE_MS: '60000', ARRIVAL_GRACE_MS: '120000', CHECK_SWEEP_MS: '5000', DEMO_MODE: 'true'}), {...cfg, demo: true});
+  assert.deepEqual(checkConfig({SILENCE_MS: '120000', ASK_GRACE_MS: '60000', ARRIVAL_GRACE_MS: '120000', CHECK_SWEEP_MS: '5000', DEMO_MODE: 'TRUE'}), cfg);
 });
 
 test('silence opens one check; OK closes it and the same reason does not reopen at once', async t => {

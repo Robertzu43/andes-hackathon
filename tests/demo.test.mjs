@@ -4,6 +4,7 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {fixture} from './helpers/runtime.mjs';
 import {runtime, sos, provider, qualification} from './helpers/dispatch.mjs';
+import {cfg, sweep, checksOf, asking} from './helpers/checks.mjs';
 
 async function demoFixture(t) {
   const {demoIssuer} = await import('../dist/demo.js');
@@ -138,4 +139,46 @@ test('an empty allowlist refuses every destination before quota or the provider'
     [{status: 'unavailable', unavailable_reason: 'destination_not_allowed', n: 3}]);
   assert.deepEqual((await f.ctx.pool.query('SELECT (SELECT count(*) FROM dispatch_attempts)::int attempts,(SELECT count(*) FROM quota_reservations)::int quota')).rows, [{attempts: 0, quota: 0}]);
   assert.equal(sends, 0);
+});
+
+const demoChecks = {...cfg, demo: true};
+async function demoTrip(f, world) {
+  const draft = await f.req('POST', '/v1/trip-drafts', {text: 'SYNTHETIC demo trip', fields: {truckId: world.driver.truckId, origin: 'A', destination: 'B', country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo'}}, world.driver.token);
+  return (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: [world.family.grantId, world.colleague.grantId]}, world.driver.token)).body.id;
+}
+const incidentJobs = async (f, trip) => (await f.ctx.pool.query("SELECT count(*)::int n FROM jobs WHERE trip_id=$1 AND channel<>'group'", [trip])).rows[0].n;
+
+test('in demo mode an abandoned trip opens no check and alerts nobody; a watched trip still escalates; SOS always works', async t => {
+  const {f, session} = await demoFixture(t);
+  const watched = (await session()).body; const left = (await session()).body;
+  const watchedTrip = await demoTrip(f, watched); const leftTrip = await demoTrip(f, left);
+  const poll = () => f.req('GET', `/v1/trips/${watchedTrip}/status`, undefined, watched.family.token);
+  f.advance(120001); await poll(); await sweep(f, demoChecks);
+  assert.deepEqual(await checksOf(f, watchedTrip), [asking('silence')]);
+  assert.deepEqual(await checksOf(f, leftTrip), [], 'nobody has looked at this world for longer than the ask window');
+  f.advance(60000); await poll(); await sweep(f, demoChecks);
+  assert.equal((await checksOf(f, watchedTrip))[0].status, 'escalated');
+  assert.equal(await incidentJobs(f, watchedTrip), 5);
+  f.advance(3600000); await sweep(f, demoChecks); await sweep(f, demoChecks);
+  assert.deepEqual(await checksOf(f, leftTrip), []);
+  assert.equal(await incidentJobs(f, leftTrip), 0);
+  assert.equal((await f.req('POST', `/v1/trips/${leftTrip}/sos`, {}, left.driver.token)).status, 200, 'an explicit SOS is never suppressed');
+  assert.equal(await incidentJobs(f, leftTrip), 5);
+});
+
+test('after the demo issuer restarts, a trip whose tokens died cancels its open check instead of escalating', async t => {
+  const {f, session} = await demoFixture(t);
+  const world = (await session()).body; const trip = await demoTrip(f, world);
+  f.advance(120001); await f.req('GET', `/v1/trips/${trip}/status`, undefined, world.driver.token); await sweep(f, demoChecks);
+  assert.deepEqual(await checksOf(f, trip), [asking('silence')]);
+  const {demoIssuer} = await import('../dist/demo.js'); const {createApp} = await import('../dist/api/app.js');
+  const restarted = await demoIssuer({});
+  const app = createApp({ctx: f.ctx, auth: restarted.auth, demo: restarted}); await app.ready();
+  const stale = await app.inject({method: 'GET', url: `/v1/trips/${trip}/status`, headers: {authorization: `Bearer ${world.driver.token}`}});
+  assert.equal(stale.statusCode, 401, 'the old world lost its authority');
+  f.advance(60000); await sweep(f, demoChecks);
+  assert.deepEqual(await checksOf(f, trip), [{reason: 'silence', status: 'cancelled', incident_id: null}]);
+  f.advance(3600000); await sweep(f, demoChecks);
+  assert.equal((await checksOf(f, trip)).length, 1);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM incidents')).rows[0].n, 0);
 });

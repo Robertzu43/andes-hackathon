@@ -137,3 +137,4 @@ Limits:
 - At most 30 worlds per minute per instance (429 `demo_rate_limited`).
 - The signing key lives in memory, so tokens end on restart and the demo must run a single instance.
 - Demo rows stay in the database until it is dropped after the event.
+- Abandoned worlds alert nobody. With `DEMO_MODE=true`, the control worker opens a check only if the trip's driver or a current contact made an authenticated request (a `/status` poll counts) within the last `ASK_GRACE_MS`, and escalates it only if one did after it opened; otherwise the open check is cancelled at its deadline. A closed tab, or tokens that died with a restart, therefore stop all automatic checks. Keep `/status` polling while a demo screen is open. An explicit SOS is never affected.
