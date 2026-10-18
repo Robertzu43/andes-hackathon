@@ -157,3 +157,65 @@ twelve cases, record it in
 source in a private clone (checked out with `--no-overlay`, so backend files
 added after the pin are removed): clean source passes, and an ignored migration is
 refused before any evidence directory exists.
+
+## Browser seam: the web app's proxy against the real backend
+
+`scripts/app-integration/check-browser-seam.mjs` serves this checkout's own
+`web/` (its `vite.config.ts`, `package.json`, lock and the client in
+`web/src/lib/api`) against this checkout's backend on a disposable PostgreSQL.
+Nothing is copied or pinned, so a change to the web app or backend on `main` is
+what this check tests. It runs in CI in the `app-integration` job.
+
+```sh
+npm ci && (cd web && npm ci)
+node scripts/app-integration/check-browser-seam.mjs
+```
+
+It builds the backend, then runs `tests/app-integration/browser-proxy.mjs`. That
+file has no `.test.mjs` suffix because it needs `web/node_modules`, which
+`run.mjs` does not install. Its eight checks:
+
+- The fixture-only credential POST rejects GET, a missing header and foreign origins.
+- The Vite dev proxy passes real `/v1/me` authentication. The client gateway
+  authenticates only after that real read, sends once for a duplicate `begin()`
+  and persists one SQL identity. The dev server serves the test mount hook and
+  the bootstrap, which imports the checkout's client.
+- A production build behind `vite preview` forwards signed reads and idempotent
+  truck writes, and its bundles contain neither the mount hook nor fixture modules.
+- The unconfigured production proxy answers JSON 503 `api_unconfigured`, not SPA HTML.
+- Signout and a server-refused credential (gateway state `error`) leave the session anonymous.
+- The interactive CLI removes its database and run directory after SIGHUP, and
+  after SIGKILL of its whole process group.
+
+### Interactive fixture
+
+```sh
+node scripts/app-integration/browser-fixture.mjs
+```
+
+It prints the loopback `/session` URL. In the browser console or automation:
+
+```js
+const fixture = await import('/__andes_fixture__/bootstrap.mjs');
+const session = fixture.mountSession();
+```
+
+Continue then gets a short-lived synthetic signed credential from a same-origin
+fixture-only POST (exact origin and host plus a custom header, CORS off) and
+verifies it through the real `/v1` proxy. Credentials stay in memory, never in a
+URL, storage or logs, and the token's phone claim is fictional
+(`+1 555 555 0146`). This is a test credential issuer, not production login.
+The bootstrap is a virtual module of the fixture's dev server, so it is never
+written into `web/` or a production build. Vite's cache and build output go to a
+private `andes-q46-browser-*` temp directory; the checkout stays clean.
+
+A separate resource-owner process (its own process group, private IPC and a
+ten-minute deadline) holds the database and run directory. They are removed on
+normal close, SIGINT, SIGTERM, SIGHUP, parent disconnect, or SIGKILL of the
+foreground process group. PostgreSQL uses port 56446 by default; set
+`APP_INTEGRATION_PG_PORT` to run beside another owned cluster, and
+`APP_INTEGRATION_PG_BIN` when `pg_config` belongs to another installation.
+
+This is server and session seam evidence, not UI acceptance: it covers no
+feature routes, viewports, accessibility, OIDC, provider delivery or whole-app
+readiness.
