@@ -1,6 +1,6 @@
 # App funcional en teléfonos reales: diseño
 
-Fecha: 2026-10-18. Estado: aprobado por Robert, sección por sección, en brainstorming. Revisión 2: corrige los 8 problemas de la primera revisión de la spec. Base: `main` 23e9f33.
+Fecha: 2026-10-18. Estado: aprobado por Robert, sección por sección, en brainstorming. Revisión 3: incorpora dos revisiones de la spec. Base: `main` 23e9f33.
 
 ## Objetivo y criterio de éxito
 
@@ -12,10 +12,12 @@ Hay éxito cuando, sobre una URL HTTPS:
 2. El contacto abre el link en otro teléfono, verifica **su** número con un código SMS y acepta.
 3. Solo con el contacto ya aceptado, el conductor crea y confirma el viaje. El contacto queda unido al viaje.
 4. El teléfono del conductor comparte la ubicación en vivo, y el contacto la ve.
-5. Un SOS hace llegar SMS, WhatsApp y llamada reales al teléfono del contacto.
-6. Un silencio abre un check y, sin respuesta, escala.
-7. «Llegué» corta la ubicación.
+5. Un silencio abre un check y, sin respuesta, escala, con alertas reales al contacto.
+6. Un SOS, que mejora el incidente de check abierto, hace llegar SMS, WhatsApp y llamada reales con la redacción de SOS.
+7. El conductor marca **«Ya estoy a salvo»**, que resuelve el incidente, y después «Llegué» corta la ubicación.
 8. La corrida queda registrada como evidencia con horas y capturas.
+
+El orden de 5 y 6 lo impone el backend: el sweeper no abre checks mientras el viaje tiene un incidente activo (`src/checks/sweep.ts`, `dueReasons`). Un SOS sí mejora un incidente de check abierto (`src/incidents/routes.ts:15-19`).
 
 ## Alcance
 
@@ -57,13 +59,14 @@ Hay éxito cuando, sobre una URL HTTPS:
 
 **Etapa 1, túnel:**
 1. `docker compose` levanta Postgres.
-2. Los cuatro procesos corren locales con `DEMO_MODE=true` y Zavu real.
+2. Los cuatro procesos corren locales con `DEMO_MODE=true` y Zavu real. El servidor escucha en **`127.0.0.1`** (`HOST`), no en `0.0.0.0`. Así nadie en la misma red se conecta directo y falsifica `X-Forwarded-For`.
 3. `cloudflared tunnel --url http://127.0.0.1:3000` da una URL `https://…trycloudflare.com`. HTTPS es obligatorio para la geolocalización.
 
 **Etapa 2, AWS:** `deploy.sh` con la misma imagen. Es una "demo reducida": una tarea, una zona de disponibilidad. En 23e9f33, `deploy.sh` **no alcanza** y hay que corregirlo:
 - La tarea hoy corre solo `worker control & server`. Tiene que correr también `worker emergency` y `worker ordinary`.
 - El rol de la tarea hoy solo tiene `sqs:SendMessage`. Necesita también `ReceiveMessage`, `DeleteMessage` y `ChangeMessageVisibility` sobre las dos colas.
-- El entorno hoy fija `ZAVU_LIVE_SEND=false` y no tiene secretos. Necesita, desde Secrets Manager: la API key de Zavu, el secreto de callbacks, `ZAVU_QUALIFICATION_JSON`, las variables `DEMO_*` y `DEMO_PHONE_PEPPER`.
+- El entorno hoy fija `ZAVU_LIVE_SEND=false` y no tiene secretos. Necesita, desde Secrets Manager: la API key de Zavu, el secreto de callbacks, `ZAVU_QUALIFICATION_JSON`, las variables `DEMO_*` y `DEMO_PHONE_PEPPER`. También necesita `ZAVU_PROJECT_ID` y `ZAVU_SENDER_ID`, iguales al `accountId` y al `senderId` de la configuración, porque sin ellos `configuredProvider` falla al arrancar. El rol de ejecución necesita `GetSecretValue` sobre cada secreto nuevo, no solo sobre `andes-demo/app-db`.
+- **Migraciones:** las tablas nuevas se migran **antes** de `deploy.sh lock`, porque después la laptop ya no llega a RDS.
 - **Interruptor sin caída:** con `ZAVU_LIVE_SEND=false`, el script **no lanza** los consumidores. `startWorker` los rechaza sin proveedor, y con `wait -n; exit 1` tumbarían la tarea entera, API incluida. Con los envíos apagados, los jobs quedan registrados como no disponibles y la app sigue arriba.
 
 ## 2. App web
@@ -97,6 +100,7 @@ Los campos que exige el borrador (`requiredFields` en `src/trips/routes.ts`) se 
 **Viaje activo:**
 - **Ubicación:** botón **Compartir ubicación**, que requiere un gesto por el permiso del navegador. Muestra el estado *compartiendo / vieja / sin datos* y la hora de la última lectura, que vienen de `/v1/trips/:id/status`. Pide un *wake lock* de pantalla si el navegador lo permite.
 - **Botones grandes:** **SOS** (rojo y dominante, un toque, como `requestHelp()`), **Estoy bien**, **Hacer una pausa / Continuar** y **Llegué**.
+- **«Ya estoy a salvo»:** aparece solo con un incidente activo. Llama a `resolveIncident` (ya existe en `web/src/lib/api/client.ts:196`; el backend exige que sea el dueño). Se agrega como operación al controlador de #63. «Llegué» **no** resuelve un SOS abierto, igual que en el backend.
 - **Polling** de `/status` cada 5 s. Si hay un check abierto, abre el banner.
 
 **GPS:**
@@ -146,7 +150,7 @@ Es un componente propio, sin librerías. Oscurece la pantalla con una sombra (`b
 1. Verifica su número con un código SMS (sección 4).
 2. Acepta con `POST /v1/contacts/:id/accept`. Desde #91, la aceptación exige que la identidad tenga el teléfono verificado e igual al de la invitación.
 3. Hace polling de `GET /v1/contact/trips` hasta que aparece el viaje confirmado, y abre `/contact/trips/:tripId`.
-4. **La pantalla del contacto consulta `/v1/trips/:id/status` cada 5 s.** Así se actualiza, y además **mantiene la presencia** que el sweeper exige en modo demo (`src/checks/sweep.ts:16-30`, `:46-47`): un check solo se abre y escala si alguien del mundo hizo una petición autenticada dentro de `ASK_GRACE_MS`.
+4. **La pantalla del contacto pide un wake lock y consulta `/v1/trips/:id/status` cada 5 s.** Así se actualiza, y además **mantiene la presencia** que el sweeper exige en modo demo (`src/checks/sweep.ts:16-30`, `:46-47`): un check solo se abre y escala si alguien del mundo hizo una petición autenticada dentro de `ASK_GRACE_MS`.
 
 Si hay un solo teléfono, el mismo usuario abre el link en otra pestaña e ingresa su propio número.
 
@@ -155,7 +159,8 @@ Si hay un solo teléfono, el mismo usuario abre el link en otra pestaña e ingre
 ## 4. Backend: modo demo con números verificados por OTP
 
 **Cambios en `src/demo.ts` y en la respuesta de la sesión:**
-- La sesión **ya no pre-crea** el camión `ABC-123 (demo)` ni el grant family, porque los dos se crean en el recorrido. `family.grantId` sale de la respuesta.
+- La sesión **ya no pre-crea** el camión `ABC-123 (demo)` ni el grant family, porque los dos se crean en el recorrido. `driver.truckId` y `family.grantId` salen de la respuesta.
+- La respuesta suma **`tripCountries`**: los países con una entrada de canales en la configuración de Zavu. Son los únicos que ofrece el selector del viaje. Es un dato distinto de `DEMO_ALLOWED_COUNTRIES`, que solo decide qué teléfonos pueden recibir un código. Esta respuesta es el contrato entre el plan A y el plan B.
 - El decodificador web (`web/src/lib/api/responses.ts:105`, `types.ts:73`) se actualiza en el mismo PR.
 - La identidad family nace con `phone` nulo y `phone_verified=false`.
 - El colega conserva su número ficticio sembrado. **No** tiene verificación OTP, así que el dispatch lo rechaza y aparece como *no permitido*.
@@ -168,7 +173,8 @@ Si hay un solo teléfono, el mismo usuario abre el link en otra pestaña e ingre
 - El actor es la persona del token.
 - Valida E.164 y que el país esté en `DEMO_ALLOWED_COUNTRIES` (por ejemplo `PE,BR,CL,CO,MX,AR`; Robert puede agregar el suyo).
 - Envía por Zavu SMS un código de 6 dígitos con el texto «Demo de Tándem: tu código es …».
-- Guarda en `demo_phone_challenges(identity_id, phone_hmac, code_hash, expires_at, attempts)` el hash del código y el HMAC del número, con `DEMO_PHONE_PEPPER` y un vencimiento de 10 minutos.
+- Guarda en `demo_phone_challenges(identity_id, phone_hmac, ip_hmac, code_hash, created_at, expires_at, attempts)` el hash del código y los HMAC del número y de la IP, con `DEMO_PHONE_PEPPER` y un vencimiento de 10 minutos. `created_at` alimenta los topes por hora.
+- Con `ZAVU_LIVE_SEND=false` responde 503 `demo_sms_disabled` y no cuenta contra los topes.
 
 `POST /v1/demo/phone/verify` con `{phone, code}`:
 - Verifica que el HMAC de `phone` coincida con el reto, y compara el código en tiempo constante.
@@ -181,7 +187,7 @@ Si hay un solo teléfono, el mismo usuario abre el link en otra pestaña e ingre
 - `DEMO_SMS_DAILY_CAP`: tope global diario **de SMS de código**. Al alcanzarlo, `start` responde 429 `demo_budget_exhausted`.
 
 **Allowlist dinámico, que reemplaza el guard de #74 por decisión explícita de Robert:**
-- En modo demo con envíos reales, el chequeo estático `allowedDestinations` (`src/notifications/dispatch.ts:90`) se **reemplaza** por uno obligatorio y que falla cerrado: el destino del grant debe ser igual al `phone` de una fila en `demo_phone_verifications` cuya identidad pertenece **al mismo mundo** que el viaje.
+- En modo demo con envíos reales, el chequeo estático `allowedDestinations` (`src/notifications/dispatch.ts:90`) se **reemplaza** por uno obligatorio y que falla cerrado: tiene que existir una fila en `demo_phone_verifications` con `identity_id = grant.contact_id` **y** `phone = grant.phone`. El chequeo queda atado al destinatario mismo.
 - No hay excepción para `DEMO_LIVE_PHONE`. Robert verifica su número como cualquier usuario, y esa variable se elimina.
 - `authorizeJob` recibe la configuración demo de forma explícita, `{enabled, alertsPerNumberDaily}`, construida al arrancar el worker desde el entorno.
 - `src/worker.ts:16` deja de exigir `allowedDestinations == [DEMO_LIVE_PHONE]`. Con `DEMO_MODE` y envíos reales, exige `demoLimits`, `DEMO_ALERTS_PER_NUMBER_DAILY`, `DEMO_SMS_DAILY_CAP` y `DEMO_PHONE_PEPPER`. Si falta alguno, el arranque falla.
@@ -192,7 +198,7 @@ Si hay un solo teléfono, el mismo usuario abre el link en otra pestaña e ingre
 - Los textos de alerta vienen de la configuración de Zavu. En `DEMO_MODE`, el arranque **rechaza** entradas cuyo texto no empiece con «Demo de Tándem».
 - La plantilla de WhatsApp aprobada tiene que contener ese prefijo.
 
-**Purga de mundos demo.** El `worker control` corre cada 10 minutos una purga de los mundos con más de **24 h**:
+**Purga de mundos demo.** El `worker control` corre cada 10 minutos una purga de los mundos cuya actividad más reciente, el `last_seen_at` máximo de sus identidades, tiene más de **24 h**:
 - borra sus filas de `demo_phone_challenges` y `demo_phone_verifications`;
 - deja `identities.phone` en nulo;
 - borra o anonimiza los `contact_grants` de esas identidades. `contact_grants.phone` es `NOT NULL`: el plan elige borrar la fila, respetando las FKs con `trip_grants`, o sobrescribir el valor.
@@ -225,7 +231,9 @@ Un test verifica que después de la purga no queda el número en ninguna tabla. 
 
 La API key de Zavu y el secreto de callbacks van en el entorno local, o en Secrets Manager en AWS. Los callbacks entran por la misma URL. Si WhatsApp no tiene plantillas aprobadas en Zavu, el canal aparece como *no disponible*: no se simula.
 
-En la URL de los jueces (AWS), los envíos reales quedan **activados con tope**. Se apagan con `ZAVU_LIVE_SEND=false`, y la app sigue funcionando.
+En la URL de los jueces (AWS), los envíos reales quedan **activados con tope**. Se apagan con `ZAVU_LIVE_SEND=false`. La app sigue arriba, pero sin SMS no hay códigos: el contacto no puede verificarse y las alertas quedan como no disponibles.
+
+**Topes para un ensayo completo:** una corrida manda dos olas a la familia (el check y después el SOS), con 3 canales cada una. Por eso `demoLimits.perIncident`, `perSession` y `DEMO_ALERTS_PER_NUMBER_DAILY` tienen que ser **al menos 6**.
 
 ## 6. Privacidad y abuso
 
@@ -264,9 +272,9 @@ Con dos teléfonos físicos, sobre la URL del túnel y después sobre la de AWS.
 2. Se crea el viaje y el contacto lo ve.
 3. La ubicación se actualiza; se anota la frecuencia y qué pasa con la pantalla bloqueada.
 4. Funcionan Estoy bien y Pausa.
-5. SOS → llegan SMS, WhatsApp y llamada al teléfono del contacto, con el tiempo desde el toque hasta cada recepción.
-6. **Silencio:** con la pantalla del contacto abierta para mantener la presencia, se bloquea el teléfono del conductor o se corta su conexión, para que dejen de llegar la ubicación y las peticiones. Se anota el check, su escalamiento y la llegada de las alertas.
-7. Llegué corta la ubicación.
+5. **Silencio:** con la pantalla del contacto abierta y sin bloqueo automático, para mantener la presencia, se bloquea el teléfono del conductor o se corta su conexión. Así dejan de llegar la ubicación y las peticiones. Se anota el check, su escalamiento y la llegada de las alertas al contacto.
+6. **SOS** con el incidente de check todavía activo: llegan SMS, WhatsApp y llamada con la redacción de SOS, y se anota el tiempo desde el toque hasta cada recepción.
+7. **«Ya estoy a salvo»** resuelve el incidente, y después **Llegué** corta la ubicación.
 
 Se registra en `docs/evidence/phone-run-2026-10-18.md` con modelos, sistema operativo, navegador y red. Una corrida no completa la matriz del #9, y se dice así.
 
