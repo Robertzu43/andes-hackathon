@@ -3,6 +3,15 @@ import { readFileSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { problem, type Trip } from './contracts.js';
+// c0e82a5 published these indexes as 004 before main integration renamed them to 009.
+// Recognize only those exact receipts and SQL bytes; never replay or rewrite applied DDL.
+const migrationRenames: Record<string, { from: string; fromHash: string; toHash: string }> = {
+  '009-client-read-indexes': {
+    from: '004-client-read-indexes',
+    fromHash: '1b64f2851d88f3b6bfa0e29dfd544e215624bb61e27896be246d29ac18b8f5eb',
+    toHash: '77d61eba3fb9b15252b7bc3e186a22526996f47174bde6fe96ba6beedb689794'
+  }
+};
 export interface Context { pool: pg.Pool; telemetryPool: pg.Pool; callbackPool: pg.Pool; clock: () => Date; close: () => Promise<void> }
 export function databaseConfig(env: NodeJS.ProcessEnv = process.env): pg.PoolConfig {
   let connectionString = env.DATABASE_URL;
@@ -60,7 +69,16 @@ export async function migrate(pool: pg.Pool): Promise<void> {
       const hash = createHash('sha256').update(sql).digest('hex');
       const existing = (await client.query('SELECT hash FROM schema_migrations WHERE version=$1', [version])).rows[0];
       if (existing) { if (existing.hash !== hash) throw new Error('Applied migration changed'); continue; }
-      await client.query(sql);
+      const rename = migrationRenames[version];
+      let appliedUnderOldName = false;
+      if (rename) {
+        const old = (await client.query('SELECT hash FROM schema_migrations WHERE version=$1', [rename.from])).rows[0];
+        if (old) {
+          if (old.hash !== rename.fromHash || hash !== rename.toHash) throw new Error('Applied migration changed');
+          appliedUnderOldName = true;
+        }
+      }
+      if (!appliedUnderOldName) await client.query(sql);
       await client.query('INSERT INTO schema_migrations VALUES($1,$2)', [version, hash]);
     }
   });
