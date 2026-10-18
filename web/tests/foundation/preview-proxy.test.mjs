@@ -12,10 +12,13 @@ test('production preview returns an honest unavailable API rather than SPA HTML'
   const app = await preview({ preview: { host: '127.0.0.1', port: 0 } });
   try {
     const origin = `http://127.0.0.1:${app.httpServer.address().port}`;
-    const response = await fetch(`${origin}/v1/me`);
-    assert.equal(response.status, 503);
-    assert.equal(response.headers.get('cache-control'), 'no-store');
-    assert.deepEqual(await response.json(), { code: 'api_unconfigured' });
+    for (const path of ['/v1', '/v1?probe=1', '/v1/', '/v1/me?probe=1']) {
+      const response = await fetch(`${origin}${path}`);
+      assert.equal(response.status, 503, path);
+      assert.equal(response.headers.get('cache-control'), 'no-store', path);
+      assert.deepEqual(await response.json(), { code: 'api_unconfigured' });
+    }
+    assert.equal((await fetch(`${origin}/v10?probe=1`)).status, 200);
     assert.equal((await fetch(`${origin}/session`)).status, 200);
   } finally { await close(app.httpServer); if (old === undefined) delete process.env.ANDES_API_PROXY_TARGET; else process.env.ANDES_API_PROXY_TARGET = old; }
 });
@@ -25,6 +28,9 @@ test('production preview proxies exact API paths, status and idempotency headers
   const fixture = createServer((request, response) => {
     response.setHeader('Content-Type', 'application/json');
     response.setHeader('Cache-Control', 'no-store');
+    if (request.method === 'GET' && request.url === '/v1?probe=1') {
+      response.end(JSON.stringify({ requestTarget: request.url })); return;
+    }
     if (request.method === 'GET' && request.url === '/v1/me') {
       response.end(JSON.stringify({ id: '00000000-0000-4000-8000-000000000049' })); return;
     }
@@ -37,6 +43,7 @@ test('production preview proxies exact API paths, status and idempotency headers
   try {
     app = await preview({ preview: { host: '127.0.0.1', port: 0 } });
     const origin = `http://127.0.0.1:${app.httpServer.address().port}`;
+    assert.deepEqual(await (await fetch(`${origin}/v1?probe=1`)).json(), { requestTarget: '/v1?probe=1' });
     assert.deepEqual(await (await fetch(`${origin}/v1/me`)).json(), { id: '00000000-0000-4000-8000-000000000049' });
     const conflict = await fetch(`${origin}/v1/trucks`, { method: 'POST', headers: { 'Idempotency-Key': 'fixture-key', 'Content-Type': 'application/json' }, body: JSON.stringify({ label: 'Fixture' }) });
     assert.equal(conflict.status, 409);

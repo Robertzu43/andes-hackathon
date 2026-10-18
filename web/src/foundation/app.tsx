@@ -39,12 +39,14 @@ function PageIdentity({ title }: { title: string }) { return <h1>{title}</h1>; }
 function RouteFrame({ definition, Component }: { definition: (typeof routeDefinitions)[number]; Component?: ComponentType<FeatureRouteProps> }) {
   const params = useParams(); const { t } = useI18n();
   const location = useLocation();
+  const valid = validRouteParams(params);
+  const title = valid ? definition.title : 'notFound';
   useEffect(() => {
-    document.title = `${t(definition.title)} | ANDES`;
+    document.title = `${t(title)} | ANDES`;
     document.querySelector<HTMLElement>('#main-content')?.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: 'instant' });
-  }, [location.pathname, definition.title, t]);
-  if (!validRouteParams(params)) return <NotFound />;
+  }, [location.pathname, title, t]);
+  if (!valid) return <NotFound />;
   if (Component) return <Component params={params as Record<string, string>} />;
   return <><PageIdentity title={t(definition.title)} /><EmptyState title={t('unavailableTitle')}
     action={definition.id === 'home' ? <Link className="andes-text-link" to="/session">{t('session')}</Link> : <HomeLink />}>
