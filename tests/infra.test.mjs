@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import {chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 const t=JSON.parse(readFileSync('infra/template.json','utf8'));
 const r=t.Resources;
 const text=path=>readFileSync(path,'utf8');
@@ -100,4 +103,85 @@ test('app-integration CI job runs the isolated harness, the browser seam and the
   const steps=job.split('\n').map(line=>line.trim());
   for(const step of ['- run: npm ci','- run: node scripts/app-integration/run.mjs','- run: node scripts/app-integration/check-browser-seam.mjs','- run: node --test evidence/app-acceptance/oracle.test.mjs'])assert.ok(steps.includes(step),step);
   assert.ok(steps.includes('fetch-depth: 0'),'The source gate needs the pinned backend commit');
+});
+
+test('demo deploy: consumers only with live sends, their queue actions, optional demo secrets and the demo environment',()=>{
+  const deploy=text('infra/demo/deploy.sh').replace(/\s*\\\n\s*/g,' ');
+  // With ZAVU_LIVE_SEND=false startWorker refuses the consumers; ungated, `wait -n; exit 1` would restart the whole task, API included.
+  assert.ok(deploy.includes('"command":["bash","-c","node dist/worker.js control & if [ \\"\\$ZAVU_LIVE_SEND\\" = true ]; then node dist/worker.js emergency & node dist/worker.js ordinary & fi; node dist/server.js & wait -n; exit 1"]'));
+  for(const role of ['emergency','ordinary'])assert.equal(deploy.split(`node dist/worker.js ${role}`).length,2,`${role} starts only inside the gate`);
+  assert.ok(deploy.includes('aws ecs update-express-gateway-service --service-arn "$arn" --primary-container'));
+  assert.ok(deploy.includes('LIVE="${ZAVU_LIVE_SEND:-false}"')&&deploy.includes('{"name":"ZAVU_LIVE_SEND","value":"$LIVE"}'));
+  const task=deploy.split('\n').filter(line=>line.includes('put-role-policy --role-name "$N-task"')).join('\n');
+  for(const action of ['sqs:SendMessage','sqs:ReceiveMessage','sqs:DeleteMessage','sqs:ChangeMessageVisibility'])assert.ok(task.includes(`\\"${action}\\"`),action);
+  assert.equal(task.split('\\"$(queue_arn emergency)\\",\\"$(queue_arn ordinary)\\"').length,3,'both task policies cover both queues');
+  const secrets=deploy.match(/^SECRETS="([^"]+)"$/m)[1].split(' ').map(pair=>pair.split(':')[1]).sort();
+  assert.deepEqual(secrets,['DEMO_PHONE_PEPPER','ZAVU_API_KEY','ZAVU_CALLBACK_SECRET','ZAVU_PROJECT_ID','ZAVU_QUALIFICATION_JSON','ZAVU_SENDER_ID']);
+  // Profile and account are the only required shell values. Each name above is stored and injected only when set.
+  assert.deepEqual([...deploy.matchAll(/\$\{([A-Z0-9_]+):\?/g)].map(match=>match[1]),['AWS_PROFILE','ANDES_AWS_ACCOUNT']);
+  assert.match(deploy,/secret_arns\(\) \{ for pair in \$SECRETS; do var="\$\{pair#\*:\}"; \[ -n "\$\{!var:-\}" \] \|\| continue;/);
+  assert.match(deploy,/service_secrets\(\) \{ \{ printf '\{"name":"PGPASSWORD","valueFrom":"%s"\},' "\$\(secret_arn "\$N\/app-db"\)"; for pair in \$SECRETS; do var="\$\{pair#\*:\}"; \[ -n "\$\{!var:-\}" \] \|\| continue;/);
+  assert.match(deploy,/if \[ "\$n" -gt 0 \]; then\s+aws iam put-role-policy --role-name "\$N-exec" --policy-name demo-secrets --policy-document "[^\n]*secretsmanager:GetSecretValue[^\n]*\[\$\(secret_arns\)\]/);
+  assert.ok(deploy.includes('"secrets":[$(service_secrets)]'));
+  assert.match(deploy,/for pair in app-db:PGPASSWORD \$SECRETS; do aws secretsmanager delete-secret/);
+  for(const name of ['DEMO_MODE','TRUST_PROXY_HOPS','DEMO_ALLOWED_COUNTRIES','DEMO_OTP_PER_NUMBER_HOURLY','DEMO_OTP_PER_IP_HOURLY','DEMO_SMS_DAILY_CAP','DEMO_ALERTS_PER_NUMBER_DAILY','SILENCE_MS','ASK_GRACE_MS','ARRIVAL_GRACE_MS','CHECK_SWEEP_MS','EMERGENCY_NUMBERS'])assert.ok(deploy.includes(`{"name":"${name}"`),name);
+  assert.ok(deploy.includes('{"name":"TRUST_PROXY_HOPS","value":"1"}'));
+  // Migrations run in bootstrap, which must come before lock: afterwards the laptop cannot reach RDS.
+  assert.ok(deploy.includes('prepare|secrets|image|database|bootstrap|lock|service|url|teardown'));
+});
+
+const optionalSecrets=['ZAVU_API_KEY','ZAVU_CALLBACK_SECRET','ZAVU_QUALIFICATION_JSON','DEMO_PHONE_PEPPER','ZAVU_PROJECT_ID','ZAVU_SENDER_ID'];
+
+test('demo deploy: with no Zavu or pepper secrets the task still starts, and a set secret is the only one injected',()=>{
+  const dir=mkdtempSync(join(tmpdir(),'andes-deploy-'));
+  const log=join(dir,'aws.log');
+  const aws=join(dir,'aws');
+  writeFileSync(aws,`#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$AWS_STUB_LOG"
+case "$*" in
+  *'sts get-caller-identity'*) echo 123456789012 ;;
+  *list-services*) echo None ;;
+  *describe-secret*'--query ARN'*) echo 'arn:aws:secretsmanager:us-east-1:123456789012:secret:stub-AbCdEf' ;;
+  *describe-secret*) exit 1 ;;
+  *create-express-gateway-service*) echo 'arn:aws:ecs:stub:service/andes-demo' ;;
+  *put-role-policy*|*create-secret*|*put-secret-value*) ;;
+  *) echo stub ;;
+esac
+`);
+  chmodSync(aws,0o755);
+  const serviceJson='/tmp/andes-demo-service.json';
+  function run(step,extra={}){
+    writeFileSync(log,'');
+    const env={...process.env,PATH:`${dir}:/usr/bin:/bin`,AWS_PROFILE:'stub',ANDES_AWS_ACCOUNT:'123456789012',AWS_REGION:'us-east-1',AWS_STUB_LOG:log,...extra};
+    for(const name of optionalSecrets)if(!(name in extra))delete env[name];
+    if(!('ZAVU_LIVE_SEND' in extra))delete env.ZAVU_LIVE_SEND;
+    const result=spawnSync('infra/demo/deploy.sh',[step],{env,encoding:'utf8',timeout:15000});
+    assert.equal(result.status,0,result.stderr||result.stdout);
+    return {stdout:result.stdout,calls:readFileSync(log,'utf8').split('\n').filter(Boolean)};
+  }
+  function secretNames(){return JSON.parse(readFileSync(serviceJson,'utf8')).primaryContainer.secrets.map(item=>item.name);}
+  try{
+    const bare=run('secrets');
+    assert.equal(bare.stdout.trim(),'stored 0 secrets');
+    assert.ok(!bare.calls.some(call=>/secretsmanager|iam put-role-policy/.test(call)),bare.calls.join('\n'));
+    const off=run('service');
+    assert.deepEqual(secretNames(),['PGPASSWORD']);
+    assert.equal(JSON.parse(readFileSync(serviceJson,'utf8')).primaryContainer.environment.find(item=>item.name==='ZAVU_LIVE_SEND').value,'false');
+    assert.ok(off.calls.some(call=>call.includes('create-express-gateway-service')));
+    assert.ok(!off.calls.some(call=>/zavu-|demo-phone-pepper|create-secret|put-secret-value|demo-secrets/.test(call)),off.calls.join('\n'));
+    const on=run('service',{ZAVU_LIVE_SEND:'true'});
+    assert.equal(JSON.parse(readFileSync(serviceJson,'utf8')).primaryContainer.environment.find(item=>item.name==='ZAVU_LIVE_SEND').value,'true');
+    assert.deepEqual(secretNames(),['PGPASSWORD']);
+    const partial=run('secrets',{ZAVU_API_KEY:'synthetic-not-a-key',DEMO_PHONE_PEPPER:'synthetic-pepper'});
+    assert.equal(partial.stdout.trim(),'stored 2 secrets');
+    assert.ok(partial.calls.some(call=>call.includes('create-secret')&&call.includes('andes-demo/zavu-api-key')));
+    assert.ok(partial.calls.some(call=>call.includes('create-secret')&&call.includes('andes-demo/demo-phone-pepper')));
+    assert.ok(partial.calls.some(call=>call.includes('demo-secrets')));
+    assert.ok(!partial.calls.some(call=>/zavu-callback-secret|zavu-qualification|zavu-project-id|zavu-sender-id/.test(call)),partial.calls.join('\n'));
+    run('service',{ZAVU_API_KEY:'synthetic-not-a-key',DEMO_PHONE_PEPPER:'synthetic-pepper'});
+    assert.deepEqual(secretNames(),['PGPASSWORD','ZAVU_API_KEY','DEMO_PHONE_PEPPER']);
+  }finally{
+    rmSync(dir,{recursive:true,force:true});
+    rmSync(serviceJson,{force:true});
+  }
 });
