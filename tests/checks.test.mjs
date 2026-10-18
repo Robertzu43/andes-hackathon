@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/runtime.mjs';
 import {contactFor, jobsOf, expectedFanOut, cfg, sweep, checksOf, asking} from './helpers/checks.mjs';
+import {waitForBlockedQueries} from './helpers/db-barriers.mjs';
 
 test('drafts keep an optional expected arrival; invitations take a family or colleague role', async t => {
   const f = await fixture(t);
@@ -228,3 +229,19 @@ test('a trip confirmed after its expected arrival gets the full grace period fir
   f.advance(1); await sweep(f, quiet); assert.deepEqual(await checksOf(f, trip), [asking('arrival_overdue')]);
 });
 
+test('a check opened after waiting for the trip lock gets its full grace window from when it opens', async t => {
+  const f = await fixture(t); const waited = await f.trip(); const control = await f.trip();
+  const askUntil = async trip => (await f.ctx.pool.query("SELECT created_at,ask_until FROM security_checks WHERE trip_id=$1 AND status='asking'", [trip])).rows[0];
+  f.advance(120001); await sweep(f);
+  assert.deepEqual(await askUntil(control), {created_at: new Date('2026-10-17T12:02:00.001Z'), ask_until: new Date('2026-10-17T12:03:00.001Z')});
+  await f.ctx.pool.query("DELETE FROM security_checks WHERE trip_id=$1", [waited]);
+  const blocker = await f.ctx.pool.connect(); await blocker.query('BEGIN');
+  await blocker.query('SELECT 1 FROM trips WHERE id=$1 FOR UPDATE', [waited]);
+  const running = sweep(f);
+  await waitForBlockedQueries(f.ctx.pool, 'SELECT * FROM trips WHERE id=$1 FOR UPDATE%', 1);
+  f.advance(50000);
+  await blocker.query('COMMIT'); blocker.release(); await running;
+  assert.deepEqual(await askUntil(waited), {created_at: new Date('2026-10-17T12:02:50.001Z'), ask_until: new Date('2026-10-17T12:03:50.001Z')});
+  f.advance(10000); await sweep(f);
+  assert.deepEqual((await checksOf(f, waited)).map(c => c.status), ['asking'], 'not escalated before its own grace window ends');
+});

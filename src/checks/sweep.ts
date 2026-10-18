@@ -53,7 +53,8 @@ export async function checkOnce(ctx: Context, support: ChannelSupport[], config:
   const expired = (await ctx.pool.query("SELECT trip_id FROM security_checks WHERE status='asking' AND ask_until<=$1", [now])).rows.map(row => row.trip_id as string);
   const opening = (await dueReasons(ctx.pool, now, config)).map(row => row.id as string);
   for (const tripId of new Set([...expired, ...opening])) {
-    try { await withTripTransaction(ctx, tripId, (client, trip) => sweepTrip(client, trip, now, config, support)); }
+    // Read the clock under the trip lock: a stale pre-wait time would shorten the grace window or open an expired check.
+    try { await withTripTransaction(ctx, tripId, (client, trip) => sweepTrip(client, trip, ctx.clock(), config, support)); }
     catch { process.stderr.write('Security check failed for one trip\n'); }
   }
 }

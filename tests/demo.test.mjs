@@ -74,4 +74,3 @@ test('dispatch refuses any destination outside a configured allowlist without ca
   assert.equal(sends, 0);
   assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM dispatch_attempts')).rows[0].n, 1);
 });
-
