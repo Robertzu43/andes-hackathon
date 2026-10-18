@@ -15,10 +15,12 @@ import { demoRoutes, type DemoIssuer } from '../demo.js';
 import { insightRoutes } from '../insights/routes.js';
 import { isWebRoute, webRoutes } from './web.js';
 declare module 'fastify' { interface FastifyRequest { actor: Actor } }
-export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer; automaticChecks?: boolean; webRoot?: string }
-export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo, automaticChecks = false, webRoot }: AppOptions) {
+export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer; automaticChecks?: boolean; webRoot?: string; trustProxyHops?: number }
+export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo, automaticChecks = false, webRoot, trustProxyHops = 0 }: AppOptions) {
   const authenticate = authenticator(auth);
-  const app = Fastify({ logger: false, bodyLimit: 128 * 1024, requestTimeout: 10000, ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } } });
+  // Exactly this many proxies (0 = none), so request.ip is the address the nearest trusted proxy saw. Never `true`.
+  // shortcut: Fastify 5.12 ignores a numeric hop count, so this function trusts exactly that many hops. Revisit if the proxy addresses are known.
+  const app = Fastify({ logger: false, trustProxy: trustProxyHops > 0 ? (_address, hop) => hop < trustProxyHops : false, bodyLimit: 128 * 1024, requestTimeout: 10000, ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } } });
   app.decorateRequest('actor');
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store');
