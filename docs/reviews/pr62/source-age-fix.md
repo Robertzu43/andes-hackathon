@@ -40,7 +40,8 @@ Node24.17.0 independent verification:
 
 [source-age-fix.json](source-age-fix.json) contains raw observations, control
 outcomes, exact archive/probe fingerprints and compiler diagnostics.
-[old-regression-red.tap](old-regression-red.tap) and
+[old-regression-red.json](old-regression-red.json) (original TAP bytes as an exact
+UTF-8 JSON string with SHA-256) and
 [fixed-contact-privacy.tap](fixed-contact-privacy.tap) retain raw test output.
 
 The current UI already renders raw age/freshness with explicit ES/PT-BR as-of-read
