@@ -76,7 +76,7 @@ and trusted host; its hard reload is not claimed as a completed feature integrat
 `node tests/contacts/browser-check.mjs <loopback-origin> <evidence-dir>` uses an
 installed Chrome and the existing dependency-free Codus browser helper (override
 `CODUS_BROWSER_HELPER` if needed). It closes only its own temporary profile.
-Forty route/locale/viewport cases cover390/1440/1920/360/430px, plus13 focused
+Forty route/locale/viewport cases cover 390/1440/1920/360/430px, plus 13 focused
 keyboard, validation, duplicate-submit, receipt, session, permission/error/empty,
 truncation, unknown-revoke, missing-reference, reduced-motion and narrow-response
 checks. Viewport and full-page captures need human inspection and independent52
