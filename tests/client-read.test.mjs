@@ -187,13 +187,15 @@ test('catalog responses never disclose stored or token phones', async t => {
   }
 });
 
-// Gatekeeper item 1 repro: demo mode lets any anonymous visitor mint personas; with live sends the
-// family persona carries the real consented DEMO_LIVE_PHONE (a fictional stand-in here).
-test('anonymous demo personas never read a phone, including DEMO_LIVE_PHONE, from any catalog', async t => {
+// Gatekeeper item 1 repro: demo mode lets any anonymous visitor mint personas; the family number a driver types in
+// (a fictional stand-in here) must never come back from a catalog.
+test('anonymous demo personas never read a phone, including the invited family number, from any catalog', async t => {
   const { demoIssuer } = await import('../dist/demo.js');
-  const demo = await demoIssuer({ ZAVU_LIVE_SEND: 'true', DEMO_LIVE_PHONE: '+15555550123' });
+  const demo = await demoIssuer({});
   const f = await fixture(t, { auth: demo.auth, demo });
   const world = (await f.app.inject({ method: 'POST', url: '/v1/demo/session', payload: {} })).json();
+  const invite = await f.req('POST', '/v1/contacts', { contactId: world.family.id, phone: '+15555550123', map: true, incident: true }, world.driver.token);
+  assert.equal(invite.status, 200);
   for (const persona of ['driver', 'family', 'colleague']) {
     for (const path of CATALOGS) {
       const response = await f.req('GET', path, undefined, world[persona].token);
@@ -203,7 +205,7 @@ test('anonymous demo personas never read a phone, including DEMO_LIVE_PHONE, fro
   }
   const contacts = (await f.req('GET', '/v1/contacts', undefined, world.driver.token)).body.contacts;
   assert.deepEqual(contacts.map(c => [c.id, c.role, c.status]).sort(), [
-    [world.colleague.grantId, 'colleague', 'accepted'], [world.family.grantId, 'family', 'accepted']].sort());
+    [world.colleague.grantId, 'colleague', 'accepted'], [invite.body.id, 'family', 'pending']].sort());
 });
 
 // Gatekeeper item 5: catalogs carry the reconciled backend's role, expected arrival and sharing state.
@@ -427,17 +429,18 @@ test('real read pool exhaustion queues bootstrap while explicit SOS persists suc
   assert.equal(response.body.readAt, f.ctx.clock().toISOString(), 'queued response samples its acquired snapshot time');
 });
 
-test('actual demo sessions never disclose the configured live destination in catalogs', async t => {
+test('actual demo sessions never disclose an invited family number in catalogs', async t => {
   const { demoIssuer } = await import('../dist/demo.js');
-  // A fictional stand-in exercises the real live-phone configuration path without sending anything.
-  const livePhone = '+15555550123';
-  const demo = await demoIssuer({ ZAVU_LIVE_SEND: 'true', DEMO_LIVE_PHONE: livePhone });
+  // A fictional stand-in for the number a driver types in for the family contact.
+  const familyPhone = '+15555550123';
+  const demo = await demoIssuer({});
   const f = await fixture(t, { auth: demo.auth, demo });
   const session = await f.app.inject({ method: 'POST', url: '/v1/demo/session', payload: {} });
   assert.equal(session.statusCode, 200);
   const world = session.json();
-  const stored = (await f.ctx.pool.query('SELECT phone FROM identities UNION SELECT phone FROM contact_grants')).rows.map(row => row.phone);
-  assert.ok(stored.includes(livePhone), 'positive control: configured destination is actually stored');
+  assert.equal((await f.req('POST', '/v1/contacts', { contactId: world.family.id, phone: familyPhone, map: true, incident: true }, world.driver.token)).status, 200);
+  const stored = (await f.ctx.pool.query('SELECT phone FROM identities WHERE phone IS NOT NULL UNION SELECT phone FROM contact_grants')).rows.map(row => row.phone);
+  assert.ok(stored.includes(familyPhone), 'positive control: the invited number is actually stored');
   for (const persona of [world.driver, world.family, world.colleague]) {
     for (const path of ['/v1/profile', '/v1/bootstrap', '/v1/trucks', '/v1/contacts', '/v1/trips']) {
       const response = await f.req('GET', path, undefined, persona.token);

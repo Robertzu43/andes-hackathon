@@ -6,9 +6,9 @@ export interface QualifiedChannel extends ChannelSupport {
 export interface Qualification {
   live: boolean; accountId: string; senderId: string; evidence: string; entries: QualifiedChannel[];
   dailyLimit: number; channelDailyLimit: number; minuteLimit: number; emergencyReserve: number;
-  /** Optional: only these E.164 destinations may be sent to; any other is refused before the provider is called. */
+  /** Optional: only these E.164 destinations may be sent to (replaced by OTP verification in demo mode). */
   allowedDestinations?: string[];
-  /** Optional live-send budget, checked at authorization: attempts per incident and per recipient identity (a demo world's one consented persona). */
+  /** Live-send budget, checked at authorization: attempts per incident and per recipient identity. Required in live demo mode. */
   demoLimits?: { perIncident: number; perSession: number };
   /** Optional: 'oneway' when the account's SMS sender is Zavu's one-way kind. Internal 'sms' then goes out and reads back as 'sms_oneway'. */
   smsMode?: 'oneway';
@@ -106,6 +106,10 @@ export function createZavuProvider(qualification: Qualification, apiKey: string,
       } catch { return { state: 'unknown' }; }
     }
   };
+}
+/** A plain SMS outside alert qualification (demo codes), on the account's SMS channel name. */
+export function textPayload(qualification: Qualification, to: string, text: string, id: string): Payload {
+  return { to, channel: wire(qualification, 'sms'), messageType: 'text', text, fallbackEnabled: false, idempotencyKey: `andes:otp:${id}`, metadata: { attemptId: id } };
 }
 export function verifyCallback(raw: Buffer, signature: string | undefined, config: CallbackConfig, now: Date): CallbackEvent {
   const fail = () => problem(401, 'invalid_callback');

@@ -14,34 +14,54 @@ async function demoFixture(t) {
   return {f, session};
 }
 
-test('a demo session creates an isolated synthetic world whose personas can run the whole journey', async t => {
+test('a demo session starts a world with no truck and no family grant, which its personas build from scratch', async t => {
   const {f, session} = await demoFixture(t);
   const world = await session();
   assert.equal(world.status, 200);
-  assert.equal(world.body.synthetic, true);
   const {driver, family, colleague} = world.body;
+  assert.deepEqual(Object.keys(world.body).sort(), ['colleague', 'driver', 'expiresAt', 'expiresInSeconds', 'family', 'synthetic', 'tripCountries']);
+  assert.deepEqual([Object.keys(driver).sort(), Object.keys(family).sort(), Object.keys(colleague).sort()], [['id', 'token'], ['id', 'token'], ['grantId', 'id', 'token']]);
+  assert.equal(world.body.synthetic, true); assert.deepEqual(world.body.tripCountries, []);
+  const left = Date.parse(world.body.expiresAt) - Date.now();
+  assert.ok(left > 7_190_000 && left <= 7_200_000, 'expiresAt is when the tokens expire');
+  for (const persona of [driver, family, colleague]) {
+    const claims = JSON.parse(Buffer.from(persona.token.split('.')[1], 'base64url').toString('utf8'));
+    assert.equal(claims.exp * 1000, Date.parse(world.body.expiresAt), 'each token shares the declared expiry');
+  }
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM trucks')).rows[0].n, 0);
+  assert.deepEqual((await f.ctx.pool.query('SELECT id,role,phone,accepted_at IS NOT NULL AS accepted FROM contact_grants')).rows,
+    [{id: colleague.grantId, role: 'colleague', phone: '+15555550103', accepted: true}]);
+  assert.deepEqual((await f.ctx.pool.query('SELECT id,phone,phone_verified FROM identities WHERE id=ANY($1) ORDER BY phone NULLS FIRST', [[driver.id, family.id, colleague.id]])).rows,
+    [{id: family.id, phone: null, phone_verified: false}, {id: driver.id, phone: '+15555550101', phone_verified: true}, {id: colleague.id, phone: '+15555550103', phone_verified: true}]);
   assert.equal((await f.req('GET', '/v1/me', undefined, driver.token)).body.id, driver.id);
-  const draft = await f.req('POST', '/v1/trip-drafts', {text: 'Lima a Ica, llego 18:00', fields: {truckId: driver.truckId, origin: 'Lima', destination: 'Ica', country: 'PE', locale: 'es-PE', timeZone: 'America/Lima'}}, driver.token);
-  assert.equal(draft.status, 200);
-  const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: [family.grantId, colleague.grantId]}, driver.token)).body.id;
-  assert.equal((await f.req('GET', `/v1/trips/${trip}/snapshot`, undefined, family.token)).status, 200);
+  const trip = await demoTrip(f, world.body);
+  assert.equal((await f.req('GET', `/v1/trips/${trip}/snapshot`, undefined, colleague.token)).status, 200);
+  assert.equal((await f.req('GET', `/v1/trips/${trip}/snapshot`, undefined, family.token)).status, 403, 'no family grant until the journey creates one');
   assert.equal((await f.req('POST', `/v1/trips/${trip}/sos`, {}, driver.token)).status, 200);
-  assert.deepEqual((await f.ctx.pool.query("SELECT cg.role,count(*)::int n FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id GROUP BY cg.role ORDER BY cg.role")).rows,
-    [{role: 'colleague', n: 2}, {role: 'family', n: 3}]);
+  assert.deepEqual((await f.ctx.pool.query('SELECT cg.role,count(*)::int n FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id GROUP BY cg.role')).rows, [{role: 'colleague', n: 2}]);
   const other = (await session()).body;
   assert.notEqual(other.driver.id, driver.id);
-  assert.equal((await f.req('GET', `/v1/trips/${trip}/snapshot`, undefined, other.family.token)).status, 403);
+  assert.equal((await f.req('GET', `/v1/trips/${trip}/snapshot`, undefined, other.colleague.token)).status, 403);
 });
 
-test('demo sessions are rate limited, and live sends need the consented DEMO_LIVE_PHONE', async t => {
+test('tripCountries lists the countries with Zavu qualification entries, live or not', async t => {
+  const {demoIssuer} = await import('../dist/demo.js');
+  const entries = [{channel: 'sms', country: 'PE', locale: 'es-PE', text: 'Demo de Tándem: estado sin confirmar.'}, ...qualification.entries]
+    .map(e => ({...e, evidence: 'test-only syntheticfixture: channel'}));
+  const json = JSON.stringify({...qualification, evidence: 'test-only syntheticfixture: retained', entries});
+  for (const live of ['false', 'true']) {
+    const demo = await demoIssuer({ZAVU_LIVE_SEND: live, ZAVU_QUALIFICATION_JSON: json});
+    const f = await fixture(t, {auth: demo.auth, demo});
+    assert.deepEqual((await f.app.inject({method: 'POST', url: '/v1/demo/session', payload: {}})).json().tripCountries, ['BR', 'PE'], live);
+  }
+});
+
+test('demo sessions are rate limited', async t => {
   const {f, session} = await demoFixture(t);
   for (let i = 0; i < 30; i++) assert.equal((await session()).status, 200);
   assert.deepEqual(await session(), {status: 429, body: {code: 'demo_rate_limited'}});
   f.advance(60001);
   assert.equal((await session()).status, 200);
-  const {demoIssuer} = await import('../dist/demo.js');
-  await assert.rejects(demoIssuer({ZAVU_LIVE_SEND: 'true'}), /DEMO_LIVE_PHONE/);
-  await assert.rejects(demoIssuer({ZAVU_LIVE_SEND: 'true', DEMO_LIVE_PHONE: '999'}), /DEMO_LIVE_PHONE/);
 });
 
 test('the real server entry stays off demo mode unless DEMO_MODE is exactly "true"', () => {
@@ -64,30 +84,31 @@ test('without demo mode the session route does not exist and real tokens are una
   assert.equal((await f.req('GET', '/v1/me')).status, 200);
 });
 
-test('live demo sends reach only the consented phone: the family persona uses it, every other destination is refused', async t => {
-  const {demoIssuer} = await import('../dist/demo.js');
-  const demo = await demoIssuer({ZAVU_LIVE_SEND: 'true', DEMO_LIVE_PHONE: '+15555550123'});
-  const f = await fixture(t, {auth: demo.auth, demo});
-  const world = (await f.app.inject({method: 'POST', url: '/v1/demo/session', payload: {}})).json();
-  const phones = (await f.ctx.pool.query('SELECT id,phone FROM identities WHERE id = ANY($1) ORDER BY phone', [[world.family.id, world.colleague.id]])).rows;
-  assert.deepEqual(phones, [{id: world.colleague.id, phone: '+15555550103'}, {id: world.family.id, phone: '+15555550123'}]);
-
-  const {configuredProvider} = await import('../dist/worker.js');
-  const live = {...qualification, evidence: 'test-only syntheticfixture: live', entries: qualification.entries.map(e => ({...e, evidence: 'test-only syntheticfixture: channel'}))};
-  const env = {ZAVU_LIVE_SEND: 'true', ZAVU_API_KEY: 'syntheticfixture-not-a-key', ZAVU_PROJECT_ID: 'prj_fixture', ZAVU_SENDER_ID: 'snd_fixture', ZAVU_CALLBACK_SECRET: 'syntheticfixture-secret'};
+test('a live demo starts only with demo budgets, a pepper and demo-prefixed alert texts; no static allowlist is needed', async () => {
+  const {configuredProvider, demoDispatch} = await import('../dist/worker.js');
+  const demoText = {...qualification, evidence: 'test-only syntheticfixture: live',
+    entries: qualification.entries.map(e => ({...e, evidence: 'test-only syntheticfixture: channel', text: 'Demo de Tándem: estado sin confirmar.'}))};
+  const env = {ZAVU_LIVE_SEND: 'true', ZAVU_API_KEY: 'syntheticfixture-not-a-key', ZAVU_PROJECT_ID: 'prj_fixture', ZAVU_SENDER_ID: 'snd_fixture', ZAVU_CALLBACK_SECRET: 'syntheticfixture-secret',
+    DEMO_MODE: 'true', DEMO_SMS_DAILY_CAP: '40', DEMO_ALERTS_PER_NUMBER_DAILY: '6', DEMO_PHONE_PEPPER: 'syntheticfixture-pepper-not-a-secret-000'};
   const limits = {perIncident: 6, perSession: 6};
-  const demoLive = (extra, demoEnv = {DEMO_MODE: 'true', DEMO_LIVE_PHONE: '+15555550123'}) => configuredProvider({...env, ...demoEnv, ZAVU_QUALIFICATION_JSON: JSON.stringify({...live, ...extra})});
-  for (const allowed of [undefined, [], ['+15555550199'], ['+15555550123', '+15555550199']]) {
-    assert.throws(() => demoLive({allowedDestinations: allowed, demoLimits: limits}), /DEMO_MODE live sends/, `allowedDestinations ${JSON.stringify(allowed)} is not exactly the consented phone`);
+  const start = (q, extra = {}) => configuredProvider({...env, ...extra, ZAVU_QUALIFICATION_JSON: JSON.stringify(q)});
+  assert.deepEqual(start({...demoText, demoLimits: limits}).qualification.demoLimits, limits);
+  assert.throws(() => start(demoText), /demoLimits/);
+  for (const name of ['DEMO_SMS_DAILY_CAP', 'DEMO_ALERTS_PER_NUMBER_DAILY', 'DEMO_PHONE_PEPPER']) {
+    assert.throws(() => start({...demoText, demoLimits: limits}, {[name]: undefined}), new RegExp(name), name);
   }
-  assert.throws(() => demoLive({allowedDestinations: ['+15555550123'], demoLimits: limits}, {DEMO_MODE: 'true'}), /DEMO_MODE live sends/);
-  assert.throws(() => demoLive({allowedDestinations: ['+15555550123']}), /DEMO_MODE live sends/, 'a live demo needs explicit send budgets');
-  for (const demoLimits of [{perIncident: 0, perSession: 6}, {perIncident: 6}, {perIncident: 6, perSession: 1.5}, 'six']) {
-    assert.throws(() => demoLive({allowedDestinations: ['+15555550123'], demoLimits}), /qualification/);
+  for (const channel of ['sms', 'whatsapp', 'voice']) {
+    const plain = {...demoText, demoLimits: limits, entries: demoText.entries.map(e => e.channel === channel ? {...e, text: 'ANDES: estado sin confirmar.'} : e)};
+    assert.throws(() => start(plain), /Demo de Tándem/, channel);
+    assert.throws(() => start(plain, {ZAVU_LIVE_SEND: 'false'}), /Demo de Tándem/, `${channel}, sends off`);
+    assert.ok(start(plain, {DEMO_MODE: undefined}), 'production keeps its own texts');
   }
-  assert.throws(() => configuredProvider({...env, ZAVU_QUALIFICATION_JSON: JSON.stringify({...live, allowedDestinations: ['999']})}), /qualification/);
-  const accepted = demoLive({allowedDestinations: ['+15555550123'], demoLimits: limits}).qualification;
-  assert.deepEqual({allowed: accepted.allowedDestinations, limits: accepted.demoLimits}, {allowed: ['+15555550123'], limits});
+  assert.ok(start({...demoText, demoLimits: limits, entries: demoText.entries.map(e => ({...e, text: e.text.normalize('NFD')}))}), 'decomposed accents');
+  for (const demoLimits of [{perIncident: 0, perSession: 6}, {perIncident: 6}, {perIncident: 6, perSession: 1.5}, 'six']) assert.throws(() => start({...demoText, demoLimits}), /qualification/);
+  assert.throws(() => start({...demoText, demoLimits: limits, allowedDestinations: ['999']}), /qualification/);
+  assert.deepEqual(demoDispatch(env), {enabled: true, alertsPerNumberDaily: 6});
+  assert.equal(demoDispatch({}), undefined);
+  assert.throws(() => demoDispatch({...env, DEMO_ALERTS_PER_NUMBER_DAILY: undefined}), /DEMO_ALERTS_PER_NUMBER_DAILY/);
 });
 
 test('demo personas can invite only personas from their own world', async t => {
@@ -95,7 +116,7 @@ test('demo personas can invite only personas from their own world', async t => {
   const a = (await session()).body; const b = (await session()).body;
   const invite = (from, to, phone) => f.req('POST', '/v1/contacts', {contactId: to.id, phone, map: true, incident: true}, from.token);
   assert.deepEqual(await invite(a.driver, b.family, '+15555550102'), {status: 403, body: {code: 'demo_world_boundary'}});
-  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM contact_grants WHERE contact_id=$1', [b.family.id])).rows[0].n, 1, 'only its own world grant');
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM contact_grants WHERE contact_id=$1', [b.family.id])).rows[0].n, 0, 'a rejected cross-world invitation creates no family grant');
   assert.equal((await invite(a.family, a.colleague, '+15555550103')).status, 200, 'same-world invitation still works');
 });
 
@@ -142,9 +163,11 @@ test('an empty allowlist refuses every destination before quota or the provider'
 });
 
 const demoChecks = {...cfg, demo: true};
+// Sessions bring no truck and no family grant: a trip uses a truck made here and the seeded colleague grant.
 async function demoTrip(f, world) {
-  const draft = await f.req('POST', '/v1/trip-drafts', {text: 'SYNTHETIC demo trip', fields: {truckId: world.driver.truckId, origin: 'A', destination: 'B', country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo'}}, world.driver.token);
-  return (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: [world.family.grantId, world.colleague.grantId]}, world.driver.token)).body.id;
+  const truck = (await f.req('POST', '/v1/trucks', {label: 'SYNTHETIC demo truck'}, world.driver.token)).body.id;
+  const draft = await f.req('POST', '/v1/trip-drafts', {text: 'SYNTHETIC demo trip', fields: {truckId: truck, origin: 'A', destination: 'B', country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo'}}, world.driver.token);
+  return (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: [world.colleague.grantId]}, world.driver.token)).body.id;
 }
 const incidentJobs = async (f, trip) => (await f.ctx.pool.query("SELECT count(*)::int n FROM jobs WHERE trip_id=$1 AND channel<>'group'", [trip])).rows[0].n;
 
@@ -152,18 +175,18 @@ test('in demo mode an abandoned trip opens no check and alerts nobody; a watched
   const {f, session} = await demoFixture(t);
   const watched = (await session()).body; const left = (await session()).body;
   const watchedTrip = await demoTrip(f, watched); const leftTrip = await demoTrip(f, left);
-  const poll = () => f.req('GET', `/v1/trips/${watchedTrip}/status`, undefined, watched.family.token);
+  const poll = () => f.req('GET', `/v1/trips/${watchedTrip}/status`, undefined, watched.colleague.token);
   f.advance(120001); await poll(); await sweep(f, demoChecks);
   assert.deepEqual(await checksOf(f, watchedTrip), [asking('silence')]);
   assert.deepEqual(await checksOf(f, leftTrip), [], 'nobody has looked at this world for longer than the ask window');
   f.advance(60000); await poll(); await sweep(f, demoChecks);
   assert.equal((await checksOf(f, watchedTrip))[0].status, 'escalated');
-  assert.equal(await incidentJobs(f, watchedTrip), 5);
+  assert.equal(await incidentJobs(f, watchedTrip), 2);
   f.advance(3600000); await sweep(f, demoChecks); await sweep(f, demoChecks);
   assert.deepEqual(await checksOf(f, leftTrip), []);
   assert.equal(await incidentJobs(f, leftTrip), 0);
   assert.equal((await f.req('POST', `/v1/trips/${leftTrip}/sos`, {}, left.driver.token)).status, 200, 'an explicit SOS is never suppressed');
-  assert.equal(await incidentJobs(f, leftTrip), 5);
+  assert.equal(await incidentJobs(f, leftTrip), 2);
 });
 
 test('after the demo issuer restarts, a trip whose tokens died cancels its open check instead of escalating', async t => {
@@ -183,54 +206,23 @@ test('after the demo issuer restarts, a trip whose tokens died cancels its open 
   assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM incidents')).rows[0].n, 0);
 });
 
-// Fictional +1-555-01xx stand-in for the one consented DEMO_LIVE_PHONE; never a real number.
-const consented = '+15550100999';
-async function liveDemo(t) {
-  const {demoIssuer} = await import('../dist/demo.js');
-  const demo = await demoIssuer({ZAVU_LIVE_SEND: 'true', DEMO_LIVE_PHONE: consented});
-  const f = await fixture(t, {auth: demo.auth, demo});
-  return {f, response: await f.app.inject({method: 'POST', url: '/v1/demo/session', payload: {}})};
-}
-
 test('the anonymous demo session never hands out a phone: no phone claim in any token, no number in the body', async t => {
-  const {f, response} = await liveDemo(t);
+  const {f} = await demoFixture(t);
+  const response = await f.app.inject({method: 'POST', url: '/v1/demo/session', payload: {}});
   assert.equal(response.statusCode, 200);
   const e164 = /\+[1-9]\d{6,14}/;
-  assert.doesNotMatch(response.body, e164); assert.ok(!response.body.includes(consented.slice(1)), 'consented digits in the body');
+  assert.doesNotMatch(response.body, e164); assert.ok(!response.body.includes('5555550103'), 'seeded digits in the body');
   const world = response.json();
   for (const persona of ['driver', 'family', 'colleague']) {
     for (const part of world[persona].token.split('.').slice(0, 2)) {
       const decoded = Buffer.from(part, 'base64url').toString('utf8'), claims = JSON.parse(decoded);
       assert.ok(!('phone_number' in claims) && !('phone_number_verified' in claims), `${persona} token carries a phone claim`);
-      assert.doesNotMatch(decoded, e164, persona); assert.ok(!decoded.includes(consented.slice(1)), persona);
+      assert.doesNotMatch(decoded, e164, persona);
     }
   }
-  // The identity row the issuer wrote stays the only place the consented phone lives, and the token never downgrades it.
+  // A phone-less token never gives the family persona a number: only the SMS code flow does.
   assert.equal((await f.req('GET', '/v1/me', undefined, world.family.token)).body.id, world.family.id);
-  assert.deepEqual((await f.ctx.pool.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [world.family.id])).rows, [{phone: consented, phone_verified: true}]);
-});
-
-test('with phone-less tokens the live demo journey still runs and the family gets the allowlisted SOS via its identity phone', async t => {
-  const {f, response} = await liveDemo(t); const world = response.json();
-  const accept = async (from, to, phone) => {
-    const invite = await f.req('POST', '/v1/contacts', {contactId: to.id, phone, map: true, incident: true}, from.token);
-    assert.equal(invite.status, 200);
-    return f.req('POST', `/v1/contacts/${invite.body.id}/accept`, {map: true, incident: true}, to.token);
-  };
-  assert.equal((await accept(world.family, world.colleague, '+15555550103')).status, 200, 'accepted on the identity-row phone');
-  assert.deepEqual(await accept(world.family, world.driver, '+15555550199'), {status: 409, body: {code: 'verified_phone_mismatch'}});
-  const trip = await demoTrip(f, world);
-  f.advance(120001); await f.req('GET', `/v1/trips/${trip}/status`, undefined, world.family.token); await sweep(f, demoChecks);
-  assert.deepEqual(await checksOf(f, trip), [asking('silence')]);
-  const incident = (await f.req('POST', `/v1/trips/${trip}/sos`, {}, world.driver.token)).body.id;
-  const jobs = (await f.ctx.pool.query("SELECT j.id,j.version,j.class,cg.role FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 ORDER BY cg.role,j.channel", [incident])).rows;
-  assert.deepEqual(jobs.map(j => j.role), ['colleague', 'colleague', 'family', 'family', 'family']);
-  const d = await runtime();
-  const live = provider({qualification: {...qualification, allowedDestinations: [consented], demoLimits: {perIncident: 6, perSession: 6}}});
-  for (const job of jobs) await d.authorizeJob(f.ctx, await d.claimJob(f.ctx, job, 'live-demo'), live);
-  assert.deepEqual((await f.ctx.pool.query(`SELECT cg.role,j.status,j.unavailable_reason,a.payload->>'to' AS "to",count(*)::int n FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id
-    LEFT JOIN dispatch_attempts a ON a.job_id=j.id WHERE j.incident_id=$1 GROUP BY 1,2,3,4 ORDER BY 1`, [incident])).rows,
-  [{role: 'colleague', status: 'unavailable', unavailable_reason: 'destination_not_allowed', to: null, n: 2}, {role: 'family', status: 'authorized', unavailable_reason: null, to: consented, n: 3}]);
+  assert.deepEqual((await f.ctx.pool.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [world.family.id])).rows, [{phone: null, phone_verified: false}]);
 });
 
 test('real OIDC tokens: a verified phone claim binds; a phone-less one never downgrades and is judged by the stored binding', async t => {

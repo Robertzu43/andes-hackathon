@@ -101,8 +101,9 @@ export const tripStatus: Decoder<T.TripStatus> = value => {
 };
 const token: Decoder<string> = value => typeof value === 'string' && value.length <= 16384
   && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value) ? value : invalid();
-const demoWorldWire = object({ synthetic: literal(true), expiresInSeconds: literal(7200),
-  driver: object({ id: uuid, token, truckId: uuid }), family: object({ id: uuid, token, grantId: uuid }),
+const countryCode: Decoder<string> = value => typeof value === 'string' && /^[A-Z]{2}$/.test(value) ? value : invalid();
+const demoWorldWire = object({ synthetic: literal(true), expiresInSeconds: literal(7200), expiresAt: date,
+  tripCountries: array(countryCode), driver: object({ id: uuid, token }), family: object({ id: uuid, token }),
   colleague: object({ id: uuid, token, grantId: uuid }) });
 export const demoWorld: Decoder<T.DemoWorld> = value => {
   const parsed = demoWorldWire(value);

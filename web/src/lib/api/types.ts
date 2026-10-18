@@ -68,9 +68,11 @@ export interface TripStatus {
 export type DemoPersona = 'driver' | 'family' | 'colleague';
 /** Sensitive wire result for a trusted demo host. Never render, persist or log tokens. */
 export interface DemoWorld {
-  synthetic: true; expiresInSeconds: 7200;
-  driver: { id: UUID; token: string; truckId: UUID };
-  family: { id: UUID; token: string; grantId: UUID };
+  synthetic: true; expiresInSeconds: 7200; expiresAt: string;
+  /** Countries the trip form may offer: those with qualified alert channels. */
+  tripCountries: string[];
+  driver: { id: UUID; token: string };
+  family: { id: UUID; token: string };
   colleague: { id: UUID; token: string; grantId: UUID };
 }
 /** Explicit demo-only exception: unauthenticated POST, no actor/idempotency key yet. */

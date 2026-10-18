@@ -1,6 +1,6 @@
 # Client read contract
 
-Owner-scoped catalogs for the persisted web journey. All five routes require the trusted OIDC bearer token, send `Cache-Control: no-store`, and bind every row to that request's actor. No query/body ID can choose another owner. Public DTO types are exported from `src/client-read/contracts.ts`; consumers should use this contract rather than raw database rows.
+Owner-scoped catalogs for the persisted web journey. All five routes require a trusted bearer token (OIDC outside demo mode, a demo persona token in demo mode), send `Cache-Control: no-store`, and bind every row to that request's actor. No query/body ID can choose another owner. Public DTO types are exported from `src/client-read/contracts.ts`; consumers should use this contract rather than raw database rows.
 
 | Route | Response |
 | --- | --- |
@@ -10,7 +10,7 @@ Owner-scoped catalogs for the persisted web journey. All five routes require the
 | `GET /v1/trips` | `{active, recent, limits, hasMore, readAt}`. Active trips are ordered by creation time then id, descending. Arrived/cancelled trips are ordered by closure-or-creation time then id, descending. Bounds: 50 active, 20 recent. |
 | `GET /v1/bootstrap` | `{profile, trucks, contacts, trips:{active,recent}, limits:{trucks,contacts,activeTrips,recentTrips}, hasMore:{trucks,contacts,activeTrips,recentTrips}, readAt}`. The same DTOs and limits in one database snapshot. |
 
-`ClientContact` contains `{id, contactId, role, map:{requested,accepted}, incident:{requested,accepted}, status, acceptedAt, revokedAt, revokedBy}`. `status` is `pending`, `accepted` or `revoked`; `revokedBy` is `driver`, `contact` or null. `role` is the stored `family`/`colleague` role. Phones are neither selected for the response nor used for ordering: no catalog response contains a phone number, including demo personas and the consented `DEMO_LIVE_PHONE`.
+`ClientContact` contains `{id, contactId, role, map:{requested,accepted}, incident:{requested,accepted}, status, acceptedAt, revokedAt, revokedBy}`. `status` is `pending`, `accepted` or `revoked`; `revokedBy` is `driver`, `contact` or null. `role` is the stored `family`/`colleague` role. Phones are neither selected for the response nor used for ordering: no catalog response contains a phone number, including demo personas and numbers verified by SMS code in demo mode.
 
 `ClientTripSummary` contains `{id, truckId, origin, destination, country, locale, timeZone, status, mapActive, checkinsActive, paused, version, createdAt, closedAt, expectedArrivalAt, sharingStoppedAt, contactGrantIds}`. Timestamps are ISO 8601 strings or null. `contactGrantIds` includes only selected grants whose per-trip and standing grants remain unrevoked, accepted, and authorize at least one scope. These IDs identify effective consent, not evidence that anyone is watching or has acknowledged a message. A standing contact may remain accepted after revocation for one trip; that trip no longer lists the grant, while other authorized trips can retain it.
 
@@ -24,7 +24,7 @@ All queries in a response use that pinned snapshot. Concurrent commits after acq
 
 ## Relation to the other trip shapes
 
-This branch integrates `main` at `5ea57adc73ee7872e1cbfc53e2beb9809a34ffad`, including the merged #74/#80/#83 runtime and #59/#81 shared SDK. Queries select the real `contact_grants.role`, `trips.expected_arrival_at` and `trips.sharing_stopped_at` columns directly. Unset arrival and sharing timestamps remain null. App registration preserves the runtime's demo, checks and insights routes and the authentication presence clock while mounting the five catalog routes. Tests exercise the actual demo session issuer with a fictional configured live destination, persisted roles, draft confirmation, sharing stop/resume, owner detail and `/status`. The shared SDK's DTOs and decoders consume this phone-free contract, preserve its runtime fields and discard any legacy phone properties; API integration tests run that SDK against the actual signed backend and PostgreSQL.
+The catalog implementation integrates the merged #74/#80/#83 runtime and #59/#81 shared SDK. Queries select the real `contact_grants.role`, `trips.expected_arrival_at` and `trips.sharing_stopped_at` columns directly. Unset arrival and sharing timestamps remain null. App registration preserves the runtime's demo, checks and insights routes and the authentication presence clock while mounting the five catalog routes. Tests exercise the actual demo session issuer, persisted roles, draft confirmation, sharing stop/resume, owner detail and `/status`. The current [demo session](runtime.md#session) seeds neither a truck nor a family grant; clients create them through the normal journey. The shared SDK's DTOs and decoders consume this phone-free contract, preserve its runtime fields and discard any legacy phone properties; API integration tests run that SDK against the actual signed backend and PostgreSQL.
 
 | Catalog field | Existing owner detail (`GET /v1/trips/:id`) | Runtime `/status` |
 | --- | --- | --- |

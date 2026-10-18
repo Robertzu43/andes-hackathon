@@ -5,7 +5,10 @@ import { transaction, withTripTransaction, type Context } from '../db.js';
 import { canonicalLocale, type Channel, type Job, type Trip } from '../contracts.js';
 import type { CallbackEvent, Outcome, Payload, Provider } from './zavu.js';
 import { alertSummary } from './wording.js';
+import { DEMO_ISSUER } from '../demo.js';
 export type WorkClass = 'emergency' | 'ordinary';
+/** Explicit demo dispatch policy, built once at worker startup. */
+export interface DemoDispatch { enabled: boolean; alertsPerNumberDaily: number }
 export interface Envelope { jobId: string; version: number; class: WorkClass }
 export interface Delivery { body: Envelope; receipt: string }
 export interface Transport {
@@ -62,7 +65,7 @@ export async function claimJob(ctx: Context, input: Envelope, owner: string): Pr
 async function invalidate(client: pg.PoolClient, job: Job, now: Date, reason: string) {
   await client.query("UPDATE jobs SET status='cancelled',cancelled_at=$2,version=version+1,unavailable_reason=$3 WHERE id=$1 AND status='claimed'", [job.id, now, reason]);
 }
-export async function authorizeJob(ctx: Context, claim: Claim | null, provider: Provider): Promise<Attempt | null> {
+export async function authorizeJob(ctx: Context, claim: Claim | null, provider: Provider, demo?: DemoDispatch): Promise<Attempt | null> {
   if (!claim) return null;
   return withTripTransaction(ctx, claim.tripId, async (client, trip) => {
     let now = ctx.clock();
@@ -75,8 +78,10 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     };
     if (await lapsed(now)) return null;
     const q = provider.qualification;
-    const grant = (await client.query(`SELECT cg.*,tg.revoked_at AS trip_revoked_at,i.phone AS verified_phone,i.phone_verified
+    const grant = (await client.query(`SELECT cg.*,tg.revoked_at AS trip_revoked_at,i.phone AS verified_phone,i.phone_verified,
+        i.synthetic AS recipient_synthetic,driver.synthetic AS driver_synthetic
       FROM trip_grants tg JOIN contact_grants cg ON cg.id=tg.grant_id JOIN identities i ON i.id=cg.contact_id
+      JOIN identities driver ON driver.id=cg.driver_id
       WHERE tg.trip_id=$1 AND tg.grant_id=$2`, [trip.id, job.grant_id])).rows[0];
     const incident = job.incident_id ? (await client.query('SELECT * FROM incidents WHERE id=$1 AND trip_id=$2', [job.incident_id, trip.id])).rows[0] : null;
     const eligible = grant && grant.driver_id === trip.driver_id && grant.contact_id === job.recipient_id && grant.accepted_at && !grant.revoked_at && !grant.trip_revoked_at && grant.incident_accepted && grant.phone_verified && grant.phone === grant.verified_phone;
@@ -87,7 +92,21 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     if (!q.live || !q.entries.some(e => e.channel === job.channel && e.country === trip.country && e.locale === locale)) {
       await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='country_channel_locale_unqualified' WHERE id=$1", [job.id]); return null;
     }
-    if (q.allowedDestinations && !q.allowedDestinations.includes(grant.phone)) {
+    // A demo policy replaces the static allowlist only for an exact OTP binding in the same demo world.
+    // Without an enabled policy, synthetic personas fail closed even if the static allowlist matches.
+    const demoDestination = demo?.enabled === true || grant.recipient_synthetic || grant.driver_synthetic;
+    const destinationAllowed = async () => demoDestination
+      ? demo?.enabled === true && Boolean((await client.query(`SELECT 1 FROM demo_phone_verifications v
+          JOIN identities recipient ON recipient.id=v.identity_id
+          JOIN contact_grants cg ON cg.contact_id=recipient.id JOIN identities driver ON driver.id=cg.driver_id
+          WHERE cg.id=$1 AND cg.driver_id=$2 AND v.identity_id=$3 AND v.phone=$4
+            AND cg.phone=v.phone AND recipient.phone=v.phone AND recipient.phone_verified
+            AND recipient.synthetic AND driver.synthetic AND recipient.issuer=$5 AND driver.issuer=$5
+            AND split_part(recipient.subject,':',1)<>''
+            AND split_part(recipient.subject,':',1)=split_part(driver.subject,':',1)`,
+        [grant.id, trip.driver_id, job.recipient_id, grant.phone, DEMO_ISSUER])).rowCount)
+      : !q.allowedDestinations || q.allowedDestinations.includes(grant.phone);
+    if (!await destinationAllowed()) {
       await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='destination_not_allowed' WHERE id=$1", [job.id]); return null;
     }
     // Account-row locking serializes reservations across channels and worker replicas.
@@ -100,11 +119,22 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     // The contact can re-verify a new phone during that wait (the auth upsert takes no trip lock): re-read it here.
     const current = (await client.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [grant.contact_id])).rows[0];
     if (!current?.phone_verified || current.phone !== grant.phone) { await invalidate(client, job, now, 'authorization_no_longer_valid'); return null; }
-    if (q.demoLimits) {
-      // Under the account lock, so concurrent workers cannot overshoot. Per session = per recipient identity: each demo world has one consented persona.
-      const used = (await client.query(`SELECT count(*) FILTER (WHERE j.incident_id=$1)::int AS incident,count(*) FILTER (WHERE j.recipient_id=$2)::int AS session
-        FROM dispatch_attempts a JOIN jobs j ON j.id=a.job_id WHERE j.incident_id=$1 OR j.recipient_id=$2`, [job.incident_id, job.recipient_id])).rows[0];
-      if (used.incident >= q.demoLimits.perIncident || used.session >= q.demoLimits.perSession) {
+    // OTP verification and world bindings take no trip/account lock: re-read after the account wait,
+    // before payload creation or any reservation. Task 11 purge must respect trip -> job -> account order.
+    if (demoDestination && !await destinationAllowed()) {
+      await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='destination_not_allowed' WHERE id=$1", [job.id]); return null;
+    }
+    if (q.demoLimits || demo?.enabled === true) {
+      // The account lock serializes workers across channels and worlds. Number usage spans the last 24 h;
+      // incident/session budgets keep their existing scope (session = recipient identity).
+      const used = (await client.query(`SELECT count(*) FILTER (WHERE j.incident_id=$1)::int AS incident,count(*) FILTER (WHERE j.recipient_id=$2)::int AS session,
+          count(*) FILTER (WHERE a.destination_hash=$3 AND a.authorized_at>$4)::int AS number
+        FROM dispatch_attempts a JOIN jobs j ON j.id=a.job_id WHERE j.incident_id=$1 OR j.recipient_id=$2 OR a.destination_hash=$3`,
+      [job.incident_id, job.recipient_id, hash(grant.phone), after(now, -86400000)])).rows[0];
+      const limits = q.demoLimits;
+      const cap = demo?.alertsPerNumberDaily;
+      if (!limits || used.incident >= limits.perIncident || used.session >= limits.perSession ||
+        (demo?.enabled === true && (typeof cap !== 'number' || !Number.isFinite(cap) || !Number.isInteger(cap) || cap <= 0 || used.number >= cap))) {
         await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='demo_budget_exhausted' WHERE id=$1", [job.id]); return null;
       }
     }
@@ -120,7 +150,7 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     const location = trip.map_active && grant.map_accepted ? (await client.query('SELECT * FROM latest_locations WHERE trip_id=$1', [trip.id])).rows[0] : null;
     const truck = (await client.query('SELECT label FROM trucks WHERE id=$1', [trip.truck_id])).rows[0]!.label as string;
     const check = incident?.trigger === 'missed_check' ? (await client.query('SELECT signal_at FROM security_checks WHERE incident_id=$1 ORDER BY created_at LIMIT 1', [incident.id])).rows[0] : null;
-    const summary = alertSummary({ truck, country: trip.country, timeZone: trip.time_zone, now, signalAt: check?.signal_at ?? null, incident: incident ?? null, location: location ?? null, voice: job.channel === 'voice' });
+    const summary = alertSummary({ truck, country: trip.country, timeZone: trip.time_zone, now, signalAt: check?.signal_at ?? null, incident: incident ?? null, location: location ?? null, channel: job.channel });
     const payload = provider.payload({ attemptId: id, to: grant.phone, channel: job.channel, country: trip.country, locale, summary });
     const attempt = (await client.query(`INSERT INTO dispatch_attempts(id,job_id,job_version,owner,claim_token,project_id,sender_id,channel,state,payload,payload_hash,destination_hash,authorized_at,next_reconcile_at,evidence_expires_at)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'authorized',$9,$10,$11,$12,$13,$14) RETURNING *`, [id, job.id, job.version, claim.owner, claim.token, q.accountId, q.senderId, job.channel, payload, hash(JSON.stringify(payload)), hash(grant.phone), now, after(now, 30000), after(now, 86400000)])).rows[0] as Attempt;
@@ -186,12 +216,12 @@ export async function finishAttempt(ctx: Context, authorization: Attempt, result
     }
   });
 }
-export async function runJob(ctx: Context, message: Envelope, provider: Provider, owner: string, signal?: AbortSignal): Promise<void> {
+export async function runJob(ctx: Context, message: Envelope, provider: Provider, owner: string, signal?: AbortSignal, demo?: DemoDispatch): Promise<void> {
   // Shutdown stops new claims and authorizations; an unauthorized claim simply expires and is reclaimed.
   if (signal?.aborted) return;
   const claim = await claimJob(ctx, message, owner);
   if (signal?.aborted) return;
-  const attempt = await authorizeJob(ctx, claim, provider);
+  const attempt = await authorizeJob(ctx, claim, provider, demo);
   if (!attempt) return;
   let result: Outcome;
   // Never pass the shutdown signal: an authorized send always finishes (bounded by the provider's own
@@ -260,7 +290,7 @@ export async function reconcileOnce(ctx: Context, provider: Provider, signal?: A
   await ctx.pool.query('UPDATE dispatch_attempts SET reconcile_token=NULL,reconcile_until=NULL WHERE id=$1 AND reconcile_token=$2', [attempt.id, token]);
   return true;
 }
-export async function consume(ctx: Context, transport: Transport, provider: Provider, kind: WorkClass, limits: Record<Channel, number>, signal: AbortSignal): Promise<void> {
+export async function consume(ctx: Context, transport: Transport, provider: Provider, kind: WorkClass, limits: Record<Channel, number>, signal: AbortSignal, demo?: DemoDispatch): Promise<void> {
   for (const value of Object.values(limits)) if (!Number.isSafeInteger(value) || value < 1 || value > 16) throw new Error('Channel slots must be 1..16');
   const active: Record<Channel, Set<Promise<void>>> = { sms: new Set(), whatsapp: new Set(), voice: new Set() };
   try {
@@ -273,7 +303,7 @@ export async function consume(ctx: Context, transport: Transport, provider: Prov
       if (!job || job.class !== kind || !['sms', 'whatsapp', 'voice'].includes(job.channel)) { await transport.ack(kind, message.receipt, signal); continue; }
       const channel = job.channel as Channel; const slots = active[channel];
       if (slots.size >= limits[channel]) { await transport.defer(kind, message.receipt, signal); continue; }
-      const task = runJob(ctx, message.body, provider, randomUUID(), signal)
+      const task = runJob(ctx, message.body, provider, randomUUID(), signal, demo)
         .then(() => transport.ack(kind, message.receipt, signal)).catch(() => {})
         .finally(() => slots.delete(task));
       slots.add(task);
