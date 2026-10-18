@@ -329,6 +329,43 @@ production identity, browser acquisition/rendering, live sends, policy timing,
 device behavior or whole-app acceptance is claimed. This completed review work
 was retained under the subsequent review/merge/inventory-only scope.
 
+### PR81 disposed-binding follow-up
+
+Scoped independent disposition: **ACCEPT** at
+`75bdffa42d858c82a8dcb0af11bc78803e3d9a09`, reviewing only the four-file delta
+from accepted `2860d8593f90e1a327ac86cee0ef313d94692489`. The only production
+change is the disposed guard around the journey binding's session subscriber.
+`MemorySession` dispatches a snapshot of listeners: gateway invalidation can
+dispose a binding and close its view before that snapshot reaches the old
+binding callback. The guard retires that obsolete callback while explicit
+disposal still clears once and live bindings still invalidate normally.
+
+Fresh Node26.3.0 execution: **all 9 helper/contact-view checks passed**, including
+both new regressions. Running those exact two candidate assertions against an
+isolated parent runtime gives **0 passed / 2 failed**, both reproducing
+`verifying` instead of `closed`. No parent production code was altered. The view
+test imports actual frozen contact store `e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6`
+and checks both views closed, protected session/location/incident/catalog cleared,
+then recovery only through explicit gateway begin. Existing helper checks cover
+server UUID binding, rotation/signout, stale responses, disposal and expiry.
+
+Strict TypeScript5.9.3 NodeNext and ESNext/Bundler checks both passed. Run from
+the verified archive with existing compiler dependencies:
+
+```sh
+node --test web/tests/api/journeys.test.mjs web/tests/api/contact-view.integration.mjs
+node /ABS/EXISTING/typescript/bin/tsc -p web/tests/api/tsconfig.json
+node /ABS/EXISTING/typescript/bin/tsc -p web/tests/api/tsconfig.json \
+  --module ESNext --moduleResolution Bundler
+```
+
+All other API production files, including transport, parsers, types, session,
+gateway and demo flow, are byte-identical to the prior accepted head. Earlier
+contract and real HTTP/PostgreSQL conclusions keep their original pins/counts;
+they were not rerun or relabeled. This is nonvisual helper/store confirmation;
+Q52 owns the separate combined browser review. No new harness or author edit was
+needed for this bounded remediation review.
+
 ## Durable observation queue oracle
 
 `queue-probes.mjs` defines ten scenarios before a lane42 candidate is supplied:
