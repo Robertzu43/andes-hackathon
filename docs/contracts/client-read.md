@@ -10,7 +10,7 @@ Owner-scoped catalogs for the persisted web journey. All five routes require the
 | `GET /v1/trips` | `{active, recent, limits, hasMore, readAt}`. Active trips are ordered by creation time then id, descending. Arrived/cancelled trips are ordered by closure-or-creation time then id, descending. Bounds: 50 active, 20 recent. |
 | `GET /v1/bootstrap` | `{profile, trucks, contacts, trips:{active,recent}, limits:{trucks,contacts,activeTrips,recentTrips}, hasMore:{trucks,contacts,activeTrips,recentTrips}, readAt}`. The same DTOs and limits in one database snapshot. |
 
-`ClientContact` contains `{id, contactId, role, map:{requested,accepted}, incident:{requested,accepted}, status, acceptedAt, revokedAt, revokedBy}`. `status` is `pending`, `accepted` or `revoked`; `revokedBy` is `driver`, `contact` or null. `role` is the stored `family`/`colleague` role, or null when unavailable. Phones are neither selected for the response nor used for ordering.
+`ClientContact` contains `{id, contactId, role, map:{requested,accepted}, incident:{requested,accepted}, status, acceptedAt, revokedAt, revokedBy}`. `status` is `pending`, `accepted` or `revoked`; `revokedBy` is `driver`, `contact` or null. `role` is the stored `family`/`colleague` role. Phones are neither selected for the response nor used for ordering: no catalog response contains a phone number, including demo personas and the consented `DEMO_LIVE_PHONE`.
 
 `ClientTripSummary` contains `{id, truckId, origin, destination, country, locale, timeZone, status, mapActive, checkinsActive, paused, version, createdAt, closedAt, expectedArrivalAt, sharingStoppedAt, contactGrantIds}`. Timestamps are ISO 8601 strings or null. `contactGrantIds` includes only selected grants whose per-trip and standing grants remain unrevoked, accepted, and authorize at least one scope. These IDs identify effective consent, not evidence that anyone is watching or has acknowledged a message. A standing contact may remain accepted after revocation for one trip; that trip no longer lists the grant, while other authorized trips can retain it.
 
@@ -20,17 +20,17 @@ Authentication and catalog queries use `telemetryPool`, separate from the comman
 
 All queries in a response use that pinned snapshot. Concurrent commits after acquisition remain invisible to the response, so a trip cannot move from active to recent halfway through bootstrap. Profile identity and verification describe the authenticated request; they intentionally do not follow a parallel token updating the shared identities row. `readAt` describes snapshot acquisition, not the age of location, event, delivery or participant evidence. It is not a freshness claim and is never derived from the client clock. Separate requests may see different committed states.
 
-`readTransaction` delegates to the common transaction helper with a fixed BEGIN statement; commit, rollback and release have one implementation. Migration `004-client-read-indexes.sql` adds indexes matching owner predicates and catalog ordering for trucks, standing contacts, active trips and recent trips. The runtime's separate `003-security-checks.sql` migration remains owned by its author.
+`readTransaction` delegates to the common transaction helper with a fixed BEGIN statement; commit, rollback and release have one implementation. Migration `009-client-read-indexes.sql` adds indexes matching owner predicates and catalog ordering for trucks, standing contacts, active trips and recent trips.
 
-## Runtime compatibility and deliberate projections
+## Relation to the other trip shapes
 
-This branch's reconciled backend parent is `dfa308b3b745a3342891ebcc0771f32a30862d5a`, including the bootstrap test-cleanup correction. The current PR #74 source `27e4f94b5962e88735fdb8fc3fea8cc3e842baa4` defines `contact_grants.role`, `trips.expected_arrival_at` and `trips.sharing_stopped_at`. Catalog queries project those actual stored fields using JSON field access so they also run on the parent schema where the fields do not exist. Missing fields are null; no family role, deadline or sharing state is invented. This compatibility path does not install the runtime migration or claim the runtime is approved. Required review item 5 remains dependent on the corrected, reviewed runtime/main integration; disposable composition evidence is separate from the production branch.
+`role`, `expectedArrivalAt` and `sharingStoppedAt` are the stored columns added by `003-security-checks.sql` (see `docs/contracts/runtime.md`).
 
 | Catalog field | Existing owner detail (`GET /v1/trips/:id`) | Runtime `/status` |
 | --- | --- | --- |
 | `status`, `paused` | Same persisted fields | `trip.status`, `trip.paused` |
-| `expectedArrivalAt` | `expected_arrival_at` when available | `trip.expectedArrivalAt` |
-| `sharingStoppedAt` | `sharing_stopped_at` when available | Not present in PR #74's current status envelope |
+| `expectedArrivalAt` | `expected_arrival_at` | `trip.expectedArrivalAt` |
+| `sharingStoppedAt` | `sharing_stopped_at` | Not in the status envelope |
 | Other summary fields | Camel-case projection of the corresponding persisted row | Status is a separate check/incident/delivery/location envelope |
 | `contactGrantIds` | Derived from effective standing and trip grants | No equivalent list |
 
