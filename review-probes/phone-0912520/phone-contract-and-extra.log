@@ -1,0 +1,39 @@
+✔ V01 older passive grant cannot promote ambiguous code1 while fresh query is pending (8.531042ms)
+V05 delivery-after-withdrawal [{"coordinates":null,"redaction":"consent-withdrawn"},{"coordinates":null,"redaction":"consent-withdrawn"}]
+✔ V02 fresh grant starts inclusive acquisition deadline; delayed timers cannot accept late result (2.277291ms)
+✔ V03 delayed timers cannot accept result at prompt deadline (0.632041ms)
+✔ V04 prompt longer than acquisition budget remains useful before grant (0.245208ms)
+✔ V05 withdrawal purges queued precise callbacks even after buffer eviction (0.437958ms)
+✔ P01 import/construction/idle stop are inert; start is explicit and passive (3.980458ms)
+✔ P02 all APIs exposed cannot unlock missing/mismatched/unsupported qualification (4.922583ms)
+✔ P03 positive GPS control retains source/receipt, safe options and useful quality (3.083875ms)
+✔ P04 denial/revocation retires watch and queued callbacks; denied initial monitor stays explicit (0.983ms)
+✔ P05 unavailable/throwing platform and rejected permission query are attributed without secrets (1.595875ms)
+✔ P06 no automatic motion prompt; missing activation stays blocked; browser-managed permission stays unknown (0.40075ms)
+✔ P07 positive motion control needs explicit grant and retains unresolved DOM clock (0.295708ms)
+✔ P08 request IDs/options survive eviction; concurrent GPS request rejected; copies detached (0.257541ms)
+✔ P09 replaced watch ignores previous success/error while replacement still works (0.564292ms)
+✔ P10 delayed old query/sample/motion answers cannot alter a replacement session (0.845541ms)
+✔ P11 local sink throw/stop is separate from sensor failure; reentrant acquisition blocked (0.735625ms)
+✔ P12 expiry boundary, stale, duplicate and reordered source timestamps stay explicit (0.187417ms)
+✔ P13 unknown/future/nonfinite source times and diverged clocks never imply fresh (0.392125ms)
+✔ P14 hidden page retires resources and cannot auto-resume or emit cached fix (0.105667ms)
+✔ P15 burst callbacks, outstanding requests, buffers, event/deadline caps and invalid budgets are bounded (0.598917ms)
+✔ P16 precise data absent by default/incomplete consent; explicit consent works and withdrawal suppresses late payload (0.401209ms)
+F1 actual {"result":{"ok":false,"reason":"obsolete-request"},"nativeCalls":0,"timersBeforeStop":1,"timersAfterStop":0}
+F2 actual {"result":{"ok":false,"reason":"session-stopped"},"state":"stopped","listeners":0}
+✔ P17 handling/drop/pothole/passenger fixtures remain observations with unknown independent outcomes (2.361542ms)
+✔ P18 provisional local boundary retains unknowns and distinct sessions/sequences (0.285584ms)
+✔ F1 P11 stopLocation from acquisition-request sink must prevent the native call and timeout (0.185709ms)
+✔ F2 P10/P15 expired motion permission answer must not attach a listener when deadline timer is delayed (0.150667ms)
+F4 actual {"requestId":"1:geo:1","watch":true,"options":{"enableHighAccuracy":true,"maximumAge":12345,"timeout":23456},"code":2}
+✔ F3 v3 browser-confirmed denial cannot be reopened by an older passive grant (0.979458ms)
+✔ F4 P08 failed location callback must retain original acquisition options after request-event eviction (0.202041ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 74.871

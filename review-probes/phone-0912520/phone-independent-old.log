@@ -1,0 +1,115 @@
+✖ Q52 R01 factory explicit stop while suspended prevents a trusted resume (2.762416ms)
+✖ Q52 R02 revocation during wake-lock delivery cannot report successful gesture start or retain late lock (0.623417ms)
+✖ Q52 R03 site grant does not permit passive retry after native code1; explicit useful retry releases the latch (3.277ms)
+✖ Q52 R04 optional motion denial permits useful GPS resume while host withdrawal remains terminal (0.557083ms)
+✖ Q52 R05 no drain or flush delegation survives pending, failed or completed withdrawal (0.57575ms)
+✖ Q52 R06 identical trip templates recreate and resume with independent session/event identities (0.247042ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 0
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 47.878375
+
+✖ failing tests:
+
+test at ../../../../../private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:90:1
+✖ Q52 R01 factory explicit stop while suspended prevents a trusted resume (2.762416ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:93:86)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../../private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:95:1
+✖ Q52 R02 revocation during wake-lock delivery cannot report successful gesture start or retain late lock (0.623417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:101:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../../private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:106:1
+✖ Q52 R03 site grant does not permit passive retry after native code1; explicit useful retry releases the latch (3.277ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:110:31)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../../private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:116:1
+✖ Q52 R04 optional motion denial permits useful GPS resume while host withdrawal remains terminal (0.557083ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:118:63)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../../private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:122:1
+✖ Q52 R05 no drain or flush delegation survives pending, failed or completed withdrawal (0.57575ms)
+  TypeError: Cannot read properties of undefined (reading 'ok')
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:126:81)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+test at ../../../../../private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:131:1
+✖ Q52 R06 identical trip templates recreate and resume with independent session/event identities (0.247042ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to:
+  
+  'legacy-template'
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:134:110)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'legacy-template',
+    expected: 'legacy-template',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }

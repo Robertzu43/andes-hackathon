@@ -1,0 +1,76 @@
+{
+  "head": "091252042581490313437c9035c5165c76828221",
+  "sourceTree": "2dd76225a21b5b53319769a7a42e7218d9845c1b",
+  "testTree": "c2ddc530d5a370a4d92544c6a3305d3529dc1696",
+  "verifiedBlobs": 17,
+  "files": [
+    {
+      "path": "docs/phone-observations/README.md",
+      "blob": "ce04facff87cc8dcb96cf4909d41e5034b1cdda7"
+    },
+    {
+      "path": "docs/phone-observations/event-boundary.md",
+      "blob": "e5a1c23afbab9b81ab76a2c719dea1da60321883"
+    },
+    {
+      "path": "docs/phone-observations/review-fixes.md",
+      "blob": "e3c954c25b89c674b1b47d8ce879b1412c298d4c"
+    },
+    {
+      "path": "docs/phone-observations/reviews/robert-5560453602.json",
+      "blob": "c5ce394a751ecf8e97aa6b09d53d178d9f028b92"
+    },
+    {
+      "path": "docs/phone-observations/reviews/robert-5560599386.json",
+      "blob": "63648357bf045d500140b8c2d439d686e5968a05"
+    },
+    {
+      "path": "docs/phone-observations/reviews/robert-5560757444.json",
+      "blob": "2505dc7c04d6b296efadc5271c1d888aab1dce5c"
+    },
+    {
+      "path": "docs/phone-observations/robert-5560599386-handoff.md",
+      "blob": "c2c4fc8ea1b57891b412d16abf94d0f93fa51380"
+    },
+    {
+      "path": "docs/phone-observations/robert-5560757444-fixes.md",
+      "blob": "be00f842456b8ff4a6a7984a0992360b1cda14a5"
+    },
+    {
+      "path": "docs/phone-observations/robert-current-disposition.md",
+      "blob": "33b957c1c78733ebf45f9914458dbfa929a5641e"
+    },
+    {
+      "path": "docs/phone-observations/robert-review-fixes.md",
+      "blob": "8ddc31fdec6bdb3a5234fe0c472cfb6a5f8cebab"
+    },
+    {
+      "path": "docs/phone-observations/verification.md",
+      "blob": "c1fe0a549a72a683a65e242789502dfd490f88c8"
+    },
+    {
+      "path": "src/phone-observations/adapter.mjs",
+      "blob": "d5c21006922fdf9bcd7eb1e1a56ad54776a9e668"
+    },
+    {
+      "path": "src/phone-observations/session-id.mjs",
+      "blob": "a5309aa32f4662c54df16755a850f79284223ea8"
+    },
+    {
+      "path": "src/phone-observations/trip-sharing.mjs",
+      "blob": "ac024ef724c47adaa62180e23039f7e729470470"
+    },
+    {
+      "path": "tests/phone-capability/recorder.test.mjs",
+      "blob": "e32eae3917cd79fe520d919c822a5052e0b5586d"
+    },
+    {
+      "path": "tests/phone-observations/adapter.test.mjs",
+      "blob": "356f60952e1b66d43ed34fc7a73919e90231de23"
+    },
+    {
+      "path": "tests/phone-observations/confounders.synthetic.json",
+      "blob": "e1d1763ab7166440ebcf66885be09cbbb41af68d"
+    }
+  ]
+}

@@ -1,0 +1,218 @@
+✖ GATE N2 explicit stop after suspension permanently clears resume intent (2.521791ms)
+✖ GATE withdrawal blocks drain while deletion is pending, failed and complete (1.230333ms)
+✖ GATE gesture acquisition reports stop and revocation after synchronous native/sink delivery (0.528625ms)
+✖ GATE code1 with site grant cannot trigger passive GPS retries or starve motion (19.229583ms)
+✖ GATE N3 denied optional motion does not prevent resuming useful GPS (0.596667ms)
+✖ GATE X1 X3 event and trip-session identities do not collide on recreation or resume (0.391709ms)
+✖ GATE p5 unavailable APIs consume no acquisition budget (0.334667ms)
+✖ GATE p4 pending first grant arms post-grant timeout for a replacement acquisition (1.186917ms)
+✖ GATE p3 late motion rejection preserves permission timeout attribution (0.257042ms)
+✖ GATE p6 unsupported permission names and wake-lock blocks stay separately attributed (0.506792ms)
+✖ GATE N13 default budgets retain a full foreground day of GPS fixes, errors and motion (1717.469333ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 0
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1797.419959
+
+✖ failing tests:
+
+test at tests/phone-observations/adapter.test.mjs:140:1
+✖ GATE N2 explicit stop after suspension permanently clears resume intent (2.521791ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-old/tests/phone-observations/adapter.test.mjs:146:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:151:1
+✖ GATE withdrawal blocks drain while deletion is pending, failed and complete (1.230333ms)
+  TypeError: Cannot read properties of undefined (reading 'ok')
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-old/tests/phone-observations/adapter.test.mjs:156:45)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+test at tests/phone-observations/adapter.test.mjs:163:1
+✖ GATE gesture acquisition reports stop and revocation after synchronous native/sink delivery (0.528625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-old/tests/phone-observations/adapter.test.mjs:169:61)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:181:1
+✖ GATE code1 with site grant cannot trigger passive GPS retries or starve motion (19.229583ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  100 !== 1
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-old/tests/phone-observations/adapter.test.mjs:187:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 100,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:193:1
+✖ GATE N3 denied optional motion does not prevent resuming useful GPS (0.596667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-old/tests/phone-observations/adapter.test.mjs:197:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:203:1
+✖ GATE X1 X3 event and trip-session identities do not collide on recreation or resume (0.391709ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to:
+  
+  'synthetic-session-a:1:1'
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-old/tests/phone-observations/adapter.test.mjs:205:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'synthetic-session-a:1:1',
+    expected: 'synthetic-session-a:1:1',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:215:1
+✖ GATE p5 unavailable APIs consume no acquisition budget (0.334667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'request-budget'
+  - 'api-unavailable'
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-old/tests/phone-observations/adapter.test.mjs:217:43)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'request-budget',
+    expected: 'api-unavailable',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:225:1
+✖ GATE p4 pending first grant arms post-grant timeout for a replacement acquisition (1.186917ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'unknown'
+  - 'granted'
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-old/tests/phone-observations/adapter.test.mjs:229:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'unknown',
+    expected: 'granted',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:235:1
+✖ GATE p3 late motion rejection preserves permission timeout attribution (0.257042ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'obsolete-request'
+  - 'permission-prompt-timeout'
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-old/tests/phone-observations/adapter.test.mjs:238:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'obsolete-request',
+    expected: 'permission-prompt-timeout',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:242:1
+✖ GATE p6 unsupported permission names and wake-lock blocks stay separately attributed (0.506792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-old/tests/phone-observations/adapter.test.mjs:245:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:255:1
+✖ GATE N13 default budgets retain a full foreground day of GPS fixes, errors and motion (1717.469333ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'stopped'
+  - 'started'
+       ^
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-old/tests/phone-observations/adapter.test.mjs:262:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'stopped',
+    expected: 'started',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

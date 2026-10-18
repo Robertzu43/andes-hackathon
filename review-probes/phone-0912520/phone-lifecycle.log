@@ -1,0 +1,226 @@
+{
+  "candidate": "9f87e2c08be8ac9e9324136fd0c4401ad8823bc6",
+  "kind": "synthetic-review-controls",
+  "results": [
+    {
+      "id": "L01 reserved terminal slot at event cap",
+      "passed": true,
+      "actual": {
+        "state": "stopped",
+        "stops": 1,
+        "emitted": 3,
+        "nativeCalls": 0,
+        "timers": 0
+      },
+      "expected": {
+        "state": "stopped",
+        "stops": 1,
+        "emitted": 3,
+        "nativeCalls": 0,
+        "timers": 0
+      }
+    },
+    {
+      "id": "L02 reentrant sink stop delivers once without nested sink",
+      "passed": true,
+      "actual": {
+        "stops": 1,
+        "maxDepth": 1,
+        "nativeCalls": 0
+      },
+      "expected": {
+        "stops": 1,
+        "maxDepth": 1,
+        "nativeCalls": 0
+      }
+    },
+    {
+      "id": "L03 explicit resume with retained trip consent; stale callbacks stay inert",
+      "passed": true,
+      "actual": {
+        "ok": true,
+        "calls": 2,
+        "staleIgnored": true,
+        "newPrecise": 1
+      },
+      "expected": {
+        "ok": true,
+        "calls": 2,
+        "staleIgnored": true,
+        "newPrecise": 1
+      }
+    },
+    {
+      "id": "L04 withdrawal while suspended must prevent precise resume",
+      "passed": true,
+      "actual": {
+        "ok": false,
+        "calls": 1,
+        "newPrecise": 0
+      },
+      "expected": {
+        "ok": false,
+        "calls": 1,
+        "newPrecise": 0
+      }
+    },
+    {
+      "id": "L05 active withdrawal purges adapter-owned precise buffer",
+      "passed": true,
+      "actual": {
+        "before": 1,
+        "after": 0,
+        "state": "stopped"
+      },
+      "expected": {
+        "before": 1,
+        "after": 0,
+        "state": "stopped"
+      }
+    },
+    {
+      "id": "L06 withdrawal after explicit stop still purges precise buffer",
+      "passed": true,
+      "actual": {
+        "before": 1,
+        "after": 0
+      },
+      "expected": {
+        "before": 1,
+        "after": 0
+      }
+    },
+    {
+      "id": "L07 inherited global alias cannot enable synthetic hardware with default clock",
+      "passed": true,
+      "actual": {
+        "nativeCalls": 0,
+        "accepted": false
+      },
+      "expected": {
+        "nativeCalls": 0,
+        "accepted": false
+      }
+    },
+    {
+      "id": "L08 transient error flood is throttled; useful fix survives",
+      "passed": true,
+      "actual": {
+        "errors": 1,
+        "suppressed": 999,
+        "fixes": 1,
+        "state": "started"
+      },
+      "expected": {
+        "errors": 1,
+        "suppressed": 999,
+        "fixes": 1,
+        "state": "started"
+      }
+    },
+    {
+      "id": "L09 blocked diagnostic flood must not exhaust active GPS ordinary budget",
+      "passed": true,
+      "actual": {
+        "state": "started",
+        "watches": 1
+      },
+      "expected": {
+        "state": "started",
+        "watches": 1
+      }
+    },
+    {
+      "id": "L10 default motion stays subscribed for simulated30s at60Hz",
+      "passed": true,
+      "actual": {
+        "state": "started",
+        "listeners": 1,
+        "callbacks": 1800
+      },
+      "expected": {
+        "state": "started",
+        "listeners": 1,
+        "callbacks": 1800
+      }
+    },
+    {
+      "id": "L11 throwing motion timer must return attributed failure without sync throw",
+      "passed": true,
+      "actual": {
+        "threw": false,
+        "reason": "timer-unavailable"
+      },
+      "expected": {
+        "threw": false,
+        "reason": "timer-unavailable"
+      }
+    },
+    {
+      "id": "L12 synchronous GPS denial must not report successful acquisition",
+      "passed": true,
+      "actual": {
+        "ok": false,
+        "permission": "unknown"
+      },
+      "expected": {
+        "ok": false,
+        "permission": "unknown"
+      }
+    },
+    {
+      "id": "L13 permission monitor fulfilment fault must not become unhandled rejection",
+      "passed": true,
+      "actual": {
+        "unhandled": 0
+      },
+      "expected": {
+        "unhandled": 0
+      }
+    },
+    {
+      "id": "L14 wake-lock grant after stop is released",
+      "passed": true,
+      "actual": {
+        "ok": false,
+        "released": 1,
+        "timers": 0
+      },
+      "expected": {
+        "ok": false,
+        "released": 1,
+        "timers": 0
+      }
+    },
+    {
+      "id": "L15 delayed wake-lock answer at inclusive request deadline is released",
+      "passed": true,
+      "actual": {
+        "ok": false,
+        "released": 1
+      },
+      "expected": {
+        "ok": false,
+        "released": 1
+      }
+    },
+    {
+      "id": "L16 legacy gesture bridge stays synchronous and rejects fabricated dispatch",
+      "passed": true,
+      "actual": {
+        "without": "user-gesture-required",
+        "sync": true,
+        "async": "user-gesture-required",
+        "untrusted": "trusted-dispatch-required"
+      },
+      "expected": {
+        "without": "user-gesture-required",
+        "sync": true,
+        "async": "user-gesture-required",
+        "untrusted": "trusted-dispatch-required"
+      }
+    }
+  ],
+  "passed": 16,
+  "failed": 0
+}

@@ -1,0 +1,14 @@
+✔ Q52 R01 factory explicit stop while suspended prevents a trusted resume (3.262375ms)
+✔ Q52 R02 revocation during wake-lock delivery cannot report successful gesture start or retain late lock (2.495ms)
+✔ Q52 R03 site grant does not permit passive retry after native code1; explicit useful retry releases the latch (1.252041ms)
+✔ Q52 R04 optional motion denial permits useful GPS resume while host withdrawal remains terminal (0.361792ms)
+✔ Q52 R05 no drain or flush delegation survives pending, failed or completed withdrawal (0.610708ms)
+✔ Q52 R06 identical trip templates recreate and resume with independent session/event identities (0.947291ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 46.604667

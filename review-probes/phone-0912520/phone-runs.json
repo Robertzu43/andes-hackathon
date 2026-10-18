@@ -1,0 +1,22 @@
+[
+  {
+    "name": "author",
+    "exit": 0
+  },
+  {
+    "name": "gate-old",
+    "exit": 1
+  },
+  {
+    "name": "contract-and-extra",
+    "exit": 0
+  },
+  {
+    "name": "lifecycle",
+    "exit": 0
+  },
+  {
+    "name": "followup",
+    "exit": 0
+  }
+]

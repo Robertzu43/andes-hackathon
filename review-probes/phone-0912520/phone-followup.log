@@ -1,0 +1,20 @@
+✔ B1 throttled 60Hz motion does not spend the useful-work callback budget (6.139542ms)
+✔ B3 repeated blocked requests leave useful GPS alive under a small valid cap (1.028416ms)
+✔ S2 code1 plus a fresh prompt status permits an explicit retry without inventing a grant (3.188416ms)
+✔ S2 positive control: browser-confirmed denial remains blocked (2.224ms)
+✔ S3 GPS permission wait is excluded from the acquisition timeout (0.413916ms)
+✔ S3 motion grant after the acquisition timeout still attaches within the session (0.317625ms)
+✔ S3 positive control: session expiry still rejects a pending motion grant (0.182333ms)
+✔ S4 GPS budget-stop stream uses public geolocation spelling (0.214084ms)
+✔ S5 synchronous denial returns failed acquisition (0.2915ms)
+✔ S8 sink cancellation is attributed to cancellation rather than a stopped session (0.315ms)
+✔ S8 a regressed request clock is attributed to clock uncertainty rather than timeout (0.201417ms)
+✔ S9 synchronous native callbacks flush the sink after native watch assignment settles (0.205291ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 61.18225

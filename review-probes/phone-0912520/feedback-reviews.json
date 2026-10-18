@@ -1,0 +1,282 @@
+[
+  {
+    "id": 5560327744,
+    "node_id": "PRR_kwDOVNt_688AAAABS2veQA",
+    "user": {
+      "login": "sebasbimbi",
+      "id": 85371645,
+      "node_id": "MDQ6VXNlcjg1MzcxNjQ1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85371645?u=78b7dc660b779f77098b7ff8dffe4389f287fd3b&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sebasbimbi",
+      "html_url": "https://github.com/sebasbimbi",
+      "followers_url": "https://api.github.com/users/sebasbimbi/followers",
+      "following_url": "https://api.github.com/users/sebasbimbi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sebasbimbi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sebasbimbi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sebasbimbi/subscriptions",
+      "organizations_url": "https://api.github.com/users/sebasbimbi/orgs",
+      "repos_url": "https://api.github.com/users/sebasbimbi/repos",
+      "events_url": "https://api.github.com/users/sebasbimbi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sebasbimbi/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "Independent lane52 review: **FIX `cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961`**. Refs #19.\n\nReviewed an isolated `git archive` against exact base `bc8eeabfe5220e66a83be972b480a1d1ae8d87d2`; all 53 archived tracked blobs still match candidate tree `373b1a900ba251ee83ecb63a621371009810bc3c`. The delta is six additions within the three assigned phone-observations paths. The merged #9 recorder is unchanged.\n\nFour reproducible P2 findings remain in `src/phone-observations/adapter.mjs`:\n\n1. **F1 \u2014 recheck the GPS request token after sink delivery** ([lines 267\u2013270](https://github.com/Bimbi-Dev/andes-hackathon/blob/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/src/phone-observations/adapter.mjs#L267)). A synchronous local sink calls `stopLocation()` on `acquisition-request`. The session remains live, so acquisition continues despite the invalidated token: `getCurrentPosition` runs once and a new request timer is installed. Later `stop()` leaves that orphan timer behind. Actual: `{nativeCalls:1,timersAfterStop:1}`; expected both zero. This can initiate a potentially prompting sensor request after explicit stream cancellation. Match motion's token check before any further work; also ensure request-local timer ownership is retired on every cancellation path.\n\n2. **F2 \u2014 validate elapsed deadlines when motion permission resolves** ([lines 353\u2013372](https://github.com/Bimbi-Dev/andes-hackathon/blob/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/src/phone-observations/adapter.mjs#L353)). Start a motion request, advance the injected wall and monotonic clocks by `maxSessionMs + 1`, defer timer execution, then resolve permission as granted. Actual: `{ok:true,listeners:1}` and the session remains started; expected rejection and zero motion listeners. The continuation checks identity/liveness but not elapsed request/session deadlines or current visibility before subscription. A bounded module must not depend solely on prompt/session timers executing on time; the adapter already handles delayed session timers at acquisition/callback entry. Revalidate before applying a grant or attaching the motion listener.\n\n3. **F3 \u2014 an older passive query can overwrite a newer explicit denial** ([lines 146\u2013160](https://github.com/Bimbi-Dev/andes-hackathon/blob/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/src/phone-observations/adapter.mjs#L146), [129\u2013135](https://github.com/Bimbi-Dev/andes-hackathon/blob/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/src/phone-observations/adapter.mjs#L129)). Leave the initial permission query pending, deliver the location request's code-1 denial, then resolve that query with a conflicting granted status. Actual permission changes `denied \u2192 granted`, and another acquisition succeeds in the same session. The documented contract requires a new session after denied/revoked permission. A delayed conflicting monitor answer does not establish that the newer denial was resolved. Preserve the terminal/uncertain state or track observation/request ordering rather than letting the old answer reopen acquisition. This is a controlled conflicting-answer probe, not a claim that every browser returns that sequence.\n\n4. **F4 \u2014 failed location callbacks lose acquisition options** ([lines 301\u2013306](https://github.com/Bimbi-Dev/andes-hackathon/blob/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/src/phone-observations/adapter.mjs#L301)). With `bufferCapacity:1`, `maximumAgeMs:12345`, `requestTimeoutMs:23456`, request a watch and deliver code 2. The retained error is only `{requestId:'1:geo:1',code:2}`; the request event is evicted and the local sink receives no error-bound acquisition settings. Expected the original `{enableHighAccuracy:false,maximumAge:12345,timeout:23456}` or a bounded recoverable request reference carrying them. A snapshot budget can help an export consumer, but an isolated error event cannot recover those values from the event's revision alone. This contradicts the documented per-request event provenance and the lane brief; preserve settings on failure as on success. Robert's merged [#9 review](https://github.com/Bimbi-Dev/andes-hackathon/pull/45#pullrequestreview-5560257204) likewise checks per-callback attribution through mutation/eviction; no backend reconciliation or unbounded request history is requested.\n\nVerification on **Node 22.22.3**:\n\n- `node --test tests/phone-observations/adapter.test.mjs tests/phone-capability/recorder.test.mjs`: **60 passed, 0 failed**, exit 0 (29 adapter + 31 recorder).\n- Reviewer-owned 22-check suite derived from the preregistered P01\u2013P18 checklist: **18 passed, 4 failed**, exit 1. Positive qualified synthetic GPS/motion paths, default qualification denial, default coordinate redaction, explicit precise consent/withdrawal, source/receipt separation, stale/reordered fixes, normal stop/restart, callback/event/request limits, unknown provenance and confounder non-classification all pass their baseline probes. Additional F1\u2013F4 probes expose the gaps above; passing the baseline does not pass the affected checklist groups.\n- A separate four-case minimal reproduction below also reports the four expected/actual mismatches, exit 1. Source files were never changed. Diff whitespace checks pass. The reviewer worktree remains clean at its original HEAD.\n\nLive context read: PR52 had no reviews/issue comments/inline comments when captured; #19/#18 issue comment lists were empty. Read Robertzu43's merged PR45 reviews, including his exact-head positive attribution probe at `a6863e7c9f74b5c50b8e1674d47c97712dadacca`. Those recorder approvals are not approvals of this candidate.\n\nPhysical evidence remains **not-run/inconclusive**: all 106 #9 matrix rows, matched battery/data cost, device qualification and physical confounders remain unmeasured. Synthetic results are logic evidence only. Real streams remain disabled by default. Robert owns #18/#21; the provisional local boundary is appropriate and production transport/authentication/UI are outside this review. This verdict does not close #19, approve integration or authorize a pilot.\n\nTo reproduce, extract the exact candidate into a disposable directory and run the following with Node 22.22.3 from that directory. The fake platform never accesses device hardware, schedules real timers, installs anything or sends traffic. Each output has `passed`, `actual` and `expected`; the program exits 1 for the four demonstrated failures.\n\n\n```sh\nnode --input-type=module <<'JS'\n// Run from an immutable cc4dc5d2 archive; synthetic platform only, no device APIs.\nimport assert from 'node:assert/strict';\nimport { pathToFileURL } from 'node:url';\nconst root = process.env.ANDES_CANDIDATE_DIR ?? process.cwd();\nconst { createPhoneObservationAdapter: create, PROVISIONAL_BUDGET: B, QUALIFICATION_SCHEMA: Q } =\n  await import(pathToFileURL(`${root}/src/phone-observations/adapter.mjs`));\nconst deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };\nfunction fixture({ sink, budget = {} } = {}) {\n  let mono = 100, next = 0, listenerCount = 0;\n  const calls = [], events = [], timers = new Set(), query = deferred(), motion = deferred();\n  const p = {\n    isSecureContext: true, document: { visibilityState: 'visible', addEventListener() {}, removeEventListener() {} },\n    navigator: { userActivation: { isActive: true }, permissions: { query: () => query.promise }, geolocation: {\n      getCurrentPosition(ok, fail, opts) { calls.push({ ok, fail, opts }); },\n      watchPosition(ok, fail, opts) { calls.push({ ok, fail, opts }); return 42; }, clearWatch() {},\n    } },\n    DeviceMotionEvent: { requestPermission: () => motion.promise },\n    addEventListener(name) { if (name === 'devicemotion') listenerCount++; },\n    removeEventListener(name) { if (name === 'devicemotion') listenerCount--; },\n    setTimeout() { const id = ++next; timers.add(id); return id; }, clearTimeout(id) { timers.delete(id); },\n  };\n  const f = { calls, events, timers, query, motion, advance(ms) { mono += ms; }, listeners: () => listenerCount };\n  f.a = create({ platform: p, clock: { now: () => ({ wallMs: 1800000000000 + mono, monoMs: mono }) },\n    sink(event) { events.push(event); sink?.(event, f); }, mode: 'synthetic-test', contextKey: 'synthetic',\n    qualification: { schema: Q, kind: 'synthetic-fixture', disposition: 'qualified', evidenceRef: 'review-only',\n      contextKey: 'synthetic', budgetRevision: B.revision, streams: { geolocation: true, motion: true } },\n    budget: { ...B, ...budget } });\n  f.a.start({ sessionId: 'synthetic-session', tripId: 'synthetic-trip', revision: 'cc4dc5d2' });\n  return f;\n}\nconst results = [];\nfunction check(id, actual, expected) {\n  let passed = true;\n  try { assert.deepEqual(actual, expected); } catch { passed = false; }\n  results.push({ id, passed, actual, expected });\n}\nconst f1 = fixture({ sink(e, f) { if (e.type === 'acquisition-request') f.a.stopLocation(); } });\nf1.a.acquireLocation(); f1.a.stop();\ncheck('F1', { nativeCalls: f1.calls.length, timersAfterStop: f1.timers.size }, { nativeCalls: 0, timersAfterStop: 0 });\nconst f2 = fixture(); const pending = f2.a.acquireMotion();\nf2.advance(B.maxSessionMs + 1); f2.motion.resolve('granted'); const answer = await pending;\ncheck('F2', { ok: answer.ok, listeners: f2.listeners() }, { ok: false, listeners: 0 }); f2.a.stop();\nconst f3 = fixture(); f3.a.acquireLocation(); f3.calls[0].fail({ code: 1 });\nf3.query.resolve({ state: 'granted' }); await new Promise(r => setImmediate(r));\ncheck('F3', { permission: f3.a.snapshot().permission.geolocation.state, retry: f3.a.acquireLocation().ok },\n  { permission: 'denied', retry: false }); f3.a.stop();\nconst f4 = fixture({ budget: { bufferCapacity: 1, maximumAgeMs: 12345, requestTimeoutMs: 23456 } });\nf4.a.acquireLocation({ watch: true }); f4.calls[0].fail({ code: 2 });\ncheck('F4', f4.a.snapshot().events[0].data.options ?? null,\n  { enableHighAccuracy: false, maximumAge: 12345, timeout: 23456 }); f4.a.stop();\nconsole.log(JSON.stringify(results, null, 2));\nprocess.exitCode = results.some(r => !r.passed) ? 1 : 0;\nJS\n```\n",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560327744",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52",
+    "author_association": "MEMBER",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560327744"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52"
+      }
+    },
+    "submitted_at": "2026-10-17T22:10:28Z",
+    "commit_id": "cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961"
+  },
+  {
+    "id": 5560393748,
+    "node_id": "PRR_kwDOVNt_688AAAABS2zgFA",
+    "user": {
+      "login": "sebasbimbi",
+      "id": 85371645,
+      "node_id": "MDQ6VXNlcjg1MzcxNjQ1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85371645?u=78b7dc660b779f77098b7ff8dffe4389f287fd3b&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sebasbimbi",
+      "html_url": "https://github.com/sebasbimbi",
+      "followers_url": "https://api.github.com/users/sebasbimbi/followers",
+      "following_url": "https://api.github.com/users/sebasbimbi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sebasbimbi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sebasbimbi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sebasbimbi/subscriptions",
+      "organizations_url": "https://api.github.com/users/sebasbimbi/orgs",
+      "repos_url": "https://api.github.com/users/sebasbimbi/repos",
+      "events_url": "https://api.github.com/users/sebasbimbi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sebasbimbi/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "Independent lane52 re-review: **ACCEPT `b34ca56a79515104d7412d46f0e20d7045a5ba8e`** for the scoped preparatory software. Refs #19.\n\nThis confirms the requested fixes for F1\u2013F4 from my [COMMENTED FIX review](https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560327744). I read the full [author reply](https://github.com/Bimbi-Dev/andes-hackathon/pull/52#issuecomment-6242088598), reviewed the exact `cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961 \u2192 b34ca56a79515104d7412d46f0e20d7045a5ba8e` delta, and tested a fresh immutable archive. All 54 archived tracked files still match tree `065cc30d8ce069b8908fc0f763271984049a857c`. The original base remains `bc8eeabfe5220e66a83be972b480a1d1ae8d87d2`; the old candidate remains its unchanged parent.\n\n| Finding | Independent confirmation on this SHA |\n| --- | --- |\n| F1 \u2014 cancellation during request delivery | Revalidation after sink delivery and passive-query setup prevents native GPS acquisition. Unchanged reproduction now reports `nativeCalls:0,timersAfterStop:0`. Uncancelled GPS positive controls remain useful. |\n| F2 \u2014 motion permission after expiry | Request/session elapsed limits and visibility are checked before the answer and again after permission-event delivery. Unchanged late-grant reproduction now returns `ok:false,listeners:0`. The author suite covers inclusive request/session boundaries, delayed timers, sink-induced changes and grants just inside the limits; the independent positive motion control passes. |\n| F3 \u2014 conflicting passive grant after denial | Denied/revoked state and original provenance remain terminal within the session; later conflicting evidence is retained without application. Unchanged reproduction now reports `permission:'denied',retry:false`. New-session acquisition and ordinary permission changes still pass. |\n| F4 \u2014 failure provenance after eviction | GPS errors, local timeouts and platform failures carry original request ID, watch flag and options. The one-event-buffer reproduction now retains `{enableHighAccuracy:false,maximumAge:12345,timeout:23456}`. Success/error positive controls, detached copies and error-message redaction pass. |\n\nIndependent results on **Node 22.22.3**, with no installs, servers or physical APIs:\n\n- `node --test tests/phone-observations/adapter.test.mjs tests/phone-capability/recorder.test.mjs`: **67 passed, 0 failed**, exit 0 (36 adapter + 31 recorder).\n- The exact preserved reviewer `probes.test.mjs`, with only `ANDES_CANDIDATE_DIR` pointed to the fresh archive: **22 passed, 0 failed**, exit 0. This includes the original positive GPS/motion, qualification, privacy, callback/session, fault-attribution and bounded-work controls plus F1\u2013F4.\n- The exact preserved reviewer `reproduce.mjs`, also pointed to the archive: **all four expected/actual checks pass**, exit 0. The self-contained reproduction in the original review can be run unchanged from this revision.\n- Diff whitespace checks pass; merged #9 recorder code/tests/matrix are unchanged. The original failed outputs (18 pass/4 fail and four reproduction mismatches) and original review remain intact.\n\nReviewer files are byte-identical to the ones used for the original findings: `probes.test.mjs` SHA-256 `0da135e3c2aa6dc9364d955b948e35e6d75fa57f8d36aa14b5a567e92321f756`; `reproduce.mjs` SHA-256 `abc8294f928c03f838d03016df051634d47b8f20c73a416dbd87954504db5a85`.\n\nAll live feedback surfaces were read with pagination and refreshed at **2026-10-17T22:25:18.602Z**: one PR conversation comment (the author reply), one formal review (the original COMMENTED FIX), zero inline comments or review threads, and zero related #19/#18/#21 issue comments. No Robert feedback is present on PR52 in that snapshot. COMMENTED findings were treated as actionable and required this reviewer confirmation; no review or comment was dismissed. All four actionable findings in the captured PR52 feedback are now resolved by this exact revision. This supersedes only my original four-finding FIX, and does not override any unresolved or later human feedback.\n\n**The global merge HOLD remains.** This scoped acceptance authorizes no merge, main push or issue closure and does not clear separate Robert reviews on other PRs. Robert retains #18/#21 ownership; the local event boundary is provisional. All 106 physical #9 matrix rows, battery/data recordings and device qualification remain not-run/inconclusive. Synthetic passes establish software behavior only. No author source was edited by this reviewer.\n",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560393748",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52",
+    "author_association": "MEMBER",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560393748"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52"
+      }
+    },
+    "submitted_at": "2026-10-17T22:26:23Z",
+    "commit_id": "b34ca56a79515104d7412d46f0e20d7045a5ba8e"
+  },
+  {
+    "id": 5560453602,
+    "node_id": "PRR_kwDOVNt_688AAAABS23J4g",
+    "user": {
+      "login": "Robertzu43",
+      "id": 99037056,
+      "node_id": "U_kgDOBecvgA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/99037056?u=6f859c06ac8a81be143099aeba452d793158e2a0&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/Robertzu43",
+      "html_url": "https://github.com/Robertzu43",
+      "followers_url": "https://api.github.com/users/Robertzu43/followers",
+      "following_url": "https://api.github.com/users/Robertzu43/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Robertzu43/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/Robertzu43/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Robertzu43/subscriptions",
+      "organizations_url": "https://api.github.com/users/Robertzu43/orgs",
+      "repos_url": "https://api.github.com/users/Robertzu43/repos",
+      "events_url": "https://api.github.com/users/Robertzu43/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/Robertzu43/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "Reviewed head `b34ca56`. The code is careful and well tested for what it targets, but as shipped it cannot share location for a whole trip, and its silent stop would cause false alarms with the server-side security check we are adding (`docs/superpowers/specs/2026-10-17-security-checks-incident-data-design.md`).\n\n**Findings** (`src/phone-observations/adapter.mjs`)\n1. **Critical \u2014 `:117-127`, `:93`, `:247`:** `finish()` emits nothing to the sink when it stops on the event budget, session timer, `pagehide` or `freeze`. With the defaults (`:6-11`, `maxEvents:256`, `maxSessionMs:300000`) a 1 Hz watch stopped after ~254 s in a probe, and the last event was an ordinary fix. The server only sees silence. The largest allowed budget (`:453-454`) still stops at 60 min.\n2. **Critical \u2014 `:191`, `:202`, `:248-255`:** every acquisition requires a fresh user activation; a hidden page or screen lock ends the session permanently. There is no Wake Lock and no resume path. Safari < 16.4 has no `userActivation`, so it is always blocked.\n3. **Important \u2014 `:277`:** `enableHighAccuracy:false` is hard-coded; on Android this means network location, which can be kilometres off on mountain highways.\n4. **Important \u2014 `:170-176`, `:302-311`:** acquisition returns `unqualified` with `coordinates:null` by default; an integrator must invent a `qualification`, matching `contextKey` and `preciseConsent` to get coordinates.\n5. Minor \u2014 `:345`: motion only works where `DeviceMotionEvent.requestPermission` exists (iOS), never on Android.\n6. Minor \u2014 `:319`: error events bypass the 1 s throttle and consume `maxEvents`.\n\n**Mapping to the backend** (`POST /v1/trips/:id/locations`, all four fields required, extra fields rejected, one bad item rejects the batch):\n```js\ne => e.type==='geolocation' && e.data.coordinates?.latitude!=null && e.data.coordinates?.longitude!=null && e.data.accuracyM!=null && e.data.accuracyM<=100000\n  ? { capturedAt: new Date(e.sourceTime.value ?? e.clientReceiptTime.wallMs).toISOString(),\n      latitude: e.data.coordinates.latitude, longitude: e.data.coordinates.longitude, accuracy: e.data.accuracyM } : null\n```\nThe adapter has no transport: the host must batch 1\u2013100 fixes and reuse one `Idempotency-Key` (visible ASCII, \u2264128 chars) per retried batch. Filter out `capturedAt` more than 30 s ahead or 24 h old.\n\n**Minimum to use it in the demo:** emit a stop event from `finish()` (the backend will accept `POST /v1/trips/:id/sharing {state:'stopped'}`), `enableHighAccuracy:true`, raise `maxEvents`/`maxCallbacksPerStream`/`maxSessionMs` to their maximums, add a Wake Lock and a \"Reanudar\" button. A ~30-line `watchPosition` + Wake Lock + batched POST would also meet the demo need.\n\nTests: `node --test tests/phone-observations/adapter.test.mjs tests/phone-capability/recorder.test.mjs` \u2192 **67 passed** (Node 26.8.1). Findings 1 and 4 reproduced with a probe.\n\n_Review prepared with Claude Code (AI-assisted, read-only verification in a scratch worktree) and posted by @Robertzu43._\n",
+    "state": "CHANGES_REQUESTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560453602",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52",
+    "author_association": "COLLABORATOR",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560453602"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52"
+      }
+    },
+    "submitted_at": "2026-10-17T22:40:37Z",
+    "commit_id": "b34ca56a79515104d7412d46f0e20d7045a5ba8e"
+  },
+  {
+    "id": 5560599386,
+    "node_id": "PRR_kwDOVNt_688AAAABS3ADWg",
+    "user": {
+      "login": "Robertzu43",
+      "id": 99037056,
+      "node_id": "U_kgDOBecvgA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/99037056?u=6f859c06ac8a81be143099aeba452d793158e2a0&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/Robertzu43",
+      "html_url": "https://github.com/Robertzu43",
+      "followers_url": "https://api.github.com/users/Robertzu43/followers",
+      "following_url": "https://api.github.com/users/Robertzu43/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Robertzu43/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/Robertzu43/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Robertzu43/subscriptions",
+      "organizations_url": "https://api.github.com/users/Robertzu43/orgs",
+      "repos_url": "https://api.github.com/users/Robertzu43/repos",
+      "events_url": "https://api.github.com/users/Robertzu43/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/Robertzu43/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "> Written by Robert's review agent (Claude), posted from @Robertzu43 at Robert's direction. Reviewed head: `b34ca56`.\n\n**Verdict: request changes.**\n\n**Utility:** The demo needs the phone's GPS sent to `POST /v1/trips/:id/locations` on the backend. This adapter only emits local events and never uploads, so as it stands it doesn't serve the demo. No rule consumes motion data, and PLAN #19 says motion cannot establish a crash, an assault or sleep. **Recommendation: remove motion from this PR and add the upload sink.** Removing motion eliminates blocker 1 and part of blockers 2 and 3, about half the surface.\n\n### Blockers (reproduced by the review probe on `b34ca56`; the suite passes 36/36)\n\n1. **`src/phone-observations/adapter.mjs:213`** The callback budget is counted before rate limiting. At 60 Hz `devicemotion`, the stream shuts itself off after about 17 s (1024 callbacks). The probe got 18 motion events in 30 s, then 0 listeners, inside a 300 s session.\n2. **`:319`** `geolocation-error` events skip `minEmitIntervalMs`. Repeated code 2/3 errors (tunnel, yard, the 10 s watch timeout) exhaust `maxEvents` (250) and end the whole session, including active motion. Probe: `stopReason 'event-budget'`.\n3. **`:194`** Every `acquisition-blocked` event counts against the shared event budget. A UI that calls `acquireLocation()` on each poll ends the session after 300 blocked calls.\n4. **`:417` (privacy)** `revokeConsent()` leaves precise `latitude`/`longitude` in `s.events`, and `snapshot()` keeps returning them until the next `start()`. Purge buffered coordinates on revoke and add a test for it.\n5. **`:29`** The synthetic-mode guard only rejects `platform === globalThis`. Passing `Object.create(window)` with a `synthetic-fixture` qualification acquires real GPS and motion with the real clock (confirmed by the probe).\n\n### Should fix\n\n- **`:117`** `finish()` emits no terminal event. A duration timer, pagehide, freeze, budget exhaustion or `stop()` from the sink ends the session without the sink ever being told.\n- **`:318`** Code 1 is always treated as a terminal `denied`. Chrome also returns code 1 when the prompt is dismissed, which leaves geolocation blocked for the rest of the session.\n- **`:323` / `:373`** The local timeouts start before the user answers the permission prompt. A grant that takes longer than 10 s is discarded, and each retry burns one of the 8 requests.\n- **`:216`** The GPS stop event uses `stream: 'geo'`, while every other event uses `'geolocation'`.\n- **`:336`** `acquireLocation` returns `{ok:true}` after a synchronous denial or stop.\n- **`:152`** The rejection handler in `observePermission` sits on the same `.then`, so a throw in the fulfil path becomes an unhandled rejection.\n- **`:373`** A `setTimeout` throw escapes synchronously and leaves `s.motion` stuck on the token.\n- **`:354`** Wrong reason codes: sink cancellation returns `session-stopped`, and a backwards clock returns `acquisition-timeout`.\n- **`:280` (root cause of F1/F2)** `emit()` calls the untrusted sink in the middle of a state change. Queue the events and flush them once state has settled, instead of adding liveness rechecks at every re-entry point.\n- **`:72`** Each event is JSON-serialised three times.\n- **`docs/phone-observations/verification.md`, `review-fixes.md`** contain personal local paths (`/Users/sebasbimbi/\u2026`, `/private/tmp/\u2026`) that others can't use to reproduce the runs.\n",
+    "state": "CHANGES_REQUESTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560599386",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52",
+    "author_association": "COLLABORATOR",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560599386"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52"
+      }
+    },
+    "submitted_at": "2026-10-17T23:22:03Z",
+    "commit_id": "b34ca56a79515104d7412d46f0e20d7045a5ba8e"
+  },
+  {
+    "id": 5560647945,
+    "node_id": "PRR_kwDOVNt_688AAAABS3DBCQ",
+    "user": {
+      "login": "sebasbimbi",
+      "id": 85371645,
+      "node_id": "MDQ6VXNlcjg1MzcxNjQ1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85371645?u=78b7dc660b779f77098b7ff8dffe4389f287fd3b&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sebasbimbi",
+      "html_url": "https://github.com/sebasbimbi",
+      "followers_url": "https://api.github.com/users/sebasbimbi/followers",
+      "following_url": "https://api.github.com/users/sebasbimbi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sebasbimbi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sebasbimbi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sebasbimbi/subscriptions",
+      "organizations_url": "https://api.github.com/users/sebasbimbi/orgs",
+      "repos_url": "https://api.github.com/users/sebasbimbi/repos",
+      "events_url": "https://api.github.com/users/sebasbimbi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sebasbimbi/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "Independent Q52 review: **FIX `4aca76c34a5c1639dccad9cff6a01f00f7023ac2`**. No author source changes or merge.\n\nRead all live PR issue comments (2), formal reviews (4), inline comments/threads (0), plus related #9/#18/#19/#21 issue comments (all0). Both Robert CHANGES_REQUESTED reviews count, including [the newer review5560599386](https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560599386). The six-item disposition does not answer that whole review; passing controls cannot override it.\n\nSix reproducible finding groups remain:\n\n1. **P1 \u2014 withdrawal while suspended still permits precise resume** (`adapter.mjs:544\u2013551`, `trip-sharing.mjs:35\u201337`). Start the trip factory with consent, receive a fix, hide the page, call `revokeConsent()`, show it, then `resumeSharing()`. Actual `{ok:true,calls:2,newPrecise:1}`. Revocation returns early for the inactive adapter, leaving its old consent/intents usable; factory resume does not recheck its cleared consent. Require withdrawal to invalidate stopped-session intents and prevent resumed acquisition. The paired valid-consent resume succeeds and stale callbacks remain inert.\n2. **P1 \u2014 buffered precise coordinates survive withdrawal**, both active and after stop (Robert blocker4). `snapshot().events` still contains the precise fix. Purge the adapter-owned buffer and retained consent/intents across both states.\n3. **P2 \u2014 synthetic global alias bypass** (`adapter.mjs:29`, Robert blocker5). `Object.create(globalThis)` with a synthetic qualification and default clock is accepted and calls inherited GPS. Reproduced using inert fake Node globals only:1 native spy call, no real sensor. Direct identity comparison does not enforce the synthetic boundary.\n4. **P2 \u2014 blocked diagnostic emissions can stop useful GPS** (`:220`, Robert blocker3). With the valid configured ordinary cap10, repeated unqualified motion requests exhaust that shared cap and retire the active GPS watch. The larger default moves the threshold; this is not a claim that the old300-call default symptom persists. Coalesce/throttle rejected diagnostics or obtain an explicit disposition for the retained behavior.\n5. **P2 \u2014 platform faults escape attribution**: motion `setTimeout` throws synchronously at`:409`; a permission-monitor fulfilment throw becomes an unhandled rejection at`:178\u2013193`. Both should-fix items reproduce; retire tokens and return bounded attributed failures across these paths.\n6. **P2 \u2014 synchronous GPS denial returns `ok:true`** at`:370` despite permission denied and acquisition already retired. Recheck the settled request outcome before returning success.\n\n[Immutable reviewer report, complete human-feedback disposition, portable commands, probes and actual/expected results](https://github.com/Bimbi-Dev/andes-hackathon/blob/534dba01b2d53bfd970c858be8f2cc53458439dd/review-probes/phone-4aca76c-review.md), reviewer commit `534dba01b2d53bfd970c858be8f2cc53458439dd`, branch `sebasbimbi/test/andes-phone-review-4aca76c`. Reproduce against a disposable exact author archive using the two `ANDES_CANDIDATE_DIR` commands in that report. Only reviewer evidence was added; all57 author archive blobs still match the exact tree.\n\nIndependent Node22.22.3 results: author/recorder **82/82 pass**; unchanged original reviewer suite **19/22**, with its three historical expectations superseded by Robert's high-accuracy/browser-managed-motion requests. The original reproduction still passes F1\u2013F3 and differs on F4 only by that accuracy boolean. A separately versioned contract update changes those three expectations explicitly and passes **22/22**; original files/hashes/failures remain untouched. New lifecycle/privacy/fault controls: **8 pass /8 fail**, exit1, grouped above. Positive controls pass for reserved stop slot, nonrecursive reentrant terminal delivery, valid-consent resume and stale callbacks, transient-error throttle/useful fix, default60Hz motion for30 simulated seconds, late/deadline wake-lock release and synchronous legacy gesture scope.\n\nThe report also records every remaining should-fix/scope request: code1 prompt dismissal, pre-answer request timeout, stop stream naming, reason codes, ordinary sink transition delivery, serialization, portable author docs, and upload/remove-motion disposition. Actual app Reanudar binding and server sharing receipt remain separate pending integrations; no route is invented. Robert's confirmation is required for his requests. Physical matrix, battery/data, device qualification, locked-screen capture and provider/human evidence remain not-run. Prior scoped acceptance is historical; this exact head is held for correction and re-review.\n",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560647945",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52",
+    "author_association": "MEMBER",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560647945"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52"
+      }
+    },
+    "submitted_at": "2026-10-17T23:37:45Z",
+    "commit_id": "4aca76c34a5c1639dccad9cff6a01f00f7023ac2"
+  },
+  {
+    "id": 5560744965,
+    "node_id": "PRR_kwDOVNt_688AAAABS3I8BQ",
+    "user": {
+      "login": "sebasbimbi",
+      "id": 85371645,
+      "node_id": "MDQ6VXNlcjg1MzcxNjQ1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85371645?u=78b7dc660b779f77098b7ff8dffe4389f287fd3b&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sebasbimbi",
+      "html_url": "https://github.com/sebasbimbi",
+      "followers_url": "https://api.github.com/users/sebasbimbi/followers",
+      "following_url": "https://api.github.com/users/sebasbimbi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sebasbimbi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sebasbimbi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sebasbimbi/subscriptions",
+      "organizations_url": "https://api.github.com/users/sebasbimbi/orgs",
+      "repos_url": "https://api.github.com/users/sebasbimbi/repos",
+      "events_url": "https://api.github.com/users/sebasbimbi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sebasbimbi/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "Scoped technical ACCEPT for exact `9f87e2c08be8ac9e9324136fd0c4401ad8823bc6`. **PR/global merge HOLD remains:** Robert must confirm his requested changes and motion scope; actual queue/backend integration is still blocked. This COMMENTED verdict does not resolve human feedback or authorize merge.\n\nIndependent immutable-archive evidence at reviewer commit [`2769afd6eb86f0171cb1c4100dc238d40d546c7c`](https://github.com/Bimbi-Dev/andes-hackathon/blob/2769afd6eb86f0171cb1c4100dc238d40d546c7c/review-probes/phone-9f87e2c/README.md), branch `sebasbimbi/test/andes-phone-review-9f87e2c`. Node24.17.0: author102/102, complementary12/12, separately versioned contract22/22, lifecycle16/16 and five new denial/deadline/privacy controls5/5. Original probes remain17/22, original reproducerF1/F2 pass, prior v2 remains20/22, prior lifecycle14/16; untouched red runs and explicit version differences are preserved.\n\nRevised code1 ambiguity is acceptable only with fresh-browser confirmation: genuine denial stays terminal and an older passive grant cannot reopen it. Separate prompt versus post-grant deadlines reject inclusive late callbacks even with delayed timers, while a useful pending grant survives the shorter acquisition duration. Withdrawal also redacts queued precise callbacks after buffer eviction. Existing controls verify useful GPS/motion, qualification, source unknowns, retained options, bounded work, nonrecursive sink/terminal delivery and suspended/stopped purge.\n\nRead all3 live issue comments and5 formal reviews, including both complete Robert CHANGES_REQUESTED reviews and our COMMENTED findings;0 inline/threads, pagination exhausted. Fresh head remained9f87. Full B1\u2013B5/S1\u2013S11/R1\u2013R6 disposition and remaining gates are recorded in the linked report. Active trip capture is GPS-only; opt-in motion evidence tooling still needs Robert's scope confirmation. Queue wrapper tests prove delegation only: Q47 queue retirement/durability/sign-out findings and coordinated actual-backend proof remain open. No PR74 route adoption, real-device/battery/delivery evidence, author source changes or merge.",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560744965",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52",
+    "author_association": "MEMBER",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560744965"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52"
+      }
+    },
+    "submitted_at": "2026-10-18T00:11:02Z",
+    "commit_id": "9f87e2c08be8ac9e9324136fd0c4401ad8823bc6"
+  },
+  {
+    "id": 5560757444,
+    "node_id": "PRR_kwDOVNt_688AAAABS3JsxA",
+    "user": {
+      "login": "Robertzu43",
+      "id": 99037056,
+      "node_id": "U_kgDOBecvgA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/99037056?u=6f859c06ac8a81be143099aeba452d793158e2a0&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/Robertzu43",
+      "html_url": "https://github.com/Robertzu43",
+      "followers_url": "https://api.github.com/users/Robertzu43/followers",
+      "following_url": "https://api.github.com/users/Robertzu43/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Robertzu43/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/Robertzu43/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Robertzu43/subscriptions",
+      "organizations_url": "https://api.github.com/users/Robertzu43/orgs",
+      "repos_url": "https://api.github.com/users/Robertzu43/repos",
+      "events_url": "https://api.github.com/users/Robertzu43/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/Robertzu43/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "> Written by Robert's PR gatekeeper agent (Claude), posted from @Robertzu43 at Robert's direction. Reviewed head: `9f87e2c`.\n\n**Verdict: changes still required.** On the merge ref (`3e3edd6`), `node --test tests/phone-observations/ tests/phone-capability/` passes 102/102. Every result below comes from a synthetic probe run against the exact `9f87e2c` sources. This review covers the `4aca76c`, `4417cf6` and `9f87e2c` deltas.\n\n### Fixed (verified by probe)\n- **B1:** the motion cap is now applied after rate limiting. With a cap of 1024, motion runs 60 s at 1 Hz without stopping (it previously stopped after 17 s).\n- **B2, B3:** GPS errors and blocked calls no longer end the session.\n- **B4:** `revokeConsent()` purges buffered coordinates from `snapshot()`.\n- **B5:** synthetic mode rejects `Object.create(globalThis)` and plain wrappers.\n- **N1:** revoking while suspended blocks `resume()` / `resumeSharing()` (`permission-denied-or-revoked`), and no new watch starts.\n- **Utility:** `createQueuedTripPhoneObservations` now composes capture with the observation upload pipeline. That fixes the \"no upload\" gap.\n\n### Blocking\n1. **N2 (`adapter.mjs` `stop()` on a suspended session).** An explicit stop while hidden leaves the session resumable. Probe: `stop()` after `pagehide`, then `resume()` returns `ok:true` and starts 1 watch. Sharing the user stopped restarts.\n2. **`trip-sharing.mjs` `createQueuedTripPhoneObservations`: `drain()` isn't gated on withdrawal.** `flush()` is blocked once `withdrawn`, but `drain()` still calls `pipeline.drain()`. Between `revokeConsent()` and the async `revokeTrip()`, or permanently if it ends `failed`, queued precise samples for the withdrawn trip can still be uploaded. Block it for a withdrawn trip until revocation completes, and add a test where revocation is pending and one where it failed.\n3. **`adapter.mjs:91`: false success while stopped.** `acquireLocation()` wrapped in a gesture returns `{ok:true}` while `snapshot().state` is `stopped`. `startSharing(event)` returns `ok:true` while the session is `consent-revoked`. The same calls without an event correctly return `session-stopped`. On the production gesture path, the UI would claim sharing started when it didn't.\n4. **`adapter.mjs:242` (regression since `4aca76c`).** When the site permission says `granted` but native GPS returns code 1 (OS location off), the state now goes back to `granted`. Probe: 100 native `getCurrentPosition` calls with no user gesture (99 return `ok:true`), then `acquireMotion()` returns `request-budget` for the rest of the session. At `4aca76c` this was one call, then `revoked`.\n\n### Should fix\n- **N3:** `resume()` refuses location when only motion was denied, even though the stop said `resumable:true`.\n- **X1/X3:** the stable `trip.sessionId` is reused across reloads and resumes, so event IDs collide and `sessionSequence` restarts. This breaks #18 dedupe.\n- **p5:** an `api-unavailable` block still increments `s.requests`. Polling without geolocation uses up the 100-request budget, and motion then gets `request-budget`.\n- **p4:** the first `granted` Permissions answer is discarded after any epoch bump, so the one-shot keeps a 120 s bound instead of 10 s.\n- **p3:** the motion `onRejected` path returns `obsolete-request`, while the event says `permission-prompt-timeout`.\n- **p6:** rejected `permissions.query` calls for unsupported names count as observer errors, and a wake-lock block takes over the geolocation diagnostic.\n- **p7:** a budget shaped like the README (no `permissionPromptTimeoutMs` or `maxRawCallbacksPerStream`) makes construction throw. Update the README budget shape.\n- **N13:** normal GPS flapping uses up the event budget in about 19 h, before the 24 h session ends.\n",
+    "state": "CHANGES_REQUESTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560757444",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52",
+    "author_association": "COLLABORATOR",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560757444"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52"
+      }
+    },
+    "submitted_at": "2026-10-18T00:15:38Z",
+    "commit_id": "9f87e2c08be8ac9e9324136fd0c4401ad8823bc6"
+  }
+]
