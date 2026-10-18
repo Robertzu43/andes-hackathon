@@ -103,6 +103,5 @@ La configuración HA cuesta más que una demo mínima. Estimar Fargate, ALB, RDS
 - [ECS autoscaling](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-auto-scaling.html): aumentar/reducir tareas según métricas, sujeto a dependencias.
 - [RDS Multi-AZ](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html): disponibilidad y failover; standby distinto de escalado de lectura.
 - [RDS Proxy y pinning](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy-pinning.html): no solucionar locks de sesión agregando un proxy.
-- [Revisión independiente previa](reviews/2026-10-17-scalability-review.md): problemas que motivan esta decisión.
 
 Robert delegó la decisión, por lo que no se vuelve a pedir elegir AWS frente a otra opción. Aún hay que validar infraestructura disponible, contratos de proveedores y evidencia de campo. Las decisiones anteriores incompatibles se retiran; los planes afectados deben citar este ADR antes de ejecutarse.

@@ -1,40 +1,18 @@
 # Typed client API and session boundary
 
-Lane45 owns `web/src/lib/api/**`, `web/tests/api/**` and this document. The library
-has no runtime dependencies, framework imports, provider SDK, storage or root
-package changes. Import its public API and wire types from `web/src/lib/api/index.ts`.
-
-## Source contracts and dependencies
-
-The original route base is `ebc8fb1d36f441ef012ca585201cefabf61383d6`. Contract checks
-also used PR74 at `27e4f94b5962e88735fdb8fc3fea8cc3e842baa4` and PR65 at
-`de9e455b6f7631aa80addfa19b1f38def68bb523`, including their actual handlers and strict
-schemas. PR59 now targets main and includes a normal merge of
-`f75de59fa1d4190cfe8a204f2ea5d42833d6f46b`, after Robert merged the backend
-reconciliation, web foundation and future-arrival contract. Normal merges also
-preserve his PR59 fixes `935d1ed` (verify first) and `578600c` (calendar/hour24),
-including his source validation and regression. Existing PR59 history is preserved.
-PR81 remains a separate child; Robert owns approval and merge.
-
-PR65's catalog repair integrates main `5ea57adc73ee7872e1cbfc53e2beb9809a34ffad`
-after PR59 and PR81 merged. Its profile and standing-contact DTOs omit every phone value,
-including demo destinations and token claims. Shared SDK decoders follow
-`docs/contracts/client-read.md`: profile verification belongs to the current
-request, contacts carry their stored role, and trip summaries preserve nullable
-`expectedArrivalAt` and `sharingStoppedAt`. Invitation inputs still require the
-explicit destination phone; catalog responses never project it.
+The library in `web/src/lib/api/` has no runtime dependencies, framework imports, provider SDK or storage. Import its public API and wire types from `web/src/lib/api/index.ts`. Decoders follow [the backend contract](../contracts/runtime.md) and [client reads](../contracts/client-read.md): no response DTO carries a phone value; invitation inputs still require the explicit destination phone.
 
 | Operation | Actual HTTP contract |
 | --- | --- |
 | `getIdentity` | GET `/v1/me`; verified backend UUID, not an OIDC subject |
-| `getProfile`, `getBootstrap` | GET `/v1/profile`, `/v1/bootstrap`; PR65 owner-scoped reads |
-| `listTrucks`, `listContacts`, `listTrips` | GET the corresponding `/v1` collection; bounded first-page PR65 reads |
+| `getProfile`, `getBootstrap` | GET `/v1/profile`, `/v1/bootstrap`; owner-scoped reads |
+| `listTrucks`, `listContacts`, `listTrips` | GET the corresponding `/v1` collection; bounded first-page reads |
 | `createTruck` | POST `/v1/trucks` with label |
-| `inviteContact` | POST `/v1/contacts` with existing contactId, international phone, map/incident scopes and optional PR74 family/colleague role |
+| `inviteContact` | POST `/v1/contacts` with existing contactId, international phone, map/incident scopes and optional family/colleague role |
 | `acceptContact`, `revokeContact` | POST `/v1/contacts/:id/accept` or `/revoke`; acceptance cannot broaden requested scope |
 | `createDraft` | POST `/v1/trip-drafts`; text and optional corrected fields, including explicit expectedArrivalAt |
 | `confirmTrip` | POST `/v1/trip-drafts/:id/confirm`; literal confirmed:true, selected grant IDs and optional corrections |
-| `getTrip` | GET `/v1/trips/:id`; preserve SQL wire names and optional PR74 arrival/sharing timestamps |
+| `getTrip` | GET `/v1/trips/:id`; preserve SQL wire names and optional arrival/sharing timestamps |
 | `getTripStatus` | GET `/v1/trips/:id/status`; server check/incident/delivery facts and optional scope-filtered location summary |
 | `setSharing` | POST `/v1/trips/:id/sharing`; explicit state/reason and caller idempotency key |
 | `createDemoSession` | POST `/v1/demo/session` with `{}`; explicit `{demo:true}`, no bearer or idempotency key; sensitive synthetic world |
@@ -47,7 +25,7 @@ explicit destination phone; catalog responses never project it.
 | `acknowledgeIncident`, `reportAction` | POST incident `/acknowledgements` or `/actions`; attributed response, not provider delivery |
 | `resolveIncident` | POST incident `/resolve`; explicit owner resolution, independent of arrival |
 
-Status, sharing and anonymous demo acquisition are described in the PR81 section
+Status, sharing and anonymous demo acquisition are described in the status section
 below. `readStatus` is accepted by the driver descriptor type, but the driver
 transport still returns `not_sent/unsupported_operation`; bind it to `getTripStatus`
 when the driver feature consumes status.
@@ -125,7 +103,7 @@ invalid. Freshness must match the backend's120000ms engineering boundary. Valida
 uses source times, never the current browser clock, and does not qualify either
 bound for field safety.
 
-All five PR65 read envelopes require their actual server readAt. Bootstrap has one
+All five catalog read envelopes require their actual server readAt. Bootstrap has one
 root time, not invented timestamps on its profile/list entries. The repaired server
 pins a repeatable-read read-only snapshot on telemetry capacity before sampling
 its clock. Preserve that value without substituting browser time. API integration
@@ -135,8 +113,8 @@ snapshot consistency and independent read/SOS capacity.
 Lists preserve bounds and truncation:100 trucks,100 standing contacts,50 active and
 20 recent trips. Revoked grants retain historical accepted scopes without granting
 current access. Errors stay errors. Collection404 is unsupported/endpoint_unavailable,
-not an empty list or missing individual resource. Recipient invitation/trip discovery
-remains a separate PR86 dependency.
+not an empty list or missing individual resource. Recipients list their own invitations and
+shared trips through `GET /v1/contact/invitations` and `GET /v1/contact/trips`.
 
 Catalog decoders discard phone properties even from legacy responses. The demo
 privacy regression uses a fictional configured live destination and performs no
@@ -157,34 +135,29 @@ before publishing its replacement. Concurrent activations with the same credenti
 revision and caller signal share one verification; different activations retire old
 ones. The callback must clear protected state when given null. Disposal clears once
 and suppresses queued session notifications, including disposal by an earlier
-listener during the same dispatch. The independently reviewed75bdffa fix is
-preserved. Same-account refresh does not call the reset callback; account
+listener during the same dispatch. Same-account refresh does not call the reset callback; account
 replacement, clear, current401 and expiry do.
 
 `createDriverTransport(api)` preserves ok/not_sent/rejected/unknown and original
-intent ownership. Its current feature compatibility pin is
-`127c82ad109702a329e5bec008708b0fbc67487b`. An explicit SOS is not swallowed by a cached
-incident; cross-trip edits and old incident reuse remain prohibited by the feature.
-The SOS regression retains the original driver80e9d45 source to isolate the shared
-binding's original refresh failure. Explicit-reactivation tests use actual current
-controller `20c08faad67fddbe27eebac7585c63b3366f31a8`, which preserves same-actor state,
-and cover accepted and committed-but-pending SOS results without replay.
+intent ownership. An explicit SOS is not swallowed by a cached incident; cross-trip
+edits and old incident reuse remain prohibited by the driver controller. The SOS
+regressions run the current controller and cover accepted and committed-but-pending
+SOS results without replay across a same-account credential refresh.
 
-Features can inject `decodeDriverResponse(request,data)`, `decodeLocationSnapshot`
-and `decodeIncidentSummary` through the public entry. These reuse the same wire
+Features can inject `decodeDriverResponse(request,data)` and `decodeLocationSnapshot`
+through the public entry. These reuse the same wire
 decoders as the HTTP client; actor/trip correlation and receipt semantics stay with
 the feature. The standalone feature need not import the SDK at runtime.
 
-`createSessionGateway({session,api,mode,acquire?,release?})` implements the real public
+`createSessionGateway({session,api,mode,acquire?})` implements the real public
 foundation seam with immutable stable token-free state/mode snapshots. Initial
 injected credentials enter connecting and require actual /v1/me. Without credentials
 or acquisition it is unconfigured. Explicit acquisition also awaits verification;
 provider success alone cannot authenticate. A verifier401 publishes error; a later
 request401 signs out. Reads and late subscriptions check expiry when browser timers
-were suspended. End/dispose retire old work; only explicit end invokes the optional
-trusted release callback. The gateway has no built-in provider or demo identity.
+were suspended. End/dispose retire old work. The gateway has no built-in provider or demo identity.
 
-## PR81 status, sharing and demo sessions
+## Status, sharing and demo sessions
 
 `getTripStatus` preserves the server's trip state/expected arrival, nullable asking
 check and `askUntil`, latest active or resolved incident, and individual job delivery
@@ -231,95 +204,16 @@ a restart, which kills the in-memory signing key). A page reload loses the world
 because tokens are never persisted; the backend's abandoned-world rule then stops
 automatic checks on the old trip, while an explicit SOS keeps escalating.
 
-`web/tests/api/runtime.test.mjs` covers this with synthetic HTTP. The real-backend
-`runtime.integration.mjs` compiles the current tracked backend and migrations in a
-test-only archive, using Q46's resource helper at c2501a4 for owned PostgreSQL:
+`web/tests/api/runtime.test.mjs` covers this with synthetic HTTP.
+
+## Tests
 
 ```sh
-APP_INTEGRATION_PG_BIN=/absolute/path/to/postgresql/bin \
-APP_INTEGRATION_PG_PORT=<owned-free-port> \
-ANDES_BACKEND_NODE_MODULES=/absolute/path/to/existing/backend/node_modules \
-ANDES_TYPESCRIPT_TSC=/absolute/path/to/existing/typescript/bin/tsc \
-  node --test web/tests/api/runtime.integration.mjs
+npm --prefix web test   # includes web/tests/api/*.test.mjs
+node web/node_modules/typescript/bin/tsc -p web/tests/api/tsconfig.json
+node web/node_modules/typescript/bin/tsc -p web/tests/api/tsconfig.json --module ESNext --moduleResolution Bundler
+# Against the real backend and a disposable PostgreSQL (after `npm run build` at the root):
+TEST_DATABASE_URL=postgresql://USER@localhost:PORT/OWNED_TEST_DB ZAVU_LIVE_SEND=false node --test web/tests/api/shared-sdk.integration.mjs
 ```
 
-The previous frozen runtime/read pins are no longer its contract oracle. The test
-uses the actual app registration and checks phone-free catalogs, stored roles,
-arrival and sharing state through the shared SDK and real signed HTTP. Snapshot
-isolation and independent read/SOS capacity have separate PostgreSQL regressions.
-
-## Reproduction and current evidence
-
-Use Node24.17.0 or another runtime allowed by the root manifest. Do not execute
-contracts.types.ts: its negative assertions are compile-only. No implicit install.
-
-```sh
-node --test web/tests/api/*.test.mjs web/tests/api/contact-view.integration.mjs
-node /absolute/path/to/existing/typescript/bin/tsc -p web/tests/api/tsconfig.json
-node /absolute/path/to/existing/typescript/bin/tsc -p web/tests/api/tsconfig.json --module ESNext --moduleResolution Bundler
-ANDES_TYPESCRIPT_TSC=/absolute/path/to/existing/typescript/bin/tsc \
-ANDES_FOUNDATION_NODE_MODULES=/absolute/path/to/existing/foundation/web/node_modules \
-  node --test web/tests/api/contacts.integration.mjs web/tests/api/foundation.integration.mjs
-# Built root backend and an explicitly owned, disposable test database are required:
-TEST_DATABASE_URL=postgresql://USER:PASSWORD@localhost:PORT/OWNED_TEST_DB \
-ZAVU_LIVE_SEND=false node --test web/tests/api/shared-sdk.integration.mjs
-```
-
-The declared immutable Git objects must be fetched. Tests use Node built-ins,
-synthetic HTTP and actual extracted feature sources; missing dependencies fail
-rather than silently skip. Temporary sources are removed afterward. Current local
-results on #59 are142 native/view checks and19 controller/foundation checks (161 total),
-plus both strict TypeScript modes. The existing web build and13 foundation checks
-also pass. CI runs the API suite and both type modes in the web job; its existing
-disposable PostgreSQL service runs the additional SQL-backed shared-SDK regression
-in the backend job. Full Git history supplies the pinned feature objects; missing
-objects fail the checks.
-
-The unchanged original Q50 SQL reproduction fails with SDK b5bc921 and actual
-controller20c08fa at the cleared-trip assertion after explicit reactivation.
-Robert's578600c head already passes the ported SQL regression against backend1a7bf70;
-the remaining concurrent-activation probe fails only its extra-verification count,
-while future-capture valid controls are still rejected. His date repair passes the
-unchanged calendar/offset controls. The product SQL regression also passes with the
-final reconciled SDK and merged main backend:
-two real check-in events, SOS held after SQL commit, fresh same-identity JWT and
-reactivation, retained pending state, accepted result, explicit resolution and a new
-incident, arrival independent of active SOS, zero outbox rows and logout cleanup.
-Local SQL evidence used an owned ephemeral PostgreSQL16.14 cluster, stopped and
-removed afterward; CI uses PostgreSQL18. No browser, physical iOS, provider delivery,
-complete-app acceptance or general backend-isolation qualification follows.
-
-On #81 the API suite adds runtime.test.mjs (status, sharing and demo world), and
-`runtime.integration.mjs` covers7 real HTTP/PostgreSQL checks; PR65 rebinds those
-checks to the current backend instead of the former runtime/read pins.
-
-The frozen contact view store at e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6 confirms both
-contact and driver views remain closed after401, protected data clears, and explicit
-begin recovers. The original queued-callback failure is preserved as RED before
-this guard. Current feature integration uses contact b95bdba and driver127c82a;
-foundation compile compatibility remains pinned3283fe6. No old receipt moves to a
-new source revision without rerunning its relevant checks.
-
-## Gatekeeper coverage and remaining dependencies
-
-PR59 review5560836622: the six required items have reproducing regressions for SOS
-refresh retention, zero-dispatch results, AbortSignal.any absence, missing catalog
-capability, anchored snapshot freshness and PR74 arrival/contact-role types. The
-should-fix lifecycle issues have RED/GREEN cases for verifier401, installed sessions,
-late expiry, asynchronous read validation, definite refusals and dropped readAt.
-UUID validation is shared and demo_rate_limited is allowlisted.
-
-PR81 review5560922593: the arrival echo, refresh/SOS retention, not_sent outcomes and
-AbortSignal.any fallback (including demo sign-in) come from the merged base. /status
-freshness must now agree with its age. One demo world is shared across personas and
-reused across begins (runtime.test.mjs). The demo-off401 case is covered by the
-demo status test. Current independent reviews/CI remain merge gates.
-
-The separate backend audit83 COMMENT5561269408 still holds demo restart after poll
-and migration007 legacy-delivery visibility. Those are Robert/main scope; neither
-is repaired or qualified by this PR59 change.
-
-Expected command revision and incident read time cannot be invented against
-PR74/27e4f94: its strict command body accepts only type, and incident GET has
-createdAt/resolvedAt but no readAt. Both contract gaps were sent to the backend
-coordinator. New requirements need an actual published backend schema before binding.
+`contracts.types.ts` holds compile-only negative assertions; do not execute it. CI runs the first three in the web job and the SQL-backed shared-SDK test in the backend job.

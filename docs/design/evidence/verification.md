@@ -2,7 +2,7 @@
 
 ## Delivered
 
-- Five SVG brand assets and five PNG exports; outlined wordmarks do not require an installed font.
+- Five SVG brand assets; outlined wordmarks do not require an installed font.
 - Local Manrope TTF/WOFF2 plus SIL OFL license.
 - Semantic JSON/CSS tokens; 20 UI component samples and six 390 × 844 SVG screen references.
 - HTML gallery with keyboard-accessible controls, explicit demo-only feedback, Spanish and Brazilian Portuguese action samples, and a 200% component-text test mode.
@@ -14,11 +14,11 @@
 
 Chrome browser inspection through the computer-use tools:
 
-- 320, 768 and 1440 CSS-pixel widths: no document horizontal overflow, loaded Manrope, all gallery action targets at least 80 high. See [responsive.json](responsive.json).
-- 390 × 844: Spanish controls measured 310 × 80, 20-pixel labels. Tab moved focus from OK to pause with a visible 3-pixel outline. Clicking OK announced “Demostración: no se envió ningún aviso.” See [mobile-controls-390.jpg](mobile-controls-390.jpg).
-- Component text mode at 200% and 390 pixels: action labels measured 40 pixels, buttons grew to 90–202 pixels without clipped content or horizontal document overflow. Portuguese demo feedback was observed. This is the gallery's explicit CSS text-enlargement mode, not iOS/Android Dynamic Type or a physical-device test. See [text-200-percent.json](text-200-percent.json).
-- Six screen SVGs inspected at 390 pixels. The active screen had no text outside the viewport; the remaining five had no text crossing the right 24-pixel margin. See [screen-layout.json](screen-layout.json) and [active-screen-390.jpg](active-screen-390.jpg).
-- Figma Assets displayed “Created in this file 23 components”. See [figma-components.jpg](figma-components.jpg). The identity/flow page remained after reload; see [figma-overview.jpg](figma-overview.jpg).
+- 320, 768 and 1440 CSS-pixel widths: no document horizontal overflow, loaded Manrope, all gallery action targets at least 80 high.
+- 390 × 844: Spanish controls measured 310 × 80, 20-pixel labels. Tab moved focus from OK to pause with a visible 3-pixel outline. Clicking OK announced “Demostración: no se envió ningún aviso.”
+- Component text mode at 200% and 390 pixels: action labels measured 40 pixels, buttons grew to 90–202 pixels without clipped content or horizontal document overflow. Portuguese demo feedback was observed. This is the gallery's explicit CSS text-enlargement mode, not iOS/Android Dynamic Type or a physical-device test.
+- Six screen SVGs inspected at 390 pixels. The active screen had no text outside the viewport; the remaining five had no text crossing the right 24-pixel margin.
+- Figma Assets displayed “Created in this file 23 components”. The identity/flow page remained after reload.
 
 ## Scope of evidence
 

@@ -9,27 +9,7 @@ Status: **v1.0 design delivery**. The user selected **Tándem** and requested `L
 
 Serve the gallery with `python3 -m http.server 8767 --bind 127.0.0.1 --directory docs/design`, then open `http://127.0.0.1:8767`.
 
-## Skill source and scope
-
-Source: [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill), MIT. Reference revision: `f624f37a8c650b9cc550253104925efe4c8de246`, retrieved 2026-10-17.
-
-| Work | Skill | Application |
-| --- | --- | --- |
-| Logo, identity, palette, typography and brand applications | [brandkit](https://github.com/Leonxlnx/taste-skill/blob/f624f37a8c650b9cc550253104925efe4c8de246/skills/brandkit/SKILL.md) | Start from product meaning, one coherent metaphor, consistent assets and restrained composition. Generated boards are visual concepts, not production vectors or executable tokens. |
-| Mobile screen concepts and flows | [imagegen-frontend-mobile](https://github.com/Leonxlnx/taste-skill/blob/f624f37a8c650b9cc550253104925efe4c8de246/skills/imagegen-frontend-mobile/SKILL.md) | Keep one design bible across screens: palette, type, spacing, controls, icon family, navigation and safe areas. This skill generates images only; it does not implement components. |
-| Public website and landing | [design-taste-frontend](https://github.com/Leonxlnx/taste-skill/blob/f624f37a8c650b9cc550253104925efe4c8de246/skills/taste-skill/SKILL.md) | Use its content-first direction, composition, tokens and screenshot critique workflow. Its own scope explicitly excludes dashboards and app screens. |
-| Implemented app components and contact views | Established Tándem design bible and product contracts | Translate the reviewed direction into the actual client stack. Do not treat an image-generation skill as implementation guidance or impose marketing-page motion/layout rules on operational UI. |
-
-These three skills are installed locally under `~/.codex/skills/`. Other contributors must install/read them in their own environment; local installation is not distributed by a Git push. With Codex's skill installer:
-
-```sh
-python3 "$HOME/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
-  --repo Leonxlnx/taste-skill \
-  --ref f624f37a8c650b9cc550253104925efe4c8de246 \
-  --path skills/taste-skill skills/brandkit skills/imagegen-frontend-mobile
-```
-
-Existing installations should be inspected before updating. Record a new reference revision when intentionally adopting upstream changes.
+Built with [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (MIT, revision `f624f37`): `brandkit` for identity, `imagegen-frontend-mobile` for screen concepts. Generated boards are concepts; the tokens, outlined logo and specification here are the production source.
 
 ## Product meaning
 
