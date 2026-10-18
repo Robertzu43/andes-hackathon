@@ -203,7 +203,7 @@ Hay además workflows con filtro de rutas para el kit de entrevistas, la cola de
 ## Tracción
 
 > [!WARNING]
-> **[[PENDIENTE: entrevistas y uso real]]** Todavía no hay entrevistas, usuarios ni uso real. No presentamos tracción que no existe.
+> Una entrevista, informada por Sebastian Bimbi: un camionero de Colombia quiere usar Tándem y declaró que pagaría hasta US$100 al mes. Es intención declarada, no una venta ni una validación representativa. No hay usuarios ni uso real todavía.
 
 Lo que sí está listo:
 
@@ -213,8 +213,8 @@ Lo que sí está listo:
 
 | Evidencia | Estado |
 |---|---|
-| Entrevistas realizadas | [[PENDIENTE: número]] |
-| Aprendizaje principal | [[PENDIENTE]] |
+| Entrevistas realizadas | 1 (camionero, Colombia) |
+| Aprendizaje principal | Quiere usarlo y pagaría hasta US$100 al mes; intención declarada, sin precio acordado |
 | Uso de la demo por personas externas | [[PENDIENTE]] |
 
 ## Limitaciones
