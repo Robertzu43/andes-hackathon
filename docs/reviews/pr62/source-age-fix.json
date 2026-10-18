@@ -1,0 +1,112 @@
+{
+  "runtime": "v24.17.0",
+  "candidate": "1fd365ee7805cd83b2b1a1706973788dea6f805e",
+  "previousCandidate": "e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6",
+  "originalProbe": {
+    "commit": "16d51a1873c54fdc302c5cdd002b9fa2bb851e89",
+    "sha256": "bae47615172fbe18005bd9ed85879b64246c1a949b68ca958505dd0e71425230",
+    "oldExit": 0,
+    "fixedExit": 1,
+    "expectedFailureOnFix": "old current-age expectation240000 now sees120000 as-of-read",
+    "hardcodedTag": "21cd50a retained in old output; actual tested archive is e2c1e6"
+  },
+  "originalObservations": {
+    "runtime": "v24.17.0",
+    "candidate": "21cd50ac15c22a2a3cc71bf105336e8ebc77c285",
+    "result": "P2 source-age mismatch reproduced; original owner/reviewer confirmation required",
+    "source": "web/src/features/contacts/journey.ts:74-81",
+    "aligned": {
+      "ageMs": 240000,
+      "serverFreshnessAtRead": "fresh",
+      "readAt": "2026-10-17T12:00:00.000Z",
+      "live": false,
+      "currentAuthorization": "requires-server-check"
+    },
+    "behind": {
+      "ageMs": 180000,
+      "serverFreshnessAtRead": "fresh",
+      "readAt": "2026-10-17T12:00:00.000Z",
+      "live": false,
+      "currentAuthorization": "requires-server-check"
+    },
+    "ahead": {
+      "ageMs": 300000,
+      "serverFreshnessAtRead": "fresh",
+      "readAt": "2026-10-17T12:00:00.000Z",
+      "live": false,
+      "currentAuthorization": "requires-server-check"
+    },
+    "sameClientClockAfterBackwardStep": {
+      "ageMs": 150000,
+      "serverFreshnessAtRead": "fresh",
+      "readAt": "2026-10-17T12:00:00.000Z",
+      "live": false,
+      "currentAuthorization": "requires-server-check"
+    },
+    "accepted300msFutureCapture": {
+      "ageMs": null,
+      "serverFreshnessAtRead": "fresh",
+      "readAt": "2026-10-17T12:00:00.000Z",
+      "live": false,
+      "currentAuthorization": "requires-server-check"
+    },
+    "boundary": "No live/safe claim observed; these are source arithmetic probes, not UI or backend integration proof"
+  },
+  "controls": [
+    {
+      "name": "aligned",
+      "rawAgePreserved": 120000,
+      "asOf": "server-read"
+    },
+    {
+      "name": "behind",
+      "rawAgePreserved": 120000,
+      "asOf": "server-read"
+    },
+    {
+      "name": "ahead",
+      "rawAgePreserved": 120000,
+      "asOf": "server-read"
+    },
+    {
+      "name": "rollback",
+      "rawAgePreserved": 120000,
+      "asOf": "server-read"
+    },
+    {
+      "name": "non-finite",
+      "rawAgePreserved": 120000,
+      "asOf": "server-read"
+    },
+    {
+      "name": "server-accepted-future300ms",
+      "rawAgePreserved": 0
+    },
+    {
+      "name": "unavailable",
+      "rawAgePreserved": null
+    },
+    {
+      "name": "stale",
+      "rawAgePreserved": 600000
+    }
+  ],
+  "baselineRejectsAsOfContract": true,
+  "verdict": "Q59 source-age P2 FIX CONFIRMED in helper only; original43 confirmation and UI/runtime acceptance separate",
+  "typeScript": {
+    "version": "Version 5.9.3",
+    "positiveExit": 0,
+    "negativeExtraClockExit": 2,
+    "negativeDiagnostic": "../../../../../tmp/andes-discovery-review.I89yaC/pr62-fixed/web/tests/contacts/location-age-negative.types.ts(7,23): error TS2554: Expected 1 arguments, but got 2.\n"
+  },
+  "sameEightRegressionControlsAgainstOld": {
+    "exit": 1,
+    "failed": 8,
+    "passed": 0
+  },
+  "existingFixedContactPrivacyTests": {
+    "passed": 30,
+    "failed": 0
+  },
+  "reviewedArchiveBlobsUnchanged": 6
+}

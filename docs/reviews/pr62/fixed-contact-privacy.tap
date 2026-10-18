@@ -1,0 +1,190 @@
+TAP version 13
+# Subtest: a contact route needs no invented driver identity and cannot acquire owner resolution
+ok 1 - a contact route needs no invented driver identity and cannot acquire owner resolution
+  ---
+  duration_ms: 2.018584
+  type: 'test'
+  ...
+# Subtest: invitation is only pending after an API receipt and sends no participant notification
+ok 2 - invitation is only pending after an API receipt and sends no participant notification
+  ---
+  duration_ms: 0.442333
+  type: 'test'
+  ...
+# Subtest: acceptance narrows scopes and is never an authorization for a protected cached view
+ok 3 - acceptance narrows scopes and is never an authorization for a protected cached view
+  ---
+  duration_ms: 0.192167
+  type: 'test'
+  ...
+# Subtest: wrong identity, self invitation and missing scope cannot issue a command
+ok 4 - wrong identity, self invitation and missing scope cannot issue a command
+  ---
+  duration_ms: 0.121875
+  type: 'test'
+  ...
+# Subtest: unverified phone conflict is rejected without manufacturing an acceptance
+ok 5 - unverified phone conflict is rejected without manufacturing an acceptance
+  ---
+  duration_ms: 0.147833
+  type: 'test'
+  ...
+# Subtest: protected location keeps source, receipt, read instant and old age separately
+ok 6 - protected location keeps source, receipt, read instant and old age separately
+  ---
+  duration_ms: 0.113125
+  type: 'test'
+  ...
+# Subtest: absent location is explicitly unavailable, malformed and cross-trip snapshots never render
+ok 7 - absent location is explicitly unavailable, malformed and cross-trip snapshots never render
+  ---
+  duration_ms: 0.220667
+  type: 'test'
+  ...
+# Subtest: auth/consent denial clears all protected data and preserves error distinctions
+ok 8 - auth/consent denial clears all protected data and preserves error distinctions
+  ---
+  duration_ms: 0.767084
+  type: 'test'
+  ...
+# Subtest: role, identity and trip changes discard protected caches and late responses
+ok 9 - role, identity and trip changes discard protected caches and late responses
+  ---
+  duration_ms: 0.276667
+  type: 'test'
+  ...
+# Subtest: a slower previous read cannot overwrite the newer protected snapshot
+ok 10 - a slower previous read cannot overwrite the newer protected snapshot
+  ---
+  duration_ms: 0.121666
+  type: 'test'
+  ...
+# Subtest: standing and trip revoke conceal data before the write and invalidate previous reads
+ok 11 - standing and trip revoke conceal data before the write and invalidate previous reads
+  ---
+  duration_ms: 0.514208
+  type: 'test'
+  ...
+# Subtest: a denied command invalidates an in-flight protected read before it can reveal data
+ok 12 - a denied command invalidates an in-flight protected read before it can reveal data
+  ---
+  duration_ms: 0.112667
+  type: 'test'
+  ...
+# Subtest: ambiguous writes never auto-replay; explicit retry reuses the exact key and body
+ok 13 - ambiguous writes never auto-replay; explicit retry reuses the exact key and body
+  ---
+  duration_ms: 0.193208
+  type: 'test'
+  ...
+# Subtest: contact acknowledgement and contradictory reported actions never resolve the incident
+ok 14 - contact acknowledgement and contradictory reported actions never resolve the incident
+  ---
+  duration_ms: 0.132208
+  type: 'test'
+  ...
+# Subtest: driver-only resolution requires a new read and invalidates pre-resolution protected reads
+ok 15 - driver-only resolution requires a new read and invalidates pre-resolution protected reads
+  ---
+  duration_ms: 0.11375
+  type: 'test'
+  ...
+# Subtest: a late acknowledged write cannot add another identity’s receipt after role switch
+ok 16 - a late acknowledged write cannot add another identity’s receipt after role switch
+  ---
+  duration_ms: 0.072333
+  type: 'test'
+  ...
+# Subtest: uncertain revoke conceals data until explicit same-key retry confirms the receipt
+ok 17 - uncertain revoke conceals data until explicit same-key retry confirms the receipt
+  ---
+  duration_ms: 0.095209
+  type: 'test'
+  ...
+# Subtest: a refused retry cannot erase the original unknown revoke outcome or reopen protected reads
+ok 18 - a refused retry cannot erase the original unknown revoke outcome or reopen protected reads
+  ---
+  duration_ms: 0.375042
+  type: 'test'
+  ...
+# Subtest: a known first-attempt conflict remains rejected; an unknown action survives a later read denial
+ok 19 - a known first-attempt conflict remains rejected; an unknown action survives a later read denial
+  ---
+  duration_ms: 0.152708
+  type: 'test'
+  ...
+# Subtest: malformed command responses remain uncertain and never create reassuring receipts
+ok 20 - malformed command responses remain uncertain and never create reassuring receipts
+  ---
+  duration_ms: 0.077792
+  type: 'test'
+  ...
+# Subtest: source age is explicitly as of the server read, with no current-time estimate
+ok 21 - source age is explicitly as of the server read, with no current-time estimate
+  ---
+  duration_ms: 1.728292
+  type: 'test'
+  ...
+# Subtest: aligned clock after 120 seconds cannot alter the raw as-of-read age
+ok 22 - aligned clock after 120 seconds cannot alter the raw as-of-read age
+  ---
+  duration_ms: 0.088625
+  type: 'test'
+  ...
+# Subtest: client clock 60 seconds behind cannot alter the raw as-of-read age
+ok 23 - client clock 60 seconds behind cannot alter the raw as-of-read age
+  ---
+  duration_ms: 0.045125
+  type: 'test'
+  ...
+# Subtest: client clock 60 seconds ahead cannot alter the raw as-of-read age
+ok 24 - client clock 60 seconds ahead cannot alter the raw as-of-read age
+  ---
+  duration_ms: 0.038709
+  type: 'test'
+  ...
+# Subtest: backward step still after server read cannot alter the raw as-of-read age
+ok 25 - backward step still after server read cannot alter the raw as-of-read age
+  ---
+  duration_ms: 0.533291
+  type: 'test'
+  ...
+# Subtest: rollback before server read cannot alter the raw as-of-read age
+ok 26 - rollback before server read cannot alter the raw as-of-read age
+  ---
+  duration_ms: 0.060375
+  type: 'test'
+  ...
+# Subtest: backend-accepted 300ms future capture preserves the server-clamped zero age
+ok 27 - backend-accepted 300ms future capture preserves the server-clamped zero age
+  ---
+  duration_ms: 0.075417
+  type: 'test'
+  ...
+# Subtest: unavailable source age remains null, not a fabricated elapsed age
+ok 28 - unavailable source age remains null, not a fabricated elapsed age
+  ---
+  duration_ms: 0.0665
+  type: 'test'
+  ...
+# Subtest: contact can narrow either requested scope without broadening or accepting nothing
+ok 29 - contact can narrow either requested scope without broadening or accepting nothing
+  ---
+  duration_ms: 1.047
+  type: 'test'
+  ...
+# Subtest: operational receipts never authorize research reuse, restore consent or promise cancellation of in-flight work
+ok 30 - operational receipts never authorize research reuse, restore consent or promise cancellation of in-flight work
+  ---
+  duration_ms: 0.129333
+  type: 'test'
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 30
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 90.432583

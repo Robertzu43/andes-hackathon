@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-10-18T00:13:16.338Z",
+  "candidate": "0e4c8bdb0c19677b455d43bbc0439b7b17ad5d22",
+  "base": "975e48b74173245dc02e5c20f553021203d1649a",
+  "changed": [
+    "evidence/data-dictionary.md"
+  ],
+  "unchangedArtifacts": 11,
+  "unchangedOriginalGuideTemplates": 8,
+  "dictionary": {
+    "blob": "da17dd3e2d35d4082f213b42312d99112d7787a8",
+    "sha256": "ce2ea65e7ee819051c6c9479cfa14e953c96a014b303e87a79e96b7d6b36e969"
+  },
+  "headers": "all prior blank/unique CSV bytes unchanged and columns remain documented",
+  "whitespace": "pass",
+  "runtimeSuite": "not repeated: one manual document only",
+  "scope": "AI ACCEPT delta only; no checker or human/evidence approval"
+}

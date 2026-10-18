@@ -7,6 +7,12 @@ status/sharing. Q59 changes review artifacts only. The frozen decision below is
 not evidence that recipient routes or the planned transaction repair exist yet.
 No competing route, schema, adapter or foundation is added.
 
+The canonical owner document is now published in **PR84 at
+3fbfe3a56fc302d427ddda2ebff9dc886abfe9f7**:
+[docs/contracts/recipient-discovery.md](https://github.com/Bimbi-Dev/andes-hackathon/blob/3fbfe3a56fc302d427ddda2ebff9dc886abfe9f7/docs/contracts/recipient-discovery.md).
+Its exact field names below supersede Q59's earlier semantic field suggestions.
+This records the agreed implementation target, not source for implemented reads.
+
 Codus planner: **pl_mvd1u5yz_f780e7**, “Recipient invitations and shared trips”.
 Owner44 satisfied **Freeze the recipient read partition** with the two-route
 decision below. The next owner action is Q41 implementation against44's canonical
@@ -76,8 +82,8 @@ identity comes from authenticated request.actor.id.
 
 | Capability | Minimum proposed information | Boundaries |
 | --- | --- | --- |
-| GET /v1/contact/invitations | Own grant/driver references, requested and accepted map/incident boolean scopes, pending/accepted/revoked state, accepted/revoked times, server readAt, limit100 and hasMore | Query contact_grants.contact_id=actor. Grant ID ascending; filter before fetching101. No invented createdAt/name/phone, other contacts, raw trip text or coordinates. Accepted scopes after revocation are historical, not current authority |
-| GET /v1/contact/trips | Trip/grant/driver references, accepted and effective scopes, trip status, activeIncidentId only with incident scope, server readAt, limit100 and hasMore; approved truck label if in canonical DTO | Accepted standing consent, explicit trip attachment, both revocations absent and at least one accepted scope. Include active trips; closed trips only when incident-consented with an active incident. Effective map requires accepted map plus active trip/map_active; effective incident follows accepted incident. Map-only activeIncidentId stays null |
+| GET /v1/contact/invitations | Envelope {invitations,readAt,limit:100,hasMore}; rows {id,driverId,requested:{map,incident},accepted:{map,incident},status,acceptedAt,revokedAt}. accepted booleans are false before acceptance, not null | Query contact_grants.contact_id=actor. Grant ID ascending; filter before fetching101. No invented createdAt/name/phone, recipient ID, other contacts, raw text or coordinates. Accepted scopes after revocation are historical, not current authority |
+| GET /v1/contact/trips | Envelope {trips,readAt,limit:100,hasMore}; rows {tripId,grantId,driverId,status,scopes:{map,incident},activeIncidentId}. scopes are effective flags; no extra acceptedScopes or truckLabel field | Accepted standing consent, explicit trip attachment, both revocations absent and at least one accepted scope. Include active trips; closed only when incident-consented with an active incident. Effective map requires accepted map plus active trip/map_active; effective incident follows accepted incident. Map-only activeIncidentId stays null |
 
 The invitation page obtains its metadata from the recipient inbox, with no new
 detail endpoint. Being given a grant UUID is never authority; missing from a
@@ -164,8 +170,9 @@ that arbitrary new recipients can be invited. Also identities has no display nam
 driverId is a technical key, not proof that a person can recognize the inviter.
 Q44/Q41 must choose a consented existing display source or keep that recognition
 gate explicit. No invented name/plate/country or unapproved phone disclosure fills
-the gap. A truck label can distinguish authorized trip rows but does not identify
-the human inviter by itself.
+the gap. The canonical minimal DTO does not add a truck label or human inviter
+name; a future approved display source needs its own contract rather than an
+extra field invented by this review.
 
 The reads are SQL-only and require no provider call or notification. Existing
 delivery work stays in Robert's current durable job/outbox pipeline. Reusing

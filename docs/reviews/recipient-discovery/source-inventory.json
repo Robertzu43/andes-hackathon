@@ -279,5 +279,12 @@
   },
   "ownership": "44 freezes interface;41 owner reads;45 typed adapter;51 contact UI;Robert status/sharing",
   "implementation": "none",
-  "refreshedAt": "2026-10-18T00:09:30.052Z"
+  "refreshedAt": "2026-10-18T00:09:30.052Z",
+  "canonicalOwnerContract": {
+    "pr": 84,
+    "sha": "3fbfe3a56fc302d427ddda2ebff9dc886abfe9f7",
+    "path": "docs/contracts/recipient-discovery.md",
+    "blob": "44f00ed4822d220ee1592b49c4d8651d47d0a051",
+    "implementation": "not supplied by contract document"
+  }
 }
