@@ -68,9 +68,12 @@ test('published shared SDK decoder and transport retain real SOS/OK facts across
   const again = await journey.requestHelp(); assert.equal(again.kind, 'ok'); assert.notEqual(again.data.id, incidentId);
   assert.equal(counts.get(`POST /v1/trips/${tripId}/sos`), 2);
   assert.equal(decoded >= 10, true, 'Real published shared SDK decoder was used');
-  // This exact base SDK deliberately does not fabricate the child status endpoint.
-  assert.deepEqual(await journey.refreshStatus(), { kind: 'not_sent', code: 'unsupported_operation' });
-  assert.equal(journey.snapshot().status.data, null);
+  const status = await journey.refreshStatus();
+  assert.equal(status.kind, 'ok');
+  assert.equal(journey.snapshot().status.data.incident.trigger, 'sos');
+  // Same-clock UUIDs do not order incidents. Reload the SOS this call created before arrival.
+  assert.equal((await journey.refreshIncident(again.data.id)).kind, 'ok');
+  assert.equal(journey.snapshot().incident.data.status, 'active');
   journey.setInteractionMode('stationary'); await journey.sendCommand('arrived');
   assert.equal(journey.snapshot().activation, null); assert.equal(journey.snapshot().incident.data.status, 'active');
   assert.equal((await f.ctx.pool.query('SELECT count(*) FROM outbox')).rows[0].count, '0');

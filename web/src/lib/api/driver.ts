@@ -19,11 +19,12 @@ export type DriverTransportResult = { kind: 'ok'; data: unknown }
 export function decodeDriverResponse(request: Pick<DriverRequest, 'operation'>, value: unknown): unknown {
   const decoders = { createTruck: decode.id, createDraft: decode.draft, confirmDraft: decode.confirmed,
     command: decode.command, sos: decode.sos, readTrip: decode.trip,
-    readSnapshot: decode.snapshot, readIncident: decode.incident };
-  if (request.operation === 'readStatus') throw new ApiError('unsupported', {
+    readSnapshot: decode.snapshot, readIncident: decode.incident, readStatus: decode.tripStatus };
+  const decodeOperation = decoders[request.operation as keyof typeof decoders];
+  if (!decodeOperation) throw new ApiError('unsupported', {
     operation: request.operation, code: 'unsupported_operation', outcome: 'not_applicable',
   });
-  try { return decoders[request.operation](value); }
+  try { return decodeOperation(value); }
   catch { throw new ApiError('invalid_response', { operation: request.operation,
     outcome: request.operation.startsWith('read') ? 'not_applicable' : 'unknown' }); }
 }
@@ -48,6 +49,7 @@ export function createDriverTransport(api: ApiClient) {
         case 'readTrip': data = await api.getTrip(id, read); break;
         case 'readSnapshot': data = await api.getSnapshot(id, read); break;
         case 'readIncident': data = await api.getIncident(id, read); break;
+        case 'readStatus': data = await api.getTripStatus(id, read); break;
         default: return { kind: 'not_sent', code: 'unsupported_operation' };
       }
       return { kind: 'ok', data };

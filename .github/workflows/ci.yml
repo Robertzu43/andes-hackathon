@@ -50,6 +50,8 @@ jobs:
         run: echo "APP_INTEGRATION_PG_BIN=$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -n 1)" >> "$GITHUB_ENV"
       - run: node scripts/app-integration/run.mjs
       - run: node scripts/app-integration/check-browser-seam.mjs
+      - name: Phone demo in Chrome against the real backend
+        run: npm --prefix web run test:phone
       - run: node --test evidence/app-acceptance/oracle.test.mjs
   backend:
     runs-on: ubuntu-latest

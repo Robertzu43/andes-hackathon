@@ -1,0 +1,6 @@
+.tandem-flow { display: grid; gap: 1rem; max-width: 28rem; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+.tandem-flow .andes-button, .tandem-flow .andes-text-link { width: 100%; }
+.tandem-sos .andes-button { min-height: 5rem; font-size: 1.35rem; }
+.tandem-stop { display: flex; align-items: center; gap: .75rem; min-height: 3rem; font-weight: 650; }
+.tandem-stop input { width: 1.5rem; height: 1.5rem; flex: none; }
+.tandem-note { margin: 0 0 1rem; }
