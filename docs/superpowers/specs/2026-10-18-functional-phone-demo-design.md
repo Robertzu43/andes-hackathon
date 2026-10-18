@@ -193,6 +193,12 @@ Si hay un solo teléfono, el mismo usuario abre el link en otra pestaña e ingre
 - `src/worker.ts:16` deja de exigir `allowedDestinations == [DEMO_LIVE_PHONE]`. Con `DEMO_MODE` y envíos reales, exige `demoLimits`, `DEMO_ALERTS_PER_NUMBER_DAILY`, `DEMO_SMS_DAILY_CAP` y `DEMO_PHONE_PEPPER`. Si falta alguno, el arranque falla.
 - Se agrega un tope de alertas por número verificado por día (`DEMO_ALERTS_PER_NUMBER_DAILY`), además de `demoLimits`.
 
+**SMS de una vía (cuenta real de Zavu).** La cuenta solo tiene un remitente con el canal `sms_oneway`. La configuración de Zavu admite `smsMode: "oneway"`:
+- Los SMS de código y las alertas por SMS salen como `sms_oneway`.
+- La respuesta del envío (`accepted()`, `src/notifications/zavu.ts:~56`), la relectura (`read()`, `:~98`, que compara contra el canal guardado `sms`) y los callbacks (`verifyCallback`, `:~123`) aceptan `sms_oneway` y lo mapean al canal interno `sms`.
+
+**Sin links en los SMS.** Zavu exige verificar cada URL exacta, y cada alerta trae un link de mapa distinto. En SMS, la ubicación va como texto: «Última ubicación hace {edad} (±{precisión} m): {lat}, {lon}». La llamada no lee identificadores ni UUIDs.
+
 **Textos:**
 - Los SMS de código los genera el código con el prefijo.
 - Los textos de alerta vienen de la configuración de Zavu. En `DEMO_MODE`, el arranque **rechaza** entradas cuyo texto no empiece con «Demo de Tándem».
