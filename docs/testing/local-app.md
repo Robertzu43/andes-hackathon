@@ -369,3 +369,60 @@ oracle. Browser observations of this fixture are provisional server/session seam
 evidence. A Git-bound UI Evidence Manifest and independent review are still
 required for complete UI proof; this harness does not accept all twelve routes,
 all five viewports, accessibility, provider delivery or whole-app readiness.
+
+## Provisional actual demo runtime
+
+`scripts/app-integration/demo-fixture.mjs` is a separate, opt-in actual Fastify
+runtime for the app assembly contract. It leaves the frozen browser fixture,
+receipt pins and earlier failures intact. The launcher requires a full Git commit
+containing the backend's real `demoIssuer` and demo-enabled `createApp`; the
+design-only backend `dfa308b` does not provide that route and is rejected before
+database allocation. It creates a private immutable checkout, verifies tracked
+and ignored backend source before/after building, and borrows only dependencies
+whose lockfile matches. It never patches backend routes or invents HTTP responses.
+
+The explicitly provisional composition is
+`240ac355167c753c2b211c46b71f15c20d6a74d6`, combining foundation `2943912` and
+backend PR83 `b95ff26`. Its known backend findings remain open. This is not final
+PR83 approval, a UI receipt, a delivery claim or physical-device qualification.
+
+Run with Node24.17 (or another supported Node24–26) and local PostgreSQL15+:
+
+```sh
+source ~/.nvm/nvm.sh
+nvm use 24.17.0
+export APP_INTEGRATION_PG_BIN=/opt/homebrew/Cellar/postgresql@16/16.14/bin
+export APP_INTEGRATION_PG_PORT=56446
+export APP_INTEGRATION_BACKEND_SHA=240ac355167c753c2b211c46b71f15c20d6a74d6
+node --test tests/app-integration/demo-runtime.mjs
+```
+
+After those ports are free, use the Codus dev slot for the interactive runtime:
+
+```sh
+source ~/.nvm/nvm.sh && nvm use 24.17.0 && APP_INTEGRATION_PG_BIN=/opt/homebrew/Cellar/postgresql@16/16.14/bin APP_INTEGRATION_PG_PORT=56446 APP_INTEGRATION_API_PORT=33446 APP_INTEGRATION_BACKEND_SHA=240ac355167c753c2b211c46b71f15c20d6a74d6 node scripts/app-integration/demo-fixture.mjs
+```
+
+The API is `http://127.0.0.1:33446`; this is infrastructure, not the app's canonical
+preview. Q44 owns the separate frontend server and its loopback `/v1` proxy.
+The launcher prints a secret-free `runtime-state.json` path with the actual source,
+process IDs, API cwd, owned cluster/database, expiry and disabled-provider state.
+No shared/admin database URL is accepted. Only the owned cluster and checkout are
+removed on close, parent disconnect or forced foreground-group exit. The runtime
+has a ten-minute deadline; restart it explicitly for another bounded session.
+
+Real `POST /v1/demo/session` with `{}` allocates one synthetic world and returns
+driver/family/colleague credentials, truck/grant references and a two-hour token
+lifetime. The frontend host retains that response in trusted memory and selects
+only roles actually returned by it, verifying each through real `/v1/me`. Role
+changes must not call the allocation route again. Credentials never belong in
+logs, URLs, storage or build variables. A stop/restart is an explicit fresh-world
+reset: a new database and signer invalidate the previous world's credentials.
+Browser credentials cannot survive reload or restart by implication.
+
+`DEMO_MODE` is explicitly true inside the isolated child, live sends are false,
+channel support is empty and no timing/notification workers run. All channels
+remain honestly unavailable. The opt-in smoke checks actual HTTP/SQL shared-world
+trip, contact access, SOS, acknowledgement and arrival, including unresolved-SOS
+preservation, no dispatch attempts, signer reset, source guards and cleanup. Final
+app/UI evidence must be rerun against the corrected, reviewed integration revision.
