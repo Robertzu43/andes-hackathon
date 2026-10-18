@@ -1,0 +1,13 @@
+{
+  "README.md": "decf7ca360091e0743ad762228ff54bc72351e22e3530ae4e55a68285dada4d2",
+  "blobs.txt": "64ad9eca694c20a4dfa92b682abf394b270c13bc4de79cce3e45628854bb9960",
+  "composer.diff": "d34c0e3ac0d486a34de08a7f24abb2d1e55cbf453b7c710aba89bae5c5868556",
+  "contact-composition.json": "6bc30f9e1a8802d1e958f11681cbc795d634fcef65cd9f1f041ab1ed9175e305",
+  "contact-default-401.log": "204216f2e6450e6c72dad259348cf43f33cdefab306a07f21deaa2f6bb1b5612",
+  "contact-pin-blobs.json": "c6672ebf8e2c720b7f7e5d51a81e41e9f712b46fcfb43b0d4b5087cd1815a5bc",
+  "feedback-inline.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "feedback-issues.json": "bfe8a99c54f5e45e31372eaae441927255fdcbbf9c48158e4493250e105adef6",
+  "feedback-pr.json": "d9812e53e9dbcc6ee47485b1936ea8499f47d2a56a95d0935a1a92fe56f948df",
+  "feedback-reviews.json": "ed8d10b350a7e98835db486d0d986e2ba0782c14d37c34fbe45c04165f3573d7",
+  "feedback-threads.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+}

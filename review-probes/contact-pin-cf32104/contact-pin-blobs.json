@@ -1,0 +1,47 @@
+[
+  {
+    "path": "web/src/lib/api/client.ts",
+    "pin": "db7034fc9e1dba035b87368117376e9730d6b830",
+    "blob": "60e01904dba337f8a1ce6ffc4c70d5a6415a4698"
+  },
+  {
+    "path": "web/src/lib/api/driver.ts",
+    "pin": "db7034fc9e1dba035b87368117376e9730d6b830",
+    "blob": "9a00d2399e26542d26f18eae0b3e5852ae7ffc1a"
+  },
+  {
+    "path": "web/src/lib/api/errors.ts",
+    "pin": "db7034fc9e1dba035b87368117376e9730d6b830",
+    "blob": "9f48b79f8d5498c097f794f4a3516213000a3d22"
+  },
+  {
+    "path": "web/src/lib/api/gateway.ts",
+    "pin": "db7034fc9e1dba035b87368117376e9730d6b830",
+    "blob": "4d68667abfd78b195e7908b22ae0524c82b5ee3c"
+  },
+  {
+    "path": "web/src/lib/api/index.ts",
+    "pin": "db7034fc9e1dba035b87368117376e9730d6b830",
+    "blob": "18a7b813d240f227a439f2c681d4d6db250b11af"
+  },
+  {
+    "path": "web/src/lib/api/journeys.ts",
+    "pin": "75bdffa42d858c82a8dcb0af11bc78803e3d9a09",
+    "blob": "3e41dc9fe23621a29ec6731f71f902e90ccafa1c"
+  },
+  {
+    "path": "web/src/lib/api/responses.ts",
+    "pin": "db7034fc9e1dba035b87368117376e9730d6b830",
+    "blob": "eee978e28de0b2314bff8c0a4009e6a530814775"
+  },
+  {
+    "path": "web/src/lib/api/session.ts",
+    "pin": "db7034fc9e1dba035b87368117376e9730d6b830",
+    "blob": "b32191adb57456884ca16c317e101dc3a5d1c9e4"
+  },
+  {
+    "path": "web/src/lib/api/types.ts",
+    "pin": "db7034fc9e1dba035b87368117376e9730d6b830",
+    "blob": "86f08834b2158ae1428f163db901c5e400cbf79d"
+  }
+]
