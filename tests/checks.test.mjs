@@ -298,3 +298,19 @@ test('a late OK after escalation keeps the incident and its alerts; it never can
   assert.deepEqual((await f.ctx.pool.query("SELECT trigger,status FROM incidents")).rows, [{trigger: 'sos', status: 'active'}]);
   assert.equal((await f.ctx.pool.query("SELECT count(*)::int n FROM jobs WHERE incident_id=$1 AND trigger='sos' AND status='pending'", [incident])).rows[0].n, 3);
 });
+
+test('resuming sharing closes the open sharing-stopped check, so a screen lock is not a false alarm', async t => {
+  const f = await fixture(t); const family = await contactFor(f, 'family'); const trip = await f.trip([family.grant]);
+  f.advance(1000); await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'page_hidden'});
+  await sweep(f); assert.deepEqual(await checksOf(f, trip), [asking('sharing_stopped')]);
+  f.advance(2000);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'resumed', reason: 'user'})).status, 200);
+  await f.req('POST', `/v1/trips/${trip}/locations`, {observations: [{capturedAt: f.ctx.clock().toISOString(), latitude: -12, longitude: -77, accuracy: 9}]});
+  assert.deepEqual(await checksOf(f, trip), [{reason: 'sharing_stopped', status: 'cancelled', incident_id: null}]);
+  f.advance(60000); await sweep(f);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM incidents')).rows[0].n, 0);
+  // An open check for another reason is not the resume's to close.
+  f.advance(120001); await sweep(f); assert.deepEqual((await checksOf(f, trip)).at(-1), asking('silence'));
+  await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'resumed', reason: 'user'});
+  assert.deepEqual((await checksOf(f, trip)).at(-1), asking('silence'));
+});
