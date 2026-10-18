@@ -332,7 +332,7 @@ test('latest issuance stays deterministic at tied timestamps and a spent latest 
   await w.f.ctx.pool.query('UPDATE demo_phone_challenges SET expires_at=$2 WHERE id=$1', [rows[1].id, w.f.ctx.clock()]);
   assert.equal((await latest(a.family.id)).id, rows[1].id, 'Task 9 must retain and select the spent latest row');
   assert.equal((await latest(a.family.id)).expires_at.getTime(), w.f.ctx.clock().getTime());
-  assert.equal((await w.call('verify', {phone, code: codes[0]}, a.family.token)).status, 404, 'Task 9 route is deliberately not implemented');
+  assert.deepEqual(await w.call('verify', {phone, code: codes[0]}, a.family.token), {status: 410, body: {code: 'code_expired'}}, 'an expired latest issuance cannot reveal an older code');
 });
 
 test('Zavu timeout ambiguity counts once and returns a private 202 through the start route', async t => {
@@ -347,4 +347,237 @@ test('Zavu timeout ambiguity counts once and returns a private 202 through the s
   assert.deepEqual(await w.call('start', {phone}, token), {status: 202, body: {expiresAt: '2026-10-17T12:10:00.000Z'}});
   assert.deepEqual(await w.call('start', {phone}, token), {status: 429, body: {code: 'rate_limited'}});
   assert.deepEqual([calls, await challenges(w.f)], [1, 1]);
+});
+
+test('the right code binds only its persona once and survives the original phone-less token', async t => {
+  const w = await demoWorld(t); const world = await w.session();
+  assert.equal((await w.call('start', {phone}, world.family.token)).status, 202);
+  assert.deepEqual(await w.call('verify', {phone, code}, world.family.token), {status: 200, body: {verified: true}});
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT identity_id,phone,verified_at FROM demo_phone_verifications')).rows,
+    [{identity_id: world.family.id, phone, verified_at: w.f.ctx.clock()}]);
+  // Authentication with the original phone-less JWT must preserve the new stored binding.
+  for (let i = 0; i < 2; i++) assert.deepEqual(await w.f.req('GET', '/v1/me', undefined, world.family.token),
+    {status: 200, body: {id: world.family.id}});
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT id,phone,phone_verified FROM identities WHERE id=ANY($1) ORDER BY phone',
+    [[world.driver.id, world.family.id, world.colleague.id]])).rows,
+  [{id: world.driver.id, phone: '+15555550101', phone_verified: true},
+    {id: world.colleague.id, phone: '+15555550103', phone_verified: true},
+    {id: world.family.id, phone, phone_verified: true}]);
+  assert.deepEqual(await w.call('verify', {phone, code}, world.family.token), {status: 410, body: {code: 'code_expired'}});
+  const row = (await w.f.ctx.pool.query('SELECT attempts,expires_at FROM demo_phone_challenges')).rows[0];
+  assert.deepEqual(row, {attempts: 1, expires_at: w.f.ctx.clock()}, 'consume in place without counting a replay');
+  assert.equal(w.sent.length, 1, 'verification never sends another SMS');
+});
+
+test('every wrong or malformed string commits an attempt and the sixth try cannot bind', async t => {
+  const w = await demoWorld(t); const token = (await w.session()).family.token;
+  const invalid = {status: 400, body: {code: 'invalid_code'}};
+  assert.deepEqual(await w.call('verify', {phone, code}, token), invalid, 'no requested challenge');
+  assert.equal((await w.call('start', {phone}, token)).status, 202);
+  assert.deepEqual(await w.call('verify', {phone: other, code}, token), invalid, 'exact number binding');
+  assert.deepEqual(await w.call('verify', {phone: 'not-a-phone', code}, token), invalid);
+  const wrong = ['000000', 'abc', '1234567', '12345', ''];
+  for (const [i, attempt] of wrong.entries()) {
+    assert.deepEqual(await w.call('verify', {phone, code: attempt}, token), invalid);
+    assert.equal((await w.f.ctx.pool.query('SELECT attempts FROM demo_phone_challenges')).rows[0].attempts, i + 1,
+      'a subsequent query sees the failed attempt committed');
+  }
+  assert.deepEqual(await w.call('verify', {phone, code}, token), {status: 429, body: {code: 'too_many_attempts'}});
+  assert.equal((await w.f.ctx.pool.query('SELECT attempts FROM demo_phone_challenges')).rows[0].attempts, 5);
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT phone,phone_verified FROM identities WHERE id=$1',
+    [(await w.f.req('GET', '/v1/me', undefined, token)).body.id])).rows, [{phone: null, phone_verified: false}]);
+  assert.equal((await w.f.ctx.pool.query('SELECT count(*)::int n FROM demo_phone_verifications')).rows[0].n, 0);
+});
+
+test('the fifth try can succeed and re-verifying another number replaces both bindings', async t => {
+  const w = await demoWorld(t); const world = await w.session(); const token = world.family.token;
+  assert.equal((await w.call('start', {phone}, token)).status, 202);
+  for (const wrong of ['123456\n', '１２３４５６', ' 123456', '000000']) {
+    assert.deepEqual(await w.call('verify', {phone, code: wrong}, token), {status: 400, body: {code: 'invalid_code'}});
+  }
+  assert.deepEqual(await w.call('verify', {phone, code}, token), {status: 200, body: {verified: true}});
+  assert.equal((await w.f.ctx.pool.query('SELECT attempts FROM demo_phone_challenges')).rows[0].attempts, 5);
+  w.f.advance(1);
+  assert.equal((await w.call('start', {phone: other}, token)).status, 202);
+  assert.deepEqual(await w.call('verify', {phone: other, code}, token), {status: 200, body: {verified: true}});
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT identity_id,phone,verified_at FROM demo_phone_verifications')).rows,
+    [{identity_id: world.family.id, phone: other, verified_at: w.f.ctx.clock()}]);
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [world.family.id])).rows,
+    [{phone: other, phone_verified: true}]);
+});
+
+for (const [elapsed, expected] of [[599999, {status: 200, body: {verified: true}}], [600000, {status: 410, body: {code: 'code_expired'}}]]) {
+  test(`a code expires at exactly ten minutes (${elapsed}ms)`, async t => {
+    const w = await demoWorld(t); const world = await w.session();
+    assert.equal((await w.call('start', {phone}, world.family.token)).status, 202);
+    w.f.advance(elapsed);
+    assert.deepEqual(await w.call('verify', {phone, code}, world.family.token), expected);
+    if (expected.status === 410) {
+      assert.deepEqual((await w.f.ctx.pool.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [world.family.id])).rows,
+        [{phone: null, phone_verified: false}]);
+      assert.equal((await w.f.ctx.pool.query('SELECT count(*)::int n FROM demo_phone_verifications')).rows[0].n, 0);
+      assert.equal((await w.f.ctx.pool.query('SELECT attempts FROM demo_phone_challenges')).rows[0].attempts, 0);
+    }
+  });
+}
+
+test('a code is bound to the requesting persona, world and exact number', async t => {
+  const w = await demoWorld(t); const a = await w.session(), b = await w.session();
+  assert.equal((await w.call('start', {phone}, a.family.token)).status, 202);
+  const invalid = {status: 400, body: {code: 'invalid_code'}};
+  assert.deepEqual(await w.call('verify', {phone, code}, b.family.token), invalid);
+  assert.deepEqual(await w.call('verify', {phone, code}, a.driver.token), invalid);
+  assert.deepEqual(await w.call('verify', {phone: other, code}, a.family.token), invalid);
+  assert.equal((await w.f.ctx.pool.query('SELECT attempts FROM demo_phone_challenges')).rows[0].attempts, 0);
+  assert.deepEqual(await w.call('verify', {phone, code}, a.family.token), {status: 200, body: {verified: true}});
+  const invite = await w.f.req('POST', '/v1/contacts', {contactId: b.family.id, phone, map: true, incident: true}, b.driver.token);
+  assert.equal(invite.status, 200);
+  assert.deepEqual(await w.f.req('POST', `/v1/contacts/${invite.body.id}/accept`, {map: true, incident: true}, b.family.token),
+    {status: 409, body: {code: 'verified_phone_mismatch'}}, 'another world never verified this number');
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT identity_id,phone FROM demo_phone_verifications')).rows,
+    [{identity_id: a.family.id, phone}]);
+});
+
+test('the contact accepts only after verifying the exact invited number', async t => {
+  const w = await demoWorld(t); const world = await w.session();
+  const invite = await w.f.req('POST', '/v1/contacts', {contactId: world.family.id, phone, map: true, incident: true}, world.driver.token);
+  assert.equal(invite.status, 200);
+  const accept = () => w.f.req('POST', `/v1/contacts/${invite.body.id}/accept`, {map: true, incident: true}, world.family.token);
+  const mismatch = {status: 409, body: {code: 'verified_phone_mismatch'}};
+  assert.deepEqual(await accept(), mismatch);
+  assert.equal((await w.call('start', {phone: other}, world.family.token)).status, 202);
+  assert.equal((await w.call('verify', {phone: other, code}, world.family.token)).status, 200);
+  assert.deepEqual(await accept(), mismatch, 'verification of a different number does not accept');
+  assert.equal((await w.call('start', {phone}, world.family.token)).status, 202);
+  assert.equal((await w.call('verify', {phone, code}, world.family.token)).status, 200);
+  assert.deepEqual(await accept(), {status: 200, body: {id: invite.body.id, map: true, incident: true, status: 'accepted'}});
+});
+
+test('verification requires authentication and strict object/string input without spending attempts', async t => {
+  const w = await demoWorld(t); const token = (await w.session()).family.token;
+  assert.equal((await w.call('start', {phone}, token)).status, 202);
+  for (const authorization of [undefined, 'Bearer invalid']) {
+    const response = await w.f.app.inject({method: 'POST', url: '/v1/demo/phone/verify', payload: {phone, code},
+      headers: authorization ? {authorization} : {}});
+    assert.deepEqual({status: response.statusCode, body: response.json()}, {status: 401, body: {code: 'unauthorized'}});
+  }
+  for (const body of [null, [], [phone, code], phone, 42, true, {}, {phone}, {code}, {phone: null, code},
+    {phone: 15555550142, code}, {phone: [], code}, {phone, code: null}, {phone, code: 123456}, {phone, code: []},
+    {phone, code, identityId: 'someone-else'}, {phone, code, extra: phone}]) {
+    const response = await w.f.app.inject({method: 'POST', url: '/v1/demo/phone/verify',
+      headers: {authorization: `Bearer ${token}`, 'content-type': 'application/json'}, payload: JSON.stringify(body)});
+    assert.deepEqual({status: response.statusCode, body: response.json()}, {status: 400, body: {code: 'invalid_request'}});
+  }
+  assert.equal((await w.f.ctx.pool.query('SELECT attempts FROM demo_phone_challenges')).rows[0].attempts, 0);
+  assert.equal((await w.f.ctx.pool.query('SELECT count(*)::int n FROM demo_phone_verifications')).rows[0].n, 0);
+  assert.deepEqual(await w.call('verify', {phone, code}, token), {status: 200, body: {verified: true}});
+});
+
+test('tied timestamps use the latest issuance and consuming it never revives an older code', async t => {
+  let next = 0; const codes = ['111111', '222222'];
+  const w = await demoWorld(t, {code: () => codes[next++]}); const token = (await w.session()).family.token;
+  await w.f.ctx.pool.query("SELECT setval(pg_get_serial_sequence('demo_phone_challenges','issuance_order'), '9007199254740992', false)");
+  for (let i = 0; i < 2; i++) assert.equal((await w.call('start', {phone}, token)).status, 202);
+  const rows = (await w.f.ctx.pool.query('SELECT id,created_at,issuance_order FROM demo_phone_challenges ORDER BY issuance_order')).rows;
+  assert.deepEqual(rows.map(row => row.issuance_order), ['9007199254740992', '9007199254740993']);
+  assert.equal(rows[0].created_at.getTime(), rows[1].created_at.getTime());
+  assert.deepEqual(await w.call('verify', {phone, code: codes[0]}, token), {status: 400, body: {code: 'invalid_code'}});
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT attempts FROM demo_phone_challenges ORDER BY issuance_order')).rows,
+    [{attempts: 0}, {attempts: 1}], 'an old code spends an attempt on the newest issuance');
+  assert.deepEqual(await w.call('verify', {phone, code: codes[1]}, token), {status: 200, body: {verified: true}});
+  assert.deepEqual(await w.call('verify', {phone, code: codes[0]}, token), {status: 410, body: {code: 'code_expired'}});
+  assert.deepEqual(await w.call('verify', {phone, code: codes[1]}, token), {status: 410, body: {code: 'code_expired'}});
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT id,attempts,expires_at FROM demo_phone_challenges ORDER BY issuance_order')).rows,
+    [{id: rows[0].id, attempts: 0, expires_at: new Date('2026-10-17T12:10:00Z')},
+      {id: rows[1].id, attempts: 2, expires_at: w.f.ctx.clock()}]);
+});
+
+async function secondPhoneApp(t, w) {
+  const {createApp} = await import('../dist/api/app.js');
+  const {createContext} = await import('../dist/db.js');
+  const ctx = createContext(w.f.ctx.pool.options.connectionString, w.f.ctx.clock);
+  const app = createApp({ctx, auth: w.demo.auth, demo: w.demo, demoPhone: w.config});
+  await app.ready(); t.after(() => app.close());
+  return async (path, body, token) => {
+    const response = await app.inject({method: 'POST', url: `/v1/demo/phone/${path}`, payload: body,
+      headers: {authorization: `Bearer ${token}`}});
+    return {status: response.statusCode, body: response.json()};
+  };
+}
+
+test('concurrent verification across two apps consumes a code exactly once', async t => {
+  const w = await demoWorld(t); const token = (await w.session()).family.token;
+  const second = await secondPhoneApp(t, w);
+  assert.equal((await w.call('start', {phone}, token)).status, 202);
+  const holder = await w.f.ctx.pool.connect(); const requests = [];
+  try {
+    await holder.query('BEGIN');
+    await holder.query('SELECT id FROM demo_phone_challenges FOR UPDATE');
+    requests.push(w.call('verify', {phone, code}, token));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%FOR UPDATE%', 1);
+    requests.push(second('verify', {phone, code}, token));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%pg_advisory_xact_lock%', 1);
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  assert.deepEqual(await Promise.all(requests), [{status: 200, body: {verified: true}}, {status: 410, body: {code: 'code_expired'}}]);
+  assert.equal((await w.f.ctx.pool.query('SELECT attempts FROM demo_phone_challenges')).rows[0].attempts, 1);
+  assert.equal((await w.f.ctx.pool.query('SELECT count(*)::int n FROM demo_phone_verifications')).rows[0].n, 1);
+});
+
+test('verification waits for a concurrent start to commit before selecting the newest code', async t => {
+  let next = 0; const codes = ['111111', '222222'];
+  const w = await demoWorld(t, {code: () => codes[next++]}); const token = (await w.session()).family.token;
+  const second = await secondPhoneApp(t, w);
+  assert.equal((await w.call('start', {phone}, token)).status, 202);
+  const holder = await w.f.ctx.pool.connect(); const requests = [];
+  try {
+    await holder.query('BEGIN');
+    await holder.query('LOCK TABLE demo_phone_challenges IN SHARE MODE');
+    requests.push(second('start', {phone}, token));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%INSERT INTO demo_phone_challenges%', 1);
+    requests.push(w.call('verify', {phone, code: codes[0]}, token));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%pg_advisory_xact_lock%', 1);
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  const [start, verify] = await Promise.all(requests);
+  assert.equal(start.status, 202);
+  assert.deepEqual(verify, {status: 400, body: {code: 'invalid_code'}});
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT attempts FROM demo_phone_challenges ORDER BY issuance_order')).rows,
+    [{attempts: 0}, {attempts: 1}]);
+  assert.deepEqual(await w.call('verify', {phone, code: codes[1]}, token), {status: 200, body: {verified: true}});
+});
+
+test('a concurrent start waits for verification to consume the current code', async t => {
+  let next = 0; const codes = ['111111', '222222'];
+  const w = await demoWorld(t, {code: () => codes[next++]}); const token = (await w.session()).family.token;
+  const second = await secondPhoneApp(t, w);
+  assert.equal((await w.call('start', {phone}, token)).status, 202);
+  const holder = await w.f.ctx.pool.connect(); const requests = [];
+  try {
+    await holder.query('BEGIN');
+    await holder.query('SELECT id FROM demo_phone_challenges FOR UPDATE');
+    requests.push(w.call('verify', {phone, code: codes[0]}, token));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%FOR UPDATE%', 1);
+    requests.push(second('start', {phone}, token));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%pg_advisory_xact_lock%', 1);
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  const [verify, start] = await Promise.all(requests);
+  assert.deepEqual(verify, {status: 200, body: {verified: true}});
+  assert.equal(start.status, 202);
+  assert.deepEqual(await w.call('verify', {phone, code: codes[0]}, token), {status: 400, body: {code: 'invalid_code'}});
+  assert.deepEqual(await w.call('verify', {phone, code: codes[1]}, token), {status: 200, body: {verified: true}});
+});
+
+test('expiry is checked after waiting for the global issuance lock', async t => {
+  const w = await demoWorld(t); const token = (await w.session()).family.token;
+  assert.equal((await w.call('start', {phone}, token)).status, 202);
+  const holder = await w.f.ctx.pool.connect(); let request;
+  try {
+    await holder.query('BEGIN');
+    await holder.query("SELECT pg_advisory_xact_lock(hashtextextended('demo_phone_start',0))");
+    request = w.call('verify', {phone, code}, token);
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%pg_advisory_xact_lock%', 1);
+    w.f.advance(600000);
+  } finally { await holder.query('ROLLBACK'); holder.release(); if (request) await request; }
+  assert.deepEqual(await request, {status: 410, body: {code: 'code_expired'}});
+  assert.equal((await w.f.ctx.pool.query('SELECT attempts FROM demo_phone_challenges')).rows[0].attempts, 0);
+  assert.equal((await w.f.ctx.pool.query('SELECT count(*)::int n FROM demo_phone_verifications')).rows[0].n, 0);
 });
