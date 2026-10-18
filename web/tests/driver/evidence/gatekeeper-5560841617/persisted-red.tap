@@ -1,0 +1,144 @@
+TAP version 13
+# Subtest: persisted driver journey keeps explicit confirmation, last location and active SOS separate through API restart
+not ok 1 - persisted driver journey keeps explicit confirmation, last location and active SOS separate through API restart
+  ---
+  duration_ms: 256.669208
+  type: 'test'
+  location: '/private/tmp/andes-q50-63-baseline-80e9d45/web/tests/driver/persisted.integration.mjs:68:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+        'arrived',
+        'checkin_ok',
+    -   'checkin_ok',
+        'rest_report'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'arrived'
+    1: 'checkin_ok'
+    2: 'checkin_ok'
+    3: 'rest_report'
+  actual:
+    0: 'arrived'
+    1: 'checkin_ok'
+    2: 'rest_report'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q50-63-baseline-80e9d45/web/tests/driver/persisted.integration.mjs:117:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: lost committed confirm and SOS responses recover with original keys and one persisted outcome each
+ok 2 - lost committed confirm and SOS responses recover with original keys and one persisted outcome each
+  ---
+  duration_ms: 131.849458
+  type: 'test'
+  ...
+# Subtest: server revocation between selection and confirmation remains an error, with no invented activation
+ok 3 - server revocation between selection and confirmation remains an error, with no invented activation
+  ---
+  duration_ms: 115.4905
+  type: 'test'
+  ...
+# Subtest: signed foreign identity cannot turn a guessed trip UUID into driver access or SOS
+not ok 4 - signed foreign identity cannot turn a guessed trip UUID into driver access or SOS
+  ---
+  duration_ms: 75.871625
+  type: 'test'
+  location: '/private/tmp/andes-q50-63-baseline-80e9d45/web/tests/driver/persisted.integration.mjs:176:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'beb3878d-a35f-4af3-88ff-af4a244e4205'
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual: 'beb3878d-a35f-4af3-88ff-af4a244e4205'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q50-63-baseline-80e9d45/web/tests/driver/persisted.integration.mjs:183:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: unknown committed confirmation reconciles by owner read and a new SOS reaches past a stale active cache
+not ok 5 - unknown committed confirmation reconciles by owner read and a new SOS reaches past a stale active cache
+  ---
+  duration_ms: 65.032209
+  type: 'test'
+  location: '/private/tmp/andes-q50-63-baseline-80e9d45/web/tests/driver/persisted.integration.mjs:190:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    'blocked' !== 'ok'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'ok'
+  actual: 'blocked'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q50-63-baseline-80e9d45/web/tests/driver/persisted.integration.mjs:199:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: unknown uncommitted confirmation rejects after idempotency lookup and permits explicit correction
+not ok 6 - unknown uncommitted confirmation rejects after idempotency lookup and permits explicit correction
+  ---
+  duration_ms: 106.946458
+  type: 'test'
+  location: '/private/tmp/andes-q50-63-baseline-80e9d45/web/tests/driver/persisted.integration.mjs:210:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      {
+    +   code: 'prior-submission-unresolved',
+    +   kind: 'unknown',
+    +   responseCode: 'contact_not_accepted',
+    -   code: 'contact_not_accepted',
+    -   kind: 'rejected',
+        status: 409
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    kind: 'rejected'
+    status: 409
+    code: 'contact_not_accepted'
+  actual:
+    kind: 'unknown'
+    code: 'prior-submission-unresolved'
+    status: 409
+    responseCode: 'contact_not_accepted'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q50-63-baseline-80e9d45/web/tests/driver/persisted.integration.mjs:219:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 2
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 913.41075

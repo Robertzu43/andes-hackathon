@@ -1,0 +1,12 @@
+:root {
+  --font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --canvas: oklch(0.9701197 0.0042559 197.08649); /* #F2F6F6 */
+  --surface: oklch(0.9932914 0.0010607 197.13904); /* #FCFDFD */
+  --ink: oklch(0.2961605 0.0350327 220.06513); /* #173139 */
+  --muted: oklch(0.4811783 0.0270835 217.06201); /* #4D6268 */
+  --primary: oklch(0.4715905 0.0759156 213.64919); /* #166675 */
+  --on-primary: oklch(0.9888050 0.0031799 197.10533); /* #F9FCFC */
+  --warning: oklch(0.4813998 0.0962646 70.21784); /* #805312 */
+  --danger: oklch(0.4970452 0.1553824 24.80414); /* #A93232 */
+  --border: oklch(0.8675346 0.0133165 208.76146); /* #CAD6D8 */
+}

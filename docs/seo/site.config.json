@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "brand": "ANDES",
+  "primaryOwner": "/",
+  "userViewport": {
+    "width": 390,
+    "height": 844
+  },
+  "routes": [
+    {
+      "path": "/",
+      "kind": "utility",
+      "job": "See current trip or prepare the next freight trip",
+      "title": "Tu viaje | ANDES"
+    },
+    {
+      "path": "/session",
+      "kind": "utility",
+      "job": "Enter an actually supported authenticated or explicitly synthetic local session",
+      "title": "Entrar a ANDES | ANDES"
+    },
+    {
+      "path": "/trucks",
+      "kind": "utility",
+      "job": "Read and register owned freight trucks",
+      "title": "Mis camiones | ANDES"
+    },
+    {
+      "path": "/contacts",
+      "kind": "utility",
+      "job": "Invite accepted trusted contacts and control scoped sharing",
+      "title": "Mis contactos | ANDES"
+    },
+    {
+      "path": "/trips/new",
+      "kind": "utility",
+      "job": "Correct a text draft and explicitly confirm truck, route and accepted contacts",
+      "title": "Preparar viaje | ANDES"
+    },
+    {
+      "path": "/trips/:tripId",
+      "kind": "utility",
+      "job": "See source-aged facts and use explicit permitted trip commands",
+      "title": "Viaje | ANDES"
+    },
+    {
+      "path": "/trips/:tripId/check-in",
+      "kind": "utility",
+      "job": "Report OK or rest only in an available interaction mode",
+      "title": "Tu respuesta | ANDES"
+    },
+    {
+      "path": "/trips/:tripId/alerts",
+      "kind": "utility",
+      "job": "Separate local intent, server acceptance, channel facts and contact response",
+      "title": "Estado de la alerta | ANDES"
+    },
+    {
+      "path": "/contact/trips/:tripId",
+      "kind": "utility",
+      "job": "Read only current authorised facts and report contact action without claiming rescue",
+      "title": "Viaje compartido | ANDES"
+    },
+    {
+      "path": "/contact/invitations/:grantId",
+      "kind": "utility",
+      "job": "Accept or narrow scopes for this authenticated invitation",
+      "title": "Invitación de contacto | ANDES"
+    },
+    {
+      "path": "/trips/:tripId/summary",
+      "kind": "utility",
+      "job": "Read persisted trip events and unresolved incident facts separately",
+      "title": "Resumen del viaje | ANDES"
+    },
+    {
+      "path": "/privacy",
+      "kind": "utility",
+      "job": "Inspect and revoke operational sharing and understand separate optional reuse",
+      "title": "Privacidad | ANDES"
+    }
+  ],
+  "origin": null,
+  "design": "docs/design/specification.md"
+}
