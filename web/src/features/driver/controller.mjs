@@ -1,11 +1,10 @@
-import { FIELD_NAMES, COMMANDS, uuid, text, copy, validateFields, inputFields,
+import { INPUT_FIELDS, COMMANDS, uuid, text, copy, validateFields, inputFields,
   selectionEvidence, acceptedGrantIds, responseData } from './validation.mjs';
 
 const WRITE_SLOTS = ['truck', 'draft', 'confirm', 'command', 'sos'];
-const TERMINAL_ERRORS = [400, 401, 403, 404, 409, 422];
 const blocked = (code, details = {}) => ({ kind: 'blocked', code, ...details });
 const blankFact = () => ({ state: 'not-loaded', data: null, clientReceivedAtMs: null, invalidated: false, error: null });
-const blankForm = () => ({ text: '', fields: Object.fromEntries(FIELD_NAMES.map((key) => [key, ''])), contactGrantIds: [] });
+const blankForm = () => ({ text: '', fields: Object.fromEntries(INPUT_FIELDS.map((key) => [key, ''])), contactGrantIds: [] });
 
 /** Nonvisual, memory-only controller. Transport/auth and monitoring projection are injected. */
 export function createDriverJourney({
@@ -29,20 +28,22 @@ export function createDriverJourney({
   let draft = null;
   let activation = null;
   let tripId = null;
+  let openingTripId = null;
   let trip = blankFact();
   let location = blankFact();
   let incident = blankFact();
+  let status = blankFact();
   const writes = new Map();
   const reads = new Map();
   const listeners = new Set();
   const now = () => { try { const value = clock(); return Number.isFinite(value) ? value : null; } catch { return null; } };
   const unresolved = (slot) => ['pending', 'unknown'].includes(writes.get(slot)?.state);
-  const lockedForm = () => tripId !== null || unresolved('draft') || unresolved('confirm') || activation !== null;
+  const lockedForm = () => tripId !== null || openingTripId !== null || unresolved('draft') || unresolved('confirm') || activation !== null;
   const operationState = (run) => ({ state: run.state, request: copy(run.request), result: copy(run.result),
     clientReceivedAtMs: run.clientReceivedAtMs, sourceTime: null });
 
   function snapshot() {
-    const facts = copy({ trip, location, incident, activation });
+    const facts = copy({ trip, location, incident, status, activation });
     let monitoring = { state: 'unavailable', reason: 'reviewed-projection-not-bound' };
     if (monitoringProjection && !disposed && auth.state === 'authenticated') {
       try { monitoring = copy(monitoringProjection(copy(facts), now())); }
@@ -55,7 +56,14 @@ export function createDriverJourney({
   function notify() {
     if (notifying) return;
     notifying = true;
-    try { for (const listener of [...listeners]) { try { listener(snapshot()); } catch { /* Local view errors do not change server facts. */ } } }
+    try {
+      const freeze = (value) => {
+        if (value && typeof value === 'object') { Object.values(value).forEach(freeze); Object.freeze(value); }
+        return value;
+      };
+      const view = freeze(snapshot());
+      for (const listener of [...listeners]) { try { listener(view); } catch { /* Local view errors do not change server facts. */ } }
+    }
     finally { notifying = false; }
   }
 
@@ -72,8 +80,9 @@ export function createDriverJourney({
     return null;
   }
 
-  function writeGate() {
-    const problem = interactionGate(); if (problem) return problem;
+  function writeGate({ emergency = false } = {}) {
+    const problem = emergency ? editable() : interactionGate(); if (problem) return problem;
+    if (auth.state !== 'authenticated') return blocked('authentication-required');
     if (network === 'offline') return blocked('offline');
     if (!transport) return blocked('transport-unavailable');
     return null;
@@ -85,7 +94,9 @@ export function createDriverJourney({
       if (request.operation === 'readIncident' && data?.tripId !== tripId) return { kind: 'unknown', code: 'trip-mismatch' };
       return data ? { kind: 'ok', data } : { kind: 'unknown', code: 'invalid-response' };
     }
-    if (result?.kind === 'rejected' && TERMINAL_ERRORS.includes(result.status)) {
+    if (result?.kind === 'not_sent') return { kind: 'not_sent', code:
+      typeof result.code === 'string' && /^[a-z][a-z0-9_-]{0,63}$/.test(result.code) ? result.code : 'not-sent' };
+    if (result?.kind === 'rejected' && Number.isInteger(result.status) && result.status >= 400 && result.status < 500) {
       return { kind: 'rejected', status: result.status,
         code: typeof result.code === 'string' && /^[a-z][a-z0-9_-]{0,63}$/.test(result.code) ? result.code : 'request-rejected' };
     }
@@ -98,7 +109,6 @@ export function createDriverJourney({
     if (!write) store.get(slot)?.cancel('superseded');
     const epoch = generation;
     const actorId = auth.actorId;
-    const startedAt = now();
     const abort = new AbortController();
     let resolve;
     const promise = new Promise((done) => { resolve = done; });
@@ -107,26 +117,31 @@ export function createDriverJourney({
     const current = () => !disposed && generation === epoch && store.get(slot) === run && run.state === 'pending';
     function finish(result, { quiet = false } = {}) {
       if (run.state !== 'pending') return;
-      if (priorUnknown && result.kind === 'rejected') {
+      // These responses run inside confirmation's idempotent operation, after
+      // successful receipts are replayed. They prove this same intent did not commit.
+      const disprovedConfirmation = request.operation === 'confirmDraft' && result.kind === 'rejected' &&
+        ((result.status === 409 && ['draft_incomplete', 'contact_not_accepted'].includes(result.code)) ||
+          (result.status === 403 && result.code === 'truck_not_owned'));
+      if (priorUnknown && (result.kind === 'not_sent' || (result.kind === 'rejected' && !disprovedConfirmation))) {
         // A retry's rejection cannot disprove an earlier ambiguous commit.
         result = { kind: 'unknown', code: 'prior-submission-unresolved', status: result.status, responseCode: result.code };
       }
-      run.state = result.kind === 'ok' ? 'accepted' : result.kind === 'rejected' ? 'rejected' : 'unknown';
+      run.state = result.kind === 'ok' ? 'accepted' : ['rejected', 'not_sent'].includes(result.kind) ? result.kind : 'unknown';
       run.result = copy(result);
       const receivedAt = now();
-      if (result.kind === 'ok' || result.kind === 'rejected') run.clientReceivedAtMs = receivedAt;
+      if (result.kind !== 'unknown') run.clientReceivedAtMs = receivedAt;
       timers.clearTimeout(run.timer); run.timer = null;
       if (result.kind === 'unknown') abort.abort();
       if (!quiet && !disposed && generation === epoch && store.get(slot) === run) {
         if (result.kind === 'ok') apply(copy(result.data), receivedAt);
         if (!write && result.kind !== 'ok') {
-          const fact = slot === 'trip' ? trip : slot === 'location' ? location : incident;
+          const fact = slot === 'trip' ? trip : slot === 'location' ? location : slot === 'status' ? status : incident;
           fact.state = 'unavailable'; fact.error = copy(result);
           if ([401, 403, 404].includes(result.status)) fact.data = null;
         }
         if (result.status === 401) {
           auth.state = 'expired'; selection = null;
-          trip = blankFact(); location = blankFact(); incident = blankFact();
+          trip = blankFact(); location = blankFact(); incident = blankFact(); status = blankFact();
           for (const other of [...writes.values(), ...reads.values()]) if (other !== run) other.cancel('authentication-expired');
         }
         notify();
@@ -143,11 +158,9 @@ export function createDriverJourney({
       try {
         const result = await transport(copy(run.request), { signal: abort.signal });
         if (current()) {
-          const receivedAt = now();
-          const expired = startedAt !== null && receivedAt !== null &&
-            (receivedAt < startedAt || receivedAt - startedAt >= requestTimeoutMs);
-          finish(expired ? { kind: 'unknown', code: write ? 'submission-timeout-unknown' : 'read-timeout' } :
-            normalizeResult(result, run.request, actorId, write));
+          // A received acknowledgement is evidence even after suspend or a wall
+          // clock correction. Only an actually fired timeout retires this wait.
+          finish(normalizeResult(result, run.request, actorId, write));
         }
       } catch { if (current()) finish({ kind: 'unknown', code: write ? 'submission-unknown' : 'read-unavailable' }); }
     });
@@ -160,8 +173,11 @@ export function createDriverJourney({
       const previousDescriptor = { ...previous.request, idempotencyKey: undefined };
       return JSON.stringify(previousDescriptor) === JSON.stringify(descriptor) ? previous.promise : Promise.resolve(blocked('operation-in-progress'));
     }
-    if (previous?.state === 'unknown') return Promise.resolve(blocked('unresolved-submission'));
-    const problem = writeGate(); if (problem) return Promise.resolve(problem);
+    const problem = writeGate({ emergency: slot === 'sos' }); if (problem) return Promise.resolve(problem);
+    if (previous?.state === 'unknown') {
+      if (slot !== 'sos') return Promise.resolve(blocked('unresolved-submission'));
+      return runRequest(slot, copy(previous.request), apply, { priorUnknown: true });
+    }
     if (previous?.state === 'accepted' && !newIntent &&
         JSON.stringify({ ...previous.request, idempotencyKey: undefined }) === JSON.stringify(descriptor)) {
       return Promise.resolve(copy(previous.result));
@@ -179,11 +195,12 @@ export function createDriverJourney({
       }
     } else if (slot === 'draft') { draft = data; }
     else if (slot === 'confirm') {
-      activation = { data, clientReceivedAtMs: receivedAt, source: 'confirm-response', sourceTime: null };
-      tripId = data.id; trip = blankFact(); location = blankFact(); incident = blankFact();
+      activation = { data, clientReceivedAtMs: receivedAt, source: 'confirm-response', sourceTime: null, invalidated: false };
+      tripId = data.id; trip = blankFact(); location = blankFact(); incident = blankFact(); status = blankFact();
     } else if (slot === 'command') {
       // A command acknowledgement is not a refreshed trip state or a wellbeing outcome.
-      trip.invalidated = true; location.invalidated = true;
+      trip.invalidated = true; location.invalidated = true; status.invalidated = true;
+      if (activation) activation.invalidated = true;
     } else if (slot === 'sos') {
       incident = { state: 'available', data, clientReceivedAtMs: receivedAt, invalidated: false, error: null };
     }
@@ -196,10 +213,11 @@ export function createDriverJourney({
   function setSession(actorId = null) {
     const problem = editable(); if (problem) return problem;
     if (actorId !== null && !uuid(actorId)) return blocked('invalid-actor');
+    if (actorId !== null && auth.state === 'authenticated' && auth.actorId === actorId.toLowerCase()) return { kind: 'local-state' };
     generation += 1;
     for (const run of [...writes.values(), ...reads.values()]) run.cancel('session-ended');
     writes.clear(); reads.clear(); selection = null; form = blankForm(); draft = null; activation = null;
-    tripId = null; trip = blankFact(); location = blankFact(); incident = blankFact();
+    tripId = null; openingTripId = null; trip = blankFact(); location = blankFact(); incident = blankFact(); status = blankFact();
     permissions = { geolocation: 'unknown', motion: 'unknown' }; interaction = 'unknown';
     auth = { state: actorId ? 'authenticated' : 'unknown', actorId: actorId?.toLowerCase() ?? null };
     notify(); return { kind: 'local-state' };
@@ -238,7 +256,7 @@ export function createDriverJourney({
         Object.keys(patch).some((key) => !['text', 'fields'].includes(key))) return blocked('invalid-form-patch');
     if (patch.text !== undefined && (draft || typeof patch.text !== 'string' || patch.text.length > 10000)) return blocked('text-immutable-or-invalid');
     if (patch.fields !== undefined && (!patch.fields || typeof patch.fields !== 'object' || Array.isArray(patch.fields) ||
-        Object.entries(patch.fields).some(([key, value]) => !FIELD_NAMES.includes(key) || typeof value !== 'string' || value.length > 300))) return blocked('invalid-fields');
+        Object.entries(patch.fields).some(([key, value]) => !INPUT_FIELDS.includes(key) || typeof value !== 'string' || value.length > 300))) return blocked('invalid-fields');
     if (patch.text !== undefined) form.text = patch.text;
     if (patch.fields) Object.assign(form.fields, copy(patch.fields));
     notify(); return { kind: 'local-state' };
@@ -257,7 +275,7 @@ export function createDriverJourney({
     if (!selection) return Promise.resolve(blocked('ownership-read-required'));
     if (selection.trucks.length >= 2) return Promise.resolve(blocked('two-truck-scope'));
     if (!text(label)) return Promise.resolve(blocked('invalid-truck-label'));
-    return submit('truck', { operation: 'createTruck', params: {}, body: { label } }, { newIntent: true });
+    return submit('truck', { operation: 'createTruck', params: {}, body: { label } });
   }
 
   function saveDraft() {
@@ -293,20 +311,18 @@ export function createDriverJourney({
     if (!tripId) return Promise.resolve(blocked('trip-required'));
     if (!COMMANDS.includes(type)) return Promise.resolve(blocked('unsupported-command'));
     if (trip.data && trip.data.status !== 'active') return Promise.resolve(blocked('trip-closed'));
-    return submit('command', { operation: 'command', params: { id: tripId }, body: { type } }, { newIntent: newIntent === true });
+    return submit('command', { operation: 'command', params: { id: tripId }, body: { type } },
+      { newIntent: newIntent === true || ['checkin_ok', 'rest_report'].includes(type) });
   }
 
   function requestHelp() {
-    const problem = writeGate(); if (problem) return Promise.resolve(problem);
+    const problem = writeGate({ emergency: true }); if (problem) return Promise.resolve(problem);
     if (!tripId) return Promise.resolve(blocked('trip-required'));
-    if (incident.data?.status === 'active' && incident.data.tripId === tripId) {
-      return Promise.resolve({ kind: 'ok', data: copy(incident.data) });
-    }
     return submit('sos', { operation: 'sos', params: { id: tripId }, body: {} }, { newIntent: true });
   }
 
   function retryUnknown(slot, { confirmed = false } = {}) {
-    const problem = writeGate(); if (problem) return Promise.resolve(problem);
+    const problem = writeGate({ emergency: slot === 'sos' }); if (problem) return Promise.resolve(problem);
     const run = writes.get(slot);
     if (!WRITE_SLOTS.includes(slot) || run?.state !== 'unknown') return Promise.resolve(blocked('unknown-submission-required'));
     if (confirmed !== true) return Promise.resolve(blocked('explicit-retry-required'));
@@ -319,13 +335,17 @@ export function createDriverJourney({
     if (auth.state !== 'authenticated') return Promise.resolve(blocked('authentication-required'));
     if (!transport) return Promise.resolve(blocked('transport-unavailable'));
     if (network === 'offline') return Promise.resolve(blocked('offline'));
-    const fact = slot === 'trip' ? trip : slot === 'location' ? location : incident;
+    const fact = slot === 'trip' ? trip : slot === 'location' ? location : slot === 'status' ? status : incident;
     fact.state = 'loading'; fact.error = null;
     return runRequest(slot, descriptor, (data, at) => {
       if (slot === 'incident' && data.tripId !== tripId) { incident = { ...blankFact(), state: 'unavailable', error: { code: 'trip-mismatch' } }; return; }
       const next = { state: 'available', data, clientReceivedAtMs: at, invalidated: false, error: null };
-      if (slot === 'trip') trip = next;
+      if (slot === 'trip') { trip = next; tripId = data.id; }
       else if (slot === 'location') location = next;
+      else if (slot === 'status') {
+        status = next;
+        if (data.incident) incident = { ...next, data: { ...data.incident, tripId } };
+      }
       else incident = next;
     }, { write: false });
   }
@@ -335,15 +355,25 @@ export function createDriverJourney({
     if (!uuid(id)) return Promise.resolve(blocked('invalid-trip'));
     const normalized = id.toLowerCase();
     if (tripId && tripId !== normalized) return Promise.resolve(blocked('journey-already-bound'));
-    if (unresolved('confirm')) return Promise.resolve(blocked('unresolved-submission'));
-    if (!tripId && (draft || unresolved('draft'))) return Promise.resolve(blocked('journey-already-bound'));
-    tripId = normalized;
-    return read('trip', { operation: 'readTrip', params: { id: tripId } });
+    if (openingTripId && openingTripId !== normalized) return Promise.resolve(blocked('journey-already-bound'));
+    const reconciling = writes.get('confirm')?.state === 'unknown' && draft?.id === normalized;
+    if (unresolved('confirm') && !reconciling) return Promise.resolve(blocked('unresolved-submission'));
+    if (!tripId && (draft || unresolved('draft')) && !reconciling) return Promise.resolve(blocked('journey-already-bound'));
+    openingTripId = normalized;
+    const pending = read('trip', { operation: 'readTrip', params: { id: normalized } });
+    // A previous read must not release a newer read's form lock.
+    const run = reads.get('trip');
+    return pending.finally(() => { if (reads.get('trip') === run) openingTripId = null; });
   }
 
   function refreshLocation() {
     if (!tripId) return Promise.resolve(blocked('trip-required'));
     return read('location', { operation: 'readSnapshot', params: { id: tripId } });
+  }
+
+  function refreshStatus() {
+    if (!tripId) return Promise.resolve(blocked('trip-required'));
+    return read('status', { operation: 'readStatus', params: { id: tripId } });
   }
 
   function refreshIncident(id = incident.data?.id) {
@@ -356,13 +386,13 @@ export function createDriverJourney({
     disposed = true; generation += 1;
     for (const run of [...writes.values(), ...reads.values()]) run.cancel('disposed');
     writes.clear(); reads.clear(); listeners.clear(); selection = null; form = blankForm(); draft = null;
-    activation = null; tripId = null; trip = blankFact(); location = blankFact(); incident = blankFact();
+    activation = null; tripId = null; openingTripId = null; trip = blankFact(); location = blankFact(); incident = blankFact(); status = blankFact();
     auth = { state: 'unknown', actorId: null };
   }
 
   return { snapshot, setSession, setInteractionMode, setNetwork, setPermission, provideSelectionEvidence,
     editForm, selectContacts, registerTruck, saveDraft, confirmTrip, sendCommand, requestHelp, retryUnknown,
-    openTrip, refreshLocation, refreshIncident, dispose,
+    openTrip, refreshLocation, refreshStatus, refreshIncident, dispose,
     subscribe(listener) {
       if (disposed || typeof listener !== 'function' || listeners.size >= 16) throw new TypeError('Invalid or excessive view subscription');
       listeners.add(listener); return () => listeners.delete(listener);

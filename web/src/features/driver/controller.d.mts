@@ -2,10 +2,10 @@ export type InteractionMode = 'unknown' | 'moving' | 'stationary' | 'allowed-ass
 export type PermissionState = 'unknown' | 'prompt' | 'granted' | 'denied' | 'revoked';
 export type Command = 'arrived' | 'cancel' | 'pause' | 'resume' | 'checkin_ok' | 'rest_report';
 export type WriteSlot = 'truck' | 'draft' | 'confirm' | 'command' | 'sos';
-export type Operation = 'createTruck' | 'createDraft' | 'confirmDraft' | 'command' | 'sos' | 'readTrip' | 'readSnapshot' | 'readIncident';
+export type Operation = 'createTruck' | 'createDraft' | 'confirmDraft' | 'command' | 'sos' | 'readTrip' | 'readSnapshot' | 'readIncident' | 'readStatus';
 export interface DraftFields {
   truckId?: string; origin?: string; destination?: string;
-  country?: string; locale?: string; timeZone?: string;
+  country?: string; locale?: string; timeZone?: string; expectedArrivalAt?: string;
 }
 /** Local operation descriptor, not an HTTP endpoint or frozen lane45 transport interface. */
 export interface DriverRequest {
@@ -16,6 +16,7 @@ export interface DriverRequest {
 }
 export type TransportResult =
   | { kind: 'ok'; data: unknown }
+  | { kind: 'not_sent'; code: string }
   | { kind: 'rejected'; status: number; code: string }
   | { kind: 'unknown'; code?: string; status?: number; responseCode?: string };
 export type Outcome = TransportResult | { kind: 'blocked'; code: string; errors?: Record<string, string> };
@@ -36,9 +37,9 @@ export interface Fact<T = Record<string, unknown>> {
 }
 export interface Activation {
   data: { id: string; status: 'active'; fields: DraftFields };
-  source: 'confirm-response'; sourceTime: null; clientReceivedAtMs: number | null;
+  invalidated: boolean; source: 'confirm-response'; sourceTime: null; clientReceivedAtMs: number | null;
 }
-export interface JourneyFacts { trip: Fact; location: Fact; incident: Fact; activation: Activation | null }
+export interface JourneyFacts { trip: Fact; location: Fact; incident: Fact; status: Fact; activation: Activation | null }
 export interface JourneySnapshot extends JourneyFacts {
   disposed: boolean;
   auth: { state: 'unknown' | 'authenticated' | 'expired'; actorId: string | null };
@@ -51,7 +52,7 @@ export interface JourneySnapshot extends JourneyFacts {
   tripId: string | null;
   monitoring: unknown;
   operations: Partial<Record<WriteSlot, {
-    state: 'pending' | 'accepted' | 'rejected' | 'unknown';
+    state: 'pending' | 'accepted' | 'rejected' | 'unknown' | 'not_sent';
     request: DriverRequest; result: TransportResult | null; clientReceivedAtMs: number | null; sourceTime: null;
   }>>;
 }
@@ -71,6 +72,7 @@ export interface DriverJourney {
   requestHelp(): Promise<Outcome>;
   retryUnknown(slot: WriteSlot, options?: { confirmed?: boolean }): Promise<Outcome>;
   openTrip(id: string): Promise<Outcome>;
+  refreshStatus(): Promise<Outcome>;
   refreshLocation(): Promise<Outcome>;
   refreshIncident(id?: string): Promise<Outcome>;
   subscribe(listener: (snapshot: JourneySnapshot) => void): () => void;

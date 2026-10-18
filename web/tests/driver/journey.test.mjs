@@ -84,14 +84,14 @@ function fixture(options = {}) {
   };
 }
 
-test('construction is inert; missing auth/transport and unknown/moving interaction never submit', async () => {
+test('construction is inert; ordinary actions require auth/transport and explicit interaction', async () => {
   const b = fixture();
   assert.equal(b.calls.length + b.timers.size, 0);
   assert.equal(b.journey.snapshot().activation, null);
   assert.equal((await b.journey.saveDraft()).code, 'authentication-required');
   b.journey.setSession(ids.actor);
   assert.equal(b.journey.editForm({ text: 'test' }).code, 'interaction-not-allowed');
-  b.journey.setInteractionMode('moving'); assert.equal((await b.journey.requestHelp()).code, 'interaction-not-allowed');
+  b.journey.setInteractionMode('moving'); assert.equal((await b.journey.sendCommand('checkin_ok')).code, 'interaction-not-allowed');
   assert.equal(b.calls.length, 0);
   const c = fixture({ transport: null }); c.ready(); c.journey.editForm({ text: 'offline planning' });
   assert.equal((await c.journey.saveDraft()).code, 'transport-unavailable');
@@ -237,7 +237,7 @@ test('an ambiguous ordinary command does not occupy SOS; repeated help has one a
   assert.equal((await b.journey.sendCommand('pause')).kind, 'unknown');
   assert.equal((await b.journey.requestHelp()).kind, 'ok');
   assert.equal((await b.journey.requestHelp()).kind, 'ok');
-  assert.equal(b.calls.filter(({ request }) => request.operation === 'sos').length, 1);
+  assert.equal(b.calls.filter(({ request }) => request.operation === 'sos').length, 2);
   assert.equal(b.journey.snapshot().incident.data.groupCapability, 'unavailable');
   for (const invented of ['delivered', 'help-arrived', 'resolved', 'driver-safe']) assert.equal(JSON.stringify(b.journey.snapshot()).includes(invented), false);
 });
@@ -256,7 +256,6 @@ test('SOS unknowns preserve intent and no arrival command silently resolves the 
   const b = fixture(); await b.active(); b.handlers.sos = () => { throw new Error('lost'); };
   assert.equal((await b.journey.requestHelp()).kind, 'unknown');
   assert.equal(b.journey.snapshot().incident.data, null);
-  assert.equal((await b.journey.requestHelp()).code, 'unresolved-submission');
   delete b.handlers.sos;
   assert.equal((await b.journey.retryUnknown('sos', { confirmed: true })).kind, 'ok');
   const attempts = b.calls.filter(({ request }) => request.operation === 'sos');
@@ -342,12 +341,12 @@ test('invalid resource/key inputs fail closed without submission or hanging time
   assert.equal((await b.journey.saveDraft()).code, 'idempotency-unavailable'); assert.equal(b.calls.length + b.timers.size, 0);
 });
 
-test('delayed timer execution does not allow an expired response to activate or overwrite a journey', async () => {
+test('received confirmation is authoritative when the timeout callback has not fired', async () => {
   const b = fixture(); await b.draft(); const answer = deferred(); b.handlers.confirmDraft = () => answer.promise;
   const pending = b.journey.confirmTrip({ confirmed: true }); await settle();
   b.advance(15_000); answer.resolve(ok({ id: ids.draft, status: 'active', fields }));
-  assert.equal((await pending).kind, 'unknown');
-  assert.equal(b.journey.snapshot().activation, null); assert.equal(b.timers.size, 0);
+  assert.equal((await pending).kind, 'ok');
+  assert.equal(b.journey.snapshot().activation.data.id, ids.draft); assert.equal(b.timers.size, 0);
 });
 
 test('response receipt is local evidence and never invented as command/report source time', async () => {
@@ -359,9 +358,9 @@ test('response receipt is local evidence and never invented as command/report so
 
 test('rejection of an explicit retry cannot erase an earlier unknown submission or enable a new key', async () => {
   const b = fixture(); await b.draft(); b.handlers.confirmDraft = () => { throw new Error('lost'); };
-  await b.journey.confirmTrip({ confirmed: true }); b.handlers.confirmDraft = () => rejected(409, 'contact_not_accepted');
+  await b.journey.confirmTrip({ confirmed: true }); b.handlers.confirmDraft = () => rejected(403, 'forbidden');
   const result = await b.journey.retryUnknown('confirm', { confirmed: true });
-  assert.equal(result.kind, 'unknown'); assert.equal(result.responseCode, 'contact_not_accepted');
+  assert.equal(result.kind, 'unknown'); assert.equal(result.responseCode, 'forbidden');
   assert.equal(b.journey.editForm({ fields: { country: 'BR' } }).code, 'form-locked');
   assert.equal((await b.journey.confirmTrip({ confirmed: true })).code, 'unresolved-submission');
   assert.deepEqual(b.calls[1].request, b.calls[2].request);
@@ -383,8 +382,9 @@ test('an opened trip prevents another draft and retains only that trip location 
   assert.equal((await b.journey.requestHelp()).data.tripId, ids.elsewhere);
   const after = b.journey.snapshot();
   assert.equal(after.tripId, ids.elsewhere); assert.deepEqual(after.location, before.location);
-  assert.deepEqual(after.incident, before.incident);
-  assert.equal(b.calls.some(({ request }) => ['createDraft', 'confirmDraft', 'sos'].includes(request.operation)), false);
+  assert.equal(after.incident.data.tripId, ids.elsewhere);
+  assert.equal(b.calls.some(({ request }) => ['createDraft', 'confirmDraft'].includes(request.operation)), false);
+  assert.equal(b.calls.filter(({ request }) => request.operation === 'sos').length, 1);
 });
 
 test('pending, unknown or saved draft cannot be crossed by openTrip or lose its original intent', async () => {
@@ -414,4 +414,138 @@ test('pending, unknown or saved draft cannot be crossed by openTrip or lose its 
     assert.equal(b.calls.filter(({ request }) => request.operation === 'sos').length, 1);
     b.journey.dispose();
   }
+});
+
+// Gatekeeper5560841617: additional controls captured before the repair.
+test('gatekeeper: locale is canonical in both draft and confirmation descriptors', async () => {
+  for (const [raw, canonical] of [['es-pe', 'es-PE'], ['pt-br', 'pt-BR']]) {
+    const b = fixture(); b.ready(); b.journey.editForm({ text: 'Carga', fields: { ...fields, locale: raw } });
+    await b.journey.saveDraft(); await b.journey.confirmTrip({ confirmed: true });
+    assert.equal(b.calls[0].request.body.fields.locale, canonical);
+    assert.equal(b.calls[1].request.body.fields.locale, canonical);
+  }
+});
+test('gatekeeper: failed initial trip reads do not bind or trap a foreign trip', async () => {
+  for (const status of [403, 404]) {
+    const b = fixture(); b.ready(); b.handlers.readTrip = () => rejected(status, 'trip_not_found');
+    await b.journey.openTrip(ids.elsewhere); assert.equal(b.journey.snapshot().tripId, null);
+    delete b.handlers.readTrip; await b.active();
+    assert.equal(b.journey.snapshot().tripId, ids.draft);
+  }
+});
+test('gatekeeper: committed unknown confirmation can reconcile by the same draft trip read and send SOS', async () => {
+  const b = fixture(); await b.draft();
+  b.handlers.confirmDraft = request => {
+    b.server.trip = { id: ids.draft, driver_id: ids.actor, truck_id: ids.truck, status: 'active',
+      paused: false, map_active: true, checkins_active: true, version: 1 };
+    return { kind: 'unknown' };
+  };
+  await b.journey.confirmTrip({ confirmed: true });
+  assert.equal((await b.journey.openTrip(ids.elsewhere)).kind, 'blocked');
+  assert.equal((await b.journey.openTrip(ids.draft)).kind, 'ok');
+  assert.equal(b.journey.snapshot().tripId, ids.draft);
+  assert.equal((await b.journey.requestHelp()).kind, 'ok');
+});
+test('gatekeeper: known not_sent never becomes an unresolved submission and 429 remains rejection', async () => {
+  const b = fixture(); await b.active(); b.handlers.sos = () => ({ kind: 'not_sent', code: 'no_session' });
+  assert.equal((await b.journey.requestHelp()).kind, 'not_sent');
+  assert.equal(b.journey.snapshot().operations.sos.state, 'not_sent');
+  b.handlers.sos = () => rejected(429, 'rate_limited');
+  assert.equal((await b.journey.requestHelp()).kind, 'rejected');
+  delete b.handlers.sos; assert.equal((await b.journey.requestHelp()).kind, 'ok');
+});
+test('gatekeeper: acknowledged closure invalidates historical activation without resolving SOS', async () => {
+  const b = fixture(); await b.active(); await b.journey.requestHelp();
+  await b.journey.sendCommand('arrived');
+  assert.equal(b.journey.snapshot().activation.invalidated, true);
+  assert.equal(b.journey.snapshot().incident.data.status, 'active');
+});
+test('gatekeeper: repeated registration of the same completed intent does not create another truck', async () => {
+  const b = fixture(); b.ready();
+  const evidence = b.journey.snapshot().selection; evidence.trucks = [];
+  b.journey.provideSelectionEvidence(evidence);
+  await b.journey.registerTruck('Camión'); await b.journey.registerTruck('Camión');
+  assert.equal(b.calls.filter(c => c.request.operation === 'createTruck').length, 1);
+});
+
+test('gatekeeper: SOS bypasses motion gate, ignores stale cache and repeats after uncertainty', async () => {
+  const b = fixture(); await b.active();
+  for (const mode of ['unknown', 'moving']) {
+    b.journey.setInteractionMode(mode); assert.equal((await b.journey.requestHelp()).kind, 'ok');
+    assert.equal((await b.journey.sendCommand('checkin_ok')).code, 'interaction-not-allowed');
+  }
+  b.handlers.sos = () => ({ kind: 'unknown' }); await b.journey.requestHelp();
+  const original = b.calls.at(-1).request;
+  delete b.handlers.sos; assert.equal((await b.journey.requestHelp()).kind, 'ok');
+  assert.deepEqual(b.calls.at(-1).request, original);
+  assert.equal(b.calls.filter(c => c.request.operation === 'sos').length, 4);
+});
+test('gatekeeper: overlapping SOS is one wait, sequential OK/rest are distinct user intents', async () => {
+  const b = fixture(); await b.active(); const reply = deferred(); b.handlers.sos = () => reply.promise;
+  const first = b.journey.requestHelp(), second = b.journey.requestHelp(); await settle();
+  assert.equal(first, second); assert.equal(b.calls.filter(c => c.request.operation === 'sos').length, 1);
+  reply.resolve(ok({ id: ids.incident, tripId: ids.draft, status: 'active', groupCapability: 'unavailable' })); await first;
+  for (const type of ['checkin_ok', 'rest_report']) {
+    await b.journey.sendCommand(type); const earlier = b.calls.at(-1).request.idempotencyKey;
+    await b.journey.sendCommand(type); assert.notEqual(b.calls.at(-1).request.idempotencyKey, earlier);
+  }
+});
+test('gatekeeper: same actor preserves pending SOS; account change still clears private state', async () => {
+  const b = fixture(); await b.active(); const reply = deferred(); b.handlers.sos = () => reply.promise;
+  const pending = b.journey.requestHelp(); await settle(); b.journey.setSession(ids.actor.toUpperCase());
+  assert.equal(b.journey.snapshot().tripId, ids.draft); assert.equal(b.journey.snapshot().operations.sos.state, 'pending');
+  reply.resolve(ok({ id: ids.incident, tripId: ids.draft, status: 'active', groupCapability: 'unavailable' }));
+  assert.equal((await pending).kind, 'ok'); b.journey.setSession(ids.other);
+  assert.equal(b.journey.snapshot().tripId, null); assert.equal(b.journey.snapshot().incident.data, null);
+});
+test('gatekeeper: wall-clock changes do not turn received SOS acknowledgements into unknowns', async () => {
+  for (const delta of [20_000, -1]) {
+    const b = fixture(); await b.active(); b.handlers.sos = request => {
+      b.advance(delta); return ok({ id: ids.incident, tripId: request.params.id, status: 'active', groupCapability: 'unavailable' });
+    };
+    assert.equal((await b.journey.requestHelp()).kind, 'ok');
+  }
+});
+test('gatekeeper: same-key confirmation rejection after receipt lookup can unlock corrections', async () => {
+  for (const [status, code] of [[409, 'contact_not_accepted'], [409, 'draft_incomplete'], [403, 'truck_not_owned']]) {
+    const b = fixture(); await b.draft(); b.handlers.confirmDraft = () => ({ kind: 'unknown' });
+    await b.journey.confirmTrip({ confirmed: true }); const request = b.calls.at(-1).request;
+    b.handlers.confirmDraft = () => rejected(status, code);
+    assert.equal((await b.journey.retryUnknown('confirm', { confirmed: true })).kind, 'rejected');
+    assert.deepEqual(b.calls.at(-1).request, request);
+    assert.equal(b.journey.editForm({ fields: { destination: 'Arequipa' } }).kind, 'local-state');
+  }
+});
+test('gatekeeper: subscribers receive one detached immutable notification snapshot', () => {
+  const b = fixture(); const seen = [];
+  b.journey.subscribe(view => { seen.push(view); assert.throws(() => { view.auth.state = 'expired'; }); });
+  b.journey.subscribe(view => seen.push(view)); b.journey.setSession(ids.actor);
+  assert.equal(seen.length, 2); assert.equal(seen[0], seen[1]);
+  assert.equal(b.journey.snapshot().auth.state, 'authenticated');
+});
+
+test('gatekeeper: expected arrival is optional explicit input, retained on draft and confirmation', async () => {
+  const b = fixture(); b.ready();
+  const expectedArrivalAt = '2026-10-18T10:30:00-05:00';
+  assert.equal(b.journey.editForm({ text: 'Carga', fields: { ...fields, expectedArrivalAt } }).kind, 'local-state');
+  assert.equal((await b.journey.saveDraft()).kind, 'ok');
+  assert.equal((await b.journey.confirmTrip({ confirmed: true })).kind, 'ok');
+  assert.equal(b.calls[0].request.body.fields.expectedArrivalAt, expectedArrivalAt);
+  assert.equal(b.calls[1].request.body.fields.expectedArrivalAt, expectedArrivalAt);
+});
+test('gatekeeper: status discovers server checks and incidents without inventing source or delivery', async () => {
+  const b = fixture(); await b.active();
+  const status = { trip: { status: 'active', paused: false, expectedArrivalAt: null },
+    check: { status: 'asking', reason: 'silence', askUntil: '2026-10-17T12:05:00Z' },
+    incident: { id: ids.incident, trigger: 'missed_check', checkReason: 'silence', status: 'active', createdAt: '2026-10-17T12:00:00Z' },
+    deliveries: [{ role: 'family', channel: 'sms', status: 'unknown', unavailableReason: null }],
+    location: { freshness: 'stale', ageMs: 300000, capturedAt: '2026-10-17T11:55:00Z', accuracy: 40 } };
+  b.handlers.readStatus = () => ok(status);
+  assert.equal((await b.journey.refreshStatus()).kind, 'ok');
+  const source = b.journey.snapshot().status;
+  assert.deepEqual(source.data, status); assert.equal(source.clientReceivedAtMs, WALL);
+  assert.equal(b.journey.snapshot().incident.data.id, ids.incident);
+  b.handlers.readStatus = () => rejected(403, 'forbidden'); await b.journey.refreshStatus();
+  assert.equal(b.journey.snapshot().status.data, null);
+  assert.equal(b.journey.snapshot().incident.data.id, ids.incident);
 });

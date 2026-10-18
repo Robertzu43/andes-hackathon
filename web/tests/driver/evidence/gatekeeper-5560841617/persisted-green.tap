@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: persisted driver journey keeps explicit confirmation, last location and active SOS separate through API restart
+ok 1 - persisted driver journey keeps explicit confirmation, last location and active SOS separate through API restart
+  ---
+  duration_ms: 220.061792
+  type: 'test'
+  ...
+# Subtest: lost committed confirm and SOS responses recover with original keys and one persisted outcome each
+ok 2 - lost committed confirm and SOS responses recover with original keys and one persisted outcome each
+  ---
+  duration_ms: 95.267792
+  type: 'test'
+  ...
+# Subtest: server revocation between selection and confirmation remains an error, with no invented activation
+ok 3 - server revocation between selection and confirmation remains an error, with no invented activation
+  ---
+  duration_ms: 69.807166
+  type: 'test'
+  ...
+# Subtest: signed foreign identity cannot turn a guessed trip UUID into driver access or SOS
+ok 4 - signed foreign identity cannot turn a guessed trip UUID into driver access or SOS
+  ---
+  duration_ms: 84.554334
+  type: 'test'
+  ...
+# Subtest: unknown committed confirmation reconciles by owner read and a new SOS reaches past a stale active cache
+ok 5 - unknown committed confirmation reconciles by owner read and a new SOS reaches past a stale active cache
+  ---
+  duration_ms: 88.296
+  type: 'test'
+  ...
+# Subtest: unknown uncommitted confirmation rejects after idempotency lookup and permits explicit correction
+ok 6 - unknown uncommitted confirmation rejects after idempotency lookup and permits explicit correction
+  ---
+  duration_ms: 97.63
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 741.618375

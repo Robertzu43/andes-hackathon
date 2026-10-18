@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto';
 import { createDriverJourney } from '../../src/features/driver/controller.mjs';
 
 const root = process.env.ANDES_DRIVER_RUNTIME_ROOT;
-assert.ok(root, 'Set ANDES_DRIVER_RUNTIME_ROOT to the built ebc8fb1 backend archive');
+assert.ok(root, 'Set ANDES_DRIVER_RUNTIME_ROOT to the built pinned backend archive');
 assert.ok(process.env.TEST_DATABASE_URL, 'Use a lane-owned disposable PostgreSQL database');
 const fromRuntime = (path) => import(pathToFileURL(`${root}/${path}`));
 const { fixture } = await fromRuntime('tests/helpers/runtime.mjs');
@@ -90,6 +90,7 @@ test('persisted driver journey keeps explicit confirmation, last location and ac
   assert.equal(location.readAt, '2026-10-17T12:02:01.000Z');
 
   assert.equal((await journey.sendCommand('checkin_ok')).kind, 'ok');
+  assert.equal((await journey.sendCommand('checkin_ok')).kind, 'ok');
   assert.equal((await journey.sendCommand('rest_report')).kind, 'ok');
   const help = await journey.requestHelp(); assert.equal(help.kind, 'ok');
   // A fresh controller opened from persisted state cannot start a second journey
@@ -114,7 +115,7 @@ test('persisted driver journey keeps explicit confirmation, last location and ac
     { channel: 'voice', status: 'unavailable' }, { channel: 'whatsapp', status: 'unavailable' }]);
   assert.equal((await f.ctx.pool.query('SELECT count(*) FROM outbox')).rows[0].count, '0');
   assert.deepEqual((await f.ctx.pool.query('SELECT kind FROM trip_events ORDER BY kind')).rows.map(({ kind }) => kind),
-    ['arrived', 'checkin_ok', 'rest_report']);
+    ['arrived', 'checkin_ok', 'checkin_ok', 'rest_report']);
 
   // Destroy the original API/context, then read the committed rows through a new API/context/key.
   const connection = f.ctx.pool.options.connectionString;
@@ -179,7 +180,46 @@ test('signed foreign identity cannot turn a guessed trip UUID into driver access
   const journey = controller(t, f, apiPort(f, f.stranger)); journey.setSession(stranger.body.id);
   journey.setInteractionMode('stationary');
   assert.deepEqual(await journey.openTrip(tripId), { kind: 'rejected', status: 403, code: 'forbidden' });
-  assert.deepEqual(await journey.requestHelp(), { kind: 'rejected', status: 403, code: 'forbidden' });
+  assert.equal(journey.snapshot().tripId, null);
+  assert.deepEqual(await journey.requestHelp(), { kind: 'blocked', code: 'trip-required' });
   assert.equal(journey.snapshot().trip.data, null); assert.equal(journey.snapshot().incident.data, null);
   assert.equal((await f.ctx.pool.query('SELECT count(*) FROM incidents')).rows[0].count, '0');
+});
+
+
+test('unknown committed confirmation reconciles by owner read and a new SOS reaches past a stale active cache', async t => {
+  const f = await fixture(t, { channelSupport: [] });
+  const raw = apiPort(f); let lose = true;
+  const { journey, tripId } = await readyDraft(t, f, async (request, options) => {
+    const reply = await raw(request, options);
+    if (request.operation === 'confirmDraft' && lose) { lose = false; throw Error('SYNTHETIC lost committed receipt'); }
+    return reply;
+  });
+  assert.equal((await journey.confirmTrip({ confirmed: true })).kind, 'unknown');
+  assert.equal((await journey.openTrip(tripId)).kind, 'ok');
+  journey.setInteractionMode('unknown'); const first = await journey.requestHelp(); assert.equal(first.kind, 'ok');
+  journey.setSession(f.me.id); assert.equal(journey.snapshot().tripId, tripId);
+  assert.equal((await f.req('POST', `/v1/incidents/${first.data.id}/resolve`, {})).status, 200);
+  assert.equal(journey.snapshot().incident.data.status, 'active');
+  journey.setInteractionMode('moving'); const second = await journey.requestHelp(); assert.equal(second.kind, 'ok');
+  assert.notEqual(second.data.id, first.data.id);
+  assert.equal((await f.ctx.pool.query('SELECT count(*) FROM incidents')).rows[0].count, '2');
+  assert.equal((await f.ctx.pool.query("SELECT count(*) FROM incidents WHERE status='active'")).rows[0].count, '1');
+  assert.equal((await f.ctx.pool.query('SELECT count(*) FROM outbox')).rows[0].count, '0');
+});
+test('unknown uncommitted confirmation rejects after idempotency lookup and permits explicit correction', async t => {
+  const f = await fixture(t, { channelSupport: [] }); const raw = apiPort(f); let lose = true;
+  const { journey, grantId } = await readyDraft(t, f, async (request, options) => {
+    const reply = await raw(request, options);
+    if (request.operation === 'confirmDraft' && lose) { lose = false; throw Error('SYNTHETIC lost rejected response'); }
+    return reply;
+  });
+  await f.req('POST', `/v1/contacts/${grantId}/revoke`, {}, f.contact);
+  assert.equal((await journey.confirmTrip({ confirmed: true })).kind, 'unknown');
+  assert.deepEqual(await journey.retryUnknown('confirm', { confirmed: true }),
+    { kind: 'rejected', status: 409, code: 'contact_not_accepted' });
+  assert.equal((await f.ctx.pool.query('SELECT count(*) FROM trips')).rows[0].count, '0');
+  assert.equal(journey.selectContacts([]).kind, 'local-state');
+  assert.equal((await journey.confirmTrip({ confirmed: true })).kind, 'ok');
+  assert.equal((await f.ctx.pool.query('SELECT count(*) FROM trips')).rows[0].count, '1');
 });

@@ -1,21 +1,24 @@
 // Validation of explicit driver input, not extraction, ownership or consent authority.
 export const FIELD_NAMES = Object.freeze(['truckId', 'origin', 'destination', 'country', 'locale', 'timeZone']);
+export const INPUT_FIELDS = Object.freeze([...FIELD_NAMES, 'expectedArrivalAt']);
 export const COMMANDS = Object.freeze(['arrived', 'cancel', 'pause', 'resume', 'checkin_ok', 'rest_report']);
 export const uuid = (value) => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 export const text = (value, max = 300) => typeof value === 'string' && value.length <= max && /\S/u.test(value);
 export const copy = (value) => JSON.parse(JSON.stringify(value));
-export const instant = (value) => typeof value === 'string' && /T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
+// Match the typed client's explicit-offset wire grammar; Date.parse alone accepts malformed ISO input.
+export const instant = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])$/.test(value) && Number.isFinite(Date.parse(value));
 const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 export function validateFields(fields, { complete = false } = {}) {
   const errors = {};
-  for (const name of FIELD_NAMES) {
+  for (const name of INPUT_FIELDS) {
     const value = fields[name];
-    if (value === undefined || value === '') { if (complete) errors[name] = 'required'; continue; }
+    if (value === undefined || value === '') { if (complete && FIELD_NAMES.includes(name)) errors[name] = 'required'; continue; }
     if (typeof value !== 'string') { errors[name] = 'invalid'; continue; }
     if (name === 'truckId' && !uuid(value)) errors[name] = 'invalid';
     if (['origin', 'destination'].includes(name) && !text(value)) errors[name] = 'invalid';
     if (name === 'country' && !/^[A-Z]{2}$/.test(value)) errors[name] = 'explicit-country-required';
+    if (name === 'expectedArrivalAt' && !instant(value)) errors[name] = 'explicit-instant-required';
     if (name === 'locale') {
       try {
         const locale = new Intl.Locale(value);
@@ -33,8 +36,9 @@ export function validateFields(fields, { complete = false } = {}) {
 }
 
 export function inputFields(fields) {
-  return Object.fromEntries(FIELD_NAMES.filter((name) => fields[name] !== undefined && fields[name] !== '')
-    .map((name) => [name, name === 'truckId' ? fields[name].toLowerCase() : fields[name]]));
+  return Object.fromEntries(INPUT_FIELDS.filter((name) => fields[name] !== undefined && fields[name] !== '')
+    .map((name) => [name, name === 'truckId' ? fields[name].toLowerCase() :
+      name === 'locale' ? Intl.getCanonicalLocales(fields[name])[0] : fields[name]]));
 }
 
 // Host-normalized selection evidence. It is not a new HTTP response contract.
@@ -69,15 +73,15 @@ export function responseData(request, data, actorId) {
   if (operation === 'createTruck') return uuid(data.id) ? { id: data.id.toLowerCase() } : null;
   if (operation === 'createDraft') {
     if (!uuid(data.id) || data.status !== 'draft' || data.rawText !== body.text || !object(data.fields) ||
-        Object.keys(data.fields).some((key) => !FIELD_NAMES.includes(key)) ||
-        FIELD_NAMES.some((key) => data.fields[key] !== body.fields[key]) || !Array.isArray(data.missingFields)) return null;
+        Object.keys(data.fields).some((key) => !INPUT_FIELDS.includes(key)) ||
+        INPUT_FIELDS.some((key) => data.fields[key] !== body.fields[key]) || !Array.isArray(data.missingFields)) return null;
     const missing = FIELD_NAMES.filter((key) => !data.fields[key]);
     if (missing.length !== data.missingFields.length || missing.some((key) => !data.missingFields.includes(key))) return null;
     return { id: data.id.toLowerCase(), status: 'draft', rawText: data.rawText, fields: copy(data.fields), missingFields: missing };
   }
   if (operation === 'confirmDraft') {
     if (data.id !== params.id || data.status !== 'active' || !object(data.fields) ||
-        FIELD_NAMES.some((key) => data.fields[key] !== body.fields[key])) return null;
+        INPUT_FIELDS.some((key) => data.fields[key] !== body.fields[key])) return null;
     return { id: data.id, status: 'active', fields: inputFields(data.fields) };
   }
   if (operation === 'command') return data.id === params.id && data.command === body.type && data.automaticEscalation === false ?
@@ -98,6 +102,8 @@ export function responseData(request, data, actorId) {
         !['fresh', 'stale', 'unavailable'].includes(data.freshness) ||
         !(data.ageMs === null || (Number.isFinite(data.ageMs) && data.ageMs >= 0))) return null;
     const location = data.location;
+    if ((location === null && (data.freshness !== 'unavailable' || data.ageMs !== null)) ||
+        (location !== null && (data.freshness === 'unavailable' || data.ageMs === null))) return null;
     if (location !== null && (!object(location) || !instant(location.capturedAt) || !instant(location.receivedAt) ||
         !Number.isFinite(location.latitude) || Math.abs(location.latitude) > 90 ||
         !Number.isFinite(location.longitude) || Math.abs(location.longitude) > 180 ||
@@ -112,6 +118,35 @@ export function responseData(request, data, actorId) {
         !instant(data.createdAt) || !(data.resolvedAt === null || instant(data.resolvedAt)) || data.groupCapability !== 'unavailable') return null;
     return { id: data.id, tripId: data.tripId, status: data.status, createdAt: data.createdAt,
       resolvedAt: data.resolvedAt, groupCapability: 'unavailable' };
+  }
+  // Published PR74/27e4f94 status contract. The SDK owns its HTTP binding;
+  // older transports return not_sent/unavailable rather than simulated facts.
+  if (operation === 'readStatus') {
+    const reasons = ['arrival_overdue', 'silence', 'sharing_stopped'];
+    if (!object(data.trip) || !['active', 'arrived', 'cancelled'].includes(data.trip.status) ||
+        typeof data.trip.paused !== 'boolean' || !(data.trip.expectedArrivalAt === null || instant(data.trip.expectedArrivalAt)) ||
+        !(data.check === null || (object(data.check) && data.check.status === 'asking' && reasons.includes(data.check.reason) && instant(data.check.askUntil))) ||
+        !(data.incident === null || (object(data.incident) && uuid(data.incident.id) &&
+          ['sos', 'missed_check'].includes(data.incident.trigger) &&
+          (data.incident.checkReason === null || reasons.includes(data.incident.checkReason)) &&
+          ['active', 'resolved'].includes(data.incident.status) && instant(data.incident.createdAt))) ||
+        !Array.isArray(data.deliveries) || data.deliveries.length > 100 || data.deliveries.some(d =>
+          !object(d) || !['family', 'colleague', 'group'].includes(d.role) || !['sms', 'whatsapp', 'voice', 'group'].includes(d.channel) ||
+          !['pending', 'claimed', 'authorized', 'accepted', 'rejected', 'unknown', 'delivered', 'cancelled', 'unavailable'].includes(d.status) ||
+          !(d.unavailableReason === null || text(d.unavailableReason, 300)))) return null;
+    const loc = data.location;
+    if (loc !== undefined && (!object(loc) || !['fresh', 'stale', 'unavailable'].includes(loc.freshness) ||
+        !(loc.ageMs === null || (Number.isFinite(loc.ageMs) && loc.ageMs >= 0)) ||
+        !(loc.capturedAt === null || instant(loc.capturedAt)) ||
+        !(loc.accuracy === null || (Number.isFinite(loc.accuracy) && loc.accuracy >= 0)) ||
+        (loc.freshness === 'unavailable' ? loc.ageMs !== null || loc.capturedAt !== null || loc.accuracy !== null :
+          loc.ageMs === null || loc.capturedAt === null || loc.accuracy === null))) return null;
+    return { trip: { status: data.trip.status, paused: data.trip.paused, expectedArrivalAt: data.trip.expectedArrivalAt },
+      check: data.check === null ? null : { status: 'asking', reason: data.check.reason, askUntil: data.check.askUntil },
+      incident: data.incident === null ? null : { id: data.incident.id, trigger: data.incident.trigger,
+        checkReason: data.incident.checkReason, status: data.incident.status, createdAt: data.incident.createdAt },
+      deliveries: data.deliveries.map(({ role, channel, status, unavailableReason }) => ({ role, channel, status, unavailableReason })),
+      ...(loc === undefined ? {} : { location: { freshness: loc.freshness, ageMs: loc.ageMs, capturedAt: loc.capturedAt, accuracy: loc.accuracy } }) };
   }
   return null;
 }
