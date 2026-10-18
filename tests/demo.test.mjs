@@ -251,6 +251,10 @@ test('real OIDC tokens: a verified phone claim binds; a phone-less one never dow
   const newcomer = await id(await f.token('newcomer', phoneless));
   assert.deepEqual(await bound(newcomer), {phone: null, phone_verified: false});
   assert.equal(await accept('driver', newcomer, '+15555550178', await f.token('newcomer', phoneless)), 409, 'never verified, never accepted');
+  // A first token with an unverified phone stores it unverified; a later phone-less token must not accept on it.
+  const drifter = await id(await f.token('drifter', {phone_number: '+15555550179', phone_number_verified: false}));
+  assert.deepEqual(await bound(drifter), {phone: '+15555550179', phone_verified: false});
+  assert.equal(await accept('driver', drifter, '+15555550179', await f.token('drifter', phoneless)), 409, 'a stored unverified phone never accepts');
   assert.equal(await id(await f.token('carrier', {phone_number: '+15555550178'})), carrier);
   assert.deepEqual(await bound(carrier), {phone: '+15555550178', phone_verified: true}, 'a verified claim rebinds');
 });
