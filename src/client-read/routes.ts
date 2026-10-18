@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
 import type { Actor } from '../contracts.js';
-import { transaction, type Context } from '../db.js';
+import { readTransaction, type Context } from '../db.js';
 
 const TRUCK_LIMIT = 100;
 const CONTACT_LIMIT = 100;
@@ -81,23 +81,23 @@ async function readTrips(client: Client, actor: Actor) {
 export function clientReadRoutes(app: FastifyInstance, ctx: Context) {
   app.get('/v1/profile', request => {
     const readAt = iso(ctx.clock());
-    return transaction(ctx.pool, async client => ({ ...(await readProfile(client, request.actor)), readAt }));
+    return readTransaction(ctx.pool, async client => ({ ...(await readProfile(client, request.actor)), readAt }));
   });
   app.get('/v1/trucks', request => {
     const readAt = iso(ctx.clock());
-    return transaction(ctx.pool, async client => ({ ...(await readTrucks(client, request.actor)), readAt }));
+    return readTransaction(ctx.pool, async client => ({ ...(await readTrucks(client, request.actor)), readAt }));
   });
   app.get('/v1/contacts', request => {
     const readAt = iso(ctx.clock());
-    return transaction(ctx.pool, async client => ({ ...(await readContacts(client, request.actor)), readAt }));
+    return readTransaction(ctx.pool, async client => ({ ...(await readContacts(client, request.actor)), readAt }));
   });
   app.get('/v1/trips', request => {
     const readAt = iso(ctx.clock());
-    return transaction(ctx.pool, async client => ({ ...(await readTrips(client, request.actor)), readAt }));
+    return readTransaction(ctx.pool, async client => ({ ...(await readTrips(client, request.actor)), readAt }));
   });
   app.get('/v1/bootstrap', request => {
     const readAt = iso(ctx.clock());
-    return transaction(ctx.pool, async client => {
+    return readTransaction(ctx.pool, async client => {
       const profile = await readProfile(client, request.actor);
       const trucks = await readTrucks(client, request.actor);
       const contacts = await readContacts(client, request.actor);

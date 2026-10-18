@@ -35,6 +35,13 @@ export async function transaction<T>(pool: pg.Pool, callback: (client: pg.PoolCl
   catch (error) { await client.query('ROLLBACK').catch(() => {}); throw error; }
   finally { client.release(); }
 }
+/** Read-only snapshot: every statement sees the same committed state. Pure SELECTs cannot serialize-fail, so mutations are untouched. */
+export async function readTransaction<T>(pool: pg.Pool, callback: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try { await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY'); const result = await callback(client); await client.query('COMMIT'); return result; }
+  catch (error) { await client.query('ROLLBACK').catch(() => {}); throw error; }
+  finally { client.release(); }
+}
 /** Callbacks are SQL-only; release the client before any network/provider operation. */
 export async function withTripTransaction<T>(ctx: Context, tripId: string, callback: (client: pg.PoolClient, trip: Trip) => Promise<T>, pool = ctx.pool): Promise<T> {
   return transaction(pool, async client => {

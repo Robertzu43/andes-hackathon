@@ -25,6 +25,25 @@ test('every read response carries the server as-of timestamp', async t => {
   }
 });
 
+// Q43 FIX 5560657565: one response must be one snapshot, not five read-committed peeks.
+test('readTransaction is a repeatable read-only snapshot', async t => {
+  const f = await fixture(t);
+  const { readTransaction } = await import('../dist/db.js');
+  const isolation = await readTransaction(f.ctx.pool, async client =>
+    (await client.query(`SELECT current_setting('transaction_isolation') AS level`)).rows[0].level);
+  assert.equal(isolation, 'repeatable read');
+  await readTransaction(f.ctx.pool, async client => {
+    const before = (await client.query('SELECT count(*)::int AS n FROM trucks')).rows[0].n;
+    // A concurrent committed write must not become visible mid-transaction.
+    await f.ctx.pool.query(`INSERT INTO trucks VALUES (gen_random_uuid(), $1, 'concurrent')`, [f.me.id]);
+    const after = (await client.query('SELECT count(*)::int AS n FROM trucks')).rows[0].n;
+    assert.equal(after, before);
+  });
+  await assert.rejects(
+    readTransaction(f.ctx.pool, client => client.query(`INSERT INTO trucks VALUES (gen_random_uuid(), $1, 'forbidden')`, [f.me.id])),
+    /read-only/i);
+});
+
 // Ownership filters stop another driver's trucks appearing in the web bootstrap list.
 test('truck list returns only owned trucks in stable bounded order', async t => {
   const f = await fixture(t);
