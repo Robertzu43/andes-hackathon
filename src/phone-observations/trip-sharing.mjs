@@ -6,9 +6,9 @@ import { newObservationSessionId } from './session-id.mjs';
 export function createTripPhoneObservations({
   trip, reviewedContext = null, locationConsent = null, ...options
 } = {}) {
-  if (!trip || !['tripId', 'sessionId', 'revision'].every((key) =>
+  if (!trip || !['tripId', 'revision'].every((key) =>
     typeof trip[key] === 'string' && trip[key].length > 0 && trip[key].length <= 160)) {
-    throw new TypeError('A bounded tripId, sessionId and revision are required');
+    throw new TypeError('A bounded tripId and revision are required');
   }
   const context = { ...trip };
   let consent = locationConsent?.granted === true && locationConsent.tripId === trip.tripId &&
@@ -25,14 +25,15 @@ export function createTripPhoneObservations({
   return {
     startSharing(event) {
       if (!consent) return { ok: false, reason: 'trip-location-consent-required' };
-      if (adapter.snapshot().state === 'started') return { ok: false, reason: 'already-acquiring' };
+      if (adapter.getState() === 'started') return { ok: false, reason: 'already-acquiring' };
       return gesture(event, () => {
         adapter.start({ ...context, sessionId: newObservationSessionId() });
         const location = adapter.acquireLocation({ watch: true, preciseConsent: consent });
         if (!location.ok) { adapter.stop(); return location; }
         const wakeLock = adapter.requestWakeLock();
-        return adapter.snapshot().state === 'started' ? { ...location, wakeLock } :
-          { ok: false, reason: 'session-stopped', wakeLock };
+        if (adapter.getState() === 'started') return { ...location, wakeLock };
+        adapter.stop();
+        return { ok: false, reason: 'session-stopped', wakeLock };
       });
     },
     resumeSharing: (event) => gesture(event, () => adapter.resume()),
@@ -78,7 +79,8 @@ export function createQueuedTripPhoneObservations({ pipeline, trip, ...options }
     stopSharing: () => capture.stopSharing(),
     revokeConsent,
     snapshot: () => ({ ...capture.snapshot(), queueWithdrawal: withdrawal }),
-    drain: () => withdrawn ? Promise.resolve(blocked()) : pipeline.drain(),
+    // The drain is global. Resume other trips only after this trip's wipe/tombstone.
+    drain: () => withdrawn && withdrawal !== 'complete' ? Promise.resolve(blocked()) : pipeline.drain(),
     flush: () => withdrawn ? Promise.resolve(blocked()) : pipeline.flush(),
     async status() {
       try {

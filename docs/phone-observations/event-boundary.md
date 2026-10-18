@@ -60,6 +60,10 @@ phone stream, incident denominator, independently observed event or replay claim
 for every executable terminal path. It retains the same trip/session/revision
 envelope and null source/server times. One extra terminal slot survives an
 exhausted ordinary budget; sink-triggered stop is delivered after that sink returns.
+If the user explicitly stops or withdraws consent while suspended, one subsequent
+`session-stop` updates that same session's reason and `resumable: false`. Repeated
+final actions add no events. The field names and schema are unchanged; consumers
+must retain the latest local intent, and must not turn either event into delivery.
 This is not an acknowledged server sharing transition. Q42 owns queue mapping;
 Robert owns any new `/sharing` endpoint, its idempotency and state semantics.
 No such route existed at inspected backend c752de8a3b424bcbc086764dc11052348b27e320.

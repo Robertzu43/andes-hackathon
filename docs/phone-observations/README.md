@@ -36,8 +36,9 @@ reference. Caller context is copied. Calling `start` while active throws.
 Event IDs also include a cryptographically random adapter-instance identity, so
 recreating an adapter cannot repeat its event IDs. The trip factory generates
 a fresh runtime session ID on every start; resume generates another fresh session
-ID before resetting `sessionSequence`. The trip's input session ID is a template,
-and `snapshot().sessionId` exposes the actual runtime identity. Direct adapter
+ID before resetting `sessionSequence`. The trip factory requires `tripId` and
+`revision`; a legacy input `sessionId` is ignored. `snapshot().sessionId` exposes
+the actual runtime identity. Direct adapter
 callers must still provide a fresh session ID for each independently started session.
 
 Only explicit `acquireLocation({ watch: false })`,
@@ -60,9 +61,12 @@ subscriptions. These operations are idempotent. A stopped session can be replace
 with a new explicit `start`; callbacks retain their original session/request and
 cannot enter the replacement. One-shot requests settle once. Hidden pages,
 `pagehide` and `freeze` terminate the session with no automatic resume. Each
-termination delivers exactly one `session-stop` with reason, `sharingState: 'stopped'`
+termination delivers one `session-stop` with reason, `sharingState: 'stopped'`
 and resumable status, including budget exhaustion and reentrant sink withdrawal.
-One terminal slot is reserved beyond the ordinary event cap. It is a local signal,
+One terminal slot is reserved beyond the ordinary event cap. Explicit stop or
+consent withdrawal while suspended delivers one additional `session-stop` with
+the final reason and `resumable: false`; repeated calls emit nothing further.
+Consumers should apply the latest intent for that session. It is a local signal,
 not server receipt; a killed process may never execute lifecycle handlers.
 
 `resume()` requires an explicit new gesture on a visible page after suspension or
@@ -79,7 +83,11 @@ motion result remains denied and no new motion request is made.
 Unsupported, rejected, timed-out and browser-released locks are explicit local
 events; late grants are released. Stop releases held locks. A held lock is only
 best effort while visible and cannot promise capture under lock, page kill or
-power policy. Resume requests another lock only after the new user action.
+power policy. Its gate requires a live, visible, secure, qualified session and
+available request budget; GPS permission or activation does not gate the wake API.
+Repeated unavailable-API calls emit one diagnostic per session and increment
+`summary.suppressedBlocked`, consuming no requests or GPS history.
+Resume requests another lock only after the new user action.
 
 The browser cannot cancel a `getCurrentPosition` callback or an outstanding
 motion permission promise. Tokens ignore their eventual answers. Timeouts bound
@@ -127,6 +135,10 @@ are queried only after explicit acquisition, with one passive subscription per
 permission name per session. Code1 can trigger a fresh status query because a
 dismissed prompt does not prove persistent denial. Only browser-confirmed denial
 is terminal; ambiguous errors retain unknown until fresh evidence arrives.
+An after-error query applies only while its evidence epoch and GPS request
+generation still match. A late answer from a failed request cannot cancel a new
+gesture retry. The initial permission monitor remains session-scoped, so a late
+grant can still arm the replacement one-shot's full acquisition deadline.
 After a native GPS code1 failure, a site-level granted status alone cannot enable
 passive GPS retries. A new user gesture is required until a useful position
 callback re-establishes acquisition; blocked polling consumes no request budget.
@@ -178,13 +190,18 @@ table; changed values still require matching independently reviewed qualificatio
 ```js
 import { PROVISIONAL_BUDGET } from '../../src/phone-observations/adapter.mjs';
 const budget = { ...PROVISIONAL_BUDGET, bufferCapacity: 128 };
+// Pass this complete object as `budget`; qualification.budgetRevision must match.
 ```
+
+Old copied objects missing `permissionPromptTimeoutMs` or
+`maxRawCallbacksPerStream` are rejected with `RangeError`, rather than silently
+changing a reviewed budget. Migrate them using the complete exported spread above.
 
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `revision` | `engineering-only/5` | Must match explicit qualification |
 | `bufferCapacity` | 128 | Retained local events; evictions counted |
-| `maxEvents` | 400000 | Ordinary emissions; one additional reserved stop event |
+| `maxEvents` | 400000 | Ordinary emissions; one reserved stop plus at most one final nonresumable intent update |
 | `maxCallbacksPerStream` | 10000000 | Motion work after throttle; GPS callbacks before retiring that stream |
 | `maxRawCallbacksPerStream` | 10000000 | Independent raw-callback safety cap, including suppressed samples |
 | `maxRequests` | 100 | Supported acquisition requests; unavailable APIs and blocked calls consume none |
@@ -248,8 +265,10 @@ to queue policy. `revokeConsent()` synchronously stops/purges capture first, the
 deletes and revokes that trip's queue scope. Await its `{ ok, reason }` result.
 `snapshot().queueWithdrawal` and `status()` expose pending/complete/failed deletion;
 a failed deletion is retryable while capture and wrapper uploads remain blocked.
-Both wrapper `drain()` and `flush()` stay blocked after withdrawal, including
-pending and failed deletion; queue-owned deletion uses its own internal drain.
+Wrapper `drain()` stays blocked during pending/failed deletion. Once deletion
+and the queue's revocation tombstone succeed, it delegates the global pipeline
+drain so unrelated trips can progress. This trip's capture, resume and `flush()`
+remain blocked. Queue-owned deletion uses its own internal drain.
 Copies already transmitted cannot be recalled. A local stop is not server sharing
 acknowledgement. Raw motion is retained only as explicit opt-in qualification and
 confounder evidence outside this active-trip controller; no incident rule consumes it.
