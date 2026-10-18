@@ -95,7 +95,8 @@ Type-check with TypeScript5.9.3 when available:
 ```sh
 tsc --noEmit --strict --skipLibCheck --target ES2023 --lib ES2023,DOM \
   --module NodeNext --moduleResolution NodeNext --allowImportingTsExtensions \
-  web/src/features/contacts/journey.ts web/src/features/privacy/consent.ts
+  web/src/features/contacts/journey.ts web/src/features/privacy/consent.ts \
+  web/tests/contacts/location-age.types.ts
 ```
 
 ## Actual API mapping for lane45
@@ -137,7 +138,7 @@ journey result. Superseded never means the server mutation was cancelled.
 Lane45 publicly confirmed the retry repair at the earlier feature logic/test freeze
 `b95bdbaa3f106f33d30b3aa8b0127ca3b691ee0e` in
 [its scoped PR62 confirmation](https://github.com/Bimbi-Dev/andes-hackathon/pull/62#issuecomment-6243021647).
-It reports14 controller/client checks, including retry400/403/404/409/422 unknown
+It reports 14 controller/client checks, including retry400/403/404/409/422 unknown
 retention, a first-attempt409 rejection control, shared-session401 invalidation and
 strict structural types. HTTP/token fixtures are synthetic; those checks do not
 establish real browser login or signed-JWT/PostgreSQL integration of the adapter.
@@ -184,10 +185,24 @@ prior-unknown case. There is no promise that revocation cancels already authoriz
 work; no restore/re-enrolment operation is invented.
 
 Location state preserves capturedAt, receivedAt, server readAt, server freshness
-at that read and source age separately. `locationAge(snapshot, nowMs)` can age that
-cached fact; clock reversal behind readAt, future capture or unavailable location
-gives unknown age. It never labels the cache live, refreshes authorization or
-promotes old uploads to a new source observation. The backend's120-second bound
+at that read and source age separately. `locationAge(snapshot)` returns that exact
+server age with `asOf: 'server-read'`. It accepts no client clock and makes no current
+age estimate. A browser wall clock, including an aligned/offset/backward clock,
+cannot alter the raw fact. A slightly future capture already accepted and clamped
+to age 0 by the server remains 0; unavailable age remains null. Re-read the authorized
+snapshot for a newer fact. The UI already renders the raw age/freshness with ES/PT-BR
+as-of-read labels and does not call this helper. Neither path labels the cache live,
+refreshes authorization or promotes old uploads to a new observation.
+
+Q59's [original preserved source-age probe](https://github.com/Bimbi-Dev/andes-hackathon/blob/16d51a1873c54fdc302c5cdd002b9fa2bb851e89/docs/reviews/pr53/bridge-reproduce.mjs)
+reproduces the earlier clock-mixing defect at the archived UI head. Its published
+output has a hardcoded older candidate tag; `location-age-baseline.json` records
+the actual archive and observations. Eight new controls in `location-age.test.mjs`
+fail against that old source and cover as-of semantics, the aligned control,
+offsets/rollback, accepted +300ms capture and unavailable age. The compile-only
+`location-age.types.ts` rejects a caller-supplied wall clock. This is a narrow helper
+correction awaiting59/43 confirmation; prior privacy acceptance stays scoped and
+the UI still awaits52 review. The backend's 120-second bound
 is synthetic engineering policy, not qualified phone coverage or a safety promise.
 
 An SOS acknowledgement is an attributed receipt, distinct from an action report.

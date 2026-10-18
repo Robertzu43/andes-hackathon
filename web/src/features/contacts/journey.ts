@@ -70,13 +70,9 @@ function failure(error: unknown): Operation['failure'] {
   return categories[status ?? 0] ?? (status ? 'server' : 'network');
 }
 
-/** Age a cached observation without relabelling it live or refreshing its authorization. */
-export function locationAge(snapshot: Snapshot, nowMs: number) {
-  const read = Date.parse(snapshot.readAt);
-  const captured = snapshot.location ? Date.parse(snapshot.location.capturedAt) : null;
-  const known = snapshot.ageMs !== null && captured !== null && Number.isFinite(nowMs)
-    && nowMs >= read && captured <= read;
-  return { ageMs: known ? snapshot.ageMs! + nowMs - read : null,
+/** Preserve source age as of the server read, without an unanchored client-clock estimate. */
+export function locationAge(snapshot: Snapshot) {
+  return { ageMs: snapshot.ageMs, asOf: 'server-read',
     serverFreshnessAtRead: snapshot.freshness, readAt: snapshot.readAt,
     live: false, currentAuthorization: 'requires-server-check' } as const;
 }

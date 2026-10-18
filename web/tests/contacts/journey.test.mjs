@@ -65,19 +65,17 @@ test('protected location keeps source, receipt, read instant and old age separat
   await journey.loadLocation();
   const snapshot = journey.getState().location.data;
   assert.deepEqual(snapshot, point());
-  const aged = locationAge(snapshot, Date.parse(snapshot.readAt) + 10_000);
-  assert.equal(aged.ageMs, 190_000);
-  assert.equal(aged.serverFreshnessAtRead, 'stale');
-  assert.equal(aged.live, false);
-  assert.equal(locationAge(snapshot, Date.parse(snapshot.readAt) - 1).ageMs, null);
-  const future = point(); future.location.capturedAt = '2026-10-17T12:03:01.000Z';
-  assert.equal(locationAge(future, Date.parse(snapshot.readAt)).ageMs, null);
+  const asOfRead = locationAge(snapshot);
+  assert.equal(asOfRead.ageMs, 180_000);
+  assert.equal(asOfRead.asOf, 'server-read');
+  assert.equal(asOfRead.serverFreshnessAtRead, 'stale');
+  assert.equal(asOfRead.live, false);
 });
 
 test('absent location is explicitly unavailable, malformed and cross-trip snapshots never render', async () => {
   const absent = setup('contact', { getTripSnapshot: () => ({ tripId: ids.trip, location: null, freshness: 'unavailable', ageMs: null, readAt: point().readAt }) });
   assert.equal(await absent.journey.loadLocation(), 'recorded');
-  assert.equal(locationAge(absent.journey.getState().location.data, Date.parse(point().readAt)).ageMs, null);
+  assert.equal(locationAge(absent.journey.getState().location.data).ageMs, null);
   for (const response of [{ ...point(), tripId: ids.other }, { ...point(), ageMs: -1 }, { ...point(), location: { ...point().location, latitude: 100 } }]) {
     const { journey } = setup('contact', { getTripSnapshot: () => response });
     assert.equal(await journey.loadLocation(), 'unavailable');
