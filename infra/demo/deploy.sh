@@ -11,8 +11,8 @@ export AWS_REGION="${AWS_REGION:-us-east-1}" AWS_PAGER=""
 N=andes-demo
 TAGS="Key=project,Value=andes-hackathon"
 # Optional <Secrets Manager name under $N/>:<variable the task receives>. Each is stored and injected only when that variable is set.
-# Live Zavu is off unless ZAVU_LIVE_SEND=true, and these six stay unset for the web/dist + POST /v1/demo/session deploy. The app DB password stays required.
-SECRETS="zavu-api-key:ZAVU_API_KEY zavu-callback-secret:ZAVU_CALLBACK_SECRET zavu-qualification:ZAVU_QUALIFICATION_JSON demo-phone-pepper:DEMO_PHONE_PEPPER zavu-project-id:ZAVU_PROJECT_ID zavu-sender-id:ZAVU_SENDER_ID"
+# Live Zavu is off unless ZAVU_LIVE_SEND=true, and these stay unset (TWILIO_* adds SOS voice calls) for the web/dist + POST /v1/demo/session deploy. The app DB password stays required.
+SECRETS="zavu-api-key:ZAVU_API_KEY zavu-callback-secret:ZAVU_CALLBACK_SECRET zavu-qualification:ZAVU_QUALIFICATION_JSON demo-phone-pepper:DEMO_PHONE_PEPPER zavu-project-id:ZAVU_PROJECT_ID zavu-sender-id:ZAVU_SENDER_ID demo-live-phone:DEMO_LIVE_PHONE twilio-account-sid:TWILIO_ACCOUNT_SID twilio-auth-token:TWILIO_AUTH_TOKEN twilio-from:TWILIO_FROM"
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 # Explicit opt-in per account: a wrong or default profile cannot deploy (or tear down) anything.
 [ "$ACCOUNT" = "$ANDES_AWS_ACCOUNT" ] || { echo "Refusing: profile account $ACCOUNT is not ANDES_AWS_ACCOUNT" >&2; exit 1; }
@@ -95,6 +95,9 @@ service) # $ ~1.5/day: Fargate 0.5 vCPU/1 GB + Express-managed HTTPS load balanc
   # ZAVU_LIVE_SEND=true (default false) turns real sends on. With it off the container skips the consumers: startWorker
   # refuses them without a live provider, and under `wait -n; exit 1` that would restart the whole task, API included.
   LIVE="${ZAVU_LIVE_SEND:-false}"
+  # Live mode crash-loops the task (API included) if any of these is missing, so refuse before rolling out.
+  if [ "$LIVE" = true ]; then for v in ZAVU_API_KEY ZAVU_QUALIFICATION_JSON ZAVU_PROJECT_ID ZAVU_SENDER_ID ZAVU_CALLBACK_SECRET DEMO_LIVE_PHONE; do
+    [ -n "${!v:-}" ] || { echo "ZAVU_LIVE_SEND=true needs $v set in this shell (and stored with: secrets)" >&2; exit 1; }; done; fi
   cat > /tmp/$N-service.json <<JSON
 {"serviceName":"$N","cluster":"$N","healthCheckPath":"/health","cpu":"512","memory":"1024",
  "executionRoleArn":"arn:aws:iam::$ACCOUNT:role/$N-exec","taskRoleArn":"arn:aws:iam::$ACCOUNT:role/$N-task",
@@ -114,7 +117,7 @@ service) # $ ~1.5/day: Fargate 0.5 vCPU/1 GB + Express-managed HTTPS load balanc
    {"name":"DEMO_OTP_PER_IP_HOURLY","value":"${DEMO_OTP_PER_IP_HOURLY:-5}"},{"name":"DEMO_SMS_DAILY_CAP","value":"${DEMO_SMS_DAILY_CAP:-40}"},
    {"name":"DEMO_ALERTS_PER_NUMBER_DAILY","value":"${DEMO_ALERTS_PER_NUMBER_DAILY:-12}"},
    {"name":"SILENCE_MS","value":"120000"},{"name":"ASK_GRACE_MS","value":"60000"},{"name":"ARRIVAL_GRACE_MS","value":"120000"},{"name":"CHECK_SWEEP_MS","value":"5000"},
-   {"name":"EMERGENCY_NUMBERS","value":"{\"PE\":\"105\",\"BR\":\"190\"}"},{"name":"INSIGHTS_TIME_ZONE","value":"America/Lima"}]}}
+   {"name":"EMERGENCY_NUMBERS","value":"{\"PE\":\"105\",\"BR\":\"190\",\"CO\":\"123\"}"},{"name":"INSIGHTS_TIME_ZONE","value":"America/Lima"}]}}
 JSON
   arn=$(aws ecs list-services --cluster "$N" --query 'serviceArns[0]' --output text)
   if [ "$arn" = None ]; then aws ecs create-express-gateway-service --cli-input-json "file:///tmp/$N-service.json" --query 'service.serviceArn' --output text

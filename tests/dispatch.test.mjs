@@ -36,7 +36,7 @@ test('recipient discovers incident from frozen alerts and can read and respond a
     const attempt=await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,job,'after-arrival'),p);assert.ok(attempt);
     const payload=(await f.ctx.pool.query('SELECT payload FROM dispatch_attempts WHERE id=$1',[attempt.id])).rows[0].payload;
     const summary=payload.text ?? payload.content.templateVariables['1'];
-    assert.ok(summary.includes(`Incidente ${id}.`));assert.match(summary,/ubicación no disponible/);assert.doesNotMatch(summary,/maps\.google\.com/);
+    assert.ok(payload.channel==='voice'||summary.includes(`Incidente ${id}.`));assert.match(summary,/ubicación no disponible/);assert.doesNotMatch(summary,/maps\.google\.com/);
   }
   assert.deepEqual((await f.ctx.pool.query('SELECT payload FROM dispatch_attempts WHERE job_id=$1',[sms.id])).rows[0].payload,frozen);
   assert.equal((await f.req('POST',`${path}/acknowledgements`,{},f.contact)).status,200);
@@ -90,7 +90,7 @@ test('stale claim cannot authorize, stop-first denies and authorize-first surviv
 test('authorization rechecks standing scope, trip scope, phone and incident; arrival keeps SOS without coordinates', async t => {
   const d=await runtime();const f=await fixture(t);const {jobs,trip}=await sos(f);const p=provider();
   await f.req('POST',`/v1/trips/${trip}/locations`,{observations:[{capturedAt:f.ctx.clock().toISOString(),latitude:-12,longitude:-77,accuracy:7}]});
-  const first=await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,jobs[0],'a'),p);assert.match(JSON.stringify(first.payload),/-12/);assert.match(JSON.stringify(first.payload),/maps\.google\.com\/\?q=-12,-77/);
+  const first=await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,jobs[0],'a'),p);assert.match(JSON.stringify(first.payload),/-12/);assert.match(JSON.stringify(first.payload),/-12\.00000,-77\.00000/);
   await f.req('POST',`/v1/trips/${trip}/commands`,{type:'arrived'});
   const second=await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,jobs[1],'b'),p);assert.ok(second);assert.doesNotMatch(JSON.stringify(second.payload),/maps\.google\.com/);assert.match(JSON.stringify(second.payload),/no disponible/);
   await f.ctx.pool.query('UPDATE identities SET phone_verified=false WHERE id=$1',[f.contactIdentity.id]);

@@ -116,7 +116,7 @@ test('demo deploy: consumers only with live sends, their queue actions, optional
   for(const action of ['sqs:SendMessage','sqs:ReceiveMessage','sqs:DeleteMessage','sqs:ChangeMessageVisibility'])assert.ok(task.includes(`\\"${action}\\"`),action);
   assert.equal(task.split('\\"$(queue_arn emergency)\\",\\"$(queue_arn ordinary)\\"').length,3,'both task policies cover both queues');
   const secrets=deploy.match(/^SECRETS="([^"]+)"$/m)[1].split(' ').map(pair=>pair.split(':')[1]).sort();
-  assert.deepEqual(secrets,['DEMO_PHONE_PEPPER','ZAVU_API_KEY','ZAVU_CALLBACK_SECRET','ZAVU_PROJECT_ID','ZAVU_QUALIFICATION_JSON','ZAVU_SENDER_ID']);
+  assert.deepEqual(secrets,['DEMO_LIVE_PHONE','DEMO_PHONE_PEPPER','TWILIO_ACCOUNT_SID','TWILIO_AUTH_TOKEN','TWILIO_FROM','ZAVU_API_KEY','ZAVU_CALLBACK_SECRET','ZAVU_PROJECT_ID','ZAVU_QUALIFICATION_JSON','ZAVU_SENDER_ID']);
   // Profile and account are the only required shell values. Each name above is stored and injected only when set.
   assert.deepEqual([...deploy.matchAll(/\$\{([A-Z0-9_]+):\?/g)].map(match=>match[1]),['AWS_PROFILE','ANDES_AWS_ACCOUNT']);
   assert.match(deploy,/secret_arns\(\) \{ for pair in \$SECRETS; do var="\$\{pair#\*:\}"; \[ -n "\$\{!var:-\}" \] \|\| continue;/);
@@ -130,7 +130,7 @@ test('demo deploy: consumers only with live sends, their queue actions, optional
   assert.ok(deploy.includes('prepare|secrets|image|database|bootstrap|lock|service|url|teardown'));
 });
 
-const optionalSecrets=['ZAVU_API_KEY','ZAVU_CALLBACK_SECRET','ZAVU_QUALIFICATION_JSON','DEMO_PHONE_PEPPER','ZAVU_PROJECT_ID','ZAVU_SENDER_ID'];
+const optionalSecrets=['ZAVU_API_KEY','ZAVU_CALLBACK_SECRET','ZAVU_QUALIFICATION_JSON','DEMO_PHONE_PEPPER','ZAVU_PROJECT_ID','ZAVU_SENDER_ID','DEMO_LIVE_PHONE','TWILIO_ACCOUNT_SID','TWILIO_AUTH_TOKEN','TWILIO_FROM'];
 
 test('demo deploy: with no Zavu or pepper secrets the task still starts, and a set secret is the only one injected',()=>{
   const dir=mkdtempSync(join(tmpdir(),'andes-deploy-'));
@@ -169,9 +169,15 @@ esac
     assert.equal(JSON.parse(readFileSync(serviceJson,'utf8')).primaryContainer.environment.find(item=>item.name==='ZAVU_LIVE_SEND').value,'false');
     assert.ok(off.calls.some(call=>call.includes('create-express-gateway-service')));
     assert.ok(!off.calls.some(call=>/zavu-|demo-phone-pepper|create-secret|put-secret-value|demo-secrets/.test(call)),off.calls.join('\n'));
-    const on=run('service',{ZAVU_LIVE_SEND:'true'});
+    // Live without its secrets would crash-loop the task (API included): refused before anything is rolled out.
+    writeFileSync(log,'');
+    const refused=spawnSync('infra/demo/deploy.sh',['service'],{env:{PATH:`${dir}:/usr/bin:/bin`,AWS_PROFILE:'stub',ANDES_AWS_ACCOUNT:'123456789012',AWS_REGION:'us-east-1',AWS_STUB_LOG:log,ZAVU_LIVE_SEND:'true'},encoding:'utf8',timeout:15000});
+    assert.equal(refused.status,1);assert.match(refused.stderr,/ZAVU_LIVE_SEND=true needs ZAVU_API_KEY/);
+    assert.ok(!readFileSync(log,'utf8').includes('express-gateway-service'));
+    const live={ZAVU_LIVE_SEND:'true',ZAVU_API_KEY:'k',ZAVU_QUALIFICATION_JSON:'{}',ZAVU_PROJECT_ID:'p',ZAVU_SENDER_ID:'s',ZAVU_CALLBACK_SECRET:'c',DEMO_LIVE_PHONE:'+15555550101'};
+    run('service',live);
     assert.equal(JSON.parse(readFileSync(serviceJson,'utf8')).primaryContainer.environment.find(item=>item.name==='ZAVU_LIVE_SEND').value,'true');
-    assert.deepEqual(secretNames(),['PGPASSWORD']);
+    assert.deepEqual(secretNames(),['PGPASSWORD','ZAVU_API_KEY','ZAVU_CALLBACK_SECRET','ZAVU_QUALIFICATION_JSON','ZAVU_PROJECT_ID','ZAVU_SENDER_ID','DEMO_LIVE_PHONE']);
     const partial=run('secrets',{ZAVU_API_KEY:'synthetic-not-a-key',DEMO_PHONE_PEPPER:'synthetic-pepper'});
     assert.equal(partial.stdout.trim(),'stored 2 secrets');
     assert.ok(partial.calls.some(call=>call.includes('create-secret')&&call.includes('andes-demo/zavu-api-key')));
