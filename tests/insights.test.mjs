@@ -176,6 +176,26 @@ test('demo sign-in stores reports as synthetic and flags every published cell as
   assert.equal(map.includesSynthetic, true); assert.deepEqual(map.cells.map(c => [c.total, c.synthetic]), [[3, 3]]);
 });
 
+// Demo personas are free to mint: what they created must stay demo data after a restart without demo sign-in, and real
+// data must stay real after a restart with it. Provenance belongs to the data, not to the mode the server runs in now.
+test('a restart in the other mode never relabels demo or real incidents', async t => {
+  const { createApp } = await import('../dist/api/app.js'); const { createContext } = await import('../dist/db.js');
+  const { demoIssuer } = await import('../dist/demo.js'); const demo = await demoIssuer({});
+  async function restarted(f, options) {
+    const app = createApp({ ctx: createContext(f.ctx.pool.options.connectionString, f.ctx.clock), ...options }); t.after(() => app.close());
+    const map = (await app.inject({ method: 'GET', url: '/v1/insights/hotspots' })).json();
+    return [map.includesSynthetic, map.cells.map(c => [c.total, c.synthetic])];
+  }
+  const labelled = async (f, jwt) => assert.equal((await f.req('POST', `/v1/incidents/${await sosAt(f, -12.325, -76.775, jwt)}/label`, { label: 'robo' }, jwt)).status, 200);
+  const real = await fixture(t);
+  for (const jwt of [real.driver, real.stranger, real.contact]) await labelled(real, jwt);
+  const played = await fixture(t, { auth: demo.auth, demo });
+  for (let i = 0; i < 3; i++) await labelled(played, (await played.app.inject({ method: 'POST', url: '/v1/demo/session', payload: {} })).json().driver.token);
+  const realInDemo = await restarted(real, { auth: demo.auth, demo });
+  const demoInReal = await restarted(played, { auth: { issuer: 'https://synthetic.test', audience: 'andes-test', keyResolver: async () => { throw new Error('unused'); } } });
+  assert.deepEqual({ realInDemo, demoInReal }, { realInDemo: [false, [[3, 0]]], demoInReal: [true, [[3, 3]]] });
+});
+
 // Insights must follow whether demo sign-in is actually on, not a separately read variable.
 test('the DEMO_MODE variable alone never marks real reports as demo data', async t => {
   process.env.DEMO_MODE = 'true'; t.after(() => { delete process.env.DEMO_MODE; });

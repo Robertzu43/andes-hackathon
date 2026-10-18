@@ -47,7 +47,7 @@ export function insightRoutes(app: FastifyInstance, ctx: Context, demo = false) 
         HAVING e.synthetic OR count(DISTINCT e.contributor) FILTER (WHERE i.phone_verified) >= $5::int) s
       GROUP BY 1,2,3 HAVING sum(n) >= $5::int ORDER BY total DESC,1,2,3`,
     [CELL, TIME_ZONE, new Date(end.getTime() - WINDOW_DAYS * DAY), end, MIN_COUNT])).rows;
-    return rows.map(r => ({ cy: r.cy, cx: r.cx, band: r.band, robo: r.robo, intentoRobo: r.intento, total: r.total, synthetic: demo ? r.total : r.synthetic }));
+    return rows.map(r => ({ cy: r.cy, cx: r.cx, band: r.band, robo: r.robo, intentoRobo: r.intento, total: r.total, synthetic: r.synthetic }));
   }
   const map = readFileSync(new URL('../../public/mapa.html', import.meta.url)); // read once; a missing file fails at startup
   app.get('/mapa', async (_request, reply) => reply.type('text/html; charset=utf-8').send(map));
