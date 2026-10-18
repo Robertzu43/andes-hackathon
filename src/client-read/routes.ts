@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
 import type { Actor } from '../contracts.js';
 import { readTransaction, type Context } from '../db.js';
+import { recipientReadRoutes } from './recipient.js';
 
 const TRUCK_LIMIT = 100;
 const CONTACT_LIMIT = 100;
@@ -113,4 +114,5 @@ export function clientReadRoutes(app: FastifyInstance, ctx: Context) {
       };
     });
   });
+  recipientReadRoutes(app, ctx);
 }
