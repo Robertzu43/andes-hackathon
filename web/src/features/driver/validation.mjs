@@ -101,8 +101,9 @@ export function responseData(request, data, actorId) {
         INPUT_FIELDS.some((key) => data.fields[key] !== body.fields[key])) return null;
     return { id: data.id, status: 'active', fields: inputFields(data.fields) };
   }
-  if (operation === 'command') return data.id === params.id && data.command === body.type && data.automaticEscalation === false ?
-    { id: data.id, command: data.command, automaticEscalation: false } : null;
+  // automaticEscalation is true when the sweeper can still escalate this trip (main b80786c).
+  if (operation === 'command') return data.id === params.id && data.command === body.type && typeof data.automaticEscalation === 'boolean' ?
+    { id: data.id, command: data.command, automaticEscalation: data.automaticEscalation } : null;
   if (operation === 'sos') return uuid(data.id) && data.tripId === params.id && data.status === 'active' && data.groupCapability === 'unavailable' ?
     { id: data.id.toLowerCase(), tripId: data.tripId, status: 'active', groupCapability: 'unavailable' } : null;
   if (operation === 'readTrip') {
@@ -146,6 +147,7 @@ export function responseData(request, data, actorId) {
         !(data.incident === null || (object(data.incident) && uuid(data.incident.id) &&
           ['sos', 'missed_check'].includes(data.incident.trigger) &&
           (data.incident.checkReason === null || reasons.includes(data.incident.checkReason)) &&
+          (data.incident.label === null || ['robo', 'intento_robo', 'falsa_alarma', 'sin_senal', 'otro'].includes(data.incident.label)) &&
           ['active', 'resolved'].includes(data.incident.status) && instant(data.incident.createdAt))) ||
         !Array.isArray(data.deliveries) || data.deliveries.length > 100 || data.deliveries.some(d =>
           !object(d) || !['family', 'colleague', 'group'].includes(d.role) || !['sms', 'whatsapp', 'voice', 'group'].includes(d.channel) ||
@@ -161,7 +163,7 @@ export function responseData(request, data, actorId) {
     return { trip: { status: data.trip.status, paused: data.trip.paused, expectedArrivalAt: data.trip.expectedArrivalAt },
       check: data.check === null ? null : { status: 'asking', reason: data.check.reason, askUntil: data.check.askUntil },
       incident: data.incident === null ? null : { id: data.incident.id, trigger: data.incident.trigger,
-        checkReason: data.incident.checkReason, status: data.incident.status, createdAt: data.incident.createdAt },
+        checkReason: data.incident.checkReason, status: data.incident.status, label: data.incident.label, createdAt: data.incident.createdAt },
       deliveries: data.deliveries.map(({ role, channel, status, unavailableReason }) => ({ role, channel, status, unavailableReason })),
       ...(loc === undefined ? {} : { location: { freshness: loc.freshness, ageMs: loc.ageMs, capturedAt: loc.capturedAt, accuracy: loc.accuracy } }) };
   }

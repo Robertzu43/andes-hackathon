@@ -11,7 +11,8 @@ const { fixture } = await import(pathToFileURL(`${root}/tests/helpers/runtime.mj
 const { checkOnce } = await import(pathToFileURL(`${root}/dist/checks/sweep.js`));
 
 test('published status and expected arrival preserve actual open checks, sweeper incident and separate arrival', async t => {
-  const f = await fixture(t, { channelSupport: [] });
+  // automaticChecks matches a deployment that runs the sweeper, as this test does.
+  const f = await fixture(t, { channelSupport: [], automaticChecks: true });
   const requests = [];
   const journey = createDriverJourney({ keyFactory: randomUUID, clock: () => f.ctx.clock().getTime(),
     transport: async (request, { signal }) => {
@@ -65,6 +66,10 @@ test('published status and expected arrival preserve actual open checks, sweeper
   assert.equal(view.incident.data.id, view.status.data.incident.id);
   assert.deepEqual(view.status.data.deliveries, [{ role: 'group', channel: 'group', status: 'unavailable', unavailableReason: 'group_support_unverified' }]);
   assert.equal(view.status.clientReceivedAtMs, f.ctx.clock().getTime());
+  // R9: the driver labels the incident and status carries the label back.
+  assert.equal((await f.req('POST', `/v1/incidents/${view.incident.data.id}/label`, { label: 'falsa_alarma' }, f.driver, randomUUID())).status, 200);
+  await journey.refreshStatus();
+  assert.equal(journey.snapshot().status.data.incident.label, 'falsa_alarma');
   await journey.sendCommand('arrived'); await journey.refreshStatus();
   assert.equal(journey.snapshot().status.data.trip.status, 'arrived');
   assert.equal(journey.snapshot().status.data.incident.status, 'active');

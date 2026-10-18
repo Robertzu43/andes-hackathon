@@ -47,10 +47,12 @@ separate from source time and may remain unknown.
 Locale is canonicalized with `Intl.getCanonicalLocales` before both draft and
 confirmation sends. Country and time zone are explicit independent inputs.
 `expectedArrivalAt` is an optional explicit-offset instant, never inferred.
-It follows published PR74/27e4f94; the current base dfa308b does not yet implement
-that additive field or status endpoint. Omit it on that base. SDK81 and the
-corrected runtime must provide the real binding before the app enables it.
-`refreshStatus()` uses additive `readStatus` to consume actual server checks,
+It follows the `GET /v1/trips/:id/status` contract on main (#74,
+`docs/contracts/runtime.md`). The driver always has incident scope, so status
+carries `check`, the latest `incident` (with `label`) and the current alert wave's
+`deliveries`; `location` is absent while the map is off. Command acknowledgements
+carry `automaticEscalation: true` when the sweeper can still escalate the trip.
+`refreshStatus()` uses `readStatus` to consume actual server checks,
 incidents and distinct delivery facts; an older transport leaves it unavailable.
 Status reads are bounded, source facts remain as-of-read, and a denied status
 read does not erase the separately authorized incident cache.

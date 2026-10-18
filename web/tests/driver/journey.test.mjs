@@ -537,7 +537,7 @@ test('gatekeeper: status discovers server checks and incidents without inventing
   const b = fixture(); await b.active();
   const status = { trip: { status: 'active', paused: false, expectedArrivalAt: null },
     check: { status: 'asking', reason: 'silence', askUntil: '2026-10-17T12:05:00Z' },
-    incident: { id: ids.incident, trigger: 'missed_check', checkReason: 'silence', status: 'active', createdAt: '2026-10-17T12:00:00Z' },
+    incident: { id: ids.incident, trigger: 'missed_check', checkReason: 'silence', status: 'active', label: null, createdAt: '2026-10-17T12:00:00Z' },
     deliveries: [{ role: 'family', channel: 'sms', status: 'unknown', unavailableReason: null }],
     location: { freshness: 'stale', ageMs: 300000, capturedAt: '2026-10-17T11:55:00Z', accuracy: 40 } };
   b.handlers.readStatus = () => ok(status);
@@ -608,3 +608,23 @@ test('R8: SOS pressed while the confirmation is in flight waits for it, then sen
   assert.equal(b.calls.filter(c => c.request.operation === 'sos').length, 1);
 });
 
+// Fix pass (R9): main's #74 contract.
+test('R9: status incident carries its label; unknown labels fail closed', async () => {
+  const b = fixture(); await b.active();
+  const status = { trip: { status: 'active', paused: false, expectedArrivalAt: null }, check: null,
+    incident: { id: ids.incident, trigger: 'sos', checkReason: null, status: 'resolved', label: 'robo', createdAt: '2026-10-17T12:00:00Z' },
+    deliveries: [] };
+  b.handlers.readStatus = () => ok(status);
+  assert.equal((await b.journey.refreshStatus()).kind, 'ok');
+  assert.equal(b.journey.snapshot().status.data.incident.label, 'robo');
+  assert.equal(b.journey.snapshot().incident.data.label, 'robo');
+  b.handlers.readStatus = () => ok({ ...status, incident: { ...status.incident, label: 'robbery' } });
+  assert.equal((await b.journey.refreshStatus()).kind, 'unknown');
+});
+test('R9: a command acknowledgement may report that the sweeper can still escalate', async () => {
+  const b = fixture(); await b.active();
+  b.handlers.command = request => ok({ id: request.params.id, command: request.body.type, automaticEscalation: true });
+  const first = await b.journey.sendCommand('checkin_ok');
+  assert.equal(first.kind, 'ok'); assert.equal(first.data.automaticEscalation, true);
+  assert.equal((await b.journey.sendCommand('checkin_ok')).kind, 'ok');
+});
