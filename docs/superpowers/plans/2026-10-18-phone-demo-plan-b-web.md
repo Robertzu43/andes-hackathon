@@ -131,7 +131,7 @@ Also assert wrong response ID stays unknown, no invented `resolvedAt`, simultane
 
 **Interfaces:**
 - Consumes: existing `createQueuedTripPhoneObservations({pipeline,trip:{tripId,revision},reviewedContext,locationConsent,...options})`; `openObservationStores`, `openObservationQueue`, `createLocationUploader`, `createObservationPipeline`; `ApiClient.setSharing`.
-- Produces: `createTripObservationHost({tripId,revision,session,api,baseUrl,reviewedContext})` → `{startSharing(event):Promise<void>, stopSharing():Promise<void>, getSnapshot(), subscribe(listener), dispose():Promise<void>}`. Snapshot is token/phone-free: acquisition state, storage/wake-lock availability and server-sharing receipt/unknown. The existing reviewedContext shape is preserved, not replaced with an enable flag.
+- Produces: `createTripObservationHost({tripId,revision,session,api,baseUrl,reviewedContext,captureOptions?})` → `{startSharing(event):Promise<void>, stopSharing():Promise<void>, getSnapshot(), subscribe(listener), dispose():Promise<void>}`. Optional in-process `captureOptions` forwards only the existing adapter's `mode/platform/clock` dependency inputs, with default mode `device`; production composition never enables synthetic mode through URL, storage or environment. Snapshot is token/phone-free: acquisition state, storage/wake-lock availability and server-sharing receipt/unknown. The existing reviewedContext shape is preserved, not replaced with an enable flag.
 
 - [ ] **Step 1: Write failing tests.** Use only detached adapter `synthetic-test` platform/clock for positive acquisition:
 
