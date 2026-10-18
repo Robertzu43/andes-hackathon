@@ -182,3 +182,79 @@ test('after the demo issuer restarts, a trip whose tokens died cancels its open 
   assert.equal((await checksOf(f, trip)).length, 1);
   assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM incidents')).rows[0].n, 0);
 });
+
+// Fictional +1-555-01xx stand-in for the one consented DEMO_LIVE_PHONE; never a real number.
+const consented = '+15550100999';
+async function liveDemo(t) {
+  const {demoIssuer} = await import('../dist/demo.js');
+  const demo = await demoIssuer({ZAVU_LIVE_SEND: 'true', DEMO_LIVE_PHONE: consented});
+  const f = await fixture(t, {auth: demo.auth, demo});
+  return {f, response: await f.app.inject({method: 'POST', url: '/v1/demo/session', payload: {}})};
+}
+
+test('the anonymous demo session never hands out a phone: no phone claim in any token, no number in the body', async t => {
+  const {f, response} = await liveDemo(t);
+  assert.equal(response.statusCode, 200);
+  const e164 = /\+[1-9]\d{6,14}/;
+  assert.doesNotMatch(response.body, e164); assert.ok(!response.body.includes(consented.slice(1)), 'consented digits in the body');
+  const world = response.json();
+  for (const persona of ['driver', 'family', 'colleague']) {
+    for (const part of world[persona].token.split('.').slice(0, 2)) {
+      const decoded = Buffer.from(part, 'base64url').toString('utf8'), claims = JSON.parse(decoded);
+      assert.ok(!('phone_number' in claims) && !('phone_number_verified' in claims), `${persona} token carries a phone claim`);
+      assert.doesNotMatch(decoded, e164, persona); assert.ok(!decoded.includes(consented.slice(1)), persona);
+    }
+  }
+  // The identity row the issuer wrote stays the only place the consented phone lives, and the token never downgrades it.
+  assert.equal((await f.req('GET', '/v1/me', undefined, world.family.token)).body.id, world.family.id);
+  assert.deepEqual((await f.ctx.pool.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [world.family.id])).rows, [{phone: consented, phone_verified: true}]);
+});
+
+test('with phone-less tokens the live demo journey still runs and the family gets the allowlisted SOS via its identity phone', async t => {
+  const {f, response} = await liveDemo(t); const world = response.json();
+  const accept = async (from, to, phone) => {
+    const invite = await f.req('POST', '/v1/contacts', {contactId: to.id, phone, map: true, incident: true}, from.token);
+    assert.equal(invite.status, 200);
+    return f.req('POST', `/v1/contacts/${invite.body.id}/accept`, {map: true, incident: true}, to.token);
+  };
+  assert.equal((await accept(world.family, world.colleague, '+15555550103')).status, 200, 'accepted on the identity-row phone');
+  assert.deepEqual(await accept(world.family, world.driver, '+15555550199'), {status: 409, body: {code: 'verified_phone_mismatch'}});
+  const trip = await demoTrip(f, world);
+  f.advance(120001); await f.req('GET', `/v1/trips/${trip}/status`, undefined, world.family.token); await sweep(f, demoChecks);
+  assert.deepEqual(await checksOf(f, trip), [asking('silence')]);
+  const incident = (await f.req('POST', `/v1/trips/${trip}/sos`, {}, world.driver.token)).body.id;
+  const jobs = (await f.ctx.pool.query("SELECT j.id,j.version,j.class,cg.role FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 ORDER BY cg.role,j.channel", [incident])).rows;
+  assert.deepEqual(jobs.map(j => j.role), ['colleague', 'colleague', 'family', 'family', 'family']);
+  const d = await runtime();
+  const live = provider({qualification: {...qualification, allowedDestinations: [consented], demoLimits: {perIncident: 6, perSession: 6}}});
+  for (const job of jobs) await d.authorizeJob(f.ctx, await d.claimJob(f.ctx, job, 'live-demo'), live);
+  assert.deepEqual((await f.ctx.pool.query(`SELECT cg.role,j.status,j.unavailable_reason,a.payload->>'to' AS "to",count(*)::int n FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id
+    LEFT JOIN dispatch_attempts a ON a.job_id=j.id WHERE j.incident_id=$1 GROUP BY 1,2,3,4 ORDER BY 1`, [incident])).rows,
+  [{role: 'colleague', status: 'unavailable', unavailable_reason: 'destination_not_allowed', to: null, n: 2}, {role: 'family', status: 'authorized', unavailable_reason: null, to: consented, n: 3}]);
+});
+
+test('real OIDC tokens: a verified phone claim binds; a phone-less one never downgrades and is judged by the stored binding', async t => {
+  const f = await fixture(t);
+  const id = async jwt => (await f.req('GET', '/v1/me', undefined, jwt)).body.id;
+  const bound = async who => (await f.ctx.pool.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [who])).rows[0];
+  const phoneless = {phone_number: undefined, phone_number_verified: undefined};
+  const carrier = await id(await f.token('carrier', {phone_number: '+15555550177'}));
+  assert.deepEqual(await bound(carrier), {phone: '+15555550177', phone_verified: true});
+  assert.equal(await id(await f.token('carrier', phoneless)), carrier);
+  assert.deepEqual(await bound(carrier), {phone: '+15555550177', phone_verified: true}, 'no downgrade');
+  const accept = async (driver, contact, phone, jwt) => {
+    const invite = await f.req('POST', '/v1/contacts', {contactId: contact, phone, map: true, incident: true}, await f.token(driver));
+    return (await f.req('POST', `/v1/contacts/${invite.body.id}/accept`, {map: true, incident: true}, jwt)).status;
+  };
+  assert.equal(await accept('driver', carrier, '+15555550177', await f.token('carrier', phoneless)), 200, 'stored verified binding');
+  assert.equal(await accept('stranger', carrier, '+15555550177', await f.token('carrier', {phone_number_verified: false, phone_number: '+15555550177'})), 409, 'an unverified claim still refuses');
+  const newcomer = await id(await f.token('newcomer', phoneless));
+  assert.deepEqual(await bound(newcomer), {phone: null, phone_verified: false});
+  assert.equal(await accept('driver', newcomer, '+15555550178', await f.token('newcomer', phoneless)), 409, 'never verified, never accepted');
+  // A first token with an unverified phone stores it unverified; a later phone-less token must not accept on it.
+  const drifter = await id(await f.token('drifter', {phone_number: '+15555550179', phone_number_verified: false}));
+  assert.deepEqual(await bound(drifter), {phone: '+15555550179', phone_verified: false});
+  assert.equal(await accept('driver', drifter, '+15555550179', await f.token('drifter', phoneless)), 409, 'a stored unverified phone never accepts');
+  assert.equal(await id(await f.token('carrier', {phone_number: '+15555550178'})), carrier);
+  assert.deepEqual(await bound(carrier), {phone: '+15555550178', phone_verified: true}, 'a verified claim rebinds');
+});
