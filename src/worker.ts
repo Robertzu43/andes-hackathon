@@ -12,8 +12,10 @@ export function configuredProvider(env: NodeJS.ProcessEnv, http: typeof fetch = 
   if (!qualification) return null;
   const callback = loadCallbackConfig(env);
   if (!env.ZAVU_API_KEY || !callback || callback.projectId !== qualification.accountId || callback.senderId !== qualification.senderId) throw new Error('Matching Zavu API and callback configuration required');
-  // Synthetic demo worlds must never reach a real person except the consented allowlisted phone.
-  if (env.DEMO_MODE === 'true' && qualification.live && !qualification.allowedDestinations?.length) throw new Error('DEMO_MODE live sends require qualification allowedDestinations');
+  // Synthetic demo worlds must never reach a real person except the one consented phone, and only within a configured budget.
+  if (env.DEMO_MODE === 'true' && qualification.live && (JSON.stringify(qualification.allowedDestinations) !== JSON.stringify([env.DEMO_LIVE_PHONE]) || !qualification.demoLimits)) {
+    throw new Error('DEMO_MODE live sends require allowedDestinations exactly [DEMO_LIVE_PHONE] and demoLimits');
+  }
   return createZavuProvider(qualification, env.ZAVU_API_KEY, http);
 }
 async function loop(operation: () => Promise<unknown>, interval: number, signal: AbortSignal) {

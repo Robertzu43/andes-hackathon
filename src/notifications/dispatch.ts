@@ -82,6 +82,14 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     // Account-row locking serializes reservations across channels and worker replicas.
     await client.query('INSERT INTO quota_accounts VALUES($1) ON CONFLICT DO NOTHING', [q.accountId]);
     await client.query('SELECT project_id FROM quota_accounts WHERE project_id=$1 FOR UPDATE', [q.accountId]);
+    if (q.demoLimits) {
+      // Under the account lock, so concurrent workers cannot overshoot. Per session = per recipient identity: each demo world has one consented persona.
+      const used = (await client.query(`SELECT count(*) FILTER (WHERE j.incident_id=$1)::int AS incident,count(*) FILTER (WHERE j.recipient_id=$2)::int AS session
+        FROM dispatch_attempts a JOIN jobs j ON j.id=a.job_id WHERE j.incident_id=$1 OR j.recipient_id=$2`, [job.incident_id, job.recipient_id])).rows[0];
+      if (used.incident >= q.demoLimits.perIncident || used.session >= q.demoLimits.perSession) {
+        await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='demo_budget_exhausted' WHERE id=$1", [job.id]); return null;
+      }
+    }
     const day = new Date(now); day.setUTCHours(0, 0, 0, 0);
     const counts = (await client.query(`SELECT count(*)::int AS daily,count(*) FILTER(WHERE channel=$3)::int AS channel FROM quota_reservations WHERE project_id=$1 AND reserved_at>=$2`, [q.accountId, day, job.channel])).rows[0];
     const requests = (await client.query('SELECT count(*)::int AS n FROM provider_requests WHERE project_id=$1 AND reserved_at>$2', [q.accountId, after(now, -60000)])).rows[0].n;
