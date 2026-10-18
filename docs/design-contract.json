@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractId": "tandem-operate-v1",
+  "createdAt": "2026-10-18T01:35:38.935746+00:00",
+  "surface": {
+    "type": "web",
+    "name": "Tándem driver and trusted-contact app",
+    "mode": "operate",
+    "subject": "Freight trip and trusted-contact coordination",
+    "audience": "LATAM freight owner-operators with one or two trucks and accepted contacts; es and pt-BR",
+    "job": "Prepare/confirm a trip, share scoped source-aged facts, report intent and contact action, and distinguish unresolved delivery/help",
+    "productTruth": [
+      "PRODUCT.md",
+      "DESIGN.md",
+      "docs/design/specification.md",
+      "docs/contracts/runtime.md"
+    ]
+  },
+  "scope": {
+    "kind": "new-surface",
+    "modules": [
+      "session",
+      "home",
+      "trucks",
+      "trusted-contacts",
+      "trip-draft-confirm",
+      "active-trip",
+      "checkin",
+      "alert-status",
+      "contact-response",
+      "trip-summary",
+      "privacy"
+    ],
+    "affectedSharedSurfaces": [
+      "header-navigation",
+      "route-router",
+      "localisation",
+      "form-fields",
+      "state-feedback",
+      "brand-icons",
+      "api-session-boundary"
+    ],
+    "excluded": [
+      "public marketing website",
+      "native mobile application",
+      "paid/live provider activation",
+      "research analytics/authority reporting",
+      "unverified safety/fatigue/robbery claims"
+    ]
+  },
+  "direction": {
+    "incumbentDisposition": "extend",
+    "territory": "Tándem supplied operational design system",
+    "rationale": "The user confirmed the supplied identity, semantic tokens, Manrope font and six reference states. Implement that system without inventing another visual direction.",
+    "signature": "Two paths together in the supplied outlined Tándem identity, stable labelled OK/pause/SOS actions and separate attributed trip facts.",
+    "palette": [
+      "canvas #F7F5F0",
+      "surface #FFFFFF",
+      "ink #132C3A",
+      "muted #536570",
+      "border #73818A",
+      "subtle #E7ECEC",
+      "brand #087F8C",
+      "action #086F79",
+      "actionPressed #07545D",
+      "onAction #FFFFFF",
+      "positive #16634B",
+      "positiveSurface #E9F4EE",
+      "warning #825400",
+      "warningSurface #FFF2D6",
+      "danger #B42332",
+      "dangerPressed #8E1926",
+      "dangerSurface #FFF0F0",
+      "focus #132C3A"
+    ],
+    "typography": [
+      "Bundled Manrope, SIL OFL; body18/28, support16/24, heading22/30, title28/36, labels18/24",
+      "Exact roles and weights from docs/design/tokens.json; no rasterized interface text"
+    ],
+    "layout": "Use the supplied prepare/review/active/offline/deferred/contact-incident references as responsive component guidance. Keep critical actions stable and visible independently of optional illustrations or the tour.",
+    "motion": "Feedback120ms; reduced motion0; no driving decoration or automatic tour.",
+    "density": "Low density for driver actions, compact labelled event rows for facts, generous separation between tasks; high-priority state stays in first390x844viewport",
+    "copyVoice": "Plain Spanish and Brazilian Portuguese, sentence case, named action verbs, source-attributed reports, explicit unknown and recovery. Camiones/Caminhões, no jargon or implied emergency guarantee.",
+    "accessibility": [
+      "Text contrast>=4.5:1 and boundaries/focus>=3:1 measured in the actual app",
+      "Targets minimum48px, primary64px, in-route80px, gap16px; text may enlarge",
+      "Preserve keyboard focus and scroll during locale changes; semantic labels and readable errors",
+      "ES/pt-BR, text enlargement and reduced motion without horizontal overflow",
+      "No personal trip or participant details in generic noindex metadata"
+    ],
+    "antiDefaults": [
+      "No fake live map/green safety status",
+      "No generated testimonials, credibility badges or invented delivery",
+      "No decorative stripes, gradients, identical icon tiles or nested cards",
+      "No bot/composer/typing affordances without backend capability",
+      "No countdown owned solely by browser; unknown source age remains explicit"
+    ]
+  },
+  "sources": [
+    {
+      "id": "user-updated:impeccable",
+      "kind": "project",
+      "revision": "sha256:1e458a10d63318f89462c8d39bd48254ff39982f6628c1e45fe127d269cf043c",
+      "role": "primary accessible product craft floor",
+      "reason": "Apply product craft while the confirmed Tándem source overrides generic color and visual preferences; personal installation paths remain outside source",
+      "reference": "DESIGN.md"
+    },
+    {
+      "id": "project:tandem-specification-md",
+      "kind": "project",
+      "revision": "sha256:a490aa857fff9804d8f32a4b72566dc53c1f89ad84afda05a467ed42bebb0a40",
+      "role": "user-confirmed visual and behavior contract",
+      "reason": "The supplied version1.0 design is the confirmed implementation source",
+      "reference": "docs/design/specification.md"
+    },
+    {
+      "id": "project:tandem-tokens-json",
+      "kind": "project",
+      "revision": "sha256:d91e8bf2488b75a46489ab155325057fd8f8b6c972540f38b51ba3e340906dbd",
+      "role": "exact semantic roles and values",
+      "reason": "The supplied version1.0 design is the confirmed implementation source",
+      "reference": "docs/design/tokens.json"
+    },
+    {
+      "id": "project:tandem-components-json",
+      "kind": "project",
+      "revision": "sha256:bbe4c17778b9266738295fbc241ca314fa9a984949e70fa57d3d246d934bc1db",
+      "role": "reusable states and reference components",
+      "reason": "The supplied version1.0 design is the confirmed implementation source",
+      "reference": "docs/design/components.json"
+    }
+  ],
+  "implementation": {
+    "componentSystem": "One existing React/TypeScript/Vite web foundation with shared Tándem tokens, controls, router and ES/pt-BR provider",
+    "shadcnRole": "not-used",
+    "constraints": [
+      "web/package and shared UI belong49; root backend/CI belongs44; no duplicate dependency files",
+      "41 additive read routes,45 transport,42 observation queue,50 driver,51 contact/privacy; typed interfaces reconcile through actual contracts",
+      "No pretend login: real externally issuedOIDC or explicitly synthetic local test session only",
+      "Required utility metadata/noindex, generic share assets, graceful404; no external analytics",
+      "Every module needs rendered state/control/viewport evidence and independent acceptance before software completion",
+      "Use only published authenticated backend contracts, independent route/gateway recovery, and a read-only explicit Driver.js tour; no second application or rasterized screens."
+    ]
+  },
+  "acceptance": [
+    {
+      "id": "A01",
+      "statement": "Driver can persist an owned truck, accepted contacts and explicitly confirmed trip against the actual backend; reload preserves facts",
+      "source": "User complete-app instruction; issues13–19; Robert runtime"
+    },
+    {
+      "id": "A02",
+      "statement": "Response/location/server-check/channel facts remain separate; stale/offline/revoked/error transitions cannot imply safety or delivery",
+      "source": "issues19/21/22; Robert PR52/53 feedback"
+    },
+    {
+      "id": "A03",
+      "statement": "SOS is visibly pending until accepted; contact acknowledgement/action and owner resolution remain distinct and access scoped",
+      "source": "issues29–35; Robert runtime"
+    },
+    {
+      "id": "A04",
+      "statement": "Every meaningful control works with error/loading/permission and duplicate-input states in es/pt-BR at mobile+desktop targets",
+      "source": "issue13; shared utility blueprints"
+    },
+    {
+      "id": "A05",
+      "statement": "Visual/manual check-in never becomes mandatory while moving to prevent an alarm; unqualified sensor modes and wake lock limits stay explicit",
+      "source": "issues9/11/24 and physical capability constraints"
+    },
+    {
+      "id": "A06",
+      "statement": "Every actionable review finding is resolved/responded with evidence before integration; no author self-signoff",
+      "source": "User mutual review correction and continuous-build instruction"
+    }
+  ]
+}

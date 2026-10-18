@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robos e intentos de robo en carretera — ANDES</title>
+<meta name="description" content="Mapa público y anónimo de robos y tentativas de robo reportados por transportistas de carga en las carreteras del Perú.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'">
+<style>
+  :root {
+    --sign-green: #0b5f36;      /* guide-sign green; white on it is 7.6:1 */
+    --sign-white: #ffffff;
+    --warning-yellow: #f6c500;  /* warning-sign yellow, carries black text */
+    --ink: #161a1d;
+    --asphalt: #1f2023;         /* dark map surface in night mode */
+    --paper: #f2efe9;           /* light map surface in day mode */
+    --focus: #ffd84d;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font-family: Overpass, "Helvetica Neue", Arial, sans-serif; color: var(--ink); background: var(--paper); }
+  #map { position: fixed; inset: 0; background: var(--paper); }
+  body.noche #map { background: var(--asphalt); }
+  body.noche .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.9) saturate(.5); }
+  .leaflet-tile-pane { transition: filter .45s ease; }
+  @media (prefers-reduced-motion: reduce) { .leaflet-tile-pane { transition: none; } }
+
+  .sign {
+    position: absolute; z-index: 1000; top: 16px; left: 16px; width: min(372px, calc(100% - 32px));
+    max-height: calc(100% - 32px); overflow: auto;
+    background: var(--sign-green); color: var(--sign-white); border-radius: 12px; padding: 22px 22px 18px;
+    box-shadow: inset 0 0 0 4px var(--sign-green), inset 0 0 0 6px var(--sign-white), 0 6px 24px rgba(0, 0, 0, .28);
+  }
+  h1 { font-size: 1.75rem; line-height: 1.1; font-weight: 800; margin: 0 0 .5rem; letter-spacing: -.01em; }
+  .lede { font-size: 1rem; line-height: 1.4; margin: 0 0 1.25rem; }
+  fieldset { border: 0; margin: 0 0 1rem; padding: 0; }
+  legend.group { font-size: .875rem; font-weight: 600; margin-bottom: .4rem; padding: 0; }
+  .segmented { display: flex; flex-wrap: wrap; gap: 6px; }
+  .segmented button {
+    font: inherit; font-weight: 600; font-size: .95rem; color: var(--sign-white); background: transparent;
+    border: 2px solid var(--sign-white); border-radius: 6px; padding: .45rem .7rem .3rem; cursor: pointer; min-height: 40px;
+  }
+  .segmented button[aria-pressed="true"] { background: var(--sign-white); color: var(--sign-green); }
+  .segmented button small { display: block; font-weight: 400; font-size: .75rem; }
+  button:focus-visible, summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  .scale { margin: 0 0 1rem; }
+  .scale-title { font-size: .875rem; font-weight: 600; margin: 0 0 .4rem; }
+  .scale ol { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 0; }
+  .scale li { font-size: .8rem; }
+  .scale i { display: block; height: 14px; border-radius: 4px; box-shadow: 0 0 0 2px var(--sign-white); margin: 2px 2px 6px; }
+
+  .status { font-size: .95rem; line-height: 1.4; margin: 0 0 1rem; min-height: 1.4em; }
+  .status button { font: inherit; font-weight: 600; color: var(--sign-green); background: var(--sign-white); border: 0; border-radius: 6px; padding: .35rem .7rem .2rem; margin-top: .5rem; cursor: pointer; }
+
+  .warning {
+    display: none; align-items: center; gap: 12px; background: var(--warning-yellow); color: var(--ink);
+    border-radius: 8px; padding: 10px 12px; margin: 0 0 1rem; box-shadow: inset 0 0 0 2px var(--ink);
+  }
+  .warning.visible { display: flex; }
+  .warning .diamond { flex: none; width: 22px; height: 22px; border: 3px solid var(--ink); transform: rotate(45deg); border-radius: 3px; position: relative; }
+  .warning .diamond::after { content: "!"; position: absolute; inset: 0; transform: rotate(-45deg); display: grid; place-items: center; font-weight: 800; font-size: .8rem; }
+  .warning p { margin: 0; font-size: .9rem; line-height: 1.3; }
+  .warning strong { display: block; font-size: 1rem; }
+
+  details { margin: 0 0 1rem; }
+  summary { cursor: pointer; font-weight: 600; font-size: .95rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: .5rem; font-size: .85rem; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: .3rem .25rem; border-bottom: 1px solid rgba(255, 255, 255, .35); }
+  th { font-weight: 600; }
+  td.num, th.num { text-align: right; }
+
+  .nomap { position: absolute; top: 50%; left: 404px; right: 0; text-align: center; color: var(--ink); font-weight: 600; padding: 0 24px; }
+  body.noche .nomap { color: var(--sign-white); }
+  .status:focus { outline: none; }
+  .fine { font-size: .8rem; line-height: 1.45; margin: 0; opacity: .92; }
+
+  .leaflet-tooltip { font-family: inherit; font-size: .9rem; line-height: 1.35; color: var(--ink); border-radius: 6px; padding: 8px 10px; max-width: 260px; white-space: normal; }
+
+  @media (max-width: 640px) {
+    .sign { top: auto; bottom: 0; left: 0; width: 100%; max-height: 52vh; border-radius: 14px 14px 0 0; padding: 18px 16px 14px; }
+    h1 { font-size: 1.4rem; }
+    .nomap { top: 16px; left: 0; }
+  }
+</style>
+</head>
+<body class="noche">
+<div id="map" role="region" aria-label="Mapa de zonas con robos e intentos de robo reportados"></div>
+
+<aside class="sign" aria-labelledby="title">
+  <h1 id="title">Robos e intentos de robo en carretera</h1>
+  <p class="lede">Zonas de unos 5 km donde <span class="min">3</span> o más personas distintas reportaron un robo o un intento de robo a su camión en los últimos 90 días.</p>
+
+  <fieldset>
+    <legend class="group">Horario</legend>
+    <div class="segmented" id="band">
+      <button type="button" data-band="noche" aria-pressed="true">Noche <small>22:00 a 06:00</small></button>
+      <button type="button" data-band="dia">Día <small>06:00 a 22:00</small></button>
+    </div>
+  </fieldset>
+
+  <div class="scale">
+    <p class="scale-title">Reportes por zona</p>
+    <ol id="scale"></ol>
+  </div>
+
+  <div class="warning" id="demo" role="note">
+    <span class="diamond" aria-hidden="true"></span>
+    <p><strong>Incluye datos de demostración</strong>Parte de estos reportes son de prueba. Cada zona indica cuántos.</p>
+  </div>
+
+  <p class="status" id="status" aria-live="polite" tabindex="-1">Cargando reportes…</p>
+
+  <details id="table">
+    <summary>Ver los datos en tabla</summary>
+    <table>
+      <thead><tr><th>Zona (centro)</th><th class="num">Reportes</th><th class="num">Robos</th><th class="num">Intentos</th><th class="num">Demo</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </details>
+
+  <p class="fine" id="fine">Sin nombres, teléfonos ni rutas de conductores. Las zonas con menos de <span class="min">3</span> personas no se muestran. Hora de Lima.</p>
+</aside>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>window.L || document.write('<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""><\/script>')</script>
+<script>
+  // Ordinal ramps validated with the dataviz checker against each map surface: day (light) and night (inverted tiles).
+  const bins = [{ min: 3, label: '3 a 4' }, { min: 5, label: '5 a 7' }, { min: 8, label: '8 a 11' }, { min: 12, label: '12 o más' }];
+  const ramp = { dia: ['#f08a24', '#d0680c', '#a84d04', '#723000'], noche: ['#a84d04', '#d0680c', '#f08a24', '#ffb35c'] };
+  const ring = { dia: '#ffffff', noche: '#1f2023' };
+  const state = { band: 'noche', data: null, fitted: false };
+  const $ = id => document.getElementById(id);
+  const mobile = matchMedia('(max-width: 640px)').matches, still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // If both Leaflet CDNs fail, the data stays usable through the table.
+  const map = window.L ? L.map('map', { zoomControl: false, zoomAnimation: !still, fadeAnimation: !still }).setView([-12.6, -76.7], 9) : null;
+  const layer = map ? L.featureGroup().addTo(map) : null;
+  if (map) {
+    L.control.zoom({ position: 'topright', zoomInTitle: 'Acercar', zoomOutTitle: 'Alejar' }).addTo(map);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: '&copy; colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+    if (mobile) map.attributionControl.setPosition('topleft'); // the bottom sheet would cover it
+  } else {
+    $('map').innerHTML = '<p class="nomap">No se pudo cargar el mapa. Los datos están en la tabla del panel.</p>';
+    $('table').open = true;
+  }
+
+  const bin = total => bins.reduce((found, b, i) => total >= b.min ? i : found, 0);
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  const coord = n => n.toFixed(3).replace('-', '−');
+  const limaHour = iso => new Intl.DateTimeFormat('es-PE', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'America/Lima' }).format(new Date(Math.floor(Date.parse(iso) / 3600000) * 3600000));
+
+  function describe(c) {
+    const parts = [`${plural(c.total, 'reporte', 'reportes')} en esta zona: ${plural(c.robo, 'robo', 'robos')} y ${plural(c.intentoRobo, 'intento', 'intentos')}.`];
+    if (c.synthetic) parts.push(`${c.synthetic === 1 ? 'Uno es' : `${c.synthetic} son`} de demostración.`);
+    return parts.join(' ');
+  }
+
+  function drawScale() {
+    $('scale').innerHTML = bins.map((b, i) => `<li><i style="background:${ramp[state.band][i]}"></i>${b.label}</li>`).join('');
+  }
+
+  function render() {
+    drawScale();
+    document.body.classList.toggle('noche', state.band === 'noche');
+    layer?.clearLayers();
+    if (!state.data) return;
+    for (const el of document.querySelectorAll('.min')) el.textContent = state.data.minCount;
+    const half = state.data.cellDegrees / 2;
+    const cells = state.data.cells.filter(c => c.band === state.band);
+    if (layer) for (const c of cells) {
+      L.rectangle([[c.lat - half, c.lon - half], [c.lat + half, c.lon + half]], {
+        color: ring[state.band], weight: 2, fillColor: ramp[state.band][bin(c.total)], fillOpacity: .82
+      }).bindTooltip(describe(c), { sticky: true }).addTo(layer);
+    }
+    $('rows').innerHTML = cells.map(c => `<tr><td>${coord(c.lat)}, ${coord(c.lon)}</td><td class="num">${c.total}</td><td class="num">${c.robo}</td><td class="num">${c.intentoRobo}</td><td class="num">${c.synthetic}</td></tr>`).join('')
+      || '<tr><td colspan="5">Sin zonas para mostrar.</td></tr>';
+    $('demo').classList.toggle('visible', cells.some(c => c.synthetic > 0));
+    const when = state.band === 'noche' ? 'de noche' : 'de día';
+    const period = `los últimos ${state.data.days} días`;
+    $('status').textContent = cells.length
+      ? `${plural(cells.length, 'zona', 'zonas')} con reportes ${when} en ${period}. Datos hasta las ${limaHour(state.data.generatedAt)}.`
+      : `No hay zonas con suficientes reportes ${when} en ${period}. Prueba con el otro horario.`;
+    if (map && cells.length && !state.fitted) {
+      // Keep zones clear of the panel: beside it on desktop, above the bottom sheet on phones.
+      const panel = document.querySelector('.sign');
+      map.fitBounds(layer.getBounds(), {
+        paddingTopLeft: [mobile ? 24 : panel.offsetWidth + 40, 40], paddingBottomRight: [40, mobile ? panel.offsetHeight + 24 : 40], maxZoom: 11
+      });
+      state.fitted = true;
+    }
+  }
+
+  async function load() {
+    $('status').textContent = 'Cargando reportes…';
+    try {
+      const response = await fetch('/v1/insights/hotspots', { headers: { accept: 'application/json' } });
+      if (!response.ok) throw new Error(String(response.status));
+      state.data = await response.json(); render();
+    } catch {
+      state.data = null; layer?.clearLayers(); $('demo').classList.remove('visible'); $('rows').innerHTML = '';
+      $('status').innerHTML = 'No se pudo cargar el mapa de reportes. Revisa la conexión e inténtalo de nuevo.<br><button type="button" id="retry">Reintentar</button>';
+      $('retry').addEventListener('click', () => { load(); $('status').focus(); });
+    }
+  }
+
+  function wire(groupId, key, onChange) {
+    $(groupId).addEventListener('click', event => {
+      const button = event.target.closest('button'); if (!button) return;
+      state[key] = button.dataset[key];
+      for (const b of $(groupId).querySelectorAll('button')) b.setAttribute('aria-pressed', String(b === button));
+      onChange();
+    });
+  }
+  for (const b of document.querySelectorAll('.segmented button:not([aria-pressed])')) b.setAttribute('aria-pressed', 'false');
+  wire('band', 'band', render);
+  drawScale();
+  load();
+</script>
+</body>
+</html>

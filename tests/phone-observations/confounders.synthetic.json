@@ -1,0 +1,10 @@
+{
+  "schema": "andes.phone-observations.synthetic-confounders/1",
+  "evidenceKind": "synthetic-only-not-device-qualification",
+  "cases": [
+    { "id": "phone-handling", "labelProvenance": "synthetic-scenario-author", "acceleration": { "x": 2, "y": 4, "z": 1 }, "independentOutcome": "unknown" },
+    { "id": "phone-drop", "labelProvenance": "synthetic-scenario-author", "acceleration": { "x": 0, "y": 0, "z": 0 }, "independentOutcome": "unknown" },
+    { "id": "pothole", "labelProvenance": "synthetic-scenario-author", "acceleration": { "x": 0, "y": 0, "z": 7 }, "independentOutcome": "unknown" },
+    { "id": "passenger-movement", "labelProvenance": "synthetic-scenario-author", "acceleration": { "x": 3, "y": 2, "z": 4 }, "independentOutcome": "unknown" }
+  ]
+}
