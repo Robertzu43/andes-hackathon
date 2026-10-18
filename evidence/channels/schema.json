@@ -1,0 +1,681 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ANDES #10 channel matrix v1 \u2014 structure only; check.py adds consistency rules",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "enum": [
+        "1"
+      ],
+      "type": "string"
+    },
+    "record_kind": {
+      "enum": [
+        "blank",
+        "synthetic",
+        "evidence"
+      ],
+      "type": "string"
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/row"
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "record_kind",
+    "rows"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "driver_country": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "pattern": "[A-Z]{2}"
+        },
+        "recipient_country": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "pattern": "[A-Z]{2}"
+        },
+        "number_country": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "pattern": "[A-Z]{2}"
+        },
+        "language": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "pattern": "[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*"
+        },
+        "channel": {
+          "enum": [
+            null,
+            "whatsapp",
+            "sms",
+            "voice"
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "audience": {
+          "enum": [
+            null,
+            "individual",
+            "existing_group"
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "provider": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "account_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "recipient_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "group_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        }
+      },
+      "required": [
+        "driver_country",
+        "recipient_country",
+        "number_country",
+        "language",
+        "channel",
+        "audience",
+        "provider",
+        "account_ref",
+        "recipient_ref",
+        "group_ref"
+      ],
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "official_document",
+            "account_record",
+            "consent_record",
+            "number_record",
+            "template_record",
+            "comprehension_observation",
+            "group_record",
+            "provider_receipt",
+            "recipient_observation",
+            "acknowledgement_observation",
+            "action_report",
+            "independent_action_observation"
+          ],
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "documentation",
+            "synthetic",
+            "sandbox",
+            "live"
+          ],
+          "type": "string"
+        },
+        "observed_at": {
+          "type": "string",
+          "minLength": 1,
+          "format": "date-time"
+        },
+        "recorded_at": {
+          "type": "string",
+          "minLength": 1,
+          "format": "date-time"
+        },
+        "locator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "attributed_to": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "verification": {
+          "enum": [
+            "unknown",
+            "verified",
+            "not_applicable"
+          ],
+          "type": "string"
+        },
+        "verification_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "mode",
+        "observed_at",
+        "recorded_at",
+        "locator",
+        "attributed_to",
+        "summary",
+        "provider_id",
+        "scope",
+        "verification",
+        "verification_ref"
+      ],
+      "additionalProperties": false
+    },
+    "row": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "state": {
+          "enum": [
+            "supported",
+            "conditional",
+            "unavailable",
+            "untested"
+          ],
+          "type": "string"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "state_evidence_ids": {
+          "$ref": "#/$defs/refs"
+        },
+        "checks": {
+          "type": "object",
+          "properties": {
+            "account": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "enum": [
+                    "unknown",
+                    "eligible",
+                    "ineligible"
+                  ],
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/refs"
+                }
+              },
+              "required": [
+                "value",
+                "evidence_ids"
+              ],
+              "additionalProperties": false
+            },
+            "opt_in": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "enum": [
+                    "unknown",
+                    "confirmed",
+                    "withdrawn"
+                  ],
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/refs"
+                }
+              },
+              "required": [
+                "value",
+                "evidence_ids"
+              ],
+              "additionalProperties": false
+            },
+            "number_format": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "enum": [
+                    "unknown",
+                    "verified",
+                    "invalid"
+                  ],
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/refs"
+                }
+              },
+              "required": [
+                "value",
+                "evidence_ids"
+              ],
+              "additionalProperties": false
+            },
+            "template": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "enum": [
+                    "unknown",
+                    "approved",
+                    "not_required",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/refs"
+                }
+              },
+              "required": [
+                "value",
+                "evidence_ids"
+              ],
+              "additionalProperties": false
+            },
+            "comprehension": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "enum": [
+                    "unknown",
+                    "observed",
+                    "not_understood"
+                  ],
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/refs"
+                }
+              },
+              "required": [
+                "value",
+                "evidence_ids"
+              ],
+              "additionalProperties": false
+            },
+            "existing_group": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "enum": [
+                    "unknown",
+                    "verified",
+                    "not_applicable"
+                  ],
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/refs"
+                }
+              },
+              "required": [
+                "value",
+                "evidence_ids"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "account",
+            "opt_in",
+            "number_format",
+            "template",
+            "comprehension",
+            "existing_group"
+          ],
+          "additionalProperties": false
+        },
+        "terms": {
+          "type": "object",
+          "properties": {
+            "evidence_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "checked_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1,
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "evidence_id",
+            "checked_at"
+          ],
+          "additionalProperties": false
+        },
+        "cost": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "currency": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1,
+              "pattern": "[A-Z]{3}"
+            },
+            "unit": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "evidence_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "checked_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1,
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "amount",
+            "currency",
+            "unit",
+            "evidence_id",
+            "checked_at"
+          ],
+          "additionalProperties": false
+        },
+        "attempt": {
+          "type": "object",
+          "properties": {
+            "provider_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "environment": {
+              "enum": [
+                null,
+                "synthetic",
+                "sandbox",
+                "live"
+              ],
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "receipt_status": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "receipt_meaning": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "receipt_source_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "acceptance": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "enum": [
+                    "unknown",
+                    "accepted",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/refs"
+                }
+              },
+              "required": [
+                "value",
+                "evidence_ids"
+              ],
+              "additionalProperties": false
+            },
+            "delivery": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "enum": [
+                    "unknown",
+                    "delivered",
+                    "failed"
+                  ],
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/refs"
+                }
+              },
+              "required": [
+                "value",
+                "evidence_ids"
+              ],
+              "additionalProperties": false
+            },
+            "recipient_observation": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "enum": [
+                    "unknown",
+                    "arrived",
+                    "not_arrived"
+                  ],
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/refs"
+                }
+              },
+              "required": [
+                "value",
+                "evidence_ids"
+              ],
+              "additionalProperties": false
+            },
+            "acknowledgement": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "enum": [
+                    "unknown",
+                    "acknowledged",
+                    "not_observed"
+                  ],
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/refs"
+                },
+                "path": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "value",
+                "evidence_ids",
+                "path"
+              ],
+              "additionalProperties": false
+            },
+            "useful_action": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "enum": [
+                    "unknown",
+                    "reported",
+                    "corroborated",
+                    "not_observed"
+                  ],
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/refs"
+                }
+              },
+              "required": [
+                "value",
+                "evidence_ids"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "provider_id",
+            "environment",
+            "receipt_status",
+            "receipt_meaning",
+            "receipt_source_id",
+            "acceptance",
+            "delivery",
+            "recipient_observation",
+            "acknowledgement",
+            "useful_action"
+          ],
+          "additionalProperties": false
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "scope",
+        "state",
+        "conditions",
+        "state_evidence_ids",
+        "checks",
+        "terms",
+        "cost",
+        "attempt",
+        "evidence"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
