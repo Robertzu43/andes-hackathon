@@ -50,7 +50,7 @@ test('current backend and phone-free catalogs work through real signed HTTP/Post
     app=createApp({ctx,auth:{...issuer.auth,keyResolver:async(...args)=>{
       if(denyDemoTokens)throw Error('Synthetic verifier rejection');
       return issuer.auth.keyResolver(...args);
-    }},demo:issuer});
+    }},demo:issuer,automaticChecks:true});
     const origin=await app.listen({port:0,host:'127.0.0.1'});
 
     for(const persona of ['driver','family','colleague']){
@@ -90,13 +90,20 @@ test('current backend and phone-free catalogs work through real signed HTTP/Post
       };
       install('driver');assert.equal((await api.getIdentity()).id,world.driver.id);
       const arrival=new Date(serverReadStart.getTime()+3_600_000).toISOString();
-      const fields={truckId:world.driver.truckId,origin:'Synthetic origin',destination:'Synthetic destination',
+      // Sessions no longer seed a truck or a family grant (the guided journey creates both); this test seeds them directly.
+      const truck=await api.createTruck({label:'Synthetic truck'},{idempotencyKey:'real-truck'});
+      const familyGrant=(await ctx.pool.query(`INSERT INTO contact_grants(id,driver_id,contact_id,phone,map_requested,incident_requested,map_accepted,incident_accepted,accepted_at,role)
+        VALUES(gen_random_uuid(),$1,$2,'+15555550102',true,true,true,true,$3,'family') RETURNING id`,[world.driver.id,world.family.id,serverReadStart])).rows[0].id;
+      const fields={truckId:truck.id,origin:'Synthetic origin',destination:'Synthetic destination',
         country:'BR',locale:'pt-BR',timeZone:'America/Sao_Paulo',expectedArrivalAt:arrival};
       const draft=await api.createDraft({text:'Synthetic persisted draft',fields},{idempotencyKey:'real-draft'});
       assert.equal(draft.fields.expectedArrivalAt,arrival);
-      await api.confirmTrip(draft.id,{confirmed:true,contactGrantIds:[world.family.grantId,world.colleague.grantId]},
+      await api.confirmTrip(draft.id,{confirmed:true,contactGrantIds:[familyGrant,world.colleague.grantId]},
         {idempotencyKey:'real-confirm'});
       assert.equal((await api.getTripStatus(draft.id)).trip.expectedArrivalAt,arrival);
+      assert.equal((await api.commandTrip(draft.id,'pause',{idempotencyKey:'real-pause'})).automaticEscalation,false);
+      assert.equal((await api.commandTrip(draft.id,'resume',{idempotencyKey:'real-resume'})).automaticEscalation,true);
+      assert.equal((await api.commandTrip(draft.id,'checkin_ok',{idempotencyKey:'real-checkin'})).automaticEscalation,true);
       for(const method of ['getProfile','listTrucks','listContacts','listTrips','getBootstrap']){
         const response=await api[method]();
         assert.equal(response.readAt,serverReadStart.toISOString());
@@ -121,10 +128,11 @@ test('current backend and phone-free catalogs work through real signed HTTP/Post
       assert.equal(before.location.capturedAt,capturedAt);assert.ok(before.location.ageMs>=300_000);
       assert.equal('readAt' in before,false);assert.equal(before.deliveries.some(d=>d.channel==='group'&&d.status==='unavailable'),true);
       install('family');assert.equal((await api.getTripStatus(draft.id)).incident.id,sos.id);
-      install('driver');await api.commandTrip(draft.id,'arrived',{idempotencyKey:'real-arrival'});
+      install('driver');
+      assert.equal((await api.commandTrip(draft.id,'arrived',{idempotencyKey:'real-arrival'})).automaticEscalation,false);
       const after=await api.getTripStatus(draft.id);
       assert.equal(after.trip.status,'arrived');assert.equal(after.incident.status,'active');assert.equal('location' in after,false);
-      await api.revokeTripContact(draft.id,world.family.grantId,{idempotencyKey:'real-revoke'});
+      await api.revokeTripContact(draft.id,familyGrant,{idempotencyKey:'real-revoke'});
       install('family');await assert.rejects(api.getTripStatus(draft.id),e=>e.status===403&&e.kind==='forbidden');
       session.clear();
     });

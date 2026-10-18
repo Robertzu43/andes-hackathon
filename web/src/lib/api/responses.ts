@@ -58,7 +58,7 @@ export const draft: Decoder<T.TripDraft> = object({ id: uuid, status: literal('d
   missingFields: array(choice<Exclude<keyof T.TripFields, 'expectedArrivalAt'>>('truckId', 'origin', 'destination', 'country', 'locale', 'timeZone')) });
 export const confirmed: Decoder<T.ConfirmedTrip> = object({ id: uuid, status: literal('active'),
   fields: object({ ...fullFields, expectedArrivalAt: optional(date) }) });
-export const command: Decoder<T.CommandResult> = object({ id: uuid, command: commands, automaticEscalation: literal(false) });
+export const command: Decoder<T.CommandResult> = object({ id: uuid, command: commands, automaticEscalation: bool });
 export const trip: Decoder<T.Trip> = object({ id: uuid, driver_id: uuid, truck_id: uuid, origin: text, destination: text,
   country: text, locale: text, time_zone: text, status: choice('active', 'arrived', 'cancelled'), map_active: bool,
   checkins_active: bool, paused: bool, version: number(1, Infinity, true), created_at: date, closed_at: nullable(date),
@@ -101,8 +101,9 @@ export const tripStatus: Decoder<T.TripStatus> = value => {
 };
 const token: Decoder<string> = value => typeof value === 'string' && value.length <= 16384
   && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value) ? value : invalid();
-const demoWorldWire = object({ synthetic: literal(true), expiresInSeconds: literal(7200),
-  driver: object({ id: uuid, token, truckId: uuid }), family: object({ id: uuid, token, grantId: uuid }),
+const countryCode: Decoder<string> = value => typeof value === 'string' && /^[A-Z]{2}$/.test(value) ? value : invalid();
+const demoWorldWire = object({ synthetic: literal(true), expiresInSeconds: literal(7200), expiresAt: date,
+  tripCountries: array(countryCode), driver: object({ id: uuid, token }), family: object({ id: uuid, token }),
   colleague: object({ id: uuid, token, grantId: uuid }) });
 export const demoWorld: Decoder<T.DemoWorld> = value => {
   const parsed = demoWorldWire(value);

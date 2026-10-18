@@ -14,10 +14,11 @@ function jwt(persona, override = {}) {
   })).toString('base64url')}.synthetic-unverified-signature`;
 }
 function world() {
-  return { synthetic: true, expiresInSeconds: 7200, driver: { id: trip, token: jwt('driver'), truckId: incident },
-    family: { id: family, token: jwt('family'), grantId: incident },
+  return { synthetic: true, expiresInSeconds: 7200, expiresAt: stamp, tripCountries: ['PE'], driver: { id: trip, token: jwt('driver') },
+    family: { id: family, token: jwt('family') },
     colleague: { id: colleague, token: jwt('colleague'), grantId: trip } };
 }
+
 function status() {
   return { trip: { status: 'arrived', paused: false, expectedArrivalAt: stamp }, check: null,
     incident: { id: incident, trigger: 'sos', checkReason: 'silence', status: 'active', createdAt: stamp },
@@ -129,6 +130,25 @@ test('new arrival/role fields pass through without creating regional or time def
   assert.equal(sent.role, 'colleague');
 });
 
+test('trip command responses preserve true and false automatic escalation', async () => {
+  for (const automaticEscalation of [true, false]) {
+    const { api } = setup(async (url, init) => {
+      assert.equal(url.pathname, `/v1/trips/${trip}/commands`);
+      assert.equal(init.method, 'POST'); assert.equal(init.body, '{"type":"resume"}');
+      return Response.json({ id: trip, command: 'resume', automaticEscalation });
+    });
+    const result = await api.commandTrip(trip, 'resume', { idempotencyKey: 'explicit-resume' });
+    assert.deepEqual(result, { id: trip, command: 'resume', automaticEscalation });
+  }
+});
+
+test('trip command responses reject nonboolean automatic escalation', async () => {
+  for (const automaticEscalation of [undefined, null, 'true', 'false', 0, 1, {}, []]) {
+    const { api } = setup(async () => Response.json({ id: trip, command: 'resume', automaticEscalation }));
+    await assert.rejects(api.commandTrip(trip, 'resume', { idempotencyKey: 'explicit-resume' }), invalid);
+  }
+});
+
 test('demo session is explicit, anonymous and unkeyed even with another active identity', async () => {
   let calls = 0;
   const { session, api } = setup(async (url, init) => {
@@ -141,6 +161,8 @@ test('demo session is explicit, anonymous and unkeyed even with another active i
   await assert.rejects(api.createDemoSession(), e => e.kind === 'invalid_input' && e.outcome === 'not_sent');
   assert.equal(calls, 0); const result = await api.createDemoSession({ demo: true });
   assert.equal(calls, 1); assert.equal(result.synthetic, true); assert.equal('secret' in result, false);
+  assert.deepEqual(result.tripCountries, ['PE']); assert.equal(result.expiresAt, stamp);
+  assert.equal('truckId' in result.driver, false); assert.equal('grantId' in result.family, false);
   assert.equal(session.snapshot().subject, 'synthetic', 'Acquisition must not install credentials by itself');
 });
 
@@ -158,7 +180,8 @@ test('demo 401 (demo mode off), 404 and 429 and ambiguous creation retain their 
 });
 
 test('malformed or non-synthetic demo responses cannot become a world', async () => {
-  for (const raw of [{ ...world(), synthetic: false }, { ...world(), expiresInSeconds: 999999 },
+  for (const raw of [{ ...world(), synthetic: false }, { ...world(), expiresInSeconds: 999999 }, { ...world(), expiresAt: 'in two hours' },
+    { ...world(), tripCountries: ['peru'] }, { ...world(), tripCountries: 'PE' },
     { ...world(), family: { ...world().family, id: trip } }, { ...world(), driver: { ...world().driver, token: 'not-a-jwt' } }]) {
     const { api } = setup(async () => Response.json(raw), false);
     await assert.rejects(api.createDemoSession({ demo: true }), invalid);

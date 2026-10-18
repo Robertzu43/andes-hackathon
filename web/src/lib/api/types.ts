@@ -20,7 +20,7 @@ export interface TripDraft extends IdResponse {
 export interface ConfirmTripInput { confirmed: true; contactGrantIds: UUID[]; fields?: Partial<TripFields> }
 export interface ConfirmedTrip extends IdResponse { status: 'active'; fields: TripFields }
 export type TripCommand = 'arrived' | 'cancel' | 'pause' | 'resume' | 'checkin_ok' | 'rest_report';
-export interface CommandResult extends IdResponse { command: TripCommand; automaticEscalation: false }
+export interface CommandResult extends IdResponse { command: TripCommand; automaticEscalation: boolean }
 export interface Trip extends IdResponse {
   driver_id: UUID; truck_id: UUID; origin: string; destination: string; country: string; locale: string;
   time_zone: string; status: 'active' | 'arrived' | 'cancelled'; map_active: boolean;
@@ -68,9 +68,11 @@ export interface TripStatus {
 export type DemoPersona = 'driver' | 'family' | 'colleague';
 /** Sensitive wire result for a trusted demo host. Never render, persist or log tokens. */
 export interface DemoWorld {
-  synthetic: true; expiresInSeconds: 7200;
-  driver: { id: UUID; token: string; truckId: UUID };
-  family: { id: UUID; token: string; grantId: UUID };
+  synthetic: true; expiresInSeconds: 7200; expiresAt: string;
+  /** Countries the trip form may offer: those with qualified alert channels. */
+  tripCountries: string[];
+  driver: { id: UUID; token: string };
+  family: { id: UUID; token: string };
   colleague: { id: UUID; token: string; grantId: UUID };
 }
 /** Explicit demo-only exception: unauthenticated POST, no actor/idempotency key yet. */
