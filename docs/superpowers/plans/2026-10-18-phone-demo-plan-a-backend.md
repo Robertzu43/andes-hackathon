@@ -1,5 +1,7 @@
 # Phone Demo · Plan A (Backend) Implementation Plan
 
+**Status:** frozen.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** The backend serves the built web app on one HTTPS origin and runs a demo mode in which a contact verifies their own phone number with an SMS code. Real alerts then go only to numbers verified that way in the same demo world, within explicit caps. Abandoned worlds lose their numbers after 24 h.
@@ -954,6 +956,7 @@ const pepper = 'syntheticfixture-pepper-not-a-secret-000';
 
 test('demo phone settings: defaults, live-send requirements, countries, and no code from the environment', async () => {
   const {demoLimits} = await import('../dist/demo-phone.js');
+  // 40 is a parser fixture, not the demo cap. The cap is the spec SMS table.
   const live = {ZAVU_LIVE_SEND: 'true', DEMO_SMS_DAILY_CAP: '40', DEMO_ALERTS_PER_NUMBER_DAILY: '6', DEMO_PHONE_PEPPER: pepper};
   assert.deepEqual(demoLimits(live), {pepper, allowedCountries: ['PE'], perNumberHourly: 3, perIpHourly: 5, smsDailyCap: 40, alertsPerNumberDaily: 6});
   assert.deepEqual(demoLimits({...live, DEMO_ALLOWED_COUNTRIES: 'PE,BR,CL,CO,MX,AR', DEMO_OTP_PER_NUMBER_HOURLY: '1', DEMO_OTP_PER_IP_HOURLY: '2'}),
@@ -1453,6 +1456,7 @@ test('a live demo starts only with demo budgets, a pepper and demo-prefixed aler
   const demoText = {...qualification, evidence: 'test-only syntheticfixture: live',
     entries: qualification.entries.map(e => ({...e, evidence: 'test-only syntheticfixture: channel', text: 'Demo de Tándem: estado sin confirmar.'}))};
   const env = {ZAVU_LIVE_SEND: 'true', ZAVU_API_KEY: 'syntheticfixture-not-a-key', ZAVU_PROJECT_ID: 'prj_fixture', ZAVU_SENDER_ID: 'snd_fixture', ZAVU_CALLBACK_SECRET: 'syntheticfixture-secret',
+    // 40 is a parser fixture. The demo cap is the spec SMS table.
     DEMO_MODE: 'true', DEMO_SMS_DAILY_CAP: '40', DEMO_ALERTS_PER_NUMBER_DAILY: '6', DEMO_PHONE_PEPPER: 'syntheticfixture-pepper-not-a-secret-000'};
   const limits = {perIncident: 6, perSession: 6};
   const start = (q, extra = {}) => configuredProvider({...env, ...extra, ZAVU_QUALIFICATION_JSON: JSON.stringify(q)});
@@ -1755,8 +1759,8 @@ Destination SHA-256 hashes remain as delivery evidence. Nothing logs a number.
 | `DEMO_ALLOWED_COUNTRIES` | `PE` | Comma list of countries whose numbers may receive a code |
 | `DEMO_OTP_PER_NUMBER_HOURLY` | 3 | Codes per number per rolling hour |
 | `DEMO_OTP_PER_IP_HOURLY` | 5 | Codes per client IP per rolling hour |
-| `DEMO_SMS_DAILY_CAP` | required with live sends | Code SMS per rolling 24 h, all numbers |
-| `DEMO_ALERTS_PER_NUMBER_DAILY` | required with live sends | Alert attempts per verified destination per rolling 24 h |
+| `DEMO_SMS_DAILY_CAP` | required with live sends | 8 code SMS per rolling 24 h. Decided by Robert 2026-10-18 |
+| `DEMO_ALERTS_PER_NUMBER_DAILY` | required with live sends | 6 alert attempts per destination per rolling 24 h. Same decision |
 | `DEMO_PHONE_PEPPER` | required with live sends | HMAC key, 32 or more random characters, from the secret manager |
 
 ### Limits
@@ -1814,8 +1818,9 @@ Replace lines 42-46 (the `DEMO_LIVE_PHONE` block) with:
 # DEMO_ALLOWED_COUNTRIES=PE,BR,CL,CO,MX,AR
 # DEMO_OTP_PER_NUMBER_HOURLY=3
 # DEMO_OTP_PER_IP_HOURLY=5
-# Required with DEMO_MODE=true and ZAVU_LIVE_SEND=true (with demoLimits in ZAVU_QUALIFICATION_JSON, each at least 6):
-# DEMO_SMS_DAILY_CAP=40
+# Required with DEMO_MODE=true and ZAVU_LIVE_SEND=true (with demoLimits in ZAVU_QUALIFICATION_JSON, each at least 6).
+# Decided by Robert 2026-10-18.
+# DEMO_SMS_DAILY_CAP=8
 # DEMO_ALERTS_PER_NUMBER_DAILY=6
 # DEMO_PHONE_PEPPER= (32+ random characters from your secret manager)
 ```
