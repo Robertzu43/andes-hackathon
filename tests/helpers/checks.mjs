@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 export async function contactFor(f, subject, role) {
   const jwt = await f.token(subject);
   const id = (await f.req('GET', '/v1/me', undefined, jwt)).body.id;
-  const invitation = await f.req('POST', '/v1/contacts', {contactId: id, phone: '+15555550100', map: true, incident: true, ...(role ? {role} : {})});
+  const invitation = await f.req('POST', '/v1/contacts', {contactId: id, phone: f.phoneFor(subject), map: true, incident: true, ...(role ? {role} : {})});
   assert.equal(invitation.status, 200);
   assert.equal((await f.req('POST', `/v1/contacts/${invitation.body.id}/accept`, {map: true, incident: true}, jwt)).status, 200);
   return {jwt, id, grant: invitation.body.id};

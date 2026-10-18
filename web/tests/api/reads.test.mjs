@@ -2,20 +2,21 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MemorySession, createApiClient } from '../../src/lib/api/index.ts';
 
-// Wire oracle: PR65/3ea6e1b docs/contracts/client-read.md and src/client-read/routes.ts.
+// Wire oracle: PR65 docs/contracts/client-read.md and its actual backend integration tests.
 const id = n => `${n.toString(16).padStart(8, '0')}-1111-4111-8111-111111111111`;
 const stamp = '2026-10-17T12:00:00.000Z';
-const profileData = { id: id(1), phone: '+5511999990000', phoneVerified: true };
+const profileData = { id: id(1), phoneVerified: true };
 const profile = { ...profileData, readAt: stamp };
 const truck = { id: id(2), label: 'Caminhão sintético' };
-const contact = { id: id(3), contactId: id(4), phone: '+5511999990001', map: { requested: true, accepted: true },
+const contact = { id: id(3), contactId: id(4), role: 'colleague', map: { requested: true, accepted: true },
   incident: { requested: true, accepted: false }, status: 'revoked', acceptedAt: stamp,
   revokedAt: '2026-10-17T12:01:00.000Z', revokedBy: 'contact' };
 const summary = { id: id(5), truckId: id(2), origin: 'Synthetic origin', destination: 'Synthetic destination',
   country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo', status: 'active', mapActive: true,
-  checkinsActive: true, paused: false, version: 1, createdAt: stamp, closedAt: null, contactGrantIds: [id(3)] };
+  checkinsActive: true, paused: false, version: 1, createdAt: stamp, closedAt: null,
+  expectedArrivalAt: '2026-10-17T18:00:00.000Z', sharingStoppedAt: null, contactGrantIds: [id(3)] };
 const recent = { ...summary, id: id(6), status: 'arrived', mapActive: false, checkinsActive: false,
-  closedAt: '2026-10-17T13:00:00.000Z' };
+  closedAt: '2026-10-17T13:00:00.000Z', sharingStoppedAt: '2026-10-17T12:30:00.000Z' };
 const trips = { active: [summary], recent: [recent], limits: { active: 50, recent: 20 }, hasMore: { active: false, recent: false }, readAt: stamp };
 const bootstrap = { profile: profileData, trucks: [truck], contacts: [contact], trips: { active: [summary], recent: [recent] },
   limits: { trucks: 100, contacts: 100, activeTrips: 50, recentTrips: 20 },
@@ -66,11 +67,11 @@ test('bootstrap preserves revoked management facts, regional fields, selected gr
   assert.equal('readAt' in result.profile, false); // Bootstrap has one root timestamp, not a row clock.
 });
 
-test('empty focused lists and unknown phone remain real empty/unverified facts', async () => {
+test('empty focused lists and unverified profiles remain real empty/unverified facts', async () => {
   const { api } = fixture(async url => url.pathname.endsWith('/profile')
-    ? Response.json({ id: id(1), phone: null, phoneVerified: false, readAt: stamp })
+    ? Response.json({ id: id(1), phoneVerified: false, readAt: stamp })
     : Response.json({ trucks: [], limit: 100, hasMore: false, readAt: stamp }));
-  assert.deepEqual(await api.getProfile(), { id: id(1), phone: null, phoneVerified: false, readAt: stamp });
+  assert.deepEqual(await api.getProfile(), { id: id(1), phoneVerified: false, readAt: stamp });
   assert.deepEqual(await api.listTrucks(), { trucks: [], limit: 100, hasMore: false, readAt: stamp });
 });
 
@@ -91,8 +92,11 @@ test('list bounds, duplicate identities, wrong limits and contradictory buckets 
 
 test('unverified and malformed consent/profile responses cannot become accepted capabilities', async () => {
   const cases = [
-    ['getProfile', { id: id(1), phone: null, phoneVerified: true }],
-    ['getProfile', { id: id(1), phone: 'not-an-international-number', phoneVerified: true }],
+    ['getProfile', { id: id(1), phoneVerified: 'true' }],
+    ['getProfile', { id: id(1) }],
+    ['listContacts', { contacts: [{ ...contact, role: 'boss' }], limit: 100, hasMore: false }],
+    ['listTrips', { ...trips, active: [{ ...summary, expectedArrivalAt: 'tomorrow' }] }],
+    ['listTrips', { ...trips, active: [{ ...summary, sharingStoppedAt: 'yesterday' }] }],
     ['listContacts', { contacts: [{ ...contact, status: 'accepted', revokedAt: null, revokedBy: null, acceptedAt: null }], limit: 100, hasMore: false }],
     ['listContacts', { contacts: [{ ...contact, map: { requested: false, accepted: true } }], limit: 100, hasMore: false }],
     ['listContacts', { contacts: [{ ...contact, status: 'pending', revokedAt: null, revokedBy: null }], limit: 100, hasMore: false }],
@@ -101,6 +105,34 @@ test('unverified and malformed consent/profile responses cannot become accepted 
     const { api } = fixture(async () => Response.json({ readAt: stamp, ...body }));
     await assert.rejects(api[method](), error => error.kind === 'invalid_response');
   }
+});
+
+test('catalog decoders never project phone values even if a legacy reply contains them', async () => {
+  const phone = '+15555550123';
+  const legacyContact = { ...contact, phone };
+  const responses = [
+    ['getProfile', { ...profile, phone }, profile],
+    ['listContacts', { contacts: [legacyContact], limit: 100, hasMore: false, readAt: stamp },
+      { contacts: [contact], limit: 100, hasMore: false, readAt: stamp }],
+    ['getBootstrap', { ...bootstrap, profile: { ...profileData, phone }, contacts: [legacyContact] }, bootstrap],
+  ];
+  for (const [method, wire, expected] of responses) {
+    const { api } = fixture(async () => Response.json(wire));
+    const result = await api[method]();
+    assert.deepEqual(result, expected);
+    assert.ok(!JSON.stringify(result).includes(phone));
+  }
+});
+
+// The server never sends phones; if a reply ever did, it must not reach client state.
+test('a phone value in a catalog reply is never projected', async () => {
+  const leaky = structuredClone(bootstrap);
+  leaky.profile.phone = '+15555550100';
+  leaky.contacts[0].phone = '+15555550101';
+  const { api } = fixture(async () => Response.json(leaky));
+  const text = JSON.stringify(await api.getBootstrap());
+  assert.doesNotMatch(text, /phone"/);
+  assert.doesNotMatch(text, /\+1555/);
 });
 
 test('read failures remain failures rather than fabricated empty catalogues', async () => {
