@@ -114,10 +114,14 @@ node evidence/app-acceptance/check.mjs /tmp/andes-q46-receipts-unique/acceptance
 ```
 
 The journey writes its observations to a private file in the run directory. Only
-after every check passed does `run.mjs` create the evidence directory and write
+after every check and owned-resource cleanup passed does `run.mjs` create the
+evidence directory and write
 `http-records.json` (selected redacted HTTP observations) and
 `acceptance-receipt.json` (the twelve ordered cases for the checker). A failing
-or interrupted run writes nothing. Both files are mode 0600 and bounded to
+or interrupted run, including a failure during cleanup after every test passed,
+writes no receipt. The cleanup-failure regression injects its exception after
+actually releasing the nested database, so the control leaves no test resources.
+Both files are mode 0600 and bounded to
 512 KiB. The receipt records `suiteResult: "pass"` and `producerRevision`, the
 producer's `HEAD` (with `+dirty` when the tree has changes); the adapter refuses
 an isolated-run receipt without both. Do not commit or paste receipts into a PR.

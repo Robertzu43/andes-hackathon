@@ -32,6 +32,12 @@ function privateClone(directory) {
   return {clone, git};
 }
 
+function keepJourney(clone) {
+  for (const folder of ['tests', 'tests/app-integration']) {
+    for (const name of readdirSync(join(clone, folder))) if (name.endsWith('.test.mjs') && name !== 'journey.test.mjs') rmSync(join(clone, folder, name));
+  }
+}
+
 test('source gate rejects ignored runnable migrations and the real export creates no evidence', {timeout: 30000}, () => {
   const directory = mkdtempSync(join(tmpdir(), 'andes-q46-ignored-source-'));
   try {
@@ -66,9 +72,7 @@ test('a failing run writes no receipt, even after the journey captured its excha
   try {
     const {clone} = privateClone(directory);
     // Keep only the journey, which records a capture, plus one forced failure elsewhere in the suite.
-    for (const folder of ['tests', 'tests/app-integration']) {
-      for (const name of readdirSync(join(clone, folder))) if (name.endsWith('.test.mjs') && name !== 'journey.test.mjs') rmSync(join(clone, folder, name));
-    }
+    keepJourney(clone);
     writeFileSync(join(clone, 'tests/forced-failure.test.mjs'),
       "import test from 'node:test';\ntest('synthetic forced failure', () => { throw new Error('synthetic forced failure'); });\n");
     const output = join(directory, 'must-not-export');
@@ -79,5 +83,27 @@ test('a failing run writes no receipt, even after the journey captured its excha
     assert.match(run.stdout, /(✖|not ok \d+ -) synthetic forced failure/, 'The forced failure must run');
     assert.equal(run.status, 1);
     assert.equal(existsSync(output), false, 'A failing run must not write a receipt or its directory');
+  } finally {rmSync(directory, {recursive: true, force: true});}
+});
+
+test('a cleanup failure writes no receipt after the journey and whole suite passed', {timeout: 120000}, () => {
+  const admin = process.env.APP_INTEGRATION_DATABASE_URL;
+  assert.ok(admin, 'Run scripts/app-integration/run.mjs');
+  const directory = mkdtempSync(join(tmpdir(), 'andes-q46-cleanup-failure-'));
+  try {
+    const {clone} = privateClone(directory);
+    keepJourney(clone);
+    const path = join(clone, 'scripts/app-integration/runtime.mjs');
+    const source = readFileSync(path, 'utf8');
+    assert.ok(source.includes('postgresVersion: version, cleanup'));
+    writeFileSync(path, source.replace('postgresVersion: version, cleanup',
+      "postgresVersion: version, cleanup: async () => {await cleanup(); throw Error('synthetic failure after actual cleanup');}"));
+    const output = join(directory, 'must-not-export');
+    const run = spawnSync(process.execPath, ['scripts/app-integration/run.mjs'], {cwd: clone, encoding: 'utf8', timeout: 110000,
+      env: testEnvironment({APP_INTEGRATION_EVIDENCE_DIR: output, APP_INTEGRATION_ADMIN_URL: admin})});
+    assert.match(run.stdout, /(✔|ok \d+ -) synthetic HTTP journey/, 'All journey captures must complete');
+    assert.match(run.stderr, /Owned integration cleanup failed/, 'The post-validation failure must actually run');
+    assert.equal(run.status, 1);
+    assert.equal(existsSync(output), false, 'Failed overall execution must publish neither a receipt nor its directory');
   } finally {rmSync(directory, {recursive: true, force: true});}
 });
