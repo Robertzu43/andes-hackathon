@@ -1,0 +1,40 @@
+{
+  "id": 5560757444,
+  "node_id": "PRR_kwDOVNt_688AAAABS3JsxA",
+  "user": {
+    "login": "Robertzu43",
+    "id": 99037056,
+    "node_id": "U_kgDOBecvgA",
+    "avatar_url": "https://avatars.githubusercontent.com/u/99037056?u=6f859c06ac8a81be143099aeba452d793158e2a0&v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/Robertzu43",
+    "html_url": "https://github.com/Robertzu43",
+    "followers_url": "https://api.github.com/users/Robertzu43/followers",
+    "following_url": "https://api.github.com/users/Robertzu43/following{/other_user}",
+    "gists_url": "https://api.github.com/users/Robertzu43/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/Robertzu43/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/Robertzu43/subscriptions",
+    "organizations_url": "https://api.github.com/users/Robertzu43/orgs",
+    "repos_url": "https://api.github.com/users/Robertzu43/repos",
+    "events_url": "https://api.github.com/users/Robertzu43/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/Robertzu43/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "body": "> Written by Robert's PR gatekeeper agent (Claude), posted from @Robertzu43 at Robert's direction. Reviewed head: `9f87e2c`.\n\n**Verdict: changes still required.** On the merge ref (`3e3edd6`), `node --test tests/phone-observations/ tests/phone-capability/` passes 102/102. Every result below comes from a synthetic probe run against the exact `9f87e2c` sources. This review covers the `4aca76c`, `4417cf6` and `9f87e2c` deltas.\n\n### Fixed (verified by probe)\n- **B1:** the motion cap is now applied after rate limiting. With a cap of 1024, motion runs 60 s at 1 Hz without stopping (it previously stopped after 17 s).\n- **B2, B3:** GPS errors and blocked calls no longer end the session.\n- **B4:** `revokeConsent()` purges buffered coordinates from `snapshot()`.\n- **B5:** synthetic mode rejects `Object.create(globalThis)` and plain wrappers.\n- **N1:** revoking while suspended blocks `resume()` / `resumeSharing()` (`permission-denied-or-revoked`), and no new watch starts.\n- **Utility:** `createQueuedTripPhoneObservations` now composes capture with the observation upload pipeline. That fixes the \"no upload\" gap.\n\n### Blocking\n1. **N2 (`adapter.mjs` `stop()` on a suspended session).** An explicit stop while hidden leaves the session resumable. Probe: `stop()` after `pagehide`, then `resume()` returns `ok:true` and starts 1 watch. Sharing the user stopped restarts.\n2. **`trip-sharing.mjs` `createQueuedTripPhoneObservations`: `drain()` isn't gated on withdrawal.** `flush()` is blocked once `withdrawn`, but `drain()` still calls `pipeline.drain()`. Between `revokeConsent()` and the async `revokeTrip()`, or permanently if it ends `failed`, queued precise samples for the withdrawn trip can still be uploaded. Block it for a withdrawn trip until revocation completes, and add a test where revocation is pending and one where it failed.\n3. **`adapter.mjs:91`: false success while stopped.** `acquireLocation()` wrapped in a gesture returns `{ok:true}` while `snapshot().state` is `stopped`. `startSharing(event)` returns `ok:true` while the session is `consent-revoked`. The same calls without an event correctly return `session-stopped`. On the production gesture path, the UI would claim sharing started when it didn't.\n4. **`adapter.mjs:242` (regression since `4aca76c`).** When the site permission says `granted` but native GPS returns code 1 (OS location off), the state now goes back to `granted`. Probe: 100 native `getCurrentPosition` calls with no user gesture (99 return `ok:true`), then `acquireMotion()` returns `request-budget` for the rest of the session. At `4aca76c` this was one call, then `revoked`.\n\n### Should fix\n- **N3:** `resume()` refuses location when only motion was denied, even though the stop said `resumable:true`.\n- **X1/X3:** the stable `trip.sessionId` is reused across reloads and resumes, so event IDs collide and `sessionSequence` restarts. This breaks #18 dedupe.\n- **p5:** an `api-unavailable` block still increments `s.requests`. Polling without geolocation uses up the 100-request budget, and motion then gets `request-budget`.\n- **p4:** the first `granted` Permissions answer is discarded after any epoch bump, so the one-shot keeps a 120 s bound instead of 10 s.\n- **p3:** the motion `onRejected` path returns `obsolete-request`, while the event says `permission-prompt-timeout`.\n- **p6:** rejected `permissions.query` calls for unsupported names count as observer errors, and a wake-lock block takes over the geolocation diagnostic.\n- **p7:** a budget shaped like the README (no `permissionPromptTimeoutMs` or `maxRawCallbacksPerStream`) makes construction throw. Update the README budget shape.\n- **N13:** normal GPS flapping uses up the event budget in about 19 h, before the 24 h session ends.\n",
+  "state": "CHANGES_REQUESTED",
+  "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560757444",
+  "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52",
+  "author_association": "COLLABORATOR",
+  "_links": {
+    "html": {
+      "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560757444"
+    },
+    "pull_request": {
+      "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/52"
+    }
+  },
+  "submitted_at": "2026-10-18T00:15:38Z",
+  "commit_id": "9f87e2c08be8ac9e9324136fd0c4401ad8823bc6"
+}
