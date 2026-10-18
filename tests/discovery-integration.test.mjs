@@ -41,8 +41,9 @@ test('native discovery reloads persisted typed-client writes without crossing ow
   const truck = await driver.createTruck({ label: 'SYNTHETIC driver truck' }, intent());
   const otherTruck = await stranger.createTruck({ label: 'SYNTHETIC other owner truck' }, intent());
   const otherIdentity = await stranger.getIdentity();
+  // The invite must carry the phone verified in the contact's own token (fictional fixture value).
   const invitation = await driver.inviteContact({ contactId: f.contactIdentity.id,
-    phone: '+5511999990000', map: true, incident: true }, intent());
+    phone: f.phoneFor('contact'), map: true, incident: true }, intent());
   await contact.acceptContact(invitation.id, { map: true, incident: true }, intent());
   const draft = await driver.createDraft({ text: 'SYNTHETIC_PRIVATE draft text', fields: {
     truckId: truck.id, origin: 'A', destination: 'B', country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo',
@@ -55,7 +56,9 @@ test('native discovery reloads persisted typed-client writes without crossing ow
   const loaded = await read('/v1/bootstrap');
   assert.equal(loaded.status, 200);
   const initial = loaded.body;
-  assert.deepEqual(initial.profile, { id: f.me.id, phone: '+5511999990000', phoneVerified: true });
+  // docs/contracts/client-read.md: catalogs are phone-free, including the token's own phone.
+  assert.deepEqual(initial.profile, { id: f.me.id, phoneVerified: true });
+  assert.equal(typeof initial.readAt, 'string');
   assert.deepEqual(initial.trucks, [{ id: truck.id, label: 'SYNTHETIC driver truck' }]);
   assert.equal(initial.contacts[0].id, invitation.id);
   assert.equal(initial.contacts[0].status, 'accepted');
@@ -64,10 +67,11 @@ test('native discovery reloads persisted typed-client writes without crossing ow
   assert.deepEqual(initial.trips.active[0].contactGrantIds, [invitation.id]);
   assert.deepEqual(Object.keys(initial.trips.active[0]).sort(), ['id', 'truckId', 'origin', 'destination',
     'country', 'locale', 'timeZone', 'status', 'mapActive', 'checkinsActive', 'paused', 'version',
-    'createdAt', 'closedAt', 'contactGrantIds'].sort());
+    'createdAt', 'closedAt', 'expectedArrivalAt', 'sharingStoppedAt', 'contactGrantIds'].sort());
   const serialized = JSON.stringify(initial);
-  for (const privateValue of ['SYNTHETIC_PRIVATE', '-12.345678', '-77.654321', incident.id, otherTruck.id]) {
-    assert.ok(!serialized.includes(privateValue));
+  for (const privateValue of ['SYNTHETIC_PRIVATE', '-12.345678', '-77.654321', incident.id, otherTruck.id,
+    f.phoneFor('driver'), f.phoneFor('contact'), '"phone"']) {
+    assert.ok(!serialized.includes(privateValue), privateValue);
   }
   assert.deepEqual((await read('/v1/trucks')).body.trucks, initial.trucks);
   assert.deepEqual((await read('/v1/contacts')).body.contacts, initial.contacts);

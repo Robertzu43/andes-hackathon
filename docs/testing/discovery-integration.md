@@ -1,24 +1,23 @@
 # Discovery integration
 
-This child of the typed-client/backend seam stages lane41's additive read routes
-from `748d30c6e6c595fd1a2c2c648a045750de3dd9c8`. Its route source, two-line
-application mount, contract and five route tests retain their original Git blobs.
-The dispatch expiry correction and accepted typed client remain unchanged.
+`tests/discovery-integration.test.mjs` exercises the five owner catalog reads in
+[`docs/contracts/client-read.md`](../contracts/client-read.md) over native
+loopback HTTP, with signed synthetic JWTs and an isolated PostgreSQL schema. The
+route-level contract tests in `tests/client-read.test.mjs` use `inject`; this file
+adds the real listener, the shared typed client's write methods, and these checks:
 
-`tests/discovery-integration.test.mjs` exercises the mounted API over native
-loopback HTTP with signed synthetic JWTs and isolated PostgreSQL schemas. It uses
-the accepted client's existing write methods, then reads the new discovery routes
-directly over HTTP. It does not invent client discovery methods while lane45's
-adaptation is under review.
+- missing and badly signed bearer tokens get 401, and every read sends
+  `Cache-Control: no-store`;
+- trucks, an accepted contact, a confirmed trip, locations and an SOS written
+  through the typed client appear in bootstrap and in the focused lists;
+- no catalog response contains a phone (driver, contact or `"phone"` key), draft
+  text, coordinates, incident IDs or another owner's truck;
+- a caller-supplied `?driverId=` hint cannot replace the signed identity;
+- a fresh read reflects contact revocation and arrival, the separate incident
+  stays active, and the revoked contact's snapshot read returns 403.
 
-The cases cover authentication and `no-store` on all five reads, persisted typed
-writes appearing in bootstrap and focused lists, signed owner isolation even with
-an owner query hint, exclusion of draft text/coordinates/incident IDs, and a fresh
-read reflecting contact revocation and trip closure. Arrival still leaves the
-separate incident active. These are local software checks; they establish no
-browser, external OIDC, device, provider, human or product outcome evidence.
+Phones come from the fixture's fictional `+1-555-01xx` values; the invite uses
+the contact's own token phone, as the runtime requires. These are local software
+checks, not browser, external OIDC, device, provider or human evidence.
 
-Use the disposable database setup in [integrated-backend.md](integrated-backend.md),
-then run `npm run typecheck`, `npm run typecheck:client-api` and `npm run test:all`.
-The existing test glob includes both route and HTTP integration suites. The source
-PR and this combined candidate each require independent review before integration.
+Run with a disposable database: `TEST_DATABASE_URL=... npm test`.
