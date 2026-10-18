@@ -65,14 +65,20 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
   return withTripTransaction(ctx, claim.tripId, async (client, trip) => {
     let now = ctx.clock();
     const job = (await client.query('SELECT * FROM jobs WHERE id=$1 FOR UPDATE', [claim.jobId])).rows[0];
-    if (!job || job.version !== claim.version || job.status !== 'claimed' || job.claim_token !== claim.token || job.claim_owner !== claim.owner || job.claim_until <= now) return null;
+    if (!job || job.version !== claim.version || job.status !== 'claimed' || job.claim_token !== claim.token || job.claim_owner !== claim.owner) return null;
+    // Terminal expiry wins over a lapsed lease, so a dead job ends cancelled instead of pending forever.
+    const lapsed = async (at: Date) => {
+      if (job.expires_at && job.expires_at <= at) { await invalidate(client, job, at, 'authorization_no_longer_valid'); return true; }
+      return job.claim_until <= at;
+    };
+    if (await lapsed(now)) return null;
     const q = provider.qualification;
     const grant = (await client.query(`SELECT cg.*,tg.revoked_at AS trip_revoked_at,i.phone AS verified_phone,i.phone_verified
       FROM trip_grants tg JOIN contact_grants cg ON cg.id=tg.grant_id JOIN identities i ON i.id=cg.contact_id
       WHERE tg.trip_id=$1 AND tg.grant_id=$2`, [trip.id, job.grant_id])).rows[0];
     const incident = job.incident_id ? (await client.query('SELECT * FROM incidents WHERE id=$1 AND trip_id=$2', [job.incident_id, trip.id])).rows[0] : null;
     const eligible = grant && grant.driver_id === trip.driver_id && grant.contact_id === job.recipient_id && grant.accepted_at && !grant.revoked_at && !grant.trip_revoked_at && grant.incident_accepted && grant.phone_verified && grant.phone === grant.verified_phone;
-    if (!eligible || (job.expires_at && job.expires_at <= now) || (job.class === 'emergency' ? !incident || incident.status !== 'active' || incident.driver_id !== trip.driver_id : trip.status !== 'active' || !trip.checkins_active || trip.paused)) {
+    if (!eligible || (job.class === 'emergency' ? !incident || incident.status !== 'active' || incident.driver_id !== trip.driver_id : trip.status !== 'active' || !trip.checkins_active || trip.paused)) {
       await invalidate(client, job, now, 'authorization_no_longer_valid'); return null;
     }
     const locale = canonicalLocale(trip.locale);
@@ -88,10 +94,10 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     // Both lifetimes can end while this transaction waits for account capacity.
     // Derive authorization and quota timestamps from the refreshed clock too.
     now = ctx.clock();
-    if (job.claim_until <= now) return null;
-    if (job.expires_at && job.expires_at <= now) {
-      await invalidate(client, job, now, 'authorization_no_longer_valid'); return null;
-    }
+    if (await lapsed(now)) return null;
+    // The contact can re-verify a new phone during that wait (the auth upsert takes no trip lock): re-read it here.
+    const current = (await client.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [grant.contact_id])).rows[0];
+    if (!current?.phone_verified || current.phone !== grant.phone) { await invalidate(client, job, now, 'authorization_no_longer_valid'); return null; }
     if (q.demoLimits) {
       // Under the account lock, so concurrent workers cannot overshoot. Per session = per recipient identity: each demo world has one consented persona.
       const used = (await client.query(`SELECT count(*) FILTER (WHERE j.incident_id=$1)::int AS incident,count(*) FILTER (WHERE j.recipient_id=$2)::int AS session
