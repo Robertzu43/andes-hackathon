@@ -247,6 +247,88 @@ is executed. These tests now establish the corrected driver/client fixture seam;
 the four real signed API/PostgreSQL driver journeys are separately pinned to
 `80e9d45` below. Browser/device/provider and whole-app acceptance remain open.
 
+### PR81 status, sharing, demo and read-time review
+
+Scoped independent disposition: **ACCEPT for the client module** at
+`5b3fadc9167baac2d1cb91720e650a1a0b901e4f` (PR81, stacked on accepted PR59/7e).
+The current frozen head `2860d8593f90e1a327ac86cee0ef313d94692489` is also
+**ACCEPT** after independently reviewing its two-file test/documentation delta.
+Both heads have identical API production tree
+`c0198b1dddc2c884c43637cc0082350956498d07`; the earlier unit, compile and 68-case
+independent results retain their original source pin rather than claiming reruns.
+The source contracts/handlers reviewed are Robert PR74
+`4c138ca1d00742400a850cd72b0888cc59260a36` and owner-read PR65
+`3ea6e1b06e6dc3d3d01360f28ae9c61751657830`. Backend policy/auth/privacy acceptance
+remains with its independent reviewers; this is client-contract acceptance only.
+
+Fresh Node26.3.0 checks: **89 author native tests, 16 pinned controller fixture
+checks, 3 actual frozen-foundation compile checks, 5 real signed HTTP/PostgreSQL
+checks and 68 independent checks passed**. Strict TypeScript5.9.3 NodeNext and
+ESNext/Bundler checks passed using existing read-only dependencies. The independent
+total is 29 original route/session checks, 2 prior focused controls, 8 gateway race
+checks and 29 new cases in `api-status-demo.probes.mjs`.
+
+New cases cover exact root server `readAt` on all five owner reads, rejection of
+the old missing-timestamp schema, no fabricated nested clocks, status source and
+delivery distinctions, omission versus unavailable location, private-field
+projection, explicit sharing key/body preservation, anonymous demo acquisition
+alongside an existing account, safe401/429, no replay, each explicit persona,
+server refusal/identity mismatch despite plausible unverified claims, retired
+world/me replies, expiry caps and optional explicit arrival/contact roles.
+Synthetic JWT signatures in those fixtures are deliberately unverified; no token
+or token-bearing world is written to the result artifact.
+
+```sh
+ANDES_REVIEW_API_ROOT=/ABS/5B3FADC/ARCHIVE \
+  node tests/client-contract-review/run.mjs \
+  --driver tests/client-contract-review/drivers/api-5b3fadc.mjs \
+  --candidate 5b3fadc9167baac2d1cb91720e650a1a0b901e4f
+ANDES_REVIEW_API_ROOT=/ABS/5B3FADC/ARCHIVE \
+  node tests/client-contract-review/api-status-demo.probes.mjs
+```
+
+The old read/lifecycle positive fixtures remain pinned to their old contract;
+they are not relabeled as new read-time evidence. Combined sanitized independent
+results are `client-contract-reviews/api-5b3fadc.probes.json`.
+
+The separately executed author `runtime.integration.mjs` extracts exact PR74
+source plus lane46 resource helper `c2501a40253b50b1406371f8fd7ebeaf309ec00c`, then
+explicitly test-mounts only the PR65 read module. Existing dependency lock bytes
+were compared with frozen PR74 before execution. The test is a temporary source
+composition, not a backend branch merge. Its command from the frozen API archive:
+
+```sh
+env -u APP_INTEGRATION_ADMIN_URL \
+  APP_INTEGRATION_PG_BIN=/ABS/POSTGRES/BIN APP_INTEGRATION_PG_PORT=56447 \
+  ANDES_BACKEND_NODE_MODULES=/ABS/EXISTING/BACKEND/node_modules \
+  ANDES_TYPESCRIPT_TSC=/ABS/EXISTING/typescript/bin/tsc \
+  node --test web/tests/api/runtime.integration.mjs
+```
+
+All five real checks passed on owned PostgreSQL16.14: parent, driver/family/
+colleague JWT verification at `/me`, and persisted arrival/sharing/location/SOS/
+revocation workflow. Five read timestamps match the injected server handler clock;
+loss after a committed sharing response reconciles under the original key with
+one SQL event, changed content gets409, stale capture remains stale, arrival keeps
+SOS active while omitting location, and revoked contact status returns403.
+The API used an OS-assigned loopback port and zero channel support; no provider or
+worker ran. Cleanup completed and no listener remained on owned port56447.
+
+At `2860d85`, the updated actual HTTP/PostgreSQL test was freshly executed:
+**7 passed, 0 failed** (parent plus six cases). The two added cases use separate
+synthetic RS256 issuers/apps and verify mutual demo/non-demo token refusal with401,
+then actual server verifier refusal clears the memory session, demo gateway and
+bound controller context. Teardown observes PostgreSQL socket closure before
+dropping the owned database. This adds server-bound evidence without changing the
+client runtime or promoting the old bridge's source pins.
+
+The SDK's demo flow creates one explicit world per begin, stores only the selected
+credential in memory and requires actual `/me` verification/matching UUID before
+authenticated. Its unverified JWT parsing supplies metadata/expiry only. No
+production identity, browser acquisition/rendering, live sends, policy timing,
+device behavior or whole-app acceptance is claimed. This completed review work
+was retained under the subsequent review/merge/inventory-only scope.
+
 ## Durable observation queue oracle
 
 `queue-probes.mjs` defines ten scenarios before a lane42 candidate is supplied:

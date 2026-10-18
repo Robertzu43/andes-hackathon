@@ -1,0 +1,305 @@
+{
+  "schema": "andes.reviewer-client-status-demo/1",
+  "claimedCandidateSha": "5b3fadc9167baac2d1cb91720e650a1a0b901e4f",
+  "candidateIdentityVerifiedByRunner": false,
+  "backendContractSha": "4c138ca1d00742400a850cd72b0888cc59260a36",
+  "ownerReadsContractSha": "3ea6e1b06e6dc3d3d01360f28ae9c61751657830",
+  "wholeAppAccepted": false,
+  "results": {
+    "baseline": {
+      "schema": "andes.reviewer-client-probes/1",
+      "claimedCandidateSha": "5b3fadc9167baac2d1cb91720e650a1a0b901e4f",
+      "candidateIdentityVerifiedByRunner": false,
+      "backendContract": "ebc8fb1d36f441ef012ca585201cefabf61383d6",
+      "scope": "api-driver-conformance",
+      "passed": true,
+      "checks": [
+        {
+          "id": "route:identity",
+          "passed": true
+        },
+        {
+          "id": "route:createTruck",
+          "passed": true
+        },
+        {
+          "id": "route:inviteContact",
+          "passed": true
+        },
+        {
+          "id": "route:acceptContact",
+          "passed": true
+        },
+        {
+          "id": "route:revokeStanding",
+          "passed": true
+        },
+        {
+          "id": "route:createDraft",
+          "passed": true
+        },
+        {
+          "id": "route:confirmTrip",
+          "passed": true
+        },
+        {
+          "id": "route:command",
+          "passed": true
+        },
+        {
+          "id": "route:uploadLocations",
+          "passed": true
+        },
+        {
+          "id": "route:snapshot",
+          "passed": true
+        },
+        {
+          "id": "route:revokeTrip",
+          "passed": true
+        },
+        {
+          "id": "route:sos",
+          "passed": true
+        },
+        {
+          "id": "route:incident",
+          "passed": true
+        },
+        {
+          "id": "route:acknowledge",
+          "passed": true
+        },
+        {
+          "id": "route:action",
+          "passed": true
+        },
+        {
+          "id": "route:resolve",
+          "passed": true
+        },
+        {
+          "id": "http:400",
+          "passed": true
+        },
+        {
+          "id": "http:401",
+          "passed": true
+        },
+        {
+          "id": "http:403",
+          "passed": true
+        },
+        {
+          "id": "http:404",
+          "passed": true
+        },
+        {
+          "id": "http:409",
+          "passed": true
+        },
+        {
+          "id": "http:422",
+          "passed": true
+        },
+        {
+          "id": "http:500",
+          "passed": true
+        },
+        {
+          "id": "write:lost-response-explicit-same-key-replay",
+          "passed": true
+        },
+        {
+          "id": "write:malformed-success-is-ambiguous",
+          "passed": true
+        },
+        {
+          "id": "write:abort-after-start-is-not-proof-of-cancellation",
+          "passed": true
+        },
+        {
+          "id": "read:revoked-snapshot-cannot-reuse-cached-location",
+          "passed": true
+        },
+        {
+          "id": "session:signout-clears-sensitive-store-and-prevents-new-request",
+          "passed": true
+        },
+        {
+          "id": "session:late-response-cannot-cross-to-new-user",
+          "passed": true
+        }
+      ],
+      "limitation": "Reviewer must verify the archived candidate and transparent driver binding. No backend, browser, device, identity or provider qualification."
+    },
+    "priorDelta": {
+      "passed": true,
+      "checks": [
+        "required-credential-fields-only",
+        "both-path-uuid-aliases-preserve-idempotency-scope"
+      ]
+    },
+    "gateway": {
+      "passed": true,
+      "checks": [
+        {
+          "id": "gateway:unconfigured-has-no-acquisition-or-authentication",
+          "passed": true
+        },
+        {
+          "id": "gateway:credentials-alone-cannot-bypass-held-server-identity",
+          "passed": true
+        },
+        {
+          "id": "gateway:retired-provider-success-cannot-replace-a-new-session",
+          "passed": true
+        },
+        {
+          "id": "gateway:retired-provider-failure-cannot-replace-a-new-session",
+          "passed": true
+        },
+        {
+          "id": "gateway:retired-401-cannot-clear-newly-verified-session",
+          "passed": true
+        },
+        {
+          "id": "gateway:old-logout-failure-cannot-overwrite-a-new-authenticated-state",
+          "passed": true
+        },
+        {
+          "id": "gateway:private-provider-failure-is-fixed-state-and-never-auto-retried",
+          "passed": true
+        },
+        {
+          "id": "gateway:dispose-clears-bound-protected-view-without-external-logout",
+          "passed": true
+        }
+      ],
+      "limitation": "Actual headless gateway/client code with synthetic providers and HTTP scheduling; no frozen foundation compatibility, browser login or production provider qualification."
+    },
+    "statusDemoReadTime": {
+      "passed": true,
+      "checks": [
+        {
+          "id": "read:getProfile-preserves-server-readAt",
+          "passed": true
+        },
+        {
+          "id": "read:getProfile-rejects-old-missing-readAt-contract",
+          "passed": true
+        },
+        {
+          "id": "read:listTrucks-preserves-server-readAt",
+          "passed": true
+        },
+        {
+          "id": "read:listTrucks-rejects-old-missing-readAt-contract",
+          "passed": true
+        },
+        {
+          "id": "read:listContacts-preserves-server-readAt",
+          "passed": true
+        },
+        {
+          "id": "read:listContacts-rejects-old-missing-readAt-contract",
+          "passed": true
+        },
+        {
+          "id": "read:listTrips-preserves-server-readAt",
+          "passed": true
+        },
+        {
+          "id": "read:listTrips-rejects-old-missing-readAt-contract",
+          "passed": true
+        },
+        {
+          "id": "read:getBootstrap-preserves-server-readAt",
+          "passed": true
+        },
+        {
+          "id": "read:getBootstrap-rejects-old-missing-readAt-contract",
+          "passed": true
+        },
+        {
+          "id": "read:bootstrap-clock-is-root-only-and-never-a-client-default",
+          "passed": true
+        },
+        {
+          "id": "read:malformed-server-clock-does-not-become-a-fabricated-time",
+          "passed": true
+        },
+        {
+          "id": "status:source-facts-stay-distinct-and-private-fields-are-projected-out",
+          "passed": true
+        },
+        {
+          "id": "status:omitted-and-unavailable-location-are-not-interchangeable",
+          "passed": true
+        },
+        {
+          "id": "status:unknown-delivery-state-and-impossible-source-facts-fail-closed",
+          "passed": true
+        },
+        {
+          "id": "sharing:one-attempt-freezes-body-and-explicit-replay-keeps-original-key",
+          "passed": true
+        },
+        {
+          "id": "sharing:closed-trip-conflict-is-a-refusal-without-retry",
+          "passed": true
+        },
+        {
+          "id": "demo:explicit-anonymous-acquisition-does-not-replace-existing-session",
+          "passed": true
+        },
+        {
+          "id": "demo:anonymous-401-does-not-invalidate-another-account",
+          "passed": true
+        },
+        {
+          "id": "demo:anonymous-429-does-not-invalidate-another-account",
+          "passed": true
+        },
+        {
+          "id": "demo:ambiguous-world-creation-is-not-replayed",
+          "passed": true
+        },
+        {
+          "id": "demo-gateway:driver-requires-server-identity-and-keeps-token-out-of-view",
+          "passed": true
+        },
+        {
+          "id": "demo-gateway:family-requires-server-identity-and-keeps-token-out-of-view",
+          "passed": true
+        },
+        {
+          "id": "demo-gateway:colleague-requires-server-identity-and-keeps-token-out-of-view",
+          "passed": true
+        },
+        {
+          "id": "demo-gateway:unverified-claims-cannot-override-a-server-refusal-or-identity-mismatch",
+          "passed": true
+        },
+        {
+          "id": "demo-gateway:retired-world-cannot-install-after-a-later-explicit-begin",
+          "passed": true
+        },
+        {
+          "id": "demo-gateway:old-me401-cannot-clear-a-newly-verified-world",
+          "passed": true
+        },
+        {
+          "id": "demo-gateway:unverified-long-expiry-is-capped-by-declared-world-lifetime",
+          "passed": true
+        },
+        {
+          "id": "fields:arrival-and-contact-role-remain-explicit-source-values",
+          "passed": true
+        }
+      ],
+      "limitation": "Frozen SDK with independent synthetic wire fixtures and unverified fake JWTs. Actual server signature/SQL checks are a separate run; no browser/provider/backend-policy or whole-app acceptance."
+    }
+  },
+  "passed": true
+}
