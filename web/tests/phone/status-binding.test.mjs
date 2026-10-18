@@ -27,3 +27,9 @@ test('a check-in command may say the sweeper can still escalate', () => {
   assert.equal(decoded.automaticEscalation, true);
   assert.equal(decoded.command, 'checkin_ok');
 });
+
+test('an unknown driver operation still throws unsupported', () => {
+  assert.throws(() => decodeDriverResponse({ operation: 'notAnOperation' }, { id }), error =>
+    error.kind === 'unsupported' && error.code === 'unsupported_operation'
+    && error.operation === 'notAnOperation' && error.outcome === 'not_applicable');
+});
