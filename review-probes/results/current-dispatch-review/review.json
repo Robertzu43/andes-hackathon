@@ -1,0 +1,204 @@
+{
+  "scope": "review-only; bounded existing findings; no production edits",
+  "clockfix_sha": "27e4f94b5962e88735fdb8fc3fea8cc3e842baa4",
+  "clockfix_results": {
+    "build": 0,
+    "preserved_clock_cases": 3,
+    "real_wait_controls": 2,
+    "all_pass": true,
+    "whitespace_exit": 0
+  },
+  "race_results": [
+    {
+      "candidate": "pr61",
+      "sha": "5591c9b55fe7f4505e36ccee96d27aa913e0debf",
+      "exit": 1,
+      "failed": [
+        "not ok 2 - expired job ends cancelled: job and lease expiry together",
+        "not ok 4 - phone is revalidated after quota wait: verified binding changed=true",
+        "not ok 6 - claim clock follows the trip lock: 1001ms"
+      ],
+      "counts": {
+        "total": 7,
+        "pass": 4,
+        "fail": 3
+      },
+      "diagnostics": [
+        {
+          "scenario": {
+            "name": "job expiry only",
+            "lifetime": 1000,
+            "before": 0,
+            "wait": 1001
+          },
+          "checkedAt": "2026-10-17T12:00:01.001Z",
+          "status": "cancelled",
+          "version": 2,
+          "expires_at": "2026-10-17T12:00:01.000Z",
+          "claim_until": "2026-10-17T12:00:30.000Z",
+          "attempts": 0
+        },
+        {
+          "scenario": {
+            "name": "job and lease expiry together",
+            "lifetime": 30000,
+            "before": 29900,
+            "wait": 101
+          },
+          "checkedAt": "2026-10-17T12:00:30.001Z",
+          "status": "pending",
+          "version": 1,
+          "expires_at": "2026-10-17T12:00:30.000Z",
+          "claim_until": null,
+          "attempts": 0
+        },
+        {
+          "changed": false,
+          "currentVerifiedPhone": "+5511999990000",
+          "attemptAuthorized": true,
+          "payloadTo": "+5511999990000",
+          "status": "authorized",
+          "version": 1,
+          "expires_at": "2026-10-17T12:15:00.000Z",
+          "claim_until": "2026-10-17T12:00:30.000Z"
+        },
+        {
+          "changed": true,
+          "currentVerifiedPhone": "+5511888880000",
+          "attemptAuthorized": true,
+          "payloadTo": "+5511999990000",
+          "status": "authorized",
+          "version": 1,
+          "expires_at": "2026-10-17T12:15:00.000Z",
+          "claim_until": "2026-10-17T12:00:30.000Z"
+        },
+        {
+          "elapsed": 0,
+          "checkedAt": "2026-10-17T12:00:00.000Z",
+          "returnedClaim": true,
+          "status": "claimed",
+          "version": 1,
+          "expires_at": "2026-10-17T12:00:01.000Z",
+          "claim_until": "2026-10-17T12:00:30.000Z"
+        },
+        {
+          "elapsed": 1001,
+          "checkedAt": "2026-10-17T12:00:01.001Z",
+          "returnedClaim": true,
+          "status": "claimed",
+          "version": 1,
+          "expires_at": "2026-10-17T12:00:01.000Z",
+          "claim_until": "2026-10-17T12:00:30.000Z"
+        },
+        {
+          "leaseLapsedAt": 30001,
+          "jobStillValidUntil": 120000,
+          "republishedAt": 60001,
+          "targetRepublishesBefore": 0,
+          "targetRepublishesAfter": 1,
+          "queueAck": "source inference from runJob/consume; no real queue used"
+        }
+      ]
+    },
+    {
+      "candidate": "pr83",
+      "sha": "b95ff267d297d1fe1f27fa8b016940996690691c",
+      "exit": 1,
+      "failed": [
+        "not ok 2 - expired job ends cancelled: job and lease expiry together",
+        "not ok 4 - phone is revalidated after quota wait: verified binding changed=true",
+        "not ok 6 - claim clock follows the trip lock: 1001ms"
+      ],
+      "counts": {
+        "total": 7,
+        "pass": 4,
+        "fail": 3
+      },
+      "diagnostics": [
+        {
+          "scenario": {
+            "name": "job expiry only",
+            "lifetime": 1000,
+            "before": 0,
+            "wait": 1001
+          },
+          "checkedAt": "2026-10-17T12:00:01.001Z",
+          "status": "cancelled",
+          "version": 2,
+          "expires_at": "2026-10-17T12:00:01.000Z",
+          "claim_until": "2026-10-17T12:00:30.000Z",
+          "attempts": 0
+        },
+        {
+          "scenario": {
+            "name": "job and lease expiry together",
+            "lifetime": 30000,
+            "before": 29900,
+            "wait": 101
+          },
+          "checkedAt": "2026-10-17T12:00:30.001Z",
+          "status": "pending",
+          "version": 1,
+          "expires_at": "2026-10-17T12:00:30.000Z",
+          "claim_until": null,
+          "attempts": 0
+        },
+        {
+          "changed": false,
+          "currentVerifiedPhone": "+5511999990000",
+          "attemptAuthorized": true,
+          "payloadTo": "+5511999990000",
+          "status": "authorized",
+          "version": 1,
+          "expires_at": "2026-10-17T12:15:00.000Z",
+          "claim_until": "2026-10-17T12:00:30.000Z"
+        },
+        {
+          "changed": true,
+          "currentVerifiedPhone": "+5511888880000",
+          "attemptAuthorized": true,
+          "payloadTo": "+5511999990000",
+          "status": "authorized",
+          "version": 1,
+          "expires_at": "2026-10-17T12:15:00.000Z",
+          "claim_until": "2026-10-17T12:00:30.000Z"
+        },
+        {
+          "elapsed": 0,
+          "checkedAt": "2026-10-17T12:00:00.000Z",
+          "returnedClaim": true,
+          "status": "claimed",
+          "version": 1,
+          "expires_at": "2026-10-17T12:00:01.000Z",
+          "claim_until": "2026-10-17T12:00:30.000Z"
+        },
+        {
+          "elapsed": 1001,
+          "checkedAt": "2026-10-17T12:00:01.001Z",
+          "returnedClaim": true,
+          "status": "claimed",
+          "version": 1,
+          "expires_at": "2026-10-17T12:00:01.000Z",
+          "claim_until": "2026-10-17T12:00:30.000Z"
+        },
+        {
+          "leaseLapsedAt": 30001,
+          "jobStillValidUntil": 120000,
+          "republishedAt": 60001,
+          "targetRepublishesBefore": 0,
+          "targetRepublishesAfter": 1,
+          "queueAck": "source inference from runJob/consume; no real queue used"
+        }
+      ]
+    }
+  ],
+  "probe_sha256": "ded40c429dc3cd6c7c71002480de6cd1da824b4ad7c043f63ee3265c2651624d",
+  "copy_note": "Review driver copied byte-for-byte from executed ignored scratch file; path-independent dynamic candidate imports.",
+  "barrier": "exact backend PID; unique quota project; every pending operation awaited after barrier error",
+  "timing": "real timers of101/1001ms plus controlled application-clock advancement; 29900ms age primed before entering SQL transaction",
+  "queue_ack": "Source inference from runJob/consume; actual SQL recovery/relay observation with stub transport, no real queue",
+  "external_provider_calls": 0,
+  "author_source_changes": 0,
+  "owned_database_stopped": true,
+  "other83scope": "Q46 owns five hardening/env/allowlist/legacy locale; CI/insights/policy owners separate"
+}
