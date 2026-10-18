@@ -163,3 +163,36 @@ test('recipient reads never return a phone number', async t => {
     }
   }
 });
+
+// A map-only contact has no consent to learn about an SOS, so a hidden incident must not change what they see or its order.
+async function mapOnlyTrip(f, jwt) {
+  const invite = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+15555550100', map: true, incident: false }, jwt);
+  assert.equal(invite.status, 200);
+  assert.equal((await f.req('POST', `/v1/contacts/${invite.body.id}/accept`, { map: true, incident: false }, f.contact)).status, 200);
+  const d = await f.draft({}, jwt); assert.equal(d.status, 200);
+  const confirmed = await f.req('POST', `/v1/trip-drafts/${d.body.id}/confirm`, { confirmed: true, contactGrantIds: [invite.body.id] }, jwt);
+  assert.equal(confirmed.status, 200);
+  return confirmed.body.id;
+}
+
+test('map-only contact does not see an arrived trip that still has an active SOS', async t => {
+  const f = await fixture(t);
+  const trip = await mapOnlyTrip(f, f.driver);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sos`, {})).status, 200);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/commands`, { type: 'arrived' })).status, 200);
+  const shared = await f.req('GET', '/v1/contact/trips', undefined, f.contact);
+  assert.equal(shared.status, 200); assert.deepEqual(shared.body.trips, []); assert.equal(shared.body.hasMore, false);
+});
+
+test('a hidden SOS does not reorder a map-only contact\'s shared trips', async t => {
+  const f = await fixture(t);
+  const older = await mapOnlyTrip(f, f.driver);
+  f.advance(1000);
+  const secondDriver = await f.token('driver2');
+  assert.equal((await f.req('GET', '/v1/me', undefined, secondDriver)).status, 200);
+  const newer = await mapOnlyTrip(f, secondDriver);
+  assert.equal((await f.req('POST', `/v1/trips/${older}/sos`, {})).status, 200);
+  const rows = (await f.req('GET', '/v1/contact/trips', undefined, f.contact)).body.trips;
+  assert.deepEqual(rows.map(row => row.tripId), [newer, older], 'newest first, as if no incident existed');
+  assert.ok(rows.every(row => row.activeIncidentId === null));
+});
