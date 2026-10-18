@@ -513,7 +513,9 @@ test("item 1: one owner's samples are never sent with another identity's token",
   });
   await uploader.flush({ userId: 'user-1' });
   online.dispatchEvent(new Event('online'));
-  for (let i = 0; i < 5; i += 1) await tick();
+  // Join the flush the online listener started. A fixed number of turns can
+  // still see the batch marked uploading, which is not a delete.
+  await uploader.flush();
   assert.equal(calls.length, 0, "user-1's coordinates never travel with user-2's bearer token");
   assert.equal((await uploader.state()).lastError, 'token-owner-mismatch');
   const counts = await queue.counts();
