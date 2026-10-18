@@ -18,12 +18,17 @@ function FamilyGate({ runtime, children }: { runtime: PhoneDemoRuntime; children
   const t = useMessages(driverMessages);
   const snap = useFamily(runtime.familyGateway);
   const [failed, setFailed] = useState(false);
+  const starting = useRef(false);
   if (snap.state === 'authenticated') return <>
     <p className="andes-hint tandem-note" data-contact-session>{t('contactNote')}</p>{children}</>;
   return <section className="tandem-flow"><h1>{t('contactTitle')}</h1><p>{t('contactBody')}</p>
-    {failed && <p role="alert">{t('contactFailed')}</p>}
+    {(failed || snap.state === 'error') && <p role="alert">{t('contactFailed')}</p>}
+    {snap.state === 'expired' && <p role="alert">{t('sessionExpired')}</p>}
     <PrimaryAction data-action="start-contact" busy={snap.state === 'connecting'} onClick={() => {
-      void runtime.familyGateway.begin?.().then(() => setFailed(false), () => setFailed(true));
+      if (starting.current || runtime.familyGateway.getSnapshot().state === 'connecting') return;
+      starting.current = true; setFailed(false);
+      void runtime.familyGateway.begin?.().then(() => setFailed(false), () => setFailed(true))
+        .finally(() => { starting.current = false; });
     }}>{t('contactOpen')}</PrimaryAction></section>;
 }
 function familyPage(runtime: PhoneDemoRuntime, page: ComponentType<FeatureRouteProps> | undefined) {
