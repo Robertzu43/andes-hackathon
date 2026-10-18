@@ -131,6 +131,138 @@ function queuedTripFixture(pipelineOverrides = {}) {
   return { ...b, controller, pipeline, trace, pending };
 }
 
+function trustedClick(b) {
+  class NativeEvent {}
+  b.platform.Event = NativeEvent;
+  return Object.assign(new NativeEvent(), { type: 'click', isTrusted: true, currentTarget: {}, eventPhase: 2 });
+}
+
+test('GATE N2 explicit stop after suspension permanently clears resume intent', async () => {
+  for (const reason of ['pagehide', 'freeze', 'visibilitychange']) {
+    const b = fixture(); b.adapter.start(context()); b.adapter.acquireLocation({ watch: true });
+    b.document.visibilityState = 'hidden';
+    if (reason === 'pagehide') b.platform.dispatch(reason); else b.document.dispatch(reason);
+    b.adapter.stop(); b.document.visibilityState = 'visible';
+    assert.equal((await b.adapter.resume()).ok, false);
+    assert.equal(b.watches.size, 0); assert.equal(b.adapter.snapshot().stopReason, 'explicit-stop');
+  }
+});
+
+test('GATE withdrawal blocks drain while deletion is pending, failed and complete', async () => {
+  let drains = 0;
+  const b = queuedTripFixture({ drain() { drains += 1; return Promise.resolve(); } });
+  await b.controller.drain(); assert.equal(drains, 1);
+  b.controller.startSharing(); const deletion = b.controller.revokeConsent();
+  assert.equal((await b.controller.drain()).ok, false); assert.equal(drains, 1);
+  b.pending.reject(new Error('synthetic-delete-failure')); await deletion;
+  assert.equal((await b.controller.drain()).ok, false); assert.equal(drains, 1);
+  b.pipeline.revokeTrip = () => 0; await b.controller.revokeConsent();
+  assert.equal((await b.controller.drain()).ok, false); assert.equal(drains, 1);
+});
+
+test('GATE gesture acquisition reports stop and revocation after synchronous native/sink delivery', () => {
+  const b = fixture(); let adapter;
+  adapter = createPhoneObservationAdapter({ ...b.config, sink(e) { if (e.type === 'geolocation') adapter.stop(); } });
+  b.geo.getCurrentPosition = (success) => success(fix());
+  adapter.start(context());
+  const result = adapter.withUserGesture(trustedClick(b), () => adapter.acquireLocation());
+  assert.equal(adapter.snapshot().state, 'stopped'); assert.equal(result.ok, false);
+  const c = queuedTripFixture();
+  c.pipeline.sink = (event) => { if (event.type === 'geolocation') c.controller.revokeConsent(); };
+  c.geo.watchPosition = (success) => { success(fix()); return 42; };
+  const start = c.controller.startSharing(trustedClick(c));
+  assert.equal(c.controller.snapshot().state, 'stopped'); assert.equal(start.ok, false);
+  c.pending.resolve(0);
+  const d = queuedTripFixture(); const useful = d.controller.startSharing(trustedClick(d));
+  assert.equal(useful.ok, true); assert.equal(d.controller.snapshot().state, 'started');
+  assert.equal(d.watches.size, 1); d.controller.stopSharing();
+});
+
+test('GATE code1 with site grant cannot trigger passive GPS retries or starve motion', async () => {
+  const b = fixture(); let nativeCalls = 0;
+  b.geo.getCurrentPosition = (_ok, fail) => { nativeCalls += 1; fail({ code: 1 }); };
+  b.adapter.start(context()); assert.equal(b.adapter.acquireLocation().ok, false); await settle();
+  b.platform.navigator.userActivation.isActive = false;
+  for (let n = 0; n < 100; n += 1) { assert.equal(b.adapter.acquireLocation().ok, false); await settle(); }
+  assert.equal(nativeCalls, 1); assert.equal(b.adapter.snapshot().summary.requests, 1);
+  b.platform.navigator.userActivation.isActive = true;
+  const motion = b.adapter.acquireMotion(); assert.equal(b.motionRequests.length, 1);
+  b.motionRequests[0].resolve('granted'); assert.equal((await motion).ok, true); b.adapter.stop();
+});
+
+test('GATE N3 denied optional motion does not prevent resuming useful GPS', async () => {
+  const b = fixture(); b.adapter.start(context()); b.adapter.acquireLocation({ watch: true });
+  const motion = b.adapter.acquireMotion(); b.motionRequests[0].resolve('denied'); await motion;
+  b.platform.dispatch('pagehide'); const resumed = await b.adapter.resume();
+  assert.equal(resumed.ok, true); assert.equal(resumed.location.ok, true);
+  assert.equal(resumed.motion.ok, false); assert.equal(b.motionRequests.length, 1);
+  assert.equal(b.watches.size, 1); b.latestWatch().success(fix());
+  assert.equal(b.last('geolocation').data.accuracyM, 20); b.adapter.stop();
+});
+
+test('GATE X1 X3 event and trip-session identities do not collide on recreation or resume', async () => {
+  const a = queuedTripFixture(), b = queuedTripFixture(); a.controller.startSharing(); b.controller.startSharing();
+  assert.notEqual(a.events[0].eventId, b.events[0].eventId);
+  assert.notEqual(a.controller.snapshot().sessionId, b.controller.snapshot().sessionId);
+  const first = a.controller.snapshot().sessionId; a.platform.dispatch('pagehide');
+  assert.equal((await a.controller.resumeSharing()).ok, true);
+  assert.notEqual(a.controller.snapshot().sessionId, first);
+  const c = fixture(), d = fixture(); c.adapter.start(context()); d.adapter.start(context());
+  assert.notEqual(c.events[0].eventId, d.events[0].eventId);
+  for (const f of [a, b]) f.controller.stopSharing(); for (const f of [c, d]) f.adapter.stop();
+});
+
+test('GATE p5 unavailable APIs consume no acquisition budget', async () => {
+  const b = fixture(); b.adapter.start(context()); delete b.platform.navigator.geolocation;
+  for (let n = 0; n < 200; n += 1) assert.equal(b.adapter.acquireLocation().reason, 'api-unavailable');
+  assert.equal(b.adapter.snapshot().summary.requests, 0);
+  const motion = b.adapter.acquireMotion(); assert.equal(b.motionRequests.length, 1);
+  b.motionRequests[0].resolve('granted'); assert.equal((await motion).ok, true);
+  const before = b.adapter.snapshot().summary.requests; await b.adapter.requestWakeLock();
+  assert.equal(b.adapter.snapshot().summary.requests, before); b.adapter.stop();
+});
+
+test('GATE p4 pending first grant arms post-grant timeout for a replacement acquisition', async () => {
+  const b = fixture(), query = deferred(); b.platform.navigator.permissions.query = () => query.promise;
+  b.adapter.start(context()); b.adapter.acquireLocation(); b.adapter.stopLocation(); b.adapter.acquireLocation();
+  query.resolve(b.statuses.geolocation); await settle();
+  assert.equal(b.adapter.snapshot().permission.geolocation.state, 'granted');
+  assert.ok([...b.timers.values()].some(timer => timer.ms === PROVISIONAL_BUDGET.requestTimeoutMs));
+  b.advance(PROVISIONAL_BUDGET.requestTimeoutMs); b.requests[1].success(fix());
+  assert.equal(b.last('geolocation'), undefined); b.adapter.stop();
+});
+
+test('GATE p3 late motion rejection preserves permission timeout attribution', async () => {
+  const b = fixture(); b.adapter.start(context()); const pending = b.adapter.acquireMotion();
+  b.advance(PROVISIONAL_BUDGET.permissionPromptTimeoutMs); b.motionRequests[0].reject(new Error('synthetic-rejection'));
+  assert.equal((await pending).reason, 'permission-prompt-timeout');
+  assert.equal(b.last('acquisition-timeout').data.reason, 'permission-prompt-timeout'); b.adapter.stop();
+});
+
+test('GATE p6 unsupported permission names and wake-lock blocks stay separately attributed', async () => {
+  const b = fixture(); b.platform.navigator.permissions.query = () => Promise.reject(new TypeError('unsupported synthetic name'));
+  b.adapter.start(context()); b.adapter.acquireLocation(); await settle();
+  assert.equal(b.adapter.snapshot().summary.permissionObserverErrors, 0);
+  b.adapter.stopLocation(); b.platform.navigator.userActivation.isActive = false;
+  await b.adapter.requestWakeLock(); b.adapter.acquireLocation();
+  const diagnostics = b.events.filter(e => e.type === 'acquisition-blocked').map(e => e.data.stream);
+  assert.ok(diagnostics.includes('wake-lock')); assert.ok(diagnostics.includes('geolocation')); b.adapter.stop();
+  const c = fixture(); c.statuses.geolocation.addEventListener = () => { throw new TypeError('synthetic-listener-fault'); };
+  c.adapter.start(context()); c.adapter.acquireLocation(); await settle();
+  assert.equal(c.adapter.snapshot().summary.permissionObserverErrors, 1); c.adapter.stop();
+});
+
+test('GATE N13 default budgets retain a full foreground day of GPS fixes, errors and motion', async () => {
+  const b = fixture({ sink() {} }); b.adapter.start(context()); b.adapter.acquireLocation({ watch: true });
+  const watch = b.latestWatch(), pending = b.adapter.acquireMotion(); b.motionRequests[0].resolve('granted'); await pending;
+  for (let n = 1; n < 86400; n += 1) {
+    b.advance(1000); watch.failure({ code: 2 }); watch.success(fix(WALL + n * 1000));
+    b.platform.dispatch('devicemotion', { timeStamp: n * 1000 });
+  }
+  assert.equal(b.adapter.snapshot().state, 'started'); assert.equal(b.watches.size, 1);
+  assert.equal(b.platform.count('devicemotion'), 1); b.adapter.stop();
+});
+
 test('queued trip composes the supplied sink and upload API while acquiring GPS only', async () => {
   const b = queuedTripFixture();
   const started = b.controller.startSharing(); assert.equal(started.ok, true); await started.wakeLock;

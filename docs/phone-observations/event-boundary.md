@@ -12,7 +12,7 @@ Every event uses `andes.phone-observations.provisional/1`,
 
 | #18 requested concept | Local representation / unresolved boundary |
 | --- | --- |
-| Event/trip/session IDs | Opaque caller `tripId`, `sessionId`; event ID includes session, adapter generation and monotonic emission sequence. Caller must make session IDs globally unique across page lifetimes. |
+| Event/trip/session IDs | Opaque caller `tripId`; event ID includes a cryptographically random adapter-instance identity, generation and monotonic emission sequence. Trip-factory start and every resume create a fresh runtime `sessionId`; direct adapter callers supply a fresh session ID for independently started sessions. |
 | Truck reference | Optional opaque `truckId`, otherwise `null` |
 | Sequence | `sequence` increases across this adapter's lifetime; `sessionSequence` starts at 1 for each explicit session. Callback arrival order is preserved; duplicate/reordered sources are not deduplicated into new facts. |
 | Source time | Location: `{ value, basis: 'unix-epoch-ms', provenance: 'position.timestamp' }`; motion: `{ value, basis: 'dom-event-ms-unreconciled', provenance: 'event.timeStamp' }`. Unknown values are `null`; control events have `sourceTime: null`. |
@@ -64,7 +64,7 @@ This is not an acknowledged server sharing transition. Q42 owns queue mapping;
 Robert owns any new `/sharing` endpoint, its idempotency and state semantics.
 No such route existed at inspected backend c752de8a3b424bcbc086764dc11052348b27e320.
 
-`resume()` creates another adapter generation in the same trip/session context
+`resume()` creates another adapter generation with a fresh runtime session ID in the same trip
 only after an explicit gesture, and never consumes old callback tokens. Wake-lock
 requested/held/released/unavailable events are local capability observations.
 Browser-managed motion retains unknown permission rather than inventing a grant.
