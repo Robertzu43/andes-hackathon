@@ -226,13 +226,23 @@ test('resolving an overdue alert or resuming after the expected arrival does not
   assert.deepEqual(await checksOf(f, trip), [{reason: 'arrival_overdue', status: 'escalated', incident_id: incident}, asking('arrival_overdue')]);
 });
 
-test('a trip confirmed after its expected arrival gets the full grace period first', async t => {
-  const f = await fixture(t); f.advance(3600000);
-  const draft = await f.draft({expectedArrivalAt: '2026-10-17T12:30:00Z'});
-  const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: []})).body.id;
-  const quiet = {...cfg, silenceMs: 86400000};
-  f.advance(120000); await sweep(f, quiet); assert.deepEqual(await checksOf(f, trip), []);
-  f.advance(1); await sweep(f, quiet); assert.deepEqual(await checksOf(f, trip), [asking('arrival_overdue')]);
+// Robert: an arrival time that has already passed is a typo, not a plan. It is checked wherever it enters, and again at
+// confirmation, because a draft that was valid when written can go stale before the driver confirms it.
+test('expected arrival must be strictly in the future when drafted, corrected and confirmed', async t => {
+  const f = await fixture(t); // server clock 2026-10-17T12:00:00Z
+  const rejected = {status: 400, body: {code: 'invalid_input', reason: 'expected_arrival_not_in_future'}};
+  const confirm = (id, fields) => f.req('POST', `/v1/trip-drafts/${id}/confirm`, {confirmed: true, contactGrantIds: [], ...(fields ? {fields} : {})});
+  for (const at of ['2026-10-17T11:59:59.999Z', '2026-10-17T12:00:00Z', '2026-10-17T07:00:00-05:00', '0001-01-01T00:00:00Z']) assert.deepEqual(await f.draft({expectedArrivalAt: at}), rejected, at);
+  assert.equal((await f.draft({expectedArrivalAt: '2026-10-17T12:00:00.001Z'})).status, 200);
+  const open = await f.draft(); assert.equal(open.status, 200, 'still optional');
+  assert.deepEqual(await confirm(open.body.id, {expectedArrivalAt: '2026-10-17T11:00:00Z'}), rejected, 'a corrected field is checked too');
+  const stale = await f.draft({expectedArrivalAt: '2026-10-17T12:30:00Z'}); assert.equal(stale.status, 200);
+  f.advance(30 * 60000); // valid when drafted, due by confirmation
+  assert.deepEqual(await confirm(stale.body.id), rejected);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM trips')).rows[0].n, 0);
+  assert.equal((await confirm(stale.body.id, {expectedArrivalAt: '2026-10-17T13:00:00Z'})).status, 200, 'a corrected time confirms');
+  assert.equal((await confirm(open.body.id)).status, 200);
+  assert.deepEqual((await f.ctx.pool.query('SELECT expected_arrival_at FROM trips ORDER BY expected_arrival_at')).rows.map(r => r.expected_arrival_at), [new Date('2026-10-17T13:00:00Z'), null]);
 });
 
 test('a check opened after waiting for the trip lock gets its full grace window from when it opens', async t => {
@@ -365,21 +375,15 @@ test('a new sharing stop after an OK opens a new check', async t => {
   assert.deepEqual(await checksOf(f, trip), [{reason: 'sharing_stopped', status: 'ok', incident_id: null}, asking('sharing_stopped')]);
 });
 
-test('expected arrival accepts any RFC 3339 instant and status returns it normalized', async t => {
+test('expected arrival accepts any future RFC 3339 instant and status returns it normalized', async t => {
   const f = await fixture(t);
-  const cases = {'2026-10-17t18:00:00z': '2026-10-17T18:00:00.000Z', '2026-10-17T23:59:60Z': '2026-10-18T00:00:00.000Z', '2026-10-17T13:00:00-05:00': '2026-10-17T18:00:00.000Z', '0001-01-01T00:00:00Z': '0001-01-01T00:00:00.000Z'};
+  const cases = {'2026-10-17t18:00:00z': '2026-10-17T18:00:00.000Z', '2026-10-17T23:59:60Z': '2026-10-18T00:00:00.000Z', '2026-10-17T13:00:00-05:00': '2026-10-17T18:00:00.000Z', '9999-12-31T23:59:59Z': '9999-12-31T23:59:59.000Z'};
   for (const [given, stored] of Object.entries(cases)) {
     const draft = await f.draft({expectedArrivalAt: given});
     assert.equal(draft.body.fields.expectedArrivalAt, given, 'draft fields echo what was sent');
     const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: []})).body.id;
     assert.equal((await f.req('GET', `/v1/trips/${trip}/status`)).body.trip.expectedArrivalAt, stored);
   }
-  // A past instant is "already due": overdue still waits the full grace from the trip start (see the confirmation-after-arrival test).
-  const quiet = {...cfg, silenceMs: 86400000};
-  f.advance(120000); await sweep(f, quiet);
-  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM security_checks')).rows[0].n, 0);
-  f.advance(1); await sweep(f, quiet);
-  assert.equal((await f.ctx.pool.query("SELECT count(*)::int n FROM security_checks WHERE reason='arrival_overdue'")).rows[0].n, 1);
 });
 
 test('commands report truthfully whether the sweeper can still escalate the trip', async t => {

@@ -27,7 +27,8 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
   app.setErrorHandler((error, _request, reply) => {
     const failure = error instanceof Error ? error as FastifyError : undefined;
     const status = failure?.statusCode && failure.statusCode >= 400 && failure.statusCode < 500 ? failure.statusCode : 500;
-    reply.status(status).send({ code: status === 500 ? 'internal_error' : failure?.validation ? 'invalid_request' : failure?.code ?? 'invalid_request' });
+    const reason = status === 500 ? undefined : (failure as { reason?: string } | undefined)?.reason; // only problem() sets it
+    reply.status(status).send({ code: status === 500 ? 'internal_error' : failure?.validation ? 'invalid_request' : failure?.code ?? 'invalid_request', ...(reason ? { reason } : {}) });
   });
   app.addHook('onClose', () => ctx.close());
   app.get('/health', async (_request, reply) => {
