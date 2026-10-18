@@ -168,3 +168,61 @@ test('impossible calendar dates and hour 24 are rejected instead of rolling forw
     { idempotencyKey: 'leap-day-intent' });
   assert.equal(sent[0].fields.expectedArrivalAt, '2028-02-29T15:00:00.000Z'); // A real leap day still converts.
 });
+
+test('impossible calendar dates and hour24 fail before either arrival write is dispatched', async t => {
+  for (const value of ['2027-02-29T10:00:00-05:00', '2026-02-30T12:00:00Z',
+    '2026-04-31T12:00:00+0000', '2026-12-31T24:00:00Z', '2026-04-30T24:00:00+05:30']) {
+    await t.test(value, async () => {
+      let calls = 0;
+      const f = fixture(async (url, init) => {
+        calls++;
+        const body = JSON.parse(init.body);
+        const echoed = { truckId: id, origin: 'Synthetic origin', destination: 'Synthetic destination',
+          country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo', ...body.fields };
+        return Response.json(url.pathname.endsWith('/confirm') ? { id, status: 'active', fields: echoed }
+          : { id, rawText: 'Synthetic draft', fields: echoed, missingFields: [], status: 'draft' });
+      });
+      const fields = { expectedArrivalAt: value };
+      const key = { idempotencyKey: 'invalid-calendar-intent' };
+      for (const send of [() => f.api.createDraft({ text: 'Synthetic draft', fields }, key),
+        () => f.api.confirmTrip(id, { confirmed: true, contactGrantIds: [], fields }, key)]) {
+        await assert.rejects(send(), error => error.kind === 'invalid_input' && error.outcome === 'not_sent');
+      }
+      assert.equal(calls, 0);
+      assert.equal(fields.expectedArrivalAt, value);
+    });
+  }
+});
+
+test('valid leap days and offset-induced UTC day changes preserve their intended instants', async t => {
+  for (const [value, canonical] of [
+    ['2028-02-29T10:00:00-05:00', '2028-02-29T15:00:00.000Z'],
+    ['2000-02-29T23:59:59.125-05', '2000-03-01T04:59:59.125Z'],
+    ['2026-01-01T00:00:00+05:30', '2025-12-31T18:30:00.000Z'],
+  ]) await t.test(value, async () => {
+    const fields = { truckId: id, origin: 'Synthetic origin', destination: 'Synthetic destination',
+      country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo', expectedArrivalAt: value };
+    const f = fixture(async (_url, init) => Response.json({ id, status: 'active', fields: JSON.parse(init.body).fields }));
+    const result = await f.api.confirmTrip(id, { confirmed: true, contactGrantIds: [], fields }, { idempotencyKey: 'valid-calendar-intent' });
+    assert.equal(result.fields.expectedArrivalAt, canonical);
+    assert.equal(fields.expectedArrivalAt, value);
+  });
+});
+
+test('backend-accepted future captures preserve clamped source age within the actual receipt tolerance', async t => {
+  const location = { capturedAt: '2026-10-17T12:00:00.300Z', receivedAt: stamp, latitude: 0, longitude: 0, accuracy: 15 };
+  const base = { tripId: id, readAt: stamp, ageMs: 0, freshness: 'fresh', location };
+  for (const offset of [300, 30_000]) await t.test(`accepted ${offset}ms`, async () => {
+    const body = { ...base, location: { ...location, capturedAt: new Date(Date.parse(stamp) + offset).toISOString() } };
+    const f = fixture(async () => Response.json(body));
+    assert.deepEqual(await f.api.getSnapshot(id), body);
+  });
+  for (const [label, body] of [
+    ['past receipt tolerance', { ...base, location: { ...location, capturedAt: '2026-10-17T12:00:30.001Z' } }],
+    ['wrong clamped age', { ...base, ageMs: 300 }],
+    ['wrong freshness', { ...base, freshness: 'stale' }],
+  ]) await t.test(label, async () => {
+    const f = fixture(async () => Response.json(body));
+    await assert.rejects(f.api.getSnapshot(id), error => error.kind === 'invalid_response');
+  });
+});

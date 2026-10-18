@@ -81,8 +81,11 @@ export const snapshot: Decoder<T.LocationSnapshot> = value => {
   }
   if (parsed.freshness === 'unavailable' || parsed.ageMs === null) invalid();
   const readMs = Date.parse(parsed.readAt);
-  const age = readMs - Date.parse(parsed.location.capturedAt);
-  if (age < 0 || Date.parse(parsed.location.receivedAt) > readMs || parsed.ageMs !== age
+  const capturedMs = Date.parse(parsed.location.capturedAt);
+  const receivedMs = Date.parse(parsed.location.receivedAt);
+  const age = Math.max(0, readMs - capturedMs);
+  // The upload route accepts capture clocks up to 30s ahead of its receipt clock.
+  if (capturedMs > receivedMs + 30_000 || receivedMs > readMs || parsed.ageMs !== age
     || parsed.freshness !== (age <= 120_000 ? 'fresh' : 'stale')) invalid();
   return { tripId: parsed.tripId, readAt: parsed.readAt, location: parsed.location, freshness: parsed.freshness, ageMs: parsed.ageMs };
 };

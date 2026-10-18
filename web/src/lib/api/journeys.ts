@@ -1,7 +1,7 @@
 import type { ApiClient } from './client.ts';
 import { ApiError } from './errors.ts';
-import type { MemorySession } from './session.ts';
-import type { RequestOptions, WriteOptions, InvitationInput, ConsentScopes, UUID } from './types.ts';
+import type { MemorySession, SessionLease } from './session.ts';
+import type { RequestOptions, WriteOptions, InvitationInput, ConsentScopes, IdResponse, UUID } from './types.ts';
 
 /** Structural ContactApi facade for PR62/a8466d5; feature implementation stays in its own lane. */
 export function createContactApi(api: ApiClient) {
@@ -28,29 +28,51 @@ export function bindJourneySession(session: MemorySession, api: Pick<ApiClient, 
   let generation = 0;
   let disposed = false;
   let bound: UUID | null = null;
-  const reset = () => { generation += 1; bound = null; setActor(null); };
+  let pending: { generation: number; lease: SessionLease; signal?: AbortSignal; promise: Promise<IdResponse> } | null = null;
+  const clearActor = () => { bound = null; setActor(null); };
+  const reset = () => { generation += 1; pending = null; clearActor(); };
   reset();
   const unsubscribe = session.subscribe(() => {
     // An earlier listener can dispose this binding during a notification snapshot.
     if (!disposed) reset();
   });
   return {
-    async activate(options?: RequestOptions) {
-      if (disposed) throw new ApiError('session_changed', { operation: 'activateJourney' });
-      // Verify before touching the controller: a same-actor re-activation must not erase an accepted SOS.
-      // Account replacement, clear, current 401 and expiry already reset through the subscription.
-      const started = generation;
-      const lease = session.capture();
-      const identity = await api.getIdentity(options);
-      if (disposed || started !== generation || !session.isCurrent(lease)) {
-        throw new ApiError('session_changed', { operation: 'activateJourney' });
+    activate(options?: RequestOptions): Promise<IdResponse> {
+      try {
+        if (disposed) throw new ApiError('session_changed', { operation: 'activateJourney' });
+        const lease = session.capture();
+        if (pending && pending.generation === generation && pending.signal === options?.signal
+          && session.isCredentialCurrent(pending.lease)) return pending.promise;
+        let resolve!: (identity: IdResponse) => void;
+        let reject!: (error: unknown) => void;
+        const promise = new Promise<IdResponse>((done, fail) => { resolve = done; reject = fail; });
+        const run = { generation: ++generation, lease, signal: options?.signal, promise };
+        pending = run;
+        function ensureCurrent() {
+          if (disposed || run.generation !== generation || !session.isCurrent(lease)) {
+            throw new ApiError('session_changed', { operation: 'activateJourney' });
+          }
+        }
+        void (async () => {
+          try {
+            // Verify before touching the controller: same-actor reactivation preserves SOS facts.
+            // Account replacement, clear, current 401 and expiry reset through the subscription.
+            const identity = await api.getIdentity(options);
+            ensureCurrent();
+            if (identity.id.toLowerCase() !== bound?.toLowerCase()) {
+              if (bound !== null) { clearActor(); ensureCurrent(); }
+              setActor(identity.id);
+              ensureCurrent();
+              bound = identity.id;
+            }
+            resolve(identity);
+          } catch (error) { reject(error); }
+          finally { if (pending === run) pending = null; }
+        })();
+        return promise;
+      } catch (error) {
+        return Promise.reject(error);
       }
-      if (identity.id.toLowerCase() !== bound?.toLowerCase()) {
-        if (bound !== null) reset();
-        bound = identity.id;
-        setActor(identity.id);
-      }
-      return identity;
     },
     dispose() {
       if (disposed) return;
