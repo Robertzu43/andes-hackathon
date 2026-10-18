@@ -90,3 +90,62 @@ export function createDemoSessionGateway(config: {
     },
   });
 }
+
+/**
+ * Consume a family invitation, never mint a world. Claims constrain acquisition only;
+ * /me authenticates the credential. The recipient catalog must separately establish
+ * grant membership before consent; a UUID-shaped route proves no ownership.
+ */
+export function createInvitationSession(config: {
+  api: Pick<ApiClient, 'getIdentity'>;
+  session: MemorySession;
+  location: Pick<Location, 'pathname' | 'search' | 'hash'>;
+  history: Pick<History, 'state' | 'replaceState'>;
+}): import('./gateway.ts').SessionGateway {
+  const { api, session, location, history } = config;
+  // Run synchronously, even for malformed input, before creating any asynchronous work.
+  const fragment = location.hash;
+  history.replaceState(history.state, '', location.pathname + location.search);
+  let held = invitationCredentials(location.pathname, fragment);
+  let expiry: ReturnType<typeof setTimeout> | undefined;
+  function retire() { held = null; clearTimeout(expiry); expiry = undefined; }
+  if (held) {
+    expiry = setTimeout(retire, Math.max(0, held.expiresAt - Date.now()));
+    (expiry as unknown as { unref?: () => void }).unref?.();
+  }
+  // This gateway must never authenticate using a driver's already-local world.
+  session.clear();
+  const gateway = createSessionGateway({ api, session, mode: 'demo', release: retire,
+    async acquire({ signal }) {
+      const credentials = held;
+      retire(); // A credential is handed to MemorySession at most once.
+      if (signal.aborted || !credentials || credentials.expiresAt <= Date.now()) throw new ApiError('unauthenticated');
+      return credentials;
+    },
+  });
+  return { ...gateway,
+    end() { retire(); gateway.end?.(); },
+    dispose() { retire(); gateway.dispose(); },
+  };
+}
+
+function invitationCredentials(pathname: string, fragment: string): SessionCredentials | null {
+  try {
+    const path = /^\/contact\/invitations\/([^/]+)$/.exec(pathname);
+    if (!path || !isUuid(path[1]) || fragment.length > 16_387 || !fragment.startsWith('#')) return null;
+    const entries = [...new URLSearchParams(fragment.slice(1))];
+    if (entries.length !== 1 || entries[0]?.[0] !== 't') return null;
+    const token = entries[0][1];
+    if (token.length > 16_384 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token)) return null;
+    const payload = token.split('.')[1]!;
+    const claims: unknown = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    if (!claims || typeof claims !== 'object' || Array.isArray(claims)) return null;
+    const c = claims as Record<string, unknown>;
+    if (c.iss !== 'https://demo.andes.invalid' || c.aud !== 'andes-demo'
+      || typeof c.sub !== 'string' || !c.sub.endsWith(':family') || !isUuid(c.sub.slice(0, -7))
+      || typeof c.exp !== 'number' || !Number.isSafeInteger(c.exp) || c.exp <= 0) return null;
+    const expiresAt = c.exp * 1000;
+    if (!Number.isSafeInteger(expiresAt) || expiresAt <= Date.now() || expiresAt > Date.now() + 7_200_000) return null;
+    return { issuer: c.iss, subject: c.sub, accessToken: token, expiresAt };
+  } catch { return null; }
+}

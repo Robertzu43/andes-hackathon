@@ -65,3 +65,20 @@ api.setSharing('id', { state: 'resumed', reason: 'user' });
 // @ts-expect-error the server exposes no read-time field in this status contract
 const statusReadAt: string = (await api.getTripStatus('id')).readAt;
 void statusReadAt;
+
+import { createInvitationSession } from '../../src/lib/api/index.ts';
+import type { DemoPhoneStart, DemoPhoneVerification, ContactInvitations, ContactTrips } from '../../src/lib/api/index.ts';
+const otpStart: Promise<DemoPhoneStart> = api.startDemoPhone({ phone: '+51999999001' });
+const otpVerified: Promise<DemoPhoneVerification> = api.verifyDemoPhone({ phone: '+51999999001', code: '123456' });
+const recipientInvites: Promise<ContactInvitations> = api.listContactInvitations();
+const recipientTrips: Promise<ContactTrips> = api.listContactTrips();
+const sourceLimit: 100 = (await recipientInvites).limit;
+const recipientStatus: 'active' | 'arrived' | 'cancelled' | undefined = (await recipientTrips).trips[0]?.status;
+void otpStart; void otpVerified; void sourceLimit; void recipientStatus;
+// @ts-expect-error OTP has no caller-controlled idempotency key
+api.startDemoPhone({ phone: '+51999999001' }, { idempotencyKey: 'key' });
+// @ts-expect-error recipient catalogs project no phone
+const recipientPhone: string = (await recipientInvites).invitations[0]?.phone;
+void recipientPhone;
+// The invitation gateway consumes only identity verification; no mint capability is needed.
+createInvitationSession({ api: { getIdentity: api.getIdentity }, session: new MemorySession(), location, history });

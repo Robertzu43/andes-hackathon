@@ -6,6 +6,8 @@ import * as decode from './responses.ts';
 import type { Decoder } from './responses.ts';
 import type * as T from './types.ts';
 import { isUuid } from './uuid.ts';
+import { demoPhoneCodes, decodeDemoPhoneStart, decodeDemoPhoneVerification } from './demo-phone.ts';
+import { decodeContactInvitations, decodeContactTrips } from './recipient.ts';
 
 export interface ApiClientConfig {
   /** Explicit trusted API/proxy base. No token, query, fragment, or userinfo in this URL. */
@@ -21,8 +23,8 @@ const knownCodes = new Set(['invalid_request', 'idempotency_key_required', 'idem
   'contact_not_accepted', 'trip_not_found', 'trip_closed', 'invalid_consent_request', 'contact_not_found',
   'contact_already_invited', 'grant_not_found', 'verified_phone_mismatch', 'invalid_consent_scope',
   'consent_revoked', 'already_accepted', 'location_stopped', 'capture_time_out_of_bounds', 'map_inactive',
-  'incident_not_found', 'incident_resolved', 'demo_rate_limited']);
-const catalogOperations = new Set(['getProfile', 'getBootstrap', 'listTrucks', 'listContacts', 'listTrips']);
+  'incident_not_found', 'incident_resolved', 'demo_rate_limited', ...demoPhoneCodes]);
+const catalogOperations = new Set(['getProfile', 'getBootstrap', 'listTrucks', 'listContacts', 'listTrips', 'listContactInvitations', 'listContactTrips']);
 
 function resource(id: string): string {
   if (!isUuid(id)) {
@@ -68,7 +70,8 @@ export function createApiClient(config: ApiClientConfig) {
   const session = config.session;
 
   async function request<R>(operation: string, path: string | (() => string), decoder: Decoder<R>,
-    options: T.RequestOptions = {}, mutation?: { body: unknown; key?: string; demo?: true; prepare?: (value: unknown) => unknown }): Promise<R> {
+    options: T.RequestOptions = {}, mutation?: { body: unknown; key?: string; prepare?: (value: unknown) => unknown },
+    policy: { actorless?: true; keyless?: true; successStatus?: 200 | 202 } = {}): Promise<R> {
     const writing = mutation !== undefined;
     let sent = false;
     const outcome = (): WriteOutcome => writing ? sent ? 'unknown' : 'not_sent' : 'not_applicable';
@@ -79,7 +82,7 @@ export function createApiClient(config: ApiClientConfig) {
     // Freeze serialized content before asynchronous fetch/response work or caller mutation.
     let body: string | undefined;
     if (mutation) {
-      if (!mutation.demo && (typeof mutation.key !== 'string' || !/^[\x21-\x7e]{1,128}$/.test(mutation.key))) throw error('invalid_input');
+      if (!policy.keyless && (typeof mutation.key !== 'string' || !/^[\x21-\x7e]{1,128}$/.test(mutation.key))) throw error('invalid_input');
       try { body = JSON.stringify(mutation.prepare ? mutation.prepare(mutation.body) : mutation.body); }
       catch { throw error('invalid_input'); }
       if (!body || new TextEncoder().encode(body).length > 128 * 1024) throw error('invalid_input');
@@ -90,7 +93,7 @@ export function createApiClient(config: ApiClientConfig) {
       catch (failure) { if (failure instanceof ApiError) throw error(failure.kind); throw failure; }
     };
     // The demo world is the one actorless exception: no bearer and no idempotency key.
-    const lease = mutation?.demo ? null : capture();
+    const lease = policy.actorless ? null : capture();
     let deadline: 'timeout' | 'session_expired' | null = null;
     const timerController = new AbortController();
     const combined = combineSignals([...(lease ? [lease.signal] : []), timerController.signal, ...(options.signal ? [options.signal] : [])]);
@@ -116,14 +119,14 @@ export function createApiClient(config: ApiClientConfig) {
       if (lease) headers.Authorization = lease.authorization;
       if (mutation) {
         headers['Content-Type'] = 'application/json';
-        if (!mutation.demo) headers['Idempotency-Key'] = mutation.key!;
+        if (!policy.keyless) headers['Idempotency-Key'] = mutation.key!;
       }
       sent = true;
       const response = await transport(url, {
         method: writing ? 'POST' : 'GET', headers, body, signal,
         credentials: 'omit', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer',
       });
-      if (response.status !== 200) {
+      if (response.status !== (policy.successStatus ?? 200)) {
         const missingEndpoint = response.status === 404 && catalogOperations.has(operation);
         const kind: ErrorKind = missingEndpoint ? 'unsupported' : ({ 400: 'invalid_input', 401: 'unauthenticated', 403: 'forbidden',
           404: 'not_found', 409: 'conflict', 422: 'unsupported' } as Record<number, ErrorKind>)[response.status]
@@ -161,8 +164,16 @@ export function createApiClient(config: ApiClientConfig) {
     getIdentity: (options?: T.RequestOptions) => request('getIdentity', 'v1/me', decode.id, options),
     createDemoSession: (options: T.DemoSessionOptions) => {
       if (options?.demo !== true) return Promise.reject(new ApiError('invalid_input', { operation: 'createDemoSession' }));
-      return request('createDemoSession', 'v1/demo/session', decode.demoWorld, options, { body: {}, demo: true });
+      return request('createDemoSession', 'v1/demo/session', decode.demoWorld, options, { body: {} }, { actorless: true, keyless: true });
     },
+    startDemoPhone: (body: { phone: string }, options?: T.RequestOptions) =>
+      request('startDemoPhone', 'v1/demo/phone/start', decodeDemoPhoneStart, options, { body }, { keyless: true, successStatus: 202 }),
+    verifyDemoPhone: (body: { phone: string; code: string }, options?: T.RequestOptions) =>
+      request('verifyDemoPhone', 'v1/demo/phone/verify', decodeDemoPhoneVerification, options, { body }, { keyless: true }),
+    listContactInvitations: (options?: T.RequestOptions) =>
+      request('listContactInvitations', 'v1/contact/invitations', decodeContactInvitations, options),
+    listContactTrips: (options?: T.RequestOptions) =>
+      request('listContactTrips', 'v1/contact/trips', decodeContactTrips, options),
     getProfile: (options?: T.RequestOptions) => request('getProfile', 'v1/profile', decode.profile, options),
     getBootstrap: (options?: T.RequestOptions) => request('getBootstrap', 'v1/bootstrap', decode.bootstrap, options),
     listTrucks: (options?: T.RequestOptions) => request('listTrucks', 'v1/trucks', decode.trucks, options),
