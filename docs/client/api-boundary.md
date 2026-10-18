@@ -188,7 +188,9 @@ trusted release callback. The gateway has no built-in provider or demo identity.
 
 `getTripStatus` preserves the server's trip state/expected arrival, nullable asking
 check and `askUntil`, latest active or resolved incident, and individual job delivery
-states. Arrival can coexist with an active incident. A job's accepted/unknown/delivered
+states. The incident keeps its #77 `label` (robo/intento_robo/falsa_alarma/sin_senal/otro
+or null); an unknown label fails as invalid_response, and a backend without labels leaves
+the field absent. Arrival can coexist with an active incident. A job's accepted/unknown/delivered
 status is not contact acknowledgement or proof of help. The projection excludes
 phones, recipient IDs and coordinates; optional location is omitted when the route
 omits it. The response has no trip ID or readAt: bind it to the requested trip and

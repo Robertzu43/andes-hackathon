@@ -52,11 +52,13 @@ export interface SharingInput {
   state: 'stopped' | 'resumed'; reason: 'user' | 'page_hidden' | 'permission_denied' | 'error';
 }
 export interface SharingResult extends IdResponse { sharing: 'stopped' | 'resumed' }
+/** Driver-set incident label (#77); null until labelled. */
+export type IncidentLabel = 'robo' | 'intento_robo' | 'falsa_alarma' | 'sin_senal' | 'otro';
 export interface TripStatus {
   trip: { status: 'active' | 'arrived' | 'cancelled'; paused: boolean; expectedArrivalAt: string | null };
   check: { status: 'asking'; reason: CheckReason; askUntil: string } | null;
   incident: { id: UUID; trigger: 'sos' | 'missed_check'; checkReason: CheckReason | null;
-    status: 'active' | 'resolved'; createdAt: string } | null;
+    status: 'active' | 'resolved'; createdAt: string; label?: IncidentLabel | null } | null;
   deliveries: { role: 'family' | 'colleague' | 'group'; channel: 'sms' | 'whatsapp' | 'voice' | 'group';
     status: 'pending' | 'claimed' | 'authorized' | 'accepted' | 'rejected' | 'unknown' | 'delivered' | 'cancelled' | 'unavailable';
     unavailableReason: string | null }[];
