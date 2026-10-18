@@ -61,7 +61,7 @@ Extract the job creation now inline in `POST /v1/trips/:id/sos` (`src/incidents/
 | `role='colleague'` with accepted incident grant | sms, whatsapp |
 | Driver group | existing `group` job, `unavailable` / `group_support_unverified` until Zavu group support is verified |
 
-The existing per-channel `unavailable` reasons, unique `(incident, recipient, channel)` index and outbox stay unchanged. An SOS while a `missed_check` incident is active records `sos_report` and sets `trigger='sos'` without new sends. `ponytail:` re-notify with SOS wording later.
+The existing per-channel `unavailable` reasons, unique `(incident, recipient, channel)` index and outbox stay unchanged. An SOS while a `missed_check` incident is active records `sos_report`, sets `trigger='sos'`, supersedes unsent missed-check jobs and sends a new SOS-worded wave (review fix for #74; see `docs/contracts/runtime.md`).
 
 ### Message wording (`authorizeJob` summary in `src/notifications/dispatch.ts`)
 
@@ -146,7 +146,7 @@ Cells below the minimum are suppressed; band boundaries at 21:59/22:00/05:59/06:
 
 ## Out of scope for the demo
 
-Dead-zone map from `sin_senal` labels, route deviation/unexpected-stop triggers, re-notification on SOS upgrade, driver display names, trained models, law-enforcement accounts, per-country time zones.
+Dead-zone map from `sin_senal` labels, route deviation/unexpected-stop triggers, driver display names, trained models, law-enforcement accounts, per-country time zones.
 
 ## Ownership and integration
 
