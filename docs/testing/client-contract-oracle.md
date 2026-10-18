@@ -633,6 +633,33 @@ combined artifact. These findings do not reopen the repaired pre-fetch gate or
 original intent tests. No author implementation was edited, and no provider,
 backend, device or whole-app qualification is implied.
 
+### Original privacy confirmation at e0ba0ff
+
+Scoped independent disposition: **FIX** at exact
+`e0ba0ff289f07ab5b4cd2aa5cc3d721da795f565`. This bounded review only confirms
+the two latest signout privacy failures from review5560766923. The original
+`queue-signout.probes.mjs` is byte-identical to the committed control at8d62e52;
+SHA-256 is `e626cb76c30e3dc7b50eacf11454d20e574574307deb67492ac492e1eb36f396`.
+Fresh Node26.3.0 execution against separate verified archives gives **0 passed /
+2 failed at both9bc7ff4 and e0ba0ff**, for the same observed reasons.
+
+The late network rejection still bypasses retirement in `upload.mjs`'s catch.
+After awaited signout clears all location records, `noteAmbiguousFailure` writes
+a new durable `intent:<owner> →<trip>` record with the original precise sample,
+key, owner, trip and capture session. Retained records are0 while unacknowledged
+batches become1. Separately, `wipeUser` still does not retire the old plaintext
+`revokedScopes` entry created by `revokeTrip` before signout. These are the same
+P1 and P2 findings; neither is repaired by changing intent storage shape or
+settling ambiguous record states back to pending.
+
+Both candidates' actual before/after metadata is preserved in
+`client-contract-reviews/queue-e0ba0ff-privacy.json`. The broader e0ba0ff delta was
+read only to understand these paths. No author implementation, control assertion
+or harness was changed. Earlier 7/10/5 and native IndexedDB results remain pinned
+to9bc7ff4; they were not rerun or promoted to this freeze. The author's claimed
+54/10/5/7 passes are not evidence that these two privacy controls pass. No browser,
+feature or broad proof campaign was started.
+
 ## Actual client-to-backend bridge
 
 `api-backend.probes.mjs` connects the frozen client **78efad0** to actual backend
