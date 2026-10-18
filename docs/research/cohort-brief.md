@@ -51,7 +51,7 @@ Known before recruitment: the team's only test phone is an iPhone, so #9 device 
 
 ## Data handling (decide before recruitment)
 
-- Interview recordings, transcripts, screenshots, exports and police or insurer documents stay in private storage outside Git. Working spreadsheets go in `evidence/private/<cohort>/`, which Git ignores.
+- Interview recordings, transcripts, screenshots, exports and police or insurer documents stay in private storage outside Git. Working spreadsheets go in `docs/research/private/<cohort>/`, which Git ignores.
 - Use codes only. The key linking codes to people stays offline with the consent forms.
 - Unset: storage location, who has access, retention period and deletion process. Do not recruit until these are decided and written into the consent form.
 - Country requirements for consent and personal data have not been reviewed. This brief makes no compliance claim for any country.

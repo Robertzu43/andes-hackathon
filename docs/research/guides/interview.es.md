@@ -92,4 +92,4 @@ Repita la parte 3 de forma breve. Ponga atención a las respuestas que llegaron 
 
 ## Después de la entrevista
 
-El mismo día, pase las notas a las hojas en la carpeta privada (`evidence/private/`). Use una fila por momento, con su fuente, con la hora marcada como registrada o recordada, y con el origen del hecho: un registro, la propia persona, otra persona, una sospecha o una fuente independiente que lo confirma.
+El mismo día, pase las notas a las hojas en la carpeta privada (`docs/research/private/`). Use una fila por momento, con su fuente, con la hora marcada como registrada o recordada, y con el origen del hecho: un registro, la propia persona, otra persona, una sospecha o una fuente independiente que lo confirma.

@@ -92,4 +92,4 @@ Repita a parte 3 de forma breve. Preste atenção às respostas que chegaram atr
 
 ## Depois da entrevista
 
-No mesmo dia, passe as anotações para as planilhas na pasta privada (`evidence/private/`). Use uma linha por momento, com a fonte, com o horário marcado como registrado ou lembrado, e com a origem do fato: um registro, a própria pessoa, outra pessoa, uma suspeita ou uma fonte independente que o confirma.
+No mesmo dia, passe as anotações para as planilhas na pasta privada (`docs/research/private/`). Use uma linha por momento, com a fonte, com o horário marcado como registrado ou lembrado, e com a origem do fato: um registro, a própria pessoa, outra pessoa, uma suspeita ou uma fonte independente que o confirma.

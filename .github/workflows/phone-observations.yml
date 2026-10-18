@@ -6,16 +6,12 @@ on:
       - '.github/workflows/phone-observations.yml'
       - 'src/phone-observations/**'
       - 'tests/phone-observations/**'
-      - 'tools/phone-capability/**'
-      - 'tests/phone-capability/**'
   push:
     branches: [main]
     paths:
       - '.github/workflows/phone-observations.yml'
       - 'src/phone-observations/**'
       - 'tests/phone-observations/**'
-      - 'tools/phone-capability/**'
-      - 'tests/phone-capability/**'
 
 permissions:
   contents: read
@@ -38,4 +34,4 @@ jobs:
           node-version: '24.17.0'
           package-manager-cache: false
       - name: Run phone adapter and capability tests
-        run: node --test tests/phone-observations/*.test.mjs tests/phone-capability/*.test.mjs
+        run: node --test tests/phone-observations/*.test.mjs

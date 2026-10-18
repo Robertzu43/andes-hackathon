@@ -9,7 +9,6 @@ import {generateKeyPair, exportJWK, SignJWT} from 'jose';
 import pg from 'pg';
 import {migrate} from '../../dist/db.js';
 import {command, runDatabaseUrl, stop, testEnvironment} from '../../scripts/app-integration/runtime.mjs';
-import {recorder} from '../../scripts/app-integration/receipts.mjs';
 
 test('synthetic HTTP journey persists across actual API and dispatch-process restarts', {timeout: 45000}, async t => {
   assert.equal(process.env.ANDES_APP_INTEGRATION, 'synthetic-only', 'Run scripts/app-integration/run.mjs');
@@ -55,22 +54,13 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
   const driver = await token('synthetic-driver');
   const contact = await token('synthetic-contact');
   const stranger = await token('synthetic-stranger');
-  const capture = recorder({kind: 'isolated-backend-run', backendSha: process.env.APP_INTEGRATION_BACKEND_SHA,
-    externalSends: false, isolatedDatabase: true, producer: 'Q46 isolated PostgreSQL / loopback HTTP; synthetic signed identities',
-    command: 'node scripts/app-integration/run.mjs'});
-  // Private run-directory file. run.mjs turns it into a receipt only after the whole suite passed.
-  t.after(async () => {
-    if (process.env.APP_INTEGRATION_CAPTURE) await writeFile(process.env.APP_INTEGRATION_CAPTURE, JSON.stringify(capture.raw()), {mode: 0o600, flag: 'wx'});
-  });
-  async function request(method, path, body, jwt = driver, {key = randomUUID(), status = 200, bindings = []} = {}) {
+  async function request(method, path, body, jwt = driver, {key = randomUUID(), status = 200} = {}) {
     const response = await fetch(origin + path, {method, signal: AbortSignal.timeout(5000),
       headers: {...(jwt ? {authorization: `Bearer ${jwt}`} : {}),
         ...(method === 'POST' ? {'content-type': 'application/json', ...(key ? {'idempotency-key': key} : {})} : {})},
       ...(body === undefined ? {} : {body: JSON.stringify(body)})});
     assert.equal(response.headers.get('cache-control'), 'no-store');
     const result = await response.json();
-    if (bindings.length) capture.record({method, path, actor: jwt === driver ? 'driver' : jwt === contact ? 'contact' : 'stranger',
-      request: body, response: result, status: response.status, key, bindings});
     assert.equal(response.status, status, `${method} ${path}: ${result.code ?? 'unexpected status'}`);
     return result;
   }
@@ -84,7 +74,7 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
     await request('GET', '/v1/me', undefined, null, {status: 401});
     const otherKey = await generateKeyPair('RS256');
     await request('GET', '/v1/me', undefined, await token('synthetic-forged', {}, otherKey.privateKey), {status: 401});
-    driverId = (await request('GET', '/v1/me', undefined, driver, {bindings: [['setup', 0]]})).id;
+    driverId = (await request('GET', '/v1/me', undefined, driver)).id;
     contactId = (await request('GET', '/v1/me', undefined, contact)).id;
     await request('GET', '/v1/me', undefined, stranger);
     assert.notEqual(driverId, contactId);
@@ -92,7 +82,7 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
 
   await t.test('owned truck creation persists idempotent response and rejects mismatched reuse', async () => {
     const key = randomUUID();
-    truck = (await request('POST', '/v1/trucks', {label: 'SYNTHETIC owner-operator truck'}, driver, {key, bindings: [['setup', 1]]})).id;
+    truck = (await request('POST', '/v1/trucks', {label: 'SYNTHETIC owner-operator truck'}, driver, {key})).id;
     assert.equal((await request('POST', '/v1/trucks', {label: 'SYNTHETIC owner-operator truck'}, driver, {key})).id, truck);
     await request('POST', '/v1/trucks', {label: 'changed'}, driver, {key, status: 409});
     await request('POST', '/v1/trucks', {label: 'missing-key'}, driver, {key: null, status: 400});
@@ -100,16 +90,16 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
   });
 
   await t.test('only intended verified contact can accept scoped standing invitation', async () => {
-    grant = (await request('POST', '/v1/contacts', {contactId, phone: '+15555550100', map: true, incident: true}, driver, {bindings: [['setup', 2]]})).id;
+    grant = (await request('POST', '/v1/contacts', {contactId, phone: '+15555550100', map: true, incident: true}, driver)).id;
     await request('POST', `/v1/contacts/${grant}/accept`, {map: true, incident: true}, stranger, {status: 403});
     await request('POST', `/v1/contacts/${grant}/accept`, {map: true, incident: true}, await token('synthetic-contact', {phone_number_verified: false}), {status: 409});
-    assert.equal((await request('POST', `/v1/contacts/${grant}/accept`, {map: true, incident: true}, contact, {bindings: [['setup', 3]]})).status, 'accepted');
+    assert.equal((await request('POST', `/v1/contacts/${grant}/accept`, {map: true, incident: true}, contact)).status, 'accepted');
   });
 
   await t.test('draft remains inactive until complete explicit confirmation; cross-user ownership enforced', async () => {
     await request('POST', '/v1/trip-drafts', {text: 'SYNTHETIC', fields: {truckId: truck}}, stranger, {status: 403});
     await request('POST', '/v1/trip-drafts', {audio: 'synthetic-unsupported'}, driver, {status: 422});
-    const created = await request('POST', '/v1/trip-drafts', {text: 'SYNTHETIC freight trip', fields: {truckId: truck}}, driver, {bindings: [['explicit-confirm', 0]]});
+    const created = await request('POST', '/v1/trip-drafts', {text: 'SYNTHETIC freight trip', fields: {truckId: truck}}, driver);
     draft = created.id;
     assert.ok(created.missingFields.includes('country'));
     await request('POST', `/v1/trip-drafts/${draft}/confirm`, {confirmed: true, contactGrantIds: [grant]}, driver, {status: 409});
@@ -119,35 +109,34 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
     const confirmation = {confirmed: true, contactGrantIds: [grant], fields};
     const confirmKey = randomUUID();
     trip = (await request('POST', `/v1/trip-drafts/${draft}/confirm`, confirmation, driver,
-      {key: confirmKey, bindings: [['explicit-confirm', 1], ['duplicate-confirm', 0]]})).id;
+      {key: confirmKey})).id;
     assert.equal((await request('POST', `/v1/trip-drafts/${draft}/confirm`, confirmation, driver,
-      {key: confirmKey, bindings: [['duplicate-confirm', 1]]})).id, trip);
+      {key: confirmKey})).id, trip);
     await request('POST', `/v1/trip-drafts/${draft}/confirm`, confirmation, driver,
-      {status: 409, bindings: [['duplicate-confirm', 2]]});
+      {status: 409});
     assert.equal(trip, draft);
-    await request('GET', `/v1/trips/${trip}`, undefined, stranger, {status: 403, bindings: [['cross-user', 0]]});
+    await request('GET', `/v1/trips/${trip}`, undefined, stranger, {status: 403});
   });
 
   await t.test('fresh/stale location retains capture/receipt/read distinctions and denies strangers', async () => {
-    const empty = await request('GET', `/v1/trips/${trip}/snapshot`, undefined, contact, {bindings: [['unavailable-snapshot', 0]]});
+    const empty = await request('GET', `/v1/trips/${trip}/snapshot`, undefined, contact);
     assert.equal(empty.freshness, 'unavailable');
     const observation = {capturedAt: now.toISOString(), latitude: -12, longitude: -77, accuracy: 8};
     await request('POST', `/v1/trips/${trip}/locations`, {observations: [observation]});
-    const fresh = await request('GET', `/v1/trips/${trip}/snapshot`, undefined, contact, {bindings: [['stale-snapshot', 0]]});
+    const fresh = await request('GET', `/v1/trips/${trip}/snapshot`, undefined, contact);
     assert.equal(fresh.freshness, 'fresh');
     assert.equal(fresh.location.capturedAt, observation.capturedAt);
     assert.equal(fresh.location.receivedAt, now.toISOString());
     await request('GET', `/v1/trips/${trip}/snapshot`, undefined, stranger, {status: 403});
     await request('POST', `/v1/trips/${trip}/locations`, {observations: [observation]}, stranger, {status: 403});
     await advance(121000);
-    assert.equal((await request('GET', `/v1/trips/${trip}/snapshot`, undefined, contact, {bindings: [['stale-snapshot', 1]]})).freshness, 'stale');
+    assert.equal((await request('GET', `/v1/trips/${trip}/snapshot`, undefined, contact)).freshness, 'stale');
     await request('POST', `/v1/trips/${trip}/locations`, {observations: [{...observation, capturedAt: new Date(now.getTime() + 31000).toISOString()}]}, driver, {status: 400});
   });
 
   await t.test('pause/resume and attributed OK/rest reports preserve map without automatic escalation', async () => {
     for (const type of ['pause', 'checkin_ok', 'rest_report']) {
-      assert.equal((await request('POST', `/v1/trips/${trip}/commands`, {type}, driver,
-        {bindings: type === 'pause' ? [] : [['self-report', type === 'checkin_ok' ? 0 : 1]]})).automaticEscalation, false);
+      assert.equal((await request('POST', `/v1/trips/${trip}/commands`, {type}, driver)).automaticEscalation, false);
     }
     const paused = await request('GET', `/v1/trips/${trip}`);
     assert.equal(paused.paused, true); assert.equal(paused.checkins_active, false); assert.equal(paused.map_active, true);
@@ -169,13 +158,13 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
   });
 
   await t.test('SOS duplicate taps create one episode; contact acknowledgement/action do not resolve it', async () => {
-    await request('POST', `/v1/trips/${trip}/sos`, {}, stranger, {status: 403, bindings: [['cross-user', 1]]});
-    incident = (await request('POST', `/v1/trips/${trip}/sos`, {}, driver, {bindings: [['sos-acceptance', 0], ['arrival-preserves-sos', 0]]})).id;
-    assert.equal((await request('POST', `/v1/trips/${trip}/sos`, {}, driver, {bindings: [['sos-acceptance', 1]]})).id, incident);
+    await request('POST', `/v1/trips/${trip}/sos`, {}, stranger, {status: 403});
+    incident = (await request('POST', `/v1/trips/${trip}/sos`, {}, driver)).id;
+    assert.equal((await request('POST', `/v1/trips/${trip}/sos`, {}, driver)).id, incident);
     await request('GET', `/v1/incidents/${incident}`, undefined, stranger, {status: 403});
-    await request('POST', `/v1/incidents/${incident}/resolve`, {}, contact, {status: 403, bindings: [['owner-resolution', 0]]});
-    assert.equal((await request('POST', `/v1/incidents/${incident}/acknowledgements`, {}, contact, {bindings: [['acknowledgement-action', 0]]})).recorded, 'acknowledged');
-    assert.equal((await request('POST', `/v1/incidents/${incident}/actions`, {action: 'SYNTHETIC reported support action'}, contact, {bindings: [['acknowledgement-action', 1]]})).recorded, 'action');
+    await request('POST', `/v1/incidents/${incident}/resolve`, {}, contact, {status: 403});
+    assert.equal((await request('POST', `/v1/incidents/${incident}/acknowledgements`, {}, contact)).recorded, 'acknowledged');
+    assert.equal((await request('POST', `/v1/incidents/${incident}/actions`, {action: 'SYNTHETIC reported support action'}, contact)).recorded, 'action');
     assert.equal((await request('GET', `/v1/incidents/${incident}`, undefined, contact)).status, 'active');
     jobs = (await pool.query('SELECT id AS "jobId",version,class FROM jobs WHERE incident_id=$1 AND channel<>\'group\' ORDER BY channel', [incident])).rows;
     assert.equal(jobs.length, 3);
@@ -197,14 +186,14 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
   });
 
   await t.test('arrival closes map but keeps SOS readable/actionable until driver resolution', async () => {
-    await request('POST', `/v1/trips/${trip}/commands`, {type: 'arrived'}, driver, {bindings: [['arrival-preserves-sos', 1]]});
+    await request('POST', `/v1/trips/${trip}/commands`, {type: 'arrived'}, driver);
     assert.equal((await request('GET', `/v1/trips/${trip}`)).status, 'arrived');
     await request('POST', `/v1/trips/${trip}/locations`, {observations: [{capturedAt: now.toISOString(), latitude: -12, longitude: -77, accuracy: 8}]}, driver, {status: 409});
-    const read = await request('GET', `/v1/incidents/${incident}`, undefined, contact, {bindings: [['arrival-preserves-sos', 2]]});
+    const read = await request('GET', `/v1/incidents/${incident}`, undefined, contact);
     assert.equal(read.status, 'active'); assert.equal(Object.hasOwn(read, 'location'), false);
-    await request('GET', `/v1/trips/${trip}/snapshot`, undefined, contact, {status: 403, bindings: [['arrival-preserves-sos', 3]]});
+    await request('GET', `/v1/trips/${trip}/snapshot`, undefined, contact, {status: 403});
     await request('POST', `/v1/incidents/${incident}/actions`, {action: 'SYNTHETIC follow-up after arrival'}, contact);
-    await request('POST', `/v1/incidents/${incident}/resolve`, {}, driver, {bindings: [['owner-resolution', 1]]});
+    await request('POST', `/v1/incidents/${incident}/resolve`, {}, driver);
     assert.equal((await request('GET', `/v1/incidents/${incident}`)).status, 'resolved');
     assert.equal((await row('SELECT status FROM jobs WHERE id=$1', [jobs[2].jobId])).status, 'cancelled');
     await request('POST', `/v1/incidents/${incident}/acknowledgements`, {}, contact, {status: 409});
@@ -218,9 +207,9 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
     const activeIncident = (await request('POST', `/v1/trips/${activeTrip}/sos`, {})).id;
     await request('GET', `/v1/trips/${activeTrip}/snapshot`, undefined, contact);
     await request('GET', `/v1/incidents/${activeIncident}`, undefined, contact);
-    await request('POST', `/v1/trips/${activeTrip}/contacts/${grant}/revoke`, {}, contact, {bindings: [['revocation', 0]]});
-    await request('GET', `/v1/trips/${activeTrip}/snapshot`, undefined, contact, {status: 403, bindings: [['revocation', 1]]});
-    await request('GET', `/v1/incidents/${activeIncident}`, undefined, contact, {status: 403, bindings: [['revocation', 2]]});
+    await request('POST', `/v1/trips/${activeTrip}/contacts/${grant}/revoke`, {}, contact);
+    await request('GET', `/v1/trips/${activeTrip}/snapshot`, undefined, contact, {status: 403});
+    await request('GET', `/v1/incidents/${activeIncident}`, undefined, contact, {status: 403});
     await request('POST', `/v1/contacts/${grant}/revoke`, {});
     const next = await request('POST', '/v1/trip-drafts', {text: 'SYNTHETIC next trip', fields: {
       truckId: truck, origin: 'A', destination: 'B', country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo'}});
