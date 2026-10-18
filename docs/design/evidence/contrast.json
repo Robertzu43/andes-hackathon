@@ -1,0 +1,89 @@
+{
+  "method": "WCAG relative luminance; nominal sRGB token pairs, not a full accessibility audit",
+  "results": [
+    {
+      "foreground": "ink",
+      "background": "canvas",
+      "ratio": 13.3,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "muted",
+      "background": "canvas",
+      "ratio": 5.57,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "ink",
+      "background": "surface",
+      "ratio": 14.49,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "muted",
+      "background": "surface",
+      "ratio": 6.06,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "onAction",
+      "background": "action",
+      "ratio": 5.9,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "onAction",
+      "background": "actionPressed",
+      "ratio": 8.62,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "onAction",
+      "background": "danger",
+      "ratio": 6.51,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "onAction",
+      "background": "dangerPressed",
+      "ratio": 9.06,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "positive",
+      "background": "positiveSurface",
+      "ratio": 6.38,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "warning",
+      "background": "warningSurface",
+      "ratio": 5.88,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "danger",
+      "background": "dangerSurface",
+      "ratio": 5.88,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "ink",
+      "background": "subtle",
+      "ratio": 12.15,
+      "minimum": 4.5
+    },
+    {
+      "foreground": "border",
+      "background": "canvas",
+      "ratio": 3.68,
+      "minimum": 3
+    },
+    {
+      "foreground": "border",
+      "background": "surface",
+      "ratio": 4.01,
+      "minimum": 3
+    }
+  ]
+}

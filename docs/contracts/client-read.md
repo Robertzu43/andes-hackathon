@@ -1,17 +1,39 @@
 # Client read contract
 
-Additive owner-scoped reads for the persisted web journey. These routes do not replace `GET /v1/me`, trip detail, snapshot or incident reads in [runtime.md](runtime.md). They are authenticated with the same trusted OIDC bearer token, use `Cache-Control: no-store`, and never accept an owner/body ID. SQL filters bind every row to the authenticated actor.
+Owner-scoped catalogs for the persisted web journey. All five routes require the trusted OIDC bearer token, send `Cache-Control: no-store`, and bind every row to that request's actor. No query/body ID can choose another owner. Public DTO types are exported from `src/client-read/contracts.ts`; consumers should use this contract rather than raw database rows.
 
 | Route | Response |
 | --- | --- |
-| `GET /v1/profile` | `{id, phone, phoneVerified, readAt}` for the authenticated identity. `phone` is the current stored E.164 claim value or null; `phoneVerified` is the persisted trusted-claim state. |
-| `GET /v1/trucks` | `{trucks, limit, hasMore, readAt}`. `trucks[]` contains `{id,label}` for trucks owned by the actor, ordered by label then id. Fixed first-page bound: 100 rows; `hasMore` reports truncation. |
-| `GET /v1/contacts` | `{contacts, limit, hasMore, readAt}`. Driver-owned standing grants ordered by phone then id. Each row is `{id, contactId, phone, map:{requested,accepted}, incident:{requested,accepted}, status, acceptedAt, revokedAt, revokedBy}`. `status` is `pending`, `accepted` or `revoked`; `revokedBy` is `driver`, `contact` or null. Fixed first-page bound: 100 rows. |
-| `GET /v1/trips` | `{active, recent, limits, hasMore, readAt}`. Driver-owned trips only. `active` contains active trips ordered newest first; `recent` contains arrived/cancelled trips ordered by closure/creation newest first. Trip summaries contain `{id, truckId, origin, destination, country, locale, timeZone, status, mapActive, checkinsActive, paused, version, createdAt, closedAt, contactGrantIds}`. Bounds: 50 active and 20 recent. |
-| `GET /v1/bootstrap` | One consistent owner-scoped initial load: `{profile, trucks, contacts, trips:{active,recent}, limits:{trucks,contacts,activeTrips,recentTrips}, hasMore:{trucks,contacts,activeTrips,recentTrips}, readAt}`. The list entries have the same shapes and fixed bounds as the focused list routes above. |
+| `GET /v1/profile` | `{id, phoneVerified, readAt}`. Both profile fields come from `request.actor`, never a later read of the mutable identity row. No phone value is returned, including the current token's phone. |
+| `GET /v1/trucks` | `{trucks, limit, hasMore, readAt}`. Entries are `{id,label}`, ordered by label then id. Bound: 100. |
+| `GET /v1/contacts` | `{contacts, limit, hasMore, readAt}`. Driver-owned standing grants ordered by id, independent of private phone values. Bound: 100. |
+| `GET /v1/trips` | `{active, recent, limits, hasMore, readAt}`. Active trips are ordered by creation time then id, descending. Arrived/cancelled trips are ordered by closure-or-creation time then id, descending. Bounds: 50 active, 20 recent. |
+| `GET /v1/bootstrap` | `{profile, trucks, contacts, trips:{active,recent}, limits:{trucks,contacts,activeTrips,recentTrips}, hasMore:{trucks,contacts,activeTrips,recentTrips}, readAt}`. The same DTOs and limits in one database snapshot. |
 
-Every response carries `readAt`: the server's own clock (ISO 8601 UTC) at the moment the request was received. It is the as-of timestamp a client may attribute to this read; it is never derived from the client clock. All five routes run their queries inside a single `REPEATABLE READ READ ONLY` transaction (the `readTransaction` helper in `src/db.ts`), so every statement in one response — including the four reads bundled by `bootstrap` — sees the same committed snapshot. A row cannot appear in both `active` and `recent`, and a grant cannot read `pending` while a trip already references it within one response. Pure `SELECT`s cannot serialize-fail under repeatable read, so mutation paths are unaffected. Rows may still change between separate requests; `readAt` marks which server instant each response reflects.
+`ClientContact` contains `{id, contactId, role, map:{requested,accepted}, incident:{requested,accepted}, status, acceptedAt, revokedAt, revokedBy}`. `status` is `pending`, `accepted` or `revoked`; `revokedBy` is `driver`, `contact` or null. `role` is the stored `family`/`colleague` role. Phones are neither selected for the response nor used for ordering: no catalog response contains a phone number, including demo personas and the consented `DEMO_LIVE_PHONE`.
 
-The reads deliberately exclude bearer tokens, raw draft text, location coordinates/history, provider/job/outbox state and other drivers' records. Cross-identity requests authenticate as their own identity and therefore receive their own empty lists, not another driver's data. Revoked standing contacts remain visible to the driver as management records with `status: 'revoked'`; trip `contactGrantIds` preserve the selected grant IDs for correlation with that standing-contact list.
+`ClientTripSummary` contains `{id, truckId, origin, destination, country, locale, timeZone, status, mapActive, checkinsActive, paused, version, createdAt, closedAt, expectedArrivalAt, sharingStoppedAt, contactGrantIds}`. Timestamps are ISO 8601 strings or null. `contactGrantIds` includes only selected grants whose per-trip and standing grants remain unrevoked, accepted, and authorize at least one scope. These IDs identify effective consent, not evidence that anyone is watching or has acknowledged a message. A standing contact may remain accepted after revocation for one trip; that trip no longer lists the grant, while other authorized trips can retain it.
 
-These are bounded first-page reads, not a cursor/pagination contract. Reload-safe pagination and page-boundary evidence are a follow-up slice.
+## Snapshot and pool behavior
+
+Authentication and catalog queries use `telemetryPool`, separate from the command pool used by explicit SOS. Polling does not borrow SOS connections. The shared `readSnapshot` wrapper acquires a connection, begins `REPEATABLE READ READ ONLY`, and executes `SELECT pg_current_snapshot()` to pin the snapshot before sampling the injected server clock for `readAt`. `BEGIN` alone does not establish the snapshot. Queuing before connection acquisition therefore cannot make a response include writes committed after its own acquisition timestamp.
+
+All queries in a response use that pinned snapshot. Concurrent commits after acquisition remain invisible to the response, so a trip cannot move from active to recent halfway through bootstrap. Profile identity and verification describe the authenticated request; they intentionally do not follow a parallel token updating the shared identities row. `readAt` describes snapshot acquisition, not the age of location, event, delivery or participant evidence. It is not a freshness claim and is never derived from the client clock. Separate requests may see different committed states.
+
+`readTransaction` delegates to the common transaction helper with a fixed BEGIN statement; commit, rollback and release have one implementation. Migration `009-client-read-indexes.sql` adds indexes matching owner predicates and catalog ordering for trucks, standing contacts, active trips and recent trips.
+
+## Relation to the other trip shapes
+
+`role`, `expectedArrivalAt` and `sharingStoppedAt` are the stored columns added by `003-security-checks.sql` (see `docs/contracts/runtime.md`).
+
+| Catalog field | Existing owner detail (`GET /v1/trips/:id`) | Runtime `/status` |
+| --- | --- | --- |
+| `status`, `paused` | Same persisted fields | `trip.status`, `trip.paused` |
+| `expectedArrivalAt` | `expected_arrival_at` | `trip.expectedArrivalAt` |
+| `sharingStoppedAt` | `sharing_stopped_at` | Not in the status envelope |
+| Other summary fields | Camel-case projection of the corresponding persisted row | Status is a separate check/incident/delivery/location envelope |
+| `contactGrantIds` | Derived from effective standing and trip grants | No equivalent list |
+
+The bounded catalog projection remains distinct deliberately: copying raw detail would expose internal owner columns, while copying the status envelope would require per-trip incident/location work and widen the read surface. Existing detail and status responses are not changed. The named exported DTO and regression comparison against owner detail make that distinction explicit without silently changing existing clients.
+
+These reads exclude phone values, bearer tokens, raw draft text, coordinates/history, provider/job/outbox state, and other actors' records. They are bounded first-page reads with truthful `hasMore`, not a cursor/pagination contract. Recipient discovery belongs to PR #86's separate actor-bound routes; these five routes do not claim to provide it.

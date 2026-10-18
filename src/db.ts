@@ -29,18 +29,16 @@ export function createContext(databaseUrl: string | pg.PoolConfig, clock: () => 
   pool.on('error', () => {}); telemetryPool.on('error', () => {}); callbackPool.on('error', () => {});
   return { pool, telemetryPool, callbackPool, clock, close: async () => { await Promise.all([pool.end(), telemetryPool.end(), callbackPool.end()]); } };
 }
-export async function transaction<T>(pool: pg.Pool, callback: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+export async function transaction<T>(pool: pg.Pool, callback: (client: pg.PoolClient) => Promise<T>,
+  begin: 'BEGIN' | 'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY' = 'BEGIN'): Promise<T> {
   const client = await pool.connect();
-  try { await client.query('BEGIN'); const result = await callback(client); await client.query('COMMIT'); return result; }
+  try { await client.query(begin); const result = await callback(client); await client.query('COMMIT'); return result; }
   catch (error) { await client.query('ROLLBACK').catch(() => {}); throw error; }
   finally { client.release(); }
 }
-/** Read-only snapshot: every statement sees the same committed state. Pure SELECTs cannot serialize-fail, so mutations are untouched. */
+/** Read-only snapshot: every statement sees the same committed state. */
 export async function readTransaction<T>(pool: pg.Pool, callback: (client: pg.PoolClient) => Promise<T>): Promise<T> {
-  const client = await pool.connect();
-  try { await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY'); const result = await callback(client); await client.query('COMMIT'); return result; }
-  catch (error) { await client.query('ROLLBACK').catch(() => {}); throw error; }
-  finally { client.release(); }
+  return transaction(pool, callback, 'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
 }
 /** Callbacks are SQL-only; release the client before any network/provider operation. */
 export async function withTripTransaction<T>(ctx: Context, tripId: string, callback: (client: pg.PoolClient, trip: Trip) => Promise<T>, pool = ctx.pool): Promise<T> {

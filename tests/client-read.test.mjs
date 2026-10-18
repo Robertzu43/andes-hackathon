@@ -9,13 +9,13 @@ test('client reads require a signed identity and return only the authenticated p
     assert.equal((await f.app.inject({ method: 'GET', url: path })).statusCode, 401);
   }
   const profile = await f.req('GET', '/v1/profile');
-  assert.deepEqual(profile.body, { id: f.me.id, phone: '+5511999990000', phoneVerified: true, readAt: '2026-10-17T12:00:00.000Z' });
+  assert.deepEqual(profile.body, { id: f.me.id, phoneVerified: true, readAt: '2026-10-17T12:00:00.000Z' });
   const stranger = await f.req('GET', '/v1/profile', undefined, f.stranger);
   assert.equal(stranger.status, 200);
   assert.notEqual(stranger.body.id, f.me.id);
 });
 
-// readAt is the server clock at request time, never a client-derived value.
+// readAt is the server clock after snapshot acquisition, never a client-derived value.
 test('every read response carries the server as-of timestamp', async t => {
   const f = await fixture(t);
   for (const path of ['/v1/profile', '/v1/trucks', '/v1/contacts', '/v1/trips', '/v1/bootstrap']) {
@@ -66,15 +66,15 @@ test('truck list returns only owned trucks in stable bounded order', async t => 
 // Standing contact state must remain truthful after acceptance and revocation.
 test('standing contact list shows driver-owned pending, accepted and revoked states only', async t => {
   const f = await fixture(t);
-  const pending = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+5511999990000', map: true, incident: false });
+  const pending = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+15555550100', map: true, incident: false });
   assert.equal(pending.status, 200);
   const contact2 = await f.token('contact-2');
   const contact2Id = (await f.req('GET', '/v1/me', undefined, contact2)).body.id;
-  const accepted = await f.req('POST', '/v1/contacts', { contactId: contact2Id, phone: '+5511999990000', map: false, incident: true });
+  const accepted = await f.req('POST', '/v1/contacts', { contactId: contact2Id, phone: '+15555550100', map: false, incident: true });
   assert.equal(accepted.status, 200);
   assert.equal((await f.req('POST', `/v1/contacts/${accepted.body.id}/accept`, { map: false, incident: true }, contact2)).status, 200);
   assert.equal((await f.req('POST', `/v1/contacts/${accepted.body.id}/revoke`, {}, contact2)).status, 200);
-  const strangerInvite = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+5511999990000', map: true, incident: true }, f.stranger);
+  const strangerInvite = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+15555550100', map: true, incident: true }, f.stranger);
   assert.equal(strangerInvite.status, 200);
   const response = await f.req('GET', '/v1/contacts');
   assert.equal(response.status, 200);
@@ -90,7 +90,7 @@ test('standing contact list shows driver-owned pending, accepted and revoked sta
   const revokedRow = byId.get(accepted.body.id);
   assert.equal(revokedRow.status, 'revoked');
   assert.equal(revokedRow.contactId, contact2Id);
-  assert.equal(revokedRow.phone, '+5511999990000');
+  assert.ok(!('phone' in revokedRow));
   assert.deepEqual(revokedRow.map, { requested: false, accepted: false });
   assert.deepEqual(revokedRow.incident, { requested: true, accepted: true });
   assert.ok(revokedRow.acceptedAt);
@@ -142,7 +142,7 @@ test('bootstrap bundles profile and owner lists with explicit bounds', async t =
   const trip = await f.trip([grant]);
   const response = await f.req('GET', '/v1/bootstrap');
   assert.equal(response.status, 200);
-  assert.deepEqual(response.body.profile, { id: f.me.id, phone: '+5511999990000', phoneVerified: true });
+  assert.deepEqual(response.body.profile, { id: f.me.id, phoneVerified: true });
   assert.equal(response.body.trucks.length, 1);
   assert.equal(response.body.contacts.length, 1);
   assert.equal(response.body.contacts[0].id, grant);
@@ -158,4 +158,187 @@ test('bootstrap bundles profile and owner lists with explicit bounds', async t =
   assert.equal(stranger.body.contacts.length, 0);
   assert.equal(stranger.body.trips.active.length, 0);
   assert.equal(stranger.body.trips.recent.length, 0);
+});
+
+const CATALOGS = ['/v1/profile', '/v1/bootstrap', '/v1/trucks', '/v1/contacts', '/v1/trips'];
+// Any E.164-shaped value, so the check holds whatever phone a fixture or deployment uses.
+const assertNoPhone = (body, label) => {
+  const text = JSON.stringify(body);
+  assert.doesNotMatch(text, /"phone(_?number)?":/i, label);
+  assert.doesNotMatch(text, /\+[1-9]\d{6,14}/, label);
+};
+
+test('catalog responses never disclose stored or token phones', async t => {
+  const f = await fixture(t);
+  await f.grant();
+  const invitee = await f.token('invitee', { phone_number: '+15555550177' });
+  const inviteeId = (await f.req('GET', '/v1/me', undefined, invitee)).body.id;
+  assert.equal((await f.req('POST', '/v1/contacts', { contactId: inviteeId, phone: '+15555550178', map: true, incident: true })).status, 200);
+  const phones = (await f.ctx.pool.query('SELECT phone FROM identities UNION SELECT phone FROM contact_grants')).rows.map(r => r.phone);
+  assert.ok(new Set(phones).size >= 3, 'stored phones exist to leak');
+  for (const jwt of [f.driver, f.contact, f.stranger, invitee]) {
+    for (const path of CATALOGS) {
+      const response = await f.req('GET', path, undefined, jwt);
+      assert.equal(response.status, 200);
+      assertNoPhone(response.body, path);
+    }
+  }
+});
+
+// Gatekeeper item 1 repro: demo mode lets any anonymous visitor mint personas; with live sends the
+// family persona carries the real consented DEMO_LIVE_PHONE (a fictional stand-in here).
+test('anonymous demo personas never read a phone, including DEMO_LIVE_PHONE, from any catalog', async t => {
+  const { demoIssuer } = await import('../dist/demo.js');
+  const demo = await demoIssuer({ ZAVU_LIVE_SEND: 'true', DEMO_LIVE_PHONE: '+15555550123' });
+  const f = await fixture(t, { auth: demo.auth, demo });
+  const world = (await f.app.inject({ method: 'POST', url: '/v1/demo/session', payload: {} })).json();
+  for (const persona of ['driver', 'family', 'colleague']) {
+    for (const path of CATALOGS) {
+      const response = await f.req('GET', path, undefined, world[persona].token);
+      assert.equal(response.status, 200, `${persona} ${path}`);
+      assertNoPhone(response.body, `${persona} ${path}`);
+    }
+  }
+  const contacts = (await f.req('GET', '/v1/contacts', undefined, world.driver.token)).body.contacts;
+  assert.deepEqual(contacts.map(c => [c.id, c.role, c.status]).sort(), [
+    [world.colleague.grantId, 'colleague', 'accepted'], [world.family.grantId, 'family', 'accepted']].sort());
+});
+
+// Gatekeeper item 5: catalogs carry the reconciled backend's role, expected arrival and sharing state.
+test('catalogs project the runtime role, expected arrival and sharing-stopped time', async t => {
+  const f = await fixture(t);
+  const other = await f.token('colleague-1');
+  const otherId = (await f.req('GET', '/v1/me', undefined, other)).body.id;
+  const colleague = await f.req('POST', '/v1/contacts', { contactId: otherId, phone: '+15555550100', map: true, incident: true, role: 'colleague' });
+  assert.equal(colleague.status, 200);
+  const draft = await f.draft({ expectedArrivalAt: '2026-10-17T18:00:00.000Z' });
+  const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, { confirmed: true, contactGrantIds: [] })).body.id;
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sharing`, { state: 'stopped', reason: 'user' })).status, 200);
+  for (const path of ['/v1/contacts', '/v1/bootstrap']) {
+    const contacts = (await f.req('GET', path)).body.contacts;
+    assert.equal(contacts.find(c => c.id === colleague.body.id).role, 'colleague', path);
+  }
+  for (const path of ['/v1/trips', '/v1/bootstrap']) {
+    const body = (await f.req('GET', path)).body;
+    const summary = (body.trips ?? body).active.find(row => row.id === trip);
+    assert.equal(summary.expectedArrivalAt, '2026-10-17T18:00:00.000Z', path);
+    assert.equal(summary.sharingStoppedAt, '2026-10-17T12:00:00.000Z', path);
+  }
+});
+
+test('profile verification belongs to this request despite a parallel identity update', async t => {
+  const f = await fixture(t);
+  // Simulate a second token updating the shared identity after this request authenticates.
+  for (const pool of [f.ctx.pool, f.ctx.telemetryPool]) {
+    const query = pool.query.bind(pool);
+    pool.query = async (...args) => {
+      const result = await query(...args);
+      if (String(args[0]).includes('ON CONFLICT(issuer,subject)')) {
+        await query('UPDATE identities SET phone=$3,phone_verified=false WHERE issuer=$1 AND subject=$2', [args[1][1], args[1][2], '+15555550199']);
+      }
+      return result;
+    };
+  }
+  for (const path of ['/v1/profile', '/v1/bootstrap']) {
+    const response = await f.req('GET', path);
+    assert.equal(response.status, 200);
+    const profile = response.body.profile ?? response.body;
+    assert.equal(profile.phoneVerified, true);
+    assert.ok(!('phone' in profile));
+  }
+});
+
+test('trip catalogs exclude per-trip and standing revoked grants', async t => {
+  const f = await fixture(t);
+  const grant = await f.grant();
+  const trip = await f.trip([grant]);
+  const otherTrip = await f.trip([grant]);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/contacts/${grant}/revoke`, {})).status, 200);
+  assert.equal((await f.req('GET', `/v1/trips/${trip}/snapshot`, undefined, f.contact)).status, 403);
+  for (const path of ['/v1/trips', '/v1/bootstrap']) {
+    const response = await f.req('GET', path);
+    const trips = response.body.trips ?? response.body;
+    assert.deepEqual(trips.active.find(row => row.id === trip).contactGrantIds, []);
+    assert.deepEqual(trips.active.find(row => row.id === otherTrip).contactGrantIds, [grant]);
+  }
+  assert.equal((await f.req('GET', '/v1/contacts')).body.contacts[0].status, 'accepted');
+  assert.equal((await f.req('POST', `/v1/contacts/${grant}/revoke`, {})).status, 200);
+  assert.deepEqual((await f.req('GET', '/v1/trips')).body.active.find(row => row.id === otherTrip).contactGrantIds, []);
+});
+
+test('catalog authentication and queries never borrow SOS command connections', async t => {
+  const f = await fixture(t);
+  const connect = f.ctx.pool.connect;
+  f.ctx.pool.connect = () => { throw new Error('command pool is reserved for mutations'); };
+  try {
+    for (const path of ['/v1/profile', '/v1/bootstrap', '/v1/trucks', '/v1/contacts', '/v1/trips']) {
+      assert.equal((await f.req('GET', path)).status, 200, path);
+    }
+  } finally { f.ctx.pool.connect = connect; }
+});
+
+test('readAt is sampled after a queued read acquires its connection', async t => {
+  const f = await fixture(t);
+  for (const pool of [f.ctx.pool, f.ctx.telemetryPool]) {
+    const connect = pool.connect.bind(pool);
+    pool.connect = function (callback) {
+      // pg.query's authentication borrow is callback-based; the transaction awaits connect().
+      if (callback) return connect(callback);
+      return (async () => {
+        f.advance(1000);
+        return connect();
+      })();
+    };
+  }
+  for (const path of ['/v1/profile', '/v1/trucks', '/v1/contacts', '/v1/trips', '/v1/bootstrap']) {
+    const response = await f.req('GET', path);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.readAt, f.ctx.clock().toISOString(), path);
+  }
+});
+
+test('catalog timestamp pins the snapshot before concurrent committed writes', async t => {
+  const f = await fixture(t);
+  let write;
+  let pinned = false;
+  f.ctx.telemetryPool.on('acquire', client => {
+    if (client.watched) return;
+    client.watched = true;
+    const query = client.query.bind(client);
+    client.query = (...args) => { if (String(args[0]).includes('pg_current_snapshot')) pinned = true; return query(...args); };
+  });
+  // Authentication also reads the clock; only the readAt sample after the pinned snapshot starts the write.
+  f.ctx.clock = () => {
+    if (pinned) write ??= f.ctx.pool.query(`INSERT INTO trucks VALUES(gen_random_uuid(), $1, 'after snapshot')`, [f.me.id]);
+    return new Date('2026-10-17T12:00:00Z');
+  };
+  const response = await f.req('GET', '/v1/bootstrap');
+  await write;
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body.trucks, []);
+  assert.equal((await f.req('GET', '/v1/trucks')).body.trucks[0].label, 'after snapshot');
+});
+
+test('an unavailable read pool does not prevent explicit SOS', async t => {
+  const f = await fixture(t);
+  const trip = await f.trip([await f.grant()]);
+  const connect = f.ctx.telemetryPool.connect;
+  f.ctx.telemetryPool.connect = () => { throw new Error('read pool exhausted'); };
+  try {
+    assert.equal((await f.req('POST', `/v1/trips/${trip}/sos`, {})).status, 200);
+  } finally { f.ctx.telemetryPool.connect = connect; }
+});
+
+test('bounded trip projection agrees with owner detail and keeps absent runtime facts unknown', async t => {
+  const f = await fixture(t);
+  const trip = await f.trip();
+  const detail = (await f.req('GET', `/v1/trips/${trip}`)).body;
+  const summary = (await f.req('GET', '/v1/trips')).body.active[0];
+  const mapping = { id: 'id', truckId: 'truck_id', origin: 'origin', destination: 'destination', country: 'country',
+    locale: 'locale', timeZone: 'time_zone', status: 'status', mapActive: 'map_active', checkinsActive: 'checkins_active',
+    paused: 'paused', version: 'version', createdAt: 'created_at', closedAt: 'closed_at',
+    expectedArrivalAt: 'expected_arrival_at', sharingStoppedAt: 'sharing_stopped_at' };
+  for (const [field, source] of Object.entries(mapping)) assert.equal(summary[field], detail[source] ?? null, field);
+  assert.ok(!('driver_id' in summary));
+  assert.ok(!('phone' in summary));
 });
