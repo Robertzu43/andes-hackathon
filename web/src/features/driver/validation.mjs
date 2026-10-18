@@ -38,7 +38,8 @@ export function validateFields(fields, { complete = false } = {}) {
 export function inputFields(fields) {
   return Object.fromEntries(INPUT_FIELDS.filter((name) => fields[name] !== undefined && fields[name] !== '')
     .map((name) => [name, name === 'truckId' ? fields[name].toLowerCase() :
-      name === 'locale' ? Intl.getCanonicalLocales(fields[name])[0] : fields[name]]));
+      name === 'locale' ? Intl.getCanonicalLocales(fields[name])[0] :
+      name === 'expectedArrivalAt' ? new Date(fields[name]).toISOString() : fields[name]]));
 }
 
 // Host-normalized selection evidence. It is not a new HTTP response contract.
@@ -64,6 +65,22 @@ export function acceptedGrantIds(ids, evidence) {
   if (normalized.length && (!evidence || normalized.some((id) => !evidence.contacts.some((contact) =>
     contact.id === id && contact.status === 'accepted' && (contact.map || contact.incident))))) return null;
   return normalized;
+}
+
+// Applied only after the host's shared SDK wire decoder. These are semantic
+// request/owner correlations, not a second set of timestamp/shape decoders.
+export function correlateResponse(request, data, actorId) {
+  if (!object(data)) return null;
+  const { operation, params = {}, body = {} } = request;
+  if (operation === 'createDraft' && (data.rawText !== body.text ||
+      INPUT_FIELDS.some(key => data.fields[key] !== body.fields[key]))) return null;
+  if (operation === 'confirmDraft' && (data.id !== params.id ||
+      INPUT_FIELDS.some(key => data.fields[key] !== body.fields[key]))) return null;
+  if (['command', 'readTrip', 'readIncident'].includes(operation) && data.id !== params.id) return null;
+  if (operation === 'command' && data.command !== body.type) return null;
+  if (operation === 'readTrip' && data.driver_id !== actorId) return null;
+  if (['sos', 'readSnapshot'].includes(operation) && data.tripId !== params.id) return null;
+  return copy(data);
 }
 
 // Successful transport data must describe the specific submitted operation.

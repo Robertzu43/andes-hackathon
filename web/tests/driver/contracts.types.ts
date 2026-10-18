@@ -10,6 +10,11 @@ journey.editForm({ fields: { locale: 'pt-BR', country: 'BR', timeZone: 'America/
 void journey.confirmTrip({ confirmed: true });
 void journey.retryUnknown('confirm', { confirmed: true });
 void journey.sendCommand('rest_report');
+void journey.refreshStatus();
+journey.editForm({ fields: { expectedArrivalAt: '2026-10-18T15:30:00.000Z' } });
+const zeroDispatch: TransportResult = { kind: 'not_sent', code: 'no_session' };
+void zeroDispatch;
+createDriverJourney({ decodeResponse: (_request, data) => data });
 journey.setPermission('geolocation', 'revoked');
 const state = journey.snapshot();
 const zone: string = state.form.fields.timeZone;

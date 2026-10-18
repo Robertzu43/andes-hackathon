@@ -84,5 +84,6 @@ export function createDriverJourney(options?: {
   keyFactory?: () => string;
   timers?: { setTimeout(fn: () => void, ms: number): unknown; clearTimeout(id: unknown): void };
   requestTimeoutMs?: number;
+  decodeResponse?: ((request: DriverRequest, data: unknown) => unknown) | null;
   monitoringProjection?: ((facts: JourneyFacts, clientNowMs: number | null) => unknown) | null;
 }): DriverJourney;

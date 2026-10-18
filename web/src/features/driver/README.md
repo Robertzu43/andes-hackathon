@@ -59,8 +59,9 @@ The bounded two-truck UI guard is not a cross-device backend count constraint.
 Repeated registration of the same captured label reuses its accepted intent;
 new labels create distinct intents. Partial drafts do not activate trips.
 Confirmation needs explicit review and complete fields; repeated confirmation
-shares one immutable request/key. Historical activation receipts are marked
-`invalidated` by later commands and must not be rendered as current trip status.
+shares one immutable request/key. Later commands invalidate the activation view; arrival/cancel or an owner read
+of closure clears it. The immutable confirmation operation retains its original
+receipt and must not be rendered as current trip status.
 
 Snapshot capture/server receipt/read times and client receipt stay separate.
 No local cadence, advancing freshness, location-based eligibility, delivery,
@@ -81,7 +82,7 @@ ANDES_REVIEW_DRIVER_ROOT="$PWD" node "$REVIEW_PROBES/driver-sos-safety.probes.mj
 ANDES_DRIVER_RUNTIME_ROOT="$BACKEND_ARCHIVE" TEST_DATABASE_URL="$OWNED_TEST_DATABASE_URL" node --test web/tests/driver/persisted.integration.mjs
 ```
 
-Current author result:42 native checks, strict consumer compilation,11 unchanged
+Current author result:45 native checks, strict consumer compilation,11 unchanged
 independent SOS controls and6 actual signed API/PostgreSQL16.14 journeys pass.
 Backend dfa308b was built in an isolated archive; all47 backend tests pass.
 The same6 persisted assertions against80e9d45 produce2 passes/4 failures;
@@ -89,8 +90,38 @@ the independent11-case controls produce3 passes/8 failures at that old head.
 These are author reruns, not independent confirmation of the new source.
 
 See [gatekeeper disposition](gatekeeper-5560841617.md), original review snapshot
-and untouched red/green raw results in `web/tests/driver/evidence/`.
+and preserved red/green raw results in `web/tests/driver/evidence/`.
 Original published branches/reviews and all14 unfinished UI files remain
 preserved. No merge, provider send, production login, physical phone qualification
-or whole-app acceptance is claimed. Runtime/status/SDK integration, fresh UI
+or whole-app acceptance is claimed. SDK81 production status binding, fresh UI
 proof and independent47/gatekeeper review remain required.
+
+## Shared SDK validation and published status verification
+
+Production hosts can pass `decodeResponse(request,data)` using component45's
+`decodeDriverResponse` export. The controller then calls only semantic
+request/owner correlations over the SDK-decoded response; it does not run its
+fallback timestamp/shape decoders a second time. Decoder exceptions, wrong
+resource IDs or foreign actors fail closed. The native fallback remains for
+standalone non-SDK consumers and explicitly synthetic transports. This author
+lane does not add a duplicate SDK mapper or edit component45's files.
+
+The actual published PR74 backend at27e4f94b5962e88735fdb8fc3fea8cc3e842baa4
+was built in a separate archive. `status.integration.mjs` passes against its
+signed API and PostgreSQL: canonical locale/optional arrival persist, open
+checks are visible, a second OK closes a later check, a manual SQL-only sweep
+creates a discoverable incident, and arrival leaves that incident active.
+Zero outbox rows and no delivery worker/provider are used. The same test fails
+against80e9d45. This verifies the controller against that published contract;
+it does not approve PR74 or claim its pending backend review findings resolved.
+
+```sh
+ANDES_DRIVER_RUNTIME_ROOT="$STATUS_BACKEND_ARCHIVE" TEST_DATABASE_URL="$OWNED_TEST_DATABASE_URL" node --test web/tests/driver/status.integration.mjs
+```
+
+Expected-arrival timestamps are normalized to the same UTC instant on the
+wire, matching the SDK normalizer; the original explicit form input remains
+unchanged. Current45 native checks, strict compilation,11 unchanged reviewer
+controls,6 base-backend journeys and1 published-status-backend journey pass.
+The exact current SDK helper/binding requires its owner's independent source
+pin before claiming the complete production composition.

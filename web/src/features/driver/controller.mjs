@@ -1,5 +1,5 @@
 import { INPUT_FIELDS, COMMANDS, uuid, text, copy, validateFields, inputFields,
-  selectionEvidence, acceptedGrantIds, responseData } from './validation.mjs';
+  selectionEvidence, acceptedGrantIds, responseData, correlateResponse } from './validation.mjs';
 
 const WRITE_SLOTS = ['truck', 'draft', 'confirm', 'command', 'sos'];
 const blocked = (code, details = {}) => ({ kind: 'blocked', code, ...details });
@@ -9,13 +9,14 @@ const blankForm = () => ({ text: '', fields: Object.fromEntries(INPUT_FIELDS.map
 /** Nonvisual, memory-only controller. Transport/auth and monitoring projection are injected. */
 export function createDriverJourney({
   transport = null, clock = () => Date.now(), keyFactory = () => globalThis.crypto.randomUUID(),
-  timers = globalThis, requestTimeoutMs = 15_000, monitoringProjection = null,
+  timers = globalThis, requestTimeoutMs = 15_000, monitoringProjection = null, decodeResponse = null,
 } = {}) {
   if (transport !== null && typeof transport !== 'function') throw new TypeError('transport must be a function');
   if (typeof clock !== 'function' || typeof keyFactory !== 'function' ||
       typeof timers.setTimeout !== 'function' || typeof timers.clearTimeout !== 'function' ||
       !Number.isSafeInteger(requestTimeoutMs) || requestTimeoutMs < 1 || requestTimeoutMs > 60_000 ||
-      (monitoringProjection !== null && typeof monitoringProjection !== 'function')) throw new TypeError('Invalid controller inputs');
+      (monitoringProjection !== null && typeof monitoringProjection !== 'function') ||
+      (decodeResponse !== null && typeof decodeResponse !== 'function')) throw new TypeError('Invalid controller inputs');
   let disposed = false;
   let notifying = false;
   let generation = 0;
@@ -90,7 +91,11 @@ export function createDriverJourney({
 
   function normalizeResult(result, request, actorId, write) {
     if (result?.kind === 'ok') {
-      const data = responseData(request, result.data, actorId);
+      let data;
+      try {
+        data = decodeResponse ? correlateResponse(request, decodeResponse(request, result.data), actorId) :
+          responseData(request, result.data, actorId);
+      } catch { return { kind: 'unknown', code: 'invalid-response' }; }
       if (request.operation === 'readIncident' && data?.tripId !== tripId) return { kind: 'unknown', code: 'trip-mismatch' };
       return data ? { kind: 'ok', data } : { kind: 'unknown', code: 'invalid-response' };
     }
@@ -201,6 +206,7 @@ export function createDriverJourney({
       // A command acknowledgement is not a refreshed trip state or a wellbeing outcome.
       trip.invalidated = true; location.invalidated = true; status.invalidated = true;
       if (activation) activation.invalidated = true;
+      if (['arrived', 'cancel'].includes(request.body.type)) activation = null;
     } else if (slot === 'sos') {
       incident = { state: 'available', data, clientReceivedAtMs: receivedAt, invalidated: false, error: null };
     }
@@ -340,7 +346,7 @@ export function createDriverJourney({
     return runRequest(slot, descriptor, (data, at) => {
       if (slot === 'incident' && data.tripId !== tripId) { incident = { ...blankFact(), state: 'unavailable', error: { code: 'trip-mismatch' } }; return; }
       const next = { state: 'available', data, clientReceivedAtMs: at, invalidated: false, error: null };
-      if (slot === 'trip') { trip = next; tripId = data.id; }
+      if (slot === 'trip') { trip = next; tripId = data.id; if (data.status !== 'active') activation = null; }
       else if (slot === 'location') location = next;
       else if (slot === 'status') {
         status = next;

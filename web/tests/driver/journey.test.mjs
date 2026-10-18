@@ -457,7 +457,7 @@ test('gatekeeper: known not_sent never becomes an unresolved submission and 429 
 test('gatekeeper: acknowledged closure invalidates historical activation without resolving SOS', async () => {
   const b = fixture(); await b.active(); await b.journey.requestHelp();
   await b.journey.sendCommand('arrived');
-  assert.equal(b.journey.snapshot().activation.invalidated, true);
+  assert.equal(b.journey.snapshot().activation, null);
   assert.equal(b.journey.snapshot().incident.data.status, 'active');
 });
 test('gatekeeper: repeated registration of the same completed intent does not create another truck', async () => {
@@ -530,8 +530,8 @@ test('gatekeeper: expected arrival is optional explicit input, retained on draft
   assert.equal(b.journey.editForm({ text: 'Carga', fields: { ...fields, expectedArrivalAt } }).kind, 'local-state');
   assert.equal((await b.journey.saveDraft()).kind, 'ok');
   assert.equal((await b.journey.confirmTrip({ confirmed: true })).kind, 'ok');
-  assert.equal(b.calls[0].request.body.fields.expectedArrivalAt, expectedArrivalAt);
-  assert.equal(b.calls[1].request.body.fields.expectedArrivalAt, expectedArrivalAt);
+  assert.equal(b.calls[0].request.body.fields.expectedArrivalAt, new Date(expectedArrivalAt).toISOString());
+  assert.equal(b.calls[1].request.body.fields.expectedArrivalAt, new Date(expectedArrivalAt).toISOString());
 });
 test('gatekeeper: status discovers server checks and incidents without inventing source or delivery', async () => {
   const b = fixture(); await b.active();
@@ -548,4 +548,29 @@ test('gatekeeper: status discovers server checks and incidents without inventing
   b.handlers.readStatus = () => rejected(403, 'forbidden'); await b.journey.refreshStatus();
   assert.equal(b.journey.snapshot().status.data, null);
   assert.equal(b.journey.snapshot().incident.data.id, ids.incident);
+});
+
+test('gatekeeper: injected SDK decoder handles wire validation and semantic owner correlation remains', async () => {
+  let decoded = 0; const b = fixture({ decodeResponse(request, data) { decoded += 1; return structuredClone(data); } });
+  await b.active(); assert.equal(decoded, 2);
+  const c = fixture({ decodeResponse() { throw Error('SDK rejected response'); } });
+  assert.equal((await c.draft()).kind, 'unknown'); assert.equal(c.journey.snapshot().draft, null);
+  const d = fixture({ decodeResponse(request, data) {
+    return request.operation === 'readTrip' ? { ...data, driver_id: ids.other } : data;
+  } });
+  await d.active(); assert.equal((await d.journey.openTrip(ids.draft)).kind, 'unknown');
+  assert.equal(d.journey.snapshot().trip.data, null);
+});
+test('gatekeeper: closure removes the active activation view while preserving the original receipt', async () => {
+  const b = fixture(); await b.active(); await b.journey.sendCommand('arrived');
+  assert.equal(b.journey.snapshot().activation, null);
+  assert.equal(b.journey.snapshot().operations.confirm.result.data.status, 'active');
+});
+
+test('gatekeeper: equivalent expected-arrival offsets use the SDK canonical instant without changing local input', async () => {
+  const b = fixture(); b.ready(); const raw = '2026-10-18T10:30:00-05:00';
+  b.journey.editForm({ text: 'Carga', fields: { ...fields, expectedArrivalAt: raw } });
+  await b.journey.saveDraft();
+  assert.equal(b.calls.at(-1).request.body.fields.expectedArrivalAt, '2026-10-18T15:30:00.000Z');
+  assert.equal(b.journey.snapshot().form.fields.expectedArrivalAt, raw);
 });
