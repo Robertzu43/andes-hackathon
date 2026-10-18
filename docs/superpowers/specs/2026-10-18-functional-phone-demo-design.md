@@ -59,7 +59,7 @@ El orden de 5 y 6 lo impone el backend: el sweeper no abre checks mientras el vi
 
 **Etapa 1, túnel:**
 1. `docker compose` levanta Postgres.
-2. Los cuatro procesos corren locales con `DEMO_MODE=true` y Zavu real. El servidor escucha en **`127.0.0.1`** (`HOST`), no en `0.0.0.0`. Así nadie en la misma red se conecta directo y falsifica `X-Forwarded-For`.
+2. Los cuatro procesos corren locales con `DEMO_MODE=true` y Zavu real. El servidor escucha en **`127.0.0.1`**, con la variable nueva `HOST` (por defecto `0.0.0.0`, que es lo que necesita el contenedor en AWS). Así nadie en la misma red se conecta directo y falsifica `X-Forwarded-For`.
 3. `cloudflared tunnel --url http://127.0.0.1:3000` da una URL `https://…trycloudflare.com`. HTTPS es obligatorio para la geolocalización.
 
 **Etapa 2, AWS:** `deploy.sh` con la misma imagen. Es una "demo reducida": una tarea, una zona de disponibilidad. En 23e9f33, `deploy.sh` **no alcanza** y hay que corregirlo:
@@ -100,7 +100,7 @@ Los campos que exige el borrador (`requiredFields` en `src/trips/routes.ts`) se 
 **Viaje activo:**
 - **Ubicación:** botón **Compartir ubicación**, que requiere un gesto por el permiso del navegador. Muestra el estado *compartiendo / vieja / sin datos* y la hora de la última lectura, que vienen de `/v1/trips/:id/status`. Pide un *wake lock* de pantalla si el navegador lo permite.
 - **Botones grandes:** **SOS** (rojo y dominante, un toque, como `requestHelp()`), **Estoy bien**, **Hacer una pausa / Continuar** y **Llegué**.
-- **«Ya estoy a salvo»:** aparece solo con un incidente activo. Llama a `resolveIncident` (ya existe en `web/src/lib/api/client.ts:196`; el backend exige que sea el dueño). Se agrega como operación al controlador de #63. «Llegué» **no** resuelve un SOS abierto, igual que en el backend.
+- **«Ya estoy a salvo»:** aparece solo con un incidente activo. Llama a `resolveIncident` (ya existe en `web/src/lib/api/client.ts:196`; el backend exige que sea el dueño). Se agrega como operación al controlador de #63. Eso supera el límite documentado de «a lo sumo 5 escrituras» de `web/src/features/driver/README.md`, así que el plan B lo sube a propósito, con sus tests, en vez de reusar el lugar de `sos`. «Llegué» **no** resuelve un SOS abierto, igual que en el backend.
 - **Polling** de `/status` cada 5 s. Si hay un check abierto, abre el banner.
 
 **GPS:**
@@ -272,7 +272,7 @@ Con dos teléfonos físicos, sobre la URL del túnel y después sobre la de AWS.
 2. Se crea el viaje y el contacto lo ve.
 3. La ubicación se actualiza; se anota la frecuencia y qué pasa con la pantalla bloqueada.
 4. Funcionan Estoy bien y Pausa.
-5. **Silencio:** con la pantalla del contacto abierta y sin bloqueo automático, para mantener la presencia, se bloquea el teléfono del conductor o se corta su conexión. Así dejan de llegar la ubicación y las peticiones. Se anota el check, su escalamiento y la llegada de las alertas al contacto.
+5. **Silencio:** con la pantalla del contacto abierta y sin bloqueo automático, para mantener la presencia, se **pone en modo avión el teléfono del conductor**. Así dejan de llegar la ubicación y las peticiones. Se prefiere a bloquearlo porque iOS puede descargar una pestaña bloqueada, y la recarga crearía un mundo nuevo que impide el SOS del paso 6. Se anota el check, su escalamiento y la llegada de las alertas al contacto.
 6. **SOS** con el incidente de check todavía activo: llegan SMS, WhatsApp y llamada con la redacción de SOS, y se anota el tiempo desde el toque hasta cada recepción.
 7. **«Ya estoy a salvo»** resuelve el incidente, y después **Llegué** corta la ubicación.
 
