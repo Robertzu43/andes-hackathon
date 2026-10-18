@@ -1,15 +1,16 @@
 # Reviewed backend binding and predicate repair
 
-Current oracle target: `main` at `02f3647462a4db57ae1ce81f1023fc83d3d06a46`.
+Current oracle target: `main` at `3a1491a4be1e32a1daa24a72d1afd374760147fd`.
 Historical targets: `5591c9b55fe7f4505e36ccee96d27aa913e0debf`,
 `ebc8fb1d36f441ef012ca585201cefabf61383d6`.
 
-## Rebinding `5591c9b` → `main` `02f3647` (fixer pass on #71)
+## Rebinding `5591c9b` → `main` `3a1491a` (fixer pass on #71)
 
 `5591c9b` was no longer on `main`, so the producer's source gate refused every
 export and its positive control failed: the harness ran 150/151 at `1a7bf70`
 (176/177 at `02f3647`). That one failure was the stale pin, not a backend
-defect. Rebound, the full harness passes and a fresh export passes all twelve
+defect. While this pass ran, #62 changed contact acceptance on `main` again, so the
+binding is `3a1491a`. Rebound, the full harness passes and a fresh export passes all twelve
 cases with exit 0. The producer now imports `BACKEND_SHA` from `oracle.mjs`.
 
 Protected-source delta (`src`, `db`, manifests, compiler config) reviewed for the
@@ -19,7 +20,8 @@ twelve cases:
 | --- | --- | --- |
 | `src/api/app.ts` | Registers check, demo, insights and client-read routes; error bodies may add `reason` next to `code` | Same twelve route patterns, actors and status codes. New routes are outside the receipt |
 | `src/auth.ts` | Only a verified phone claim updates the stored phone; demo sign-in records `last_seen_at` | Same identity and contact acceptance in the harness (verified claims, no demo issuer) |
-| `src/contacts/routes.ts` | Optional `role` (`family` default); self-invite compared case-insensitively | `setup` and `revocation` unchanged |
+| `src/contacts/routes.ts` | Optional `role` (`family` default); self-invite compared case-insensitively; acceptance checks the identity row's verified phone, and a token phone claim can only refuse (#62) | `setup` and `revocation` unchanged; the unverified-claim acceptance is still 409 |
+| `src/demo.ts` | Demo tokens carry no phone claim (#62) | No demo issuer in the harness |
 | `src/trips/routes.ts` | Canonical locale storage; optional future-only `expectedArrivalAt`; commands close open checks; `automaticEscalation` is true only when check timings are configured and the trip can still escalate | Harness sends no arrival time and configures no check timings, so `explicit-confirm`, `duplicate-confirm`, `arrival-preserves-sos` and `self-report` (`automaticEscalation:false`) hold. A receipt from a run with check timings set would need that predicate revisited |
 | `src/incidents/*` | Shared `createIncident` fan-out; SOS on a missed-check incident re-notifies with SOS wording; labels | `sos-acceptance`, `acknowledgement-action`, `owner-resolution` responses unchanged |
 | `src/location/routes.ts` | Shared `latestLocation`; unparseable capture times rejected | Snapshot fields, freshness bound (120 s) and age rule unchanged |

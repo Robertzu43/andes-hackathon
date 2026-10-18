@@ -135,7 +135,7 @@ never filled from synthetic examples, and observed failures stay failures.
 
 The producer and the checker share one constant, `BACKEND_SHA` in
 [`evidence/app-acceptance/oracle.mjs`](../../evidence/app-acceptance/oracle.mjs),
-currently `main` at `02f3647462a4db57ae1ce81f1023fc83d3d06a46`. Export first
+currently `main` at `3a1491a4be1e32a1daa24a72d1afd374760147fd`. Export first
 checks that `src/`, `db/`, the manifests and the compiler config match it,
 including unstaged, untracked and Git-ignored files (the migrator runs an ignored
 numbered SQL file), and checks again before writing. Export needs a Git checkout

@@ -1,6 +1,6 @@
 # Route and state acceptance matrix
 
-Backend reference: `main` at `02f3647462a4db57ae1ce81f1023fc83d3d06a46`.
+Backend reference: `main` at `3a1491a4be1e32a1daa24a72d1afd374760147fd`.
 The twelve receipt cases' routes and payloads are unchanged from `5591c9b`; the
 reviewed delta is recorded in rebindings.md. Historical ebc
 receipts remain separate and cannot be promoted to this binding.

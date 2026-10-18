@@ -28,7 +28,7 @@ test('absent cases are pending; no response is never counted as success', () => 
   assert.ok(r.cases.every(c => c.status === 'pending'));
 });
 test('only the reviewed main backend binding is current; legacy receipts stay rejected', () => {
-  assert.equal(BACKEND_SHA, '02f3647462a4db57ae1ce81f1023fc83d3d06a46');
+  assert.equal(BACKEND_SHA, '3a1491a4be1e32a1daa24a72d1afd374760147fd');
   const data = syntheticControl();
   assert.equal(data.backendSha, BACKEND_SHA);
   for (const legacy of ['ebc8fb1d36f441ef012ca585201cefabf61383d6', '5591c9b55fe7f4505e36ccee96d27aa913e0debf']) {

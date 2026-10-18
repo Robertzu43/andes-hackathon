@@ -14,7 +14,7 @@ Snapshot aging requires matching nonempty trip aliases, and both repeated SOS
 responses must remain active with unavailable group capability. Three additional
 reviewer counterexamples failed before these predicate repairs.
 
-Current reference: `main` backend `02f3647462a4db57ae1ce81f1023fc83d3d06a46`.
+Current reference: `main` backend `3a1491a4be1e32a1daa24a72d1afd374760147fd`.
 `BACKEND_SHA` in `oracle.mjs` is the only copy; the receipt producer in
 `scripts/app-integration/receipts.mjs` imports it. Earlier bindings
 `5591c9b55fe7f4505e36ccee96d27aa913e0debf` and

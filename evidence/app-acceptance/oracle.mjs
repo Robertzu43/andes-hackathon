@@ -1,7 +1,7 @@
 // Independent receipt checks. No network, database, device or provider access.
 // The one backend binding, shared with the receipt producer (scripts/app-integration/receipts.mjs).
 // Rebinding needs a source review recorded in rebindings.md.
-export const BACKEND_SHA = '02f3647462a4db57ae1ce81f1023fc83d3d06a46';
+export const BACKEND_SHA = '3a1491a4be1e32a1daa24a72d1afd374760147fd';
 export const SCHEMA = 'andes.app-acceptance.receipt/1';
 const object = x => x !== null && typeof x === 'object' && !Array.isArray(x);
 const id = x => typeof x === 'string' && x.length > 0 && x.length <= 160;
