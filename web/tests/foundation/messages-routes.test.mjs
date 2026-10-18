@@ -28,7 +28,7 @@ test('the router implements exactly the released utility route patterns without 
   assert.equal(new Set(routeDefinitions.map(r => r.id)).size, 12);
   for (const route of routeDefinitions) {
     const row = config.routes.find(item => item.path === route.path);
-    assert.equal(`${message('es', route.title)} | ANDES`, row.title);
+    assert.equal(`${message('es', route.title)} | Tándem`, row.title);
   }
 });
 test('opaque UUID route identifiers are validated without adding user data to titles', () => {
