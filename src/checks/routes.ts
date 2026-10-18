@@ -11,7 +11,8 @@ export function checkRoutes(app: FastifyInstance, ctx: Context) {
     return idempotent(ctx, client, request, async () => {
       if (trip.status !== 'active') problem(409, 'trip_closed');
       const { state, reason } = request.body as { state: 'stopped' | 'resumed'; reason: string };
-      await client.query(`UPDATE trips SET sharing_stopped_at=${state === 'stopped' ? 'COALESCE(sharing_stopped_at,$2)' : 'NULL'} WHERE id=$1`, state === 'stopped' ? [trip.id, ctx.clock()] : [trip.id]);
+      // Each stop records its own time, so a stop after an OK opens a new check.
+      await client.query('UPDATE trips SET sharing_stopped_at=$2 WHERE id=$1', [trip.id, state === 'stopped' ? ctx.clock() : null]);
       // Resuming removes the condition behind a sharing-stopped check; other open checks stay.
       if (state === 'resumed') await client.query("UPDATE security_checks SET status='cancelled',closed_at=$2 WHERE trip_id=$1 AND status='asking' AND reason='sharing_stopped'", [trip.id, ctx.clock()]);
       await client.query('INSERT INTO trip_events VALUES($1,$2,$3,$4,$5)', [randomUUID(), trip.id, request.actor.id, state === 'stopped' ? `sharing_stopped:${reason}` : 'sharing_resumed', ctx.clock()]);

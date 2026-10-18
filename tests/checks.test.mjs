@@ -351,3 +351,11 @@ test('status reads never wait on the trip lock or use telemetry capacity', async
     assert.deepEqual((await Promise.all(polls)).map(p => p.status), [200, 200], 'status answers while the trip lock is held');
   } finally { await blocker.query('COMMIT'); blocker.release(); }
 });
+
+test('a new sharing stop after an OK opens a new check', async t => {
+  const f = await fixture(t); const trip = await f.trip(); f.advance(1000);
+  await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'page_hidden'}); await sweep(f);
+  f.advance(1000); assert.equal((await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'checkin_ok'})).status, 200);
+  f.advance(1000); await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'permission_denied'}); await sweep(f);
+  assert.deepEqual(await checksOf(f, trip), [{reason: 'sharing_stopped', status: 'ok', incident_id: null}, asking('sharing_stopped')]);
+});
