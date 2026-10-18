@@ -268,3 +268,27 @@ test('public cells are computed once per hour and shared by every caller', async
   assert.equal(runs, 1);
   nextHour(f); await hotspots(f); assert.equal(runs, 2);
 });
+
+// Q48 P1 on #76: anonymous map reads blocked on the data must never take the connections an SOS needs.
+test('blocked public aggregation never starves an SOS', async t => {
+  const f = await fixture(t); const trip = await f.trip();
+  const blocker = await f.ctx.callbackPool.connect(); await blocker.query('BEGIN');
+  await blocker.query('LOCK TABLE reports IN ACCESS EXCLUSIVE MODE');
+  try {
+    const reads = Array.from({ length: 6 }, () => hotspots(f));
+    await new Promise(resolve => setTimeout(resolve, 200));
+    const started = Date.now();
+    const sos = await f.req('POST', `/v1/trips/${trip}/sos`, {});
+    assert.equal(sos.status, 200, 'SOS must get a connection while public reads wait');
+    assert.ok(Date.now() - started < 2000);
+    await blocker.query('COMMIT');
+    assert.deepEqual((await Promise.all(reads)).map(r => r.status), [200, 200, 200, 200, 200, 200]);
+  } finally { await blocker.query('ROLLBACK').catch(() => {}); blocker.release(); }
+});
+
+test('a failed aggregation is retried by the next caller, not cached for the hour', async t => {
+  const f = await fixture(t); const query = f.ctx.pool.query.bind(f.ctx.pool); let failures = 1;
+  f.ctx.pool.query = (text, ...rest) => (typeof text === 'string' && text.includes('security_events e') && failures-- > 0 ? Promise.reject(new Error('synthetic failure')) : query(text, ...rest));
+  assert.equal((await hotspots(f)).status, 500);
+  assert.equal((await hotspots(f)).status, 200, 'same hour, fresh attempt');
+});
