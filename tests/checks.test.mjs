@@ -363,3 +363,20 @@ test('a new sharing stop after an OK opens a new check', async t => {
   f.advance(1000); await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'permission_denied'}); await sweep(f);
   assert.deepEqual(await checksOf(f, trip), [{reason: 'sharing_stopped', status: 'ok', incident_id: null}, asking('sharing_stopped')]);
 });
+
+test('expected arrival accepts any RFC 3339 instant and status returns it normalized', async t => {
+  const f = await fixture(t);
+  const cases = {'2026-10-17t18:00:00z': '2026-10-17T18:00:00.000Z', '2026-10-17T23:59:60Z': '2026-10-18T00:00:00.000Z', '2026-10-17T13:00:00-05:00': '2026-10-17T18:00:00.000Z', '0001-01-01T00:00:00Z': '0001-01-01T00:00:00.000Z'};
+  for (const [given, stored] of Object.entries(cases)) {
+    const draft = await f.draft({expectedArrivalAt: given});
+    assert.equal(draft.body.fields.expectedArrivalAt, given, 'draft fields echo what was sent');
+    const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: []})).body.id;
+    assert.equal((await f.req('GET', `/v1/trips/${trip}/status`)).body.trip.expectedArrivalAt, stored);
+  }
+  // A past instant is "already due": overdue still waits the full grace from the trip start (see the confirmation-after-arrival test).
+  const quiet = {...cfg, silenceMs: 86400000};
+  f.advance(120000); await sweep(f, quiet);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM security_checks')).rows[0].n, 0);
+  f.advance(1); await sweep(f, quiet);
+  assert.equal((await f.ctx.pool.query("SELECT count(*)::int n FROM security_checks WHERE reason='arrival_overdue'")).rows[0].n, 1);
+});
