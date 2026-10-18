@@ -52,11 +52,13 @@ export interface SharingInput {
   state: 'stopped' | 'resumed'; reason: 'user' | 'page_hidden' | 'permission_denied' | 'error';
 }
 export interface SharingResult extends IdResponse { sharing: 'stopped' | 'resumed' }
+/** Driver-set incident label (#77); null until labelled. */
+export type IncidentLabel = 'robo' | 'intento_robo' | 'falsa_alarma' | 'sin_senal' | 'otro';
 export interface TripStatus {
   trip: { status: 'active' | 'arrived' | 'cancelled'; paused: boolean; expectedArrivalAt: string | null };
   check: { status: 'asking'; reason: CheckReason; askUntil: string } | null;
   incident: { id: UUID; trigger: 'sos' | 'missed_check'; checkReason: CheckReason | null;
-    status: 'active' | 'resolved'; createdAt: string } | null;
+    status: 'active' | 'resolved'; createdAt: string; label?: IncidentLabel | null } | null;
   deliveries: { role: 'family' | 'colleague' | 'group'; channel: 'sms' | 'whatsapp' | 'voice' | 'group';
     status: 'pending' | 'claimed' | 'authorized' | 'accepted' | 'rejected' | 'unknown' | 'delivered' | 'cancelled' | 'unavailable';
     unavailableReason: string | null }[];
@@ -74,12 +76,13 @@ export interface DemoWorld {
 /** Explicit demo-only exception: unauthenticated POST, no actor/idempotency key yet. */
 export interface DemoSessionOptions extends RequestOptions { demo: true }
 
-/** PR65/de9e455 supplies its server read-start timestamp; never substitute a local clock. */
+/** Catalog snapshot acquisition time; never substitute a local clock. */
 export interface ServerRead { readAt: string }
-export interface Profile extends IdResponse, ServerRead { phone: string | null; phoneVerified: boolean }
+/** Catalogs never carry a phone value. */
+export interface Profile extends IdResponse, ServerRead { phoneVerified: boolean }
 export interface TruckSummary extends IdResponse { label: string }
 export interface ContactSummary extends IdResponse {
-  contactId: UUID; phone: string;
+  contactId: UUID; role: ContactRole;
   map: { requested: boolean; accepted: boolean };
   incident: { requested: boolean; accepted: boolean };
   status: 'pending' | 'accepted' | 'revoked';
@@ -87,7 +90,8 @@ export interface ContactSummary extends IdResponse {
 }
 export interface TripSummary extends IdResponse, Omit<TripFields, 'expectedArrivalAt'> {
   status: 'active' | 'arrived' | 'cancelled'; mapActive: boolean; checkinsActive: boolean;
-  paused: boolean; version: number; createdAt: string; closedAt: string | null; contactGrantIds: UUID[];
+  paused: boolean; version: number; createdAt: string; closedAt: string | null;
+  expectedArrivalAt: string | null; sharingStoppedAt: string | null; contactGrantIds: UUID[];
 }
 export interface TruckList extends ServerRead { trucks: TruckSummary[]; limit: 100; hasMore: boolean }
 export interface ContactList extends ServerRead { contacts: ContactSummary[]; limit: 100; hasMore: boolean }

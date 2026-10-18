@@ -87,7 +87,8 @@ const statusWire = object({
   trip: object({ status: choice('active', 'arrived', 'cancelled'), paused: bool, expectedArrivalAt: nullable(date) }),
   check: nullable(object({ status: literal('asking'), reason: checkReason, askUntil: date })),
   incident: nullable(object({ id: uuid, trigger: choice('sos', 'missed_check'), checkReason: nullable(checkReason),
-    status: choice('active', 'resolved'), createdAt: date })),
+    status: choice('active', 'resolved'), createdAt: date,
+    label: optional(nullable(choice<T.IncidentLabel>('robo', 'intento_robo', 'falsa_alarma', 'sin_senal', 'otro'))) })),
   deliveries: array(object({ role: choice('family', 'colleague', 'group'), channel: choice('sms', 'whatsapp', 'voice', 'group'),
     status: choice('pending', 'claimed', 'authorized', 'accepted', 'rejected', 'unknown', 'delivered', 'cancelled', 'unavailable'),
     unavailableReason: nullable(text) })),
@@ -128,15 +129,10 @@ export const snapshot: Decoder<T.LocationSnapshot> = value => {
   return { tripId: parsed.tripId, readAt: parsed.readAt, location: parsed.location, freshness: parsed.freshness, ageMs: parsed.ageMs };
 };
 
-const phone: Decoder<string> = value => typeof value === 'string' && /^\+[1-9]\d{6,14}$/.test(value) ? value : invalid();
-const profileWire = object({ id: uuid, phone: nullable(phone), phoneVerified: bool });
-const profileData: Decoder<Omit<T.Profile, 'readAt'>> = value => {
-  const parsed = profileWire(value);
-  if (parsed.phoneVerified && parsed.phone === null) invalid();
-  return parsed;
-};
+// Catalogs carry no phone values (PR65 contract); none is ever projected from a reply.
+const profileData: Decoder<Omit<T.Profile, 'readAt'>> = object({ id: uuid, phoneVerified: bool });
 export const profile: Decoder<T.Profile> = value => ({ ...profileData(value), readAt: object({ readAt: date })(value).readAt });
-const contactWire = object({ id: uuid, contactId: uuid, phone,
+const contactWire = object({ id: uuid, contactId: uuid, role: choice('family', 'colleague'),
   map: object({ requested: bool, accepted: bool }), incident: object({ requested: bool, accepted: bool }),
   status: choice('pending', 'accepted', 'revoked'), acceptedAt: nullable(date), revokedAt: nullable(date),
   revokedBy: nullable(choice('driver', 'contact')) });
@@ -150,7 +146,8 @@ const contact: Decoder<T.ContactSummary> = value => {
 };
 const summary: Decoder<T.TripSummary> = object({ id: uuid, ...fullFields,
   status: choice('active', 'arrived', 'cancelled'), mapActive: bool, checkinsActive: bool,
-  paused: bool, version: number(1, Infinity, true), createdAt: date, closedAt: nullable(date), contactGrantIds: array(uuid) });
+  paused: bool, version: number(1, Infinity, true), createdAt: date, closedAt: nullable(date),
+  expectedArrivalAt: nullable(date), sharingStoppedAt: nullable(date), contactGrantIds: array(uuid) });
 function bounded<T extends { id: string }>(decoder: Decoder<T>, max: number): Decoder<T[]> {
   return value => {
     if (!Array.isArray(value) || value.length > max) invalid();

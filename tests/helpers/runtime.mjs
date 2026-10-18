@@ -22,8 +22,13 @@ export async function fixture(t, options = {}) {
     channelSupport: ['sms', 'whatsapp', 'voice'].map(channel => ({ channel, country: 'BR', locale: 'pt-BR' })), ...options });
   await app.ready();
   t.after(async () => { await app.close(); await admin.query(`DROP SCHEMA ${schema} CASCADE`); await admin.end(); });
+  const phones = { driver: '+15555550101', stranger: '+15555550102', contact: '+15555550100' };
+  function phoneFor(subject) {
+    phones[subject] ??= `+1555555${String(100 + Object.keys(phones).length).padStart(4, '0')}`;
+    return phones[subject];
+  }
   async function token(subject, claims = {}) {
-    return new SignJWT({ phone_number: '+15555550100', phone_number_verified: true, sub: subject, iss: 'https://synthetic.test', aud: 'andes-test', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 3600, ...claims }).setProtectedHeader({ alg: 'RS256' }).sign(privateKey);
+    return new SignJWT({ phone_number: phoneFor(subject), phone_number_verified: true, sub: subject, iss: 'https://synthetic.test', aud: 'andes-test', iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 3600, ...claims }).setProtectedHeader({ alg: 'RS256' }).sign(privateKey);
   }
   const driver = await token('driver'); const stranger = await token('stranger'); const contact = await token('contact');
   async function req(method, url, body, jwt = driver, key = randomUUID()) {
@@ -37,7 +42,7 @@ export async function fixture(t, options = {}) {
     return req('POST', '/v1/trip-drafts', { text: 'SYNTHETIC freight trip', fields: { truckId: await truck(jwt), origin: 'A', destination: 'B', country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo', ...fields } }, jwt);
   }
   async function grant(accept = true) {
-    const invitation = await req('POST', '/v1/contacts', { contactId: other.body.id, phone: '+15555550100', map: true, incident: true });
+    const invitation = await req('POST', '/v1/contacts', { contactId: other.body.id, phone: phones.contact, map: true, incident: true });
     assert.equal(invitation.status, 200);
     if (accept) assert.equal((await req('POST', `/v1/contacts/${invitation.body.id}/accept`, { map: true, incident: true }, contact)).status, 200);
     return invitation.body.id;
@@ -47,5 +52,5 @@ export async function fixture(t, options = {}) {
     const result = await req('POST', `/v1/trip-drafts/${d.body.id}/confirm`, { confirmed: true, contactGrantIds: grants });
     assert.equal(result.status, 200); return result.body.id;
   }
-  return { app, ctx, req, token, driver, stranger, contact, me: me.body, contactIdentity: other.body, truck, draft, grant, trip, advance(ms) { now = new Date(now.getTime() + ms); } };
+  return { app, ctx, req, token, phoneFor, driver, stranger, contact, me: me.body, contactIdentity: other.body, truck, draft, grant, trip, advance(ms) { now = new Date(now.getTime() + ms); } };
 }
