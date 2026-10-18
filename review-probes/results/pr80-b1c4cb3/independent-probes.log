@@ -1,0 +1,71 @@
+✔ control: sequential daily budget and idempotent retry remain valid (168.766458ms)
+✖ daily budget is atomic across distinct simultaneous idempotency keys (107.590375ms)
+✖ attempt-only data must not become completed-robbery wording (87.541375ms)
+✔ control: public suppression needs three verified contributors and advice uses the same cells (78.259834ms)
+✔ control: fixed window uses its exact hourly upper and 90-day lower boundaries (122.937375ms)
+✔ control: one hourly aggregation is shared by concurrent public callers and advice (123.173584ms)
+✔ control: a failed aggregation does not poison the current-hour cache (122.095417ms)
+✔ control: incident freshness cutoff, relabel publication and resolved status label (140.777833ms)
+✔ control: IANA and UTC startup zones accept while numeric offsets fail (179.6845ms)
+✖ demo incident provenance survives a process reopened without the demo issuer (133.66825ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 7
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1267.738167
+
+✖ failing tests:
+
+test at ../review-probes.mjs:54:1
+✖ daily budget is atomic across distinct simultaneous idempotency keys (107.590375ms)
+  AssertionError [ERR_ASSERTION]: two concurrent submissions must not exceed the five-report budget
+  
+  6 !== 5
+  
+      at TestContext.<anonymous> (file:///private/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-q58-insights-ca00kjqw/review-probes.mjs:83:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 6,
+    expected: 5,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../review-probes.mjs:86:1
+✖ attempt-only data must not become completed-robbery wording (87.541375ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /intento/i. Input:
+  
+  '3 reportes de robo en esta zona de día (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro.'
+  
+      at TestContext.<anonymous> (file:///private/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-q58-insights-ca00kjqw/review-probes.mjs:91:42)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '3 reportes de robo en esta zona de día (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro.',
+    expected: /intento/i,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at ../review-probes.mjs:170:1
+✖ demo incident provenance survives a process reopened without the demo issuer (133.66825ms)
+  AssertionError [ERR_ASSERTION]: demo-origin incidents must not turn into real public data
+      at TestContext.<anonymous> (file:///private/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-q58-insights-ca00kjqw/review-probes.mjs:185:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

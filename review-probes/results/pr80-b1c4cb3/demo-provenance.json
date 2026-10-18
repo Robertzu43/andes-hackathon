@@ -1,0 +1,45 @@
+{
+  "source": "b1c4cb38413cd4f32c801c0bea6f29bdacc0f4c8",
+  "inDemo": {
+    "generatedAt": "2026-10-17T12:00:00.000Z",
+    "days": 90,
+    "cellDegrees": 0.05,
+    "minCount": 3,
+    "includesSynthetic": true,
+    "cells": [
+      {
+        "lat": -12.325,
+        "lon": -76.775,
+        "band": "dia",
+        "robo": 3,
+        "intentoRobo": 0,
+        "total": 3,
+        "synthetic": 3
+      }
+    ]
+  },
+  "storedFlags": [
+    {
+      "synthetic": false,
+      "n": 3
+    }
+  ],
+  "reopenedWithoutDemo": {
+    "generatedAt": "2026-10-17T12:00:00.000Z",
+    "days": 90,
+    "cellDegrees": 0.05,
+    "minCount": 3,
+    "includesSynthetic": false,
+    "cells": [
+      {
+        "lat": -12.325,
+        "lon": -76.775,
+        "band": "dia",
+        "robo": 3,
+        "intentoRobo": 0,
+        "total": 3,
+        "synthetic": 0
+      }
+    ]
+  }
+}

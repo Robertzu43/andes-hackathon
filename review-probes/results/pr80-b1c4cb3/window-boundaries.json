@@ -1,0 +1,46 @@
+{
+  "source": "b1c4cb38413cd4f32c801c0bea6f29bdacc0f4c8",
+  "end": "2026-10-17T12:00:00.000Z",
+  "start": "2026-07-19T12:00:00.000Z",
+  "cells": [
+    {
+      "lat": -14.325,
+      "lon": -76.775,
+      "band": "dia",
+      "robo": 3,
+      "intentoRobo": 0,
+      "total": 3,
+      "synthetic": 0
+    },
+    {
+      "lat": -13.325,
+      "lon": -76.775,
+      "band": "dia",
+      "robo": 3,
+      "intentoRobo": 0,
+      "total": 3,
+      "synthetic": 0
+    }
+  ],
+  "alternativeCells": [
+    {
+      "lat": -14.325,
+      "lon": -76.775,
+      "band": "dia",
+      "robo": 3,
+      "intentoRobo": 0,
+      "total": 3,
+      "synthetic": 0
+    },
+    {
+      "lat": -13.325,
+      "lon": -76.775,
+      "band": "dia",
+      "robo": 3,
+      "intentoRobo": 0,
+      "total": 3,
+      "synthetic": 0
+    }
+  ],
+  "alternativeDays": 90
+}

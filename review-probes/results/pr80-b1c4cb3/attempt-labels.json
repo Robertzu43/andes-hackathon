@@ -1,0 +1,28 @@
+{
+  "source": "b1c4cb38413cd4f32c801c0bea6f29bdacc0f4c8",
+  "cells": [
+    {
+      "lat": -12.325,
+      "lon": -76.775,
+      "band": "dia",
+      "robo": 0,
+      "intentoRobo": 3,
+      "total": 3,
+      "synthetic": 0
+    }
+  ],
+  "es": {
+    "level": "caution",
+    "count": 3,
+    "includesSynthetic": false,
+    "band": "dia",
+    "text": "3 reportes de robo en esta zona de día (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro."
+  },
+  "pt": {
+    "level": "caution",
+    "count": 3,
+    "includesSynthetic": false,
+    "band": "dia",
+    "text": "3 relatos de roubo nesta região durante o dia (últimos 90 dias). Se puder, pare em um local movimentado e seguro."
+  }
+}

@@ -1,0 +1,11 @@
+✔ demo sign-in stores reports as synthetic and flags every published cell as demo data (213.014ms)
+✔ the DEMO_MODE variable alone never marks real reports as demo data (89.291875ms)
+✔ trip status shows the latest incident label, also after resolution (90.028333ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 459.648875

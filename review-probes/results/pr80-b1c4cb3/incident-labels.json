@@ -1,0 +1,28 @@
+{
+  "source": "b1c4cb38413cd4f32c801c0bea6f29bdacc0f4c8",
+  "before": [
+    {
+      "lat": -12.325,
+      "lon": -76.775,
+      "band": "dia",
+      "robo": 3,
+      "intentoRobo": 0,
+      "total": 3,
+      "synthetic": 0
+    }
+  ],
+  "cached": [
+    {
+      "lat": -12.325,
+      "lon": -76.775,
+      "band": "dia",
+      "robo": 3,
+      "intentoRobo": 0,
+      "total": 3,
+      "synthetic": 0
+    }
+  ],
+  "after": [],
+  "label": "sin_senal",
+  "incidentStatus": "resolved"
+}

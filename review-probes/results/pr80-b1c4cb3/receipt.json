@@ -1,0 +1,202 @@
+{
+  "reviewer": "Codex Q58, AI technical review; not independent human evidence",
+  "verdict": "FIX",
+  "ancestry": {
+    "heads": {
+      "76": "05cf907e0e27c4f1a7f6756740222207bdcc7663",
+      "77": "62ee06cc761d2f94e88b6a66ec1dd444e263c78a",
+      "80": "b1c4cb38413cd4f32c801c0bea6f29bdacc0f4c8",
+      "83": "b95ff267d297d1fe1f27fa8b016940996690691c"
+    },
+    "ancestry": [
+      {
+        "ancestor_pr": 76,
+        "descendant_pr": 80,
+        "is_ancestor": false
+      },
+      {
+        "ancestor_pr": 77,
+        "descendant_pr": 80,
+        "is_ancestor": true
+      },
+      {
+        "ancestor_pr": 76,
+        "descendant_pr": 83,
+        "is_ancestor": true
+      },
+      {
+        "ancestor_pr": 77,
+        "descendant_pr": 83,
+        "is_ancestor": false
+      },
+      {
+        "ancestor_pr": 80,
+        "descendant_pr": 83,
+        "is_ancestor": false
+      }
+    ]
+  },
+  "runtime": {
+    "node": "24.17.0",
+    "postgresql": "16.14 Homebrew",
+    "pg_transport": "owned temporary Unix socket only; no TCP or shared DB",
+    "pg18_tested": false
+  },
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exit": 0
+  },
+  "native": {
+    "command": "npm test",
+    "tests": 85,
+    "passed": 85,
+    "exit": 0
+  },
+  "independent": {
+    "command": "node review-probes/insights-review.mjs EXACT_BUILT_ARCHIVE NEW_OUTPUT_DIRECTORY",
+    "tests": 10,
+    "passed": 7,
+    "failed": 3,
+    "exit": 1,
+    "cases": [
+      {
+        "case": "sequential-budget",
+        "passed": true
+      },
+      {
+        "case": "concurrent-budget",
+        "passed": false
+      },
+      {
+        "case": "attempt-labels",
+        "passed": false
+      },
+      {
+        "case": "verified-threshold",
+        "passed": true
+      },
+      {
+        "case": "window-boundaries",
+        "passed": true
+      },
+      {
+        "case": "singleflight",
+        "passed": true
+      },
+      {
+        "case": "cache-recovery",
+        "passed": true
+      },
+      {
+        "case": "incident-labels",
+        "passed": true
+      },
+      {
+        "case": "zone-validation",
+        "passed": true
+      },
+      {
+        "case": "demo-provenance",
+        "passed": false
+      }
+    ]
+  },
+  "pr77": {
+    "source": "62ee06cc761d2f94e88b6a66ec1dd444e263c78a",
+    "command": "node --test --test-name-pattern='trip status shows|demo sign-in stores|DEMO_MODE variable alone' tests/insights.test.mjs",
+    "tests": 3,
+    "passed": 3,
+    "exit": 0
+  },
+  "source_files": [
+    {
+      "path": "package.json",
+      "git_blob": "c8e4e8006fb021df3b157c522cc35f58b483c16d",
+      "sha256": "248a82b42aed75fa5d59839425b5500a763a50b18e956fc5e6c829f1bbc08f0d"
+    },
+    {
+      "path": "package-lock.json",
+      "git_blob": "2f1cbd3d6eb4604095a4eecaaa426bc831bcfc0c",
+      "sha256": "c7455f5f1ab8c78d627a87080b1a4525fa1386024e137c9d7e3a11ae53e115fa"
+    },
+    {
+      "path": "src/insights/routes.ts",
+      "git_blob": "9c208a8f960893f351fad57ef07db28a60587d99",
+      "sha256": "b0f8768146baeb7262ce985cd60d6a55d002df62b4450cf30096f9168d6c4ea7"
+    },
+    {
+      "path": "src/api/app.ts",
+      "git_blob": "457d071f1c48353622099968e95ae77549aebfec",
+      "sha256": "55487ae46296cafe109507965e39bf186cd9d81849dfe6ab0e67aca4947764de"
+    },
+    {
+      "path": "src/checks/routes.ts",
+      "git_blob": "ac17f4d3948b770baf262c90585e74d56099768a",
+      "sha256": "71e1c842b760b38ef23c3a18647cb82692fa74c792f186d2f26296b180c6e3bc"
+    },
+    {
+      "path": "src/auth.ts",
+      "git_blob": "8fb86caceb9a4e09c92b15e2258a3a4104e02969",
+      "sha256": "99fb9eba688fe31782b704e440d6a1421fb9888ae04892eae174006f5f1b4b0a"
+    },
+    {
+      "path": "src/demo.ts",
+      "git_blob": "2f3cf286924bee8388fd55bf576ed049ef9c1a81",
+      "sha256": "db71873255f8def67ac942c7c3de97a54b2cca09c38bc25dc28e6146a667c174"
+    },
+    {
+      "path": "src/api/mutations.ts",
+      "git_blob": "a048f2159ace3c012076710171f805e90abebb20",
+      "sha256": "e538aad6a926e5e52a727690a673b579ad5a8ec2087804fe017fbe070034e292"
+    },
+    {
+      "path": "db/migrations/004-insights.sql",
+      "git_blob": "cc3d1f7d84d7547a8f8399368387cc6e16dac176",
+      "sha256": "c4077854801e6c4f13811a5da609f66f1fe8aa854a7fc1191ab776d3c369e3a8"
+    },
+    {
+      "path": "db/migrations/005-insights-hardening.sql",
+      "git_blob": "485724f2cd50e4df0fda2dd09fe2056d056bc1ca",
+      "sha256": "0db6ea5002a67a2897db0f4a2f85bd5a5ee2864656d0fe200a2db875b4868de7"
+    },
+    {
+      "path": "tests/insights.test.mjs",
+      "git_blob": "eed1a801ffffea6042d901e74c16898dd566c999",
+      "sha256": "8deda62b5d542cbd964adcb0e9e06c12960ab2d121cbbaac855831447d2b02cd"
+    },
+    {
+      "path": "tests/helpers/runtime.mjs",
+      "git_blob": "bdac035d6f9c43fdfd55e3411cf0bac9458b8675",
+      "sha256": "1bd08a936376c607e33959bbb7265d1da49b2f917f714ea8069617566a33da03"
+    }
+  ],
+  "probe_sha256": "b21513405b1a7a8678e477b41adb81720f0944a5e54e9df73aab7e409e54ab13",
+  "accepted_residual_source": "https://github.com/Bimbi-Dev/andes-hackathon/pull/76#issuecomment-6243414623",
+  "limits": [
+    "PostgreSQL 18 was not available locally; these real database checks used 16.14",
+    "No author production source, migration or fixture was edited",
+    "No app HTTP server, provider activation, real notification, deployment or participant data",
+    "Initial window assertion used lexical numeric sorting; numeric ordering corrected the reviewer harness before the final 7/3 run",
+    "The initial bootstrap failure came from the fixture URL host query not URL.hostname; encoded Unix socket host fixed the fixture without product edits"
+  ],
+  "cleanup": {
+    "remaining_test_schemas": 0,
+    "remaining_fixture_databases": 0,
+    "owned_aux_free_stopped": true
+  },
+  "artifacts": {
+    "concurrent-budget.json": "64bb77f9bec301377cd1886995929905d65e7815482b5b209e9268a9a159e6d5",
+    "window-boundaries.json": "e65db4c95d2b8329e32f2c49efe2feed5c6c96690ed010b05802c92daf954e8f",
+    "sequential-budget.json": "89f39b6254e0034ee6759370ad3f2ac475b5255eb56d0f72bd3845f620d8bfa7",
+    "singleflight.json": "53be7bc097e99ec812971ee2ccd65d3efeae12f7f21eafc43710c542349b7e0c",
+    "zone-validation.json": "7b0a7fe64abb024715e420f72196e0ffc46c7516c10accb065b9f39a3dbb57e8",
+    "verified-threshold.json": "eea5f4cf576827e919a1aff43dd65e16bb1235337323d413698d0098bb29f92c",
+    "attempt-labels.json": "45de856ca3a388293eaedad4d477751baed9ca120683d0a76549dc85d8cf2d2b",
+    "cache-recovery.json": "ec0c2d3f557a648c55e0dc042d64ed2ccd110b97e7cfea8514e9de5e4fa60c72",
+    "pr77-focused.log": "b75ca150a6a533c4e561d0c562ba74b10d16f2756aa133e0cd37fb47738de09b",
+    "incident-labels.json": "edd9ec260870f5c0fadce5c490b864a0e27d7c7d1e55143cdc7b31f2cfea28b9",
+    "independent-probes.log": "e342c1330958f3e4b14232cd39e89290f94ccf7603669e85ac232d4204977efc",
+    "native-tests.log": "8e5bc96813017e5bed97c05f2d4efda5cee6cb6320d1d6b02977da28f8d53860",
+    "demo-provenance.json": "21cfba11566e051dcd3c2333484dfe58838c8d900a9652667e962cb6ace85e19"
+  }
+}

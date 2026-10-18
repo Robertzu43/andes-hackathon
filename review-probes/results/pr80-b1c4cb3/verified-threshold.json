@@ -1,0 +1,25 @@
+{
+  "source": "b1c4cb38413cd4f32c801c0bea6f29bdacc0f4c8",
+  "before": [],
+  "hiddenAdvice": {
+    "level": "none"
+  },
+  "after": [
+    {
+      "lat": -12.325,
+      "lon": -76.775,
+      "band": "dia",
+      "robo": 4,
+      "intentoRobo": 0,
+      "total": 4,
+      "synthetic": 0
+    }
+  ],
+  "shownAdvice": {
+    "level": "caution",
+    "count": 4,
+    "includesSynthetic": false,
+    "band": "dia",
+    "text": "4 reportes de robo en esta zona de día (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro."
+  }
+}
