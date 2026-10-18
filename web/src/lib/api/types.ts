@@ -46,6 +46,34 @@ export interface RequestOptions { signal?: AbortSignal }
 /** Generate once per explicit intent; preserve the key and payload when reconciling ambiguity. */
 export interface WriteOptions extends RequestOptions { idempotencyKey: string }
 
+/** Actual additive runtime contract at Robert PR74/4c138ca. No client policy clock. */
+export type CheckReason = 'sharing_stopped' | 'silence' | 'arrival_overdue';
+export interface SharingInput {
+  state: 'stopped' | 'resumed'; reason: 'user' | 'page_hidden' | 'permission_denied' | 'error';
+}
+export interface SharingResult extends IdResponse { sharing: 'stopped' | 'resumed' }
+export interface TripStatus {
+  trip: { status: 'active' | 'arrived' | 'cancelled'; paused: boolean; expectedArrivalAt: string | null };
+  check: { status: 'asking'; reason: CheckReason; askUntil: string } | null;
+  incident: { id: UUID; trigger: 'sos' | 'missed_check'; checkReason: CheckReason | null;
+    status: 'active' | 'resolved'; createdAt: string } | null;
+  deliveries: { role: 'family' | 'colleague' | 'group'; channel: 'sms' | 'whatsapp' | 'voice' | 'group';
+    status: 'pending' | 'claimed' | 'authorized' | 'accepted' | 'rejected' | 'unknown' | 'delivered' | 'cancelled' | 'unavailable';
+    unavailableReason: string | null }[];
+  /** Omitted when current scope/map state does not permit location. No coordinates. */
+  location?: { freshness: 'fresh' | 'stale' | 'unavailable'; ageMs: number | null; capturedAt: string | null; accuracy: number | null };
+}
+export type DemoPersona = 'driver' | 'family' | 'colleague';
+/** Sensitive wire result for a trusted demo host. Never render, persist or log tokens. */
+export interface DemoWorld {
+  synthetic: true; expiresInSeconds: 7200;
+  driver: { id: UUID; token: string; truckId: UUID };
+  family: { id: UUID; token: string; grantId: UUID };
+  colleague: { id: UUID; token: string; grantId: UUID };
+}
+/** Explicit demo-only exception: unauthenticated POST, no actor/idempotency key yet. */
+export interface DemoSessionOptions extends RequestOptions { demo: true }
+
 /** Catalog snapshot acquisition time; never substitute a local clock. */
 export interface ServerRead { readAt: string }
 export interface Profile extends IdResponse, ServerRead { phoneVerified: boolean }
