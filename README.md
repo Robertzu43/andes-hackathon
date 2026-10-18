@@ -21,6 +21,10 @@ Tándem es una app para el transportista que maneja su propio camión. Las perso
 
 ANDES es el nombre del repositorio; Tándem es la app; GOAT es el equipo.
 
+## Demo visual
+
+https://github.com/user-attachments/assets/e61305c9-1cba-4d34-8cfa-dabb34a9266d
+
 ## Para el jurado
 
 **Demo:** https://an-1dc2ae9cdfee46e6bfe399ec607092d5.ecs.us-east-1.on.aws · **Deck:** [/deck.html](https://an-1dc2ae9cdfee46e6bfe399ec607092d5.ecs.us-east-1.on.aws/deck.html)
