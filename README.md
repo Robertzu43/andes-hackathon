@@ -12,8 +12,6 @@ With Node 24 and a disposable PostgreSQL database, run `npm ci`, set `TEST_DATAB
 
 The [integrated backend baseline](docs/testing/integrated-backend.md) combines this runtime with the reviewed offline toolkits. With Python 3.10+ available, `npm run test:all` runs both sets of checks; `npm run test:tooling` runs only the offline tools.
 
-The [typed-client/backend seam](docs/testing/client-backend-seam.md) exercises the reviewed client over real local HTTP and signed synthetic backend sessions. `npm run typecheck:client-api` checks both supported module configurations; `test:all` includes the client tests.
-
 ## Start here
 
 [Reconstruct freight trip incidents](https://github.com/Bimbi-Dev/andes-hackathon/issues/8) is the first task. Follow the section gates and GitHub blocked-by links.
