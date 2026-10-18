@@ -1,0 +1,41 @@
+TAP version 13
+# Subtest: real SQL lock wait preserves the opening grace: 0ms control
+ok 1 - real SQL lock wait preserves the opening grace: 0ms control
+  ---
+  duration_ms: 163.96325
+  type: 'test'
+  ...
+# {"wallDelayMs":0,"measuredWallMs":0.00020799999998644125,"applicationElapsedMs":0,"remainingGraceMs":60000,"createdAt":"2026-10-17T12:02:00.001Z","askUntil":"2026-10-17T12:03:00.001Z"}
+# Subtest: real SQL lock wait preserves the opening grace: 1001ms control
+not ok 2 - real SQL lock wait preserves the opening grace: 1001ms control
+  ---
+  duration_ms: 1109.258333
+  type: 'test'
+  location: '<review-worktree>/review-probes/security-check-real-wait.test.mjs:14:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    row-lock delay must not consume a new check response window
+
+    58998 !== 60000
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 60000
+  actual: 58998
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<review-worktree>/review-probes/security-check-real-wait.test.mjs:41:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# {"wallDelayMs":1001,"measuredWallMs":1002.2748750000001,"applicationElapsedMs":1002,"remainingGraceMs":58998,"createdAt":"2026-10-17T12:02:00.001Z","askUntil":"2026-10-17T12:03:00.001Z"}
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1334.335375

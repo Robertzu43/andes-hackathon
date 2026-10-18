@@ -1,0 +1,128 @@
+{
+  "sha": "516aee230b70c804db589ddde6e3eb775118fa37",
+  "root": "fresh isolated archive",
+  "archive": "516aee230b70c804db589ddde6e3eb775118fa37",
+  "source_reference_tree": "52f0cc4c56e5e1caf631d14af504c78e2f73c63a",
+  "source_db_delta_to_reference": [],
+  "parents": [
+    "ecf3f111c1eb3cf3d6d85f83e084dc95ef665c1f",
+    "4c138ca1d00742400a850cd72b0888cc59260a36"
+  ],
+  "node": "24.17.0",
+  "postgresql": "16.14",
+  "author_backend_tests": 80,
+  "typecheck_exit": 0,
+  "strict_client_nodenext_bundler_exit": 0,
+  "expiry_regressions_in_author_suite": 6,
+  "whitespace_exit": 0,
+  "source_trees": {
+    "src": {
+      "pr82": "739a81d42ca9bf2ec81d39abc3246187dbd90e2e",
+      "tested_combined": "739a81d42ca9bf2ec81d39abc3246187dbd90e2e"
+    },
+    "db": {
+      "pr82": "18baade9f7998940d5865c52c56084f076e61c75",
+      "tested_combined": "18baade9f7998940d5865c52c56084f076e61c75"
+    }
+  },
+  "typed_client_delta_to_accepted64": [],
+  "probes": {
+    "lifecycle28": {
+      "total": 28,
+      "pass": 26,
+      "fail": 2,
+      "diagnostics": [
+        {
+          "elapsed": 0,
+          "now": "2026-10-17T12:02:00.001Z",
+          "createdAt": "2026-10-17T12:02:00.001Z",
+          "askUntil": "2026-10-17T12:03:00.001Z",
+          "remainingGraceMs": 60000,
+          "incidentCount": 0
+        },
+        {
+          "elapsed": 1001,
+          "now": "2026-10-17T12:02:01.002Z",
+          "createdAt": "2026-10-17T12:02:00.001Z",
+          "askUntil": "2026-10-17T12:03:00.001Z",
+          "remainingGraceMs": 58999,
+          "incidentCount": 0
+        },
+        {
+          "elapsed": 60001,
+          "now": "2026-10-17T12:03:00.002Z",
+          "createdAt": "2026-10-17T12:02:00.001Z",
+          "askUntil": "2026-10-17T12:03:00.001Z",
+          "remainingGraceMs": -1,
+          "incidentCount": 1
+        },
+        {
+          "policy": "GPS receipt vetoes silence although capture is stale; no driver OK",
+          "captureAgeMs": 599000,
+          "receivedAt": "2026-10-17T12:10:00.000Z",
+          "check": null
+        },
+        {
+          "policy": "No bounded pause expiry or independent overdue while paused",
+          "elapsedMs": 604800000,
+          "paused": true,
+          "checkins_active": false
+        }
+      ],
+      "pre_separator_normalization_sha256": "98a5c793077c202a395417ed768ba5ec64011447274cdc41392c69c216f102c5"
+    },
+    "real-wait82": {
+      "total": 2,
+      "pass": 1,
+      "fail": 1,
+      "diagnostics": [
+        {
+          "wallDelayMs": 0,
+          "measuredWallMs": 0.00020799999998644125,
+          "applicationElapsedMs": 0,
+          "remainingGraceMs": 60000,
+          "createdAt": "2026-10-17T12:02:00.001Z",
+          "askUntil": "2026-10-17T12:03:00.001Z"
+        },
+        {
+          "wallDelayMs": 1001,
+          "measuredWallMs": 1002.2748750000001,
+          "applicationElapsedMs": 1002,
+          "remainingGraceMs": 58998,
+          "createdAt": "2026-10-17T12:02:00.001Z",
+          "askUntil": "2026-10-17T12:03:00.001Z"
+        }
+      ],
+      "pre_separator_normalization_sha256": "6382cefd33b83d16981313601e68ff62b339cdd7e02f28018034f18d6de91d48"
+    },
+    "real-wait74": {
+      "total": 2,
+      "pass": 1,
+      "fail": 1,
+      "diagnostics": [
+        {
+          "wallDelayMs": 0,
+          "measuredWallMs": 0.00020800000001486296,
+          "applicationElapsedMs": 0,
+          "remainingGraceMs": 60000,
+          "createdAt": "2026-10-17T12:02:00.001Z",
+          "askUntil": "2026-10-17T12:03:00.001Z"
+        },
+        {
+          "wallDelayMs": 1001,
+          "measuredWallMs": 1001.9521669999999,
+          "applicationElapsedMs": 1001,
+          "remainingGraceMs": 58999,
+          "createdAt": "2026-10-17T12:02:00.001Z",
+          "askUntil": "2026-10-17T12:03:00.001Z"
+        }
+      ],
+      "pre_separator_normalization_sha256": "2e18996a7fe3b4976e57f68599b7fc80f9023bf07421a1d25052729174b8e5b8"
+    }
+  },
+  "proof_sha256": "a7cddece297fa3c25ad39abbff19eb864182f34907478ab41e42ff725d24ffe4",
+  "classification": "Same PR74 stale clock P2; all sources/database identical to independently tested combined tree",
+  "database_stopped": true,
+  "external_sends": 0,
+  "path_normalization": "Local paths replaced and whitespace-only TAP separator indentation removed; assertions/results unchanged."
+}
