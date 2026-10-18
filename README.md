@@ -26,7 +26,7 @@ ANDES es el nombre del repositorio y del proyecto; Tándem es la app; GOAT es el
 ## Para el jurado: cómo entrar
 
 > [!IMPORTANT]
-> **La demo guiada está EN CONSTRUCCIÓN y todavía no hay URL.** El recorrido de abajo es el diseño aprobado, no algo que ya se pueda abrir. Lo define la spec `docs/superpowers/specs/2026-10-18-functional-phone-demo-design.md`, en la rama `docs/functional-phone-demo-spec`, que aún no está en `main`.
+> **La demo guiada está EN CONSTRUCCIÓN y todavía no hay URL.** El recorrido de abajo es el diseño aprobado, no algo que ya se pueda abrir. Lo define la [spec de la demo funcional](https://github.com/Bimbi-Dev/andes-hackathon/blob/docs/functional-phone-demo-spec/docs/superpowers/specs/2026-10-18-functional-phone-demo-design.md), en la rama `docs/functional-phone-demo-spec`, que aún no está en `main`.
 
 **Demo:** [[PENDIENTE: URL de la demo]]
 
@@ -37,7 +37,7 @@ Recorrido previsto:
 1. **Empezar.**
 2. **Registra tu camión** (placa o apodo).
 3. **Agrega a tu contacto de emergencia** con su número. El contacto abre su link en otro teléfono y **verifica su propio número con un código SMS**.
-4. **El contacto acepta.** Sin un contacto aceptado no se puede crear el viaje: el backend une a los contactos al viaje solo al confirmarlo.
+4. **El contacto acepta.** La app guiada pide este contacto aceptado antes de dejarte crear el viaje, porque el backend une a los contactos al viaje solo en el momento de confirmarlo.
 5. **Crea el viaje**: origen, destino, hora estimada de llegada y camión. Revisas y confirmas.
 6. **Comparte la ubicación.** El contacto la ve con su hora y su precisión.
 7. **SOS** (avisa al instante) o **Estoy bien** (responde a un check del servidor).
@@ -100,7 +100,7 @@ La interfaz se diseña para español y portugués de Brasil. La demo usa Perú (
 | Colegas | SMS y WhatsApp |
 | Grupo de WhatsApp de choferes | Diseñado como un trabajo aparte, pero hoy **siempre queda «no disponible»** (`group_support_unverified`): no hemos verificado que el proveedor entregue a grupos. Los mensajes individuales nunca lo reemplazan. |
 
-Tocar SOS varias veces no duplica avisos: todos los toques se unen al mismo episodio. «Llegué» no cierra un SOS abierto. La entrega real por Zavu no está confirmada todavía; sin ella, la demo muestra cada canal como «no habilitado».
+Tocar SOS varias veces no duplica avisos: todos los toques se unen al mismo episodio. «Llegué» no cierra un SOS abierto. La entrega real por Zavu no está confirmada todavía; sin ella, cada trabajo de envío queda en estado `unavailable` y la pantalla del contacto lo muestra como «No disponible».
 
 **7. Los contactos registran lo que hicieron.** Un contacto puede marcar que recibió la alerta y registrar qué acción tomó. Son hechos separados: entregado no es leído, y leído no es ayuda.
 
@@ -128,7 +128,7 @@ Tocar SOS varias veces no duplica avisos: todos los toques se unen al mismo epis
 **Todavía no:**
 
 - **La app web de producción es un cascarón.** [`web/src/main.tsx`](web/src/main.tsx) monta el shell sin rutas ni sesión: las pantallas de cada función aparecen como «no disponible».
-- **Las pantallas del conductor y el recorrido guiado** se están construyendo (spec en la rama `docs/functional-phone-demo-spec`).
+- **Las pantallas del conductor y el recorrido guiado** se están construyendo ([spec](https://github.com/Bimbi-Dev/andes-hackathon/blob/docs/functional-phone-demo-spec/docs/superpowers/specs/2026-10-18-functional-phone-demo-design.md) en la rama `docs/functional-phone-demo-spec`).
 - **Nada está desplegado.** El script de la demo existe, pero no se ha ejecutado y no hay URL.
 - **La entrega real por Zavu no está confirmada.** Los envíos están apagados por defecto (`ZAVU_LIVE_SEND=false`).
 - **El viaje por voz** no está implementado.
@@ -198,7 +198,7 @@ Cada push y cada PR corren el workflow [`Backend checks`](.github/workflows/ci.y
 
 Hay además workflows con filtro de rutas para el kit de entrevistas, la cola de observaciones y el adaptador del teléfono. Ninguna prueba envía mensajes reales: todos los teléfonos e identidades son sintéticos.
 
-**Revisión.** A la fecha hay 37 PRs fusionados (algunos a ramas de integración que luego llegaron a `main`). Las reglas están en [`CONTRIBUTING.md`](CONTRIBUTING.md): Robert fusiona todos los PRs, incluidos los suyos; cada hallazgo accionable se resuelve en su hilo con el commit del arreglo y su prueba de regresión; y la fusión se hace con `--match-head-commit` sobre el SHA revisado, para que un cambio de último minuto la rechace. Antes de fusionar se exigen los arreglos pedidos en la revisión, cada uno con su prueba de regresión, y los revisores usan pruebas de mutación para comprobar que esa prueba falla si se revierte el arreglo. El [oráculo de aceptación](evidence/app-acceptance/README.md), por ejemplo, registra los contraejemplos que fallaban antes de su corrección. Los límites aceptados en vez de arreglados quedan escritos (ver [Limitaciones](#limitaciones)).
+**Revisión.** Todo el trabajo entra por PR desde el 17 de octubre de 2026 (ver la [lista de PRs fusionados](https://github.com/Bimbi-Dev/andes-hackathon/pulls?q=is%3Apr+is%3Amerged)); algunos pasan primero por ramas de integración que luego llegaron a `main`. Las reglas están en [`CONTRIBUTING.md`](CONTRIBUTING.md): Robert fusiona todos los PRs, incluidos los suyos; cada hallazgo accionable se resuelve en su hilo con el commit del arreglo y su prueba de regresión; y la fusión se hace con `--match-head-commit` sobre el SHA revisado, para que un cambio de último minuto la rechace. Antes de fusionar se exigen los arreglos pedidos en la revisión, cada uno con su prueba de regresión, y los revisores usan pruebas de mutación para comprobar que esa prueba falla si se revierte el arreglo. El [oráculo de aceptación](evidence/app-acceptance/README.md), por ejemplo, registra los contraejemplos que fallaban antes de su corrección. Los límites aceptados en vez de arreglados quedan escritos (ver [Limitaciones](#limitaciones)).
 
 ## Tracción
 
