@@ -12,6 +12,7 @@ project.json
 !.env.example
 .envrc
 *.pem
+!infra/rds-global-bundle.pem
 *.key
 
 # OS / editor
@@ -23,6 +24,10 @@ RUNBOOK.md
 
 # dependencies
 node_modules/
+dist/
+
+# Account-specific deployment inputs/results
+infra/*.local.json
 
 # Real participant material stays outside Git
 evidence/private/

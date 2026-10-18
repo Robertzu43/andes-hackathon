@@ -1,5 +1,7 @@
 # Complete Andes plan
 
+Current local architecture decision: [ADR-002](architecture/ADR-002-aws-durable-dispatch.md), selected by Robert’s delegation, supersedes earlier implementation assumptions about global dispatch fencing, closure ordering and single-channel routing. The original issue text below remains a provenance snapshot; issue owners/blockers/evidence gates and remote issue states are not changed by the design decision.
+
 All 63 original nodes are retained below. The 44 task nodes map to GitHub issues; the 19 actions/notes remain explicit flow, gates and context.
 
 <a id="root"></a>
@@ -18,6 +20,8 @@ Positioning: a direct-to-driver service for small owner-operators, with simple o
 Design for Spanish and Brazilian Portuguese, configurable country/locale, international phone numbers and local time zones. Additional language coverage must be stated explicitly. Validation may start with a small evidence-selected cohort and corridor in any Latin American country. Record the countries, languages and conditions actually tested; a local sample does not validate the whole region. Each enabled country/channel/language combination needs its own support evidence, with unsupported conditions shown honestly.
 
 Critical scenarios: a freight driver requests help or reports a security incident; a driver reports tiredness and needs a safe rest/support action; or an agreed check-in/arrival is missed and the trusted contact cannot tell whether to act. Intended benefit: reduce avoidable delay to appropriate contact action without increasing driving distraction or alarm burden. Phone signal -> qualified observation/report -> bounded check-in or explicit help -> attributed/uncertain alert -> contact acknowledgement -> recorded action is the causal chain to test. Phone telemetry and missed replies alone do not establish sleep or robbery. Any later automatic detection or stronger safety claim requires independent validation; weapon detection is not an implemented capability.
+
+Core journey: while stationary, a freight driver describes a haul by voice note or natural-language text, reviews and confirms the proposed trip, then starts phone-based live location sharing with selected accepted trusted contacts. Contacts follow current location while supported observations are available, with timestamp, accuracy and explicit stale/unavailable states. The trip continues through the existing rest, check-in, help, escalation, contact-action and arrival flows. Voice/text interpretation never activates a trip or grants access without driver confirmation.
 
 Incoming flow: Entry/context.
 
@@ -150,6 +154,8 @@ Tie the capability matrix to the devices, carriers, connectivity and languages r
 
 Qualify the recorder in the freight cab use context when actual testing is authorised: phone placement, navigation/calls, mounting vibration, charging and connectivity may affect observations. Do not treat motion or a quiet phone as evidence of sleep, assault or cargo theft. Start with the available iPhone; keep Android and other configurations untested until measured.
 
+Test microphone capture and phone-to-contact location updates on physical devices, including navigation, locked screen, background, permission revocation and reconnect. Define and measure supported update cadence, end-to-end latency, stale threshold and battery cost before claiming live tracking. Continuous sharing throughout an active trip is the target experience, not an established browser capability; if locked/background tracking fails, record the platform gap and required platform decision in #12. A foreground-only demonstration does not satisfy continuous background tracking.
+
 Incoming flow: Reconstruct freight trip incidents.
 
 Codus node: `pn_mvcq4l8x_bee2e7`
@@ -196,6 +202,8 @@ Keep country, locale, message templates, channel eligibility and verified emerge
 
 The product boundary is a driver-controlled account with one or two freight trucks; a corporate fleet tenant or dispatcher workflow is not a prerequisite. Extend the existing event contract with typed fatigue/rest and security reports, reporter/source and corroboration state. These are requirements for the existing architecture task, not a new fleet-management product.
 
+Include voice/text trip intake and authorised live location sharing in the component and API contracts. Robert owns transcription/extraction integration, validated draft/confirmation contracts and location ingestion/read/update authorisation; Sebastian owns recording/text entry, review/correction, phone capture and contact-map UI. Treat audio, text and model output as untrusted input: bound size/duration and supported formats, validate extracted fields, resolve truck/contact references only within the acting driver’s permissions, and prevent instructions in input from granting access or executing actions. Define audio/transcript processing disclosure, restricted access and minimal retention/deletion; do not place raw recordings or contact-link secrets in logs. Choose the update transport after #9 evidence; the transport does not solve phone background capture.
+
 Incoming flow: Set evidence and stop gates.
 
 Codus node: `pn_mvcq4m7h_1e9695`
@@ -227,6 +235,8 @@ Validate each enabled language with drivers and contacts who use it, including t
 
 Use freight-driver terminology: Trucks / Camiones / Caminhões, freight trip, rest and trusted contacts. Show fatigue/rest and security/help reporting without requiring an incident description while moving; collect detailed context when stationary or through an authorised contact. The default flow must be usable by one owner-operator without a company dashboard.
 
+Start Trip accepts a voice note or natural-language text while stationary. Show the transcript/proposed origin, destination, truck, departure, arrival date/time zone, planned stops and contacts; allow corrections and ask for missing or ambiguous details. Require explicit confirmation of the final trip and sharing recipients before activation. Test Spanish and Brazilian Portuguese, denied microphone permission, transcription failure and ambiguous names/times; typed/manual correction remains available. Show recording/processing/error states without claiming that a draft is an active trip.
+
 Entry in this section.
 
 Codus node: `pn_mvcq4rfu_e36ab0`
@@ -253,6 +263,8 @@ Claim: a named contact is willing and able to take a useful action, not merely r
 
 Store each contact's preferred language, phone-number country and verified reachable channels independently from the driver's country. Confirm mutual understanding of the localised message and agreed action; a foreign number does not imply nearby physical assistance.
 
+Obtain per-trip consent for live location sharing with each selected accepted contact, with a clear duration and revocation control. Distinguish map-view permission from incident-response permission. A scoped contact link is a bearer credential: communicate forwarding risk, make it expiring/revocable, and prevent access to other trips or full historical routes by default. Revoking live sharing must not silently cancel agreed check-in deadlines; explain any resulting change to contact availability.
+
 Incoming flow: Verify driver and trucks.
 
 Codus node: `pn_mvcq4s7y_319dc6`
@@ -267,6 +279,8 @@ Make departure/destination country context and arrival time zone explicit where 
 
 Associate each freight trip with the selected truck and driver, planned rest/check-in arrangement and agreed contacts. Use only the transport context needed for safety; cargo value, customer details and manifests are not required default inputs.
 
+Implement voice-note transcription and natural-language text extraction into a driver-owned trip draft, followed by clarification, correction and explicit confirmation. Missing or ambiguous origin/destination, truck, contact or arrival date/time zone must not be silently invented; optional fields remain optional. Validate the confirmed draft against current truck/contact permissions and the supported sharing mode, then durably register the trip, grants and deadlines before acknowledging activation. Test equivalent voice/text descriptions, malformed or instruction-bearing model output, ambiguous “tomorrow at six”, revoked contacts, stale draft confirmation, failed transcription and repeated start requests. Neither a transcript nor an unconfirmed draft starts tracking, sends notifications or schedules escalation.
+
 Incoming flow: Validate the trusted circle.
 
 Codus node: `pn_mvcq4sje_2fe977`
@@ -278,6 +292,8 @@ Model planned rest, extension, cancellation and arrival with explicit server ack
 Acceptance evidence: deterministic event replay of arrival versus worker dispatch, delayed offline closure, repeated taps, restart and expired pause. Zero obsolete escalation may be initiated after committed resolution; if the provider already accepted a send, record that fact and reconcile rather than promise recall. The same final state must appear on Active Trip, Contact Response and Summary. Preserve unresolved contact/driver disagreement and retest the failing race.
 
 Record planned and reported actual rest separately, including the driver's attributed tiredness/sleepiness report when supplied. A parked truck or a break timer does not establish that the driver slept or recovered.
+
+On committed arrival or cancellation, end live location publication and contact-map access for that trip, including existing update subscriptions; retain summary/incident access only under its separate scope. Test delayed location uploads, already-open contact views and reconnect after closure. Location already viewed or copied cannot be recalled. Rest or extension follows the explicitly confirmed sharing agreement rather than silently changing recipients or visibility.
 
 Incoming flow: Register the trip and limits.
 
@@ -296,6 +312,8 @@ Represent country context, user/contact locale and the provenance or uncertainty
 
 Add explicit event categories for fatigue/sleepiness self-report, planned/started/ended rest, security concern, reported attempted robbery, reported robbery/theft, help request and independently corroborated outcome. Preserve reporter role/source, event time and uncertainty, source/receipt times, truck/trip reference, location accuracy or unknown context, reported action and verification status. Reporter information and evidence references remain access-controlled. Test that no telemetry or no-response rule silently upgrades a report to confirmed sleep/crime; the schema must retain contradictory accounts.
 
+Version the trip-draft/confirmation and location-sharing contracts: input modality, confirmed fields/revision, grant recipient/scope/expiry/revocation, and location sample ID/sequence, observed/received times, coordinates and accuracy. Separate proposed fields from confirmed values. Preserve location provenance without logging raw audio, transcripts, bearer links or unnecessary precise coordinates. Test duplicate/reordered samples and permission changes without treating a location update as a driver wellbeing response.
+
 Entry in this section.
 
 Codus node: `pn_mvcq4wd4_d71f24`
@@ -305,6 +323,8 @@ Codus node: `pn_mvcq4wd4_d71f24`
 Capture permission-gated GPS/motion only in the tested device matrix. Label quality, route progress and candidate motion changes; phone drops, potholes, handling and passenger movement remain confounders, not confirmed crashes/assault/sleep.
 
 Use safe stationary handling and controlled recordings with separate observer timestamps to test these confounders. Compare battery/data consumption with a matched no-app session. Accept only observations whose provenance, freshness and resource cost fit the preregistered capability budget; unsupported raw streams stay unavailable. Remove a motion rule that adds false concern without independently observable benefit. Do not add computer vision or medical sensing to repair the hypothesis.
+
+During an active, confirmed trip, collect and send location updates only with the driver’s permission and in measured supported phone states. Expose capture/upload failure and stop capture on trip closure or permission withdrawal. Qualify cadence, freshness and battery/data use with #9; a background connection or push notification alone does not prove fresh GPS capture.
 
 Incoming flow: Define auditable trip events.
 
@@ -330,6 +350,8 @@ Buffer bounded telemetry, retain observation time and reconcile after reconnect 
 
 Fault cases: airplane mode, screen lock/background, browser kill, shutdown, delayed batch and reordered upload. The external observer records when availability changed. Accept: no fresh location/wellbeing claim inside an unobserved interval; last confirmed position/time and uncertainty remain visible, and agreed lost-contact action follows server deadlines. Do not “fix” missing coverage by escalating indefinitely or inventing a cause.
 
+Implement authorised ingestion, current-location reads and update delivery for accepted per-trip contacts. Validate sample identity, coordinate/accuracy bounds, timestamps and ordering; reject cross-driver/trip writes and prevent delayed samples from replacing newer positions. Recheck grants for reads, reconnects and delivery over existing subscriptions so expiry, revocation or trip closure prevents further server disclosure. On reconnect obtain an authorised current snapshot and preserve observation age; never animate buffered points as current movement. Test two drivers/two trips, revoked/expired links, open subscriptions at revocation, duplicate/out-of-order uploads and prolonged outages. Define bounded buffering and measured freshness/latency limits in #12/#18; server check-in deadlines remain independent of location delivery.
+
 Incoming flow: Qualify road and time context.
 
 Codus node: `pn_mvcq4xju_95fa11`
@@ -339,6 +361,8 @@ Codus node: `pn_mvcq4xju_95fa11`
 Active Trip and Contact Response separately show last driver response, last usable location, server deadline and notification state. No browser timer or silent push is the sole owner of an agreed contact deadline.
 
 Compare UI state, device observer log and server event trace through suspension, permissions loss, restart and reconnection. A driver/contact must correctly explain what is known and unknown in a walkthrough. Accept zero false live-monitoring assertions in required fixtures. Any confusion that could delay help or create false reassurance reopens the capability/UX gate; activity indicators alone do not prove safety.
+
+Provide a trusted-contact live map showing the latest authorised position, observed time/age, accuracy, sharing state and current/stale/unavailable status. Keep location freshness separate from last driver response and alert/action status. Test updates between two physical devices, dropped updates, stale thresholds, reconnect and access revocation; the map must age into a stale state even when no new message arrives. No interpolation or “live” badge may imply an unobserved position.
 
 Incoming flow: Make coverage gaps explicit.
 
@@ -518,6 +542,8 @@ Future verification only, after the evidence contract is fixed. Use synthetic/co
 Run current practice and proposed policy on matched safe scenarios; retain development/holdout separation. Save revision, configuration, device versions, observer labels, source/receipt clock uncertainty and every failure. A scenario matrix maps each H1/H2/H3 constraint to an existing verification axis. No real emergency, deliberately tired driving or external contact is authorised by this plan edit.
 
 Include safe synthetic or consented freight scenarios for an explicit security report, a reported attempted robbery, a fatigue/rest request, ordinary late delivery, a planned freight stop and contradictory incident accounts. Prove reporting, provenance and response handling; no test induces robbery or drowsy driving.
+
+Add end-to-end voice/text draft → correction → confirmation → durable start → authorised contact map → check-in/help → arrival scenarios. Include transcription failure, ambiguous arrival, forged extracted contact references, duplicate start, stale/out-of-order locations, two-trip isolation, revoked access on an open map and closure during reconnect. Use synthetic or specifically consented inputs. Verify phone-to-contact latency and capture limits separately from deterministic backend fixtures; report unsupported background modes explicitly.
 
 Entry in this section.
 
