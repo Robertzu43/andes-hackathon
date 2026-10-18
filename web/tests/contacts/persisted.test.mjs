@@ -34,7 +34,7 @@ function signIn(journey, actorId, view, tripId, driverId) {
 }
 async function invite(f, journey) {
   signIn(journey, f.me.id, 'driver');
-  assert.equal(await journey.inviteContact({ contactId: f.contactIdentity.id, phone: '+5511999990000', map: true, incident: true }), 'recorded');
+  assert.equal(await journey.inviteContact({ contactId: f.contactIdentity.id, phone: '+15555550100', map: true, incident: true }), 'recorded');
   return journey.getState().invitation;
 }
 async function sos(f, tripId) {
