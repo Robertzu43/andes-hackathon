@@ -1,0 +1,157 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { MemorySession, createApiClient } from '../../src/lib/api/index.ts';
+
+// Wire oracle: PR65 docs/contracts/client-read.md and its actual backend integration tests.
+const id = n => `${n.toString(16).padStart(8, '0')}-1111-4111-8111-111111111111`;
+const stamp = '2026-10-17T12:00:00.000Z';
+const profileData = { id: id(1), phoneVerified: true };
+const profile = { ...profileData, readAt: stamp };
+const truck = { id: id(2), label: 'Caminhão sintético' };
+const contact = { id: id(3), contactId: id(4), role: 'colleague', map: { requested: true, accepted: true },
+  incident: { requested: true, accepted: false }, status: 'revoked', acceptedAt: stamp,
+  revokedAt: '2026-10-17T12:01:00.000Z', revokedBy: 'contact' };
+const summary = { id: id(5), truckId: id(2), origin: 'Synthetic origin', destination: 'Synthetic destination',
+  country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo', status: 'active', mapActive: true,
+  checkinsActive: true, paused: false, version: 1, createdAt: stamp, closedAt: null,
+  expectedArrivalAt: '2026-10-17T18:00:00.000Z', sharingStoppedAt: null, contactGrantIds: [id(3)] };
+const recent = { ...summary, id: id(6), status: 'arrived', mapActive: false, checkinsActive: false,
+  closedAt: '2026-10-17T13:00:00.000Z' };
+const trips = { active: [summary], recent: [recent], limits: { active: 50, recent: 20 }, hasMore: { active: false, recent: false }, readAt: stamp };
+const bootstrap = { profile: profileData, trucks: [truck], contacts: [contact], trips: { active: [summary], recent: [recent] },
+  limits: { trucks: 100, contacts: 100, activeTrips: 50, recentTrips: 20 },
+  hasMore: { trucks: false, contacts: false, activeTrips: false, recentTrips: false }, readAt: stamp };
+
+function fixture(reply) {
+  const session = new MemorySession();
+  session.setCredentials({ issuer: 'https://identity.example.invalid', subject: 'synthetic-A', accessToken: 'synthetic.A', expiresAt: Date.now() + 60_000 });
+  const api = createApiClient({ baseUrl: 'https://api.example.invalid/', session, fetch: reply });
+  return { api, session };
+}
+
+test('five additive reads use only their actual GET routes with no owner/body/key', async t => {
+  for (const [method, path, result] of [
+    ['getProfile', '/v1/profile', profile], ['getBootstrap', '/v1/bootstrap', bootstrap],
+    ['listTrucks', '/v1/trucks', { trucks: [truck], limit: 100, hasMore: false, readAt: stamp }],
+    ['listContacts', '/v1/contacts', { contacts: [contact], limit: 100, hasMore: false, readAt: stamp }],
+    ['listTrips', '/v1/trips', trips],
+  ]) {
+    await t.test(method, async () => {
+      let calls = 0;
+      const { api } = fixture(async (url, init) => {
+        calls += 1;
+        assert.equal(url.pathname, path); assert.equal(url.search, '');
+        assert.equal(init.method, 'GET'); assert.equal(init.body, undefined);
+        assert.equal(init.headers['Idempotency-Key'], undefined);
+        assert.equal(init.headers.Authorization, 'Bearer synthetic.A');
+        assert.equal(init.credentials, 'omit'); assert.equal(init.cache, 'no-store');
+        return Response.json({ ...result, privateBackendField: 'must-not-project' });
+      });
+      assert.deepEqual(await api[method](), result);
+      assert.equal(calls, 1);
+    });
+  }
+});
+
+test('bootstrap preserves revoked management facts, regional fields, selected grants and truncation', async () => {
+  const body = structuredClone(bootstrap); body.hasMore.contacts = true;
+  const { api } = fixture(async () => Response.json(body));
+  const result = await api.getBootstrap();
+  assert.equal(result.contacts[0].status, 'revoked');
+  assert.equal(result.contacts[0].map.accepted, true); // Historical acceptance is not current permission.
+  assert.equal(result.contacts[0].revokedBy, 'contact');
+  assert.equal(result.hasMore.contacts, true);
+  assert.equal(result.trips.active[0].timeZone, 'America/Sao_Paulo');
+  assert.deepEqual(result.trips.active[0].contactGrantIds, [id(3)]);
+  assert.equal(result.readAt, stamp);
+  assert.equal('readAt' in result.profile, false); // Bootstrap has one root timestamp, not a row clock.
+});
+
+test('empty focused lists and unverified profiles remain real empty/unverified facts', async () => {
+  const { api } = fixture(async url => url.pathname.endsWith('/profile')
+    ? Response.json({ id: id(1), phoneVerified: false, readAt: stamp })
+    : Response.json({ trucks: [], limit: 100, hasMore: false, readAt: stamp }));
+  assert.deepEqual(await api.getProfile(), { id: id(1), phoneVerified: false, readAt: stamp });
+  assert.deepEqual(await api.listTrucks(), { trucks: [], limit: 100, hasMore: false, readAt: stamp });
+});
+
+test('list bounds, duplicate identities, wrong limits and contradictory buckets fail closed', async () => {
+  const cases = [
+    ['listTrucks', { trucks: Array.from({ length: 101 }, (_, n) => ({ id: id(n + 20), label: 'Synthetic' })), limit: 100, hasMore: true }],
+    ['listTrucks', { trucks: [truck, truck], limit: 100, hasMore: false }],
+    ['listTrucks', { trucks: [truck], limit: 50, hasMore: false }],
+    ['listTrips', { ...trips, active: [recent] }],
+    ['listTrips', { ...trips, recent: [summary] }],
+    ['getBootstrap', { ...bootstrap, hasMore: { trucks: false } }],
+  ];
+  for (const [method, body] of cases) {
+    const { api } = fixture(async () => Response.json({ readAt: stamp, ...body }));
+    await assert.rejects(api[method](), error => error.kind === 'invalid_response' && error.outcome === 'not_applicable');
+  }
+});
+
+test('unverified and malformed consent/profile responses cannot become accepted capabilities', async () => {
+  const cases = [
+    ['getProfile', { id: id(1), phoneVerified: 'true' }],
+    ['getProfile', { id: id(1) }],
+    ['listContacts', { contacts: [{ ...contact, role: 'boss' }], limit: 100, hasMore: false }],
+    ['listTrips', { ...trips, active: [{ ...summary, expectedArrivalAt: 'tomorrow' }] }],
+    ['listTrips', { ...trips, active: [{ ...summary, sharingStoppedAt: 'yesterday' }] }],
+    ['listContacts', { contacts: [{ ...contact, status: 'accepted', revokedAt: null, revokedBy: null, acceptedAt: null }], limit: 100, hasMore: false }],
+    ['listContacts', { contacts: [{ ...contact, map: { requested: false, accepted: true } }], limit: 100, hasMore: false }],
+    ['listContacts', { contacts: [{ ...contact, status: 'pending', revokedAt: null, revokedBy: null }], limit: 100, hasMore: false }],
+  ];
+  for (const [method, body] of cases) {
+    const { api } = fixture(async () => Response.json({ readAt: stamp, ...body }));
+    await assert.rejects(api[method](), error => error.kind === 'invalid_response');
+  }
+});
+
+test('catalog decoders never project phone values even if a legacy reply contains them', async () => {
+  const phone = '+15555550123';
+  const legacyContact = { ...contact, phone };
+  const responses = [
+    ['getProfile', { ...profile, phone }, profile],
+    ['listContacts', { contacts: [legacyContact], limit: 100, hasMore: false, readAt: stamp },
+      { contacts: [contact], limit: 100, hasMore: false, readAt: stamp }],
+    ['getBootstrap', { ...bootstrap, profile: { ...profileData, phone }, contacts: [legacyContact] }, bootstrap],
+  ];
+  for (const [method, wire, expected] of responses) {
+    const { api } = fixture(async () => Response.json(wire));
+    const result = await api[method]();
+    assert.deepEqual(result, expected);
+    assert.ok(!JSON.stringify(result).includes(phone));
+  }
+});
+
+test('read failures remain failures rather than fabricated empty catalogues', async () => {
+  for (const status of [401, 403, 404, 409, 422, 500]) {
+    const { api } = fixture(async () => Response.json({ code: 'invalid_request' }, { status }));
+    await assert.rejects(api.getBootstrap(), error => error.status === status);
+  }
+  const { api } = fixture(async () => { throw new Error('synthetic network loss'); });
+  await assert.rejects(api.getBootstrap(), error => error.kind === 'network' && error.outcome === 'not_applicable');
+});
+
+test('all five reads require and preserve the source timestamp rather than substituting a client clock', async () => {
+  for (const [method, body] of [['getProfile', profile], ['getBootstrap', bootstrap], ['listTrips', trips],
+    ['listTrucks', { trucks: [], limit: 100, hasMore: false }],
+    ['listContacts', { contacts: [], limit: 100, hasMore: false }]]) {
+    const { api } = fixture(async () => Response.json({ ...body, readAt: stamp }));
+    assert.equal((await api[method]()).readAt, stamp);
+    for (const readAt of [undefined, null, 'not-a-date']) {
+      const bad = fixture(async () => Response.json({ ...body, readAt }));
+      await assert.rejects(bad.api[method](), error => error.kind === 'invalid_response');
+    }
+  }
+});
+
+test('an old bootstrap reply cannot populate a replacement session', async () => {
+  let finish;
+  const { session, api } = fixture(async () => new Promise(resolve => { finish = resolve; }));
+  const pending = api.getBootstrap();
+  session.setCredentials({ issuer: 'https://identity.example.invalid', subject: 'synthetic-B', accessToken: 'synthetic.B', expiresAt: Date.now() + 60_000 });
+  finish(Response.json(bootstrap));
+  await assert.rejects(pending, error => error.kind === 'session_changed');
+  assert.equal(session.snapshot().subject, 'synthetic-B');
+});

@@ -428,3 +428,29 @@ test('catalog runtime roles and arrival or sharing facts follow the current muta
   assert.equal((await f.req('POST', `/v1/trips/${trip}/sharing`, { state: 'resumed', reason: 'user' })).status, 200);
   assert.equal((await f.req('GET', '/v1/trips')).body.active[0].sharingStoppedAt, null);
 });
+
+test('the shared SDK consumes the real phone-free catalog responses and runtime fields', async t => {
+  const f = await fixture(t);
+  await f.trip([await f.grant()]);
+  const { MemorySession, createApiClient } = await import('../web/src/lib/api/index.ts');
+  const session = new MemorySession();
+  session.setCredentials({ issuer: 'https://synthetic.test', subject: 'driver', accessToken: f.driver, expiresAt: Date.now() + 3600000 });
+  const api = createApiClient({ baseUrl: 'https://synthetic.test', session, fetch: async (url, options) => {
+    const response = await f.app.inject({ method: options.method, url: url.pathname, headers: options.headers });
+    assert.equal(response.statusCode, 200, 'valid signed backend control');
+    assert.match(response.headers['content-type'], /application\/json/);
+    return new Response(response.body, { status: response.statusCode, headers: response.headers });
+  } });
+  t.after(() => session.clear());
+  for (const method of ['getProfile', 'getBootstrap', 'listTrucks', 'listContacts', 'listTrips']) {
+    const response = await api[method]();
+    assert.equal(response.readAt, f.ctx.clock().toISOString());
+    assert.ok(!JSON.stringify(response).includes('"phone":'));
+    if (method === 'getProfile') assert.deepEqual(response, { id: f.me.id, phoneVerified: true, readAt: response.readAt });
+    if (method === 'listContacts') assert.equal(response.contacts[0].role, 'family');
+    if (method === 'listTrips') {
+      assert.equal(response.active[0].expectedArrivalAt, null);
+      assert.equal(response.active[0].sharingStoppedAt, null);
+    }
+  }
+});
