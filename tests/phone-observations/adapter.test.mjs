@@ -148,7 +148,8 @@ test('GATE N2 explicit stop after suspension permanently clears resume intent', 
   }
 });
 
-test('GATE withdrawal blocks drain while deletion is pending, failed and complete', async () => {
+// Review 5560875615 supersedes the completed-wipe global drain expectation at 0912520.
+test('GATE withdrawal blocks global drain until deletion completes', async () => {
   let drains = 0;
   const b = queuedTripFixture({ drain() { drains += 1; return Promise.resolve(); } });
   await b.controller.drain(); assert.equal(drains, 1);
@@ -157,7 +158,7 @@ test('GATE withdrawal blocks drain while deletion is pending, failed and complet
   b.pending.reject(new Error('synthetic-delete-failure')); await deletion;
   assert.equal((await b.controller.drain()).ok, false); assert.equal(drains, 1);
   b.pipeline.revokeTrip = () => 0; await b.controller.revokeConsent();
-  assert.equal((await b.controller.drain()).ok, false); assert.equal(drains, 1);
+  await b.controller.drain(); assert.equal(drains, 2);
 });
 
 test('GATE gesture acquisition reports stop and revocation after synchronous native/sink delivery', () => {
@@ -244,7 +245,9 @@ test('GATE p6 unsupported permission names and wake-lock blocks stay separately 
   b.adapter.start(context()); b.adapter.acquireLocation(); await settle();
   assert.equal(b.adapter.snapshot().summary.permissionObserverErrors, 0);
   b.adapter.stopLocation(); b.platform.navigator.userActivation.isActive = false;
-  await b.adapter.requestWakeLock(); b.adapter.acquireLocation();
+  // Wake lock has its own visibility gate; it does not require GPS activation.
+  b.document.visibilityState = 'hidden'; await b.adapter.requestWakeLock();
+  b.document.visibilityState = 'visible'; b.adapter.acquireLocation();
   const diagnostics = b.events.filter(e => e.type === 'acquisition-blocked').map(e => e.data.stream);
   assert.ok(diagnostics.includes('wake-lock')); assert.ok(diagnostics.includes('geolocation')); b.adapter.stop();
   const c = fixture(); c.statuses.geolocation.addEventListener = () => { throw new TypeError('synthetic-listener-fault'); };
@@ -497,7 +500,8 @@ test('motion denies missing API and retains denied/unknown/rejected explicit ans
   assert.equal(c.adapter.snapshot().permission.motion.state, 'unknown');
 });
 
-test('R1 every terminal path emits exactly one stop beyond an exhausted ordinary budget', () => {
+// Review 5560875615 requires a final intent update after a resumable stop.
+test('R1 terminal paths reserve one stop and at most one final intent update', () => {
   for (const reason of ['event-budget', 'duration-budget', 'visibility-lost', 'pagehide', 'freeze', 'explicit-stop', 'consent-revoked']) {
     const b = fixture({ budget: { ...PROVISIONAL_BUDGET, maxEvents: reason === 'event-budget' ? 3 : 10 } });
     b.adapter.start(context()); b.adapter.acquireLocation({ watch: true });
@@ -513,9 +517,14 @@ test('R1 every terminal path emits exactly one stop beyond an exhausted ordinary
     assert.equal(b.last('session-stop').data.sharingState, 'stopped');
     assert.equal(b.last('session-stop').serverReceiptTime, null);
     const count = b.events.length;
-    old.success(fix()); old.failure({ code: 2 }); b.adapter.stop(); b.adapter.revokeConsent();
+    old.success(fix()); old.failure({ code: 2 });
     assert.equal(b.events.length, count);
     assert.equal(b.events.filter((e) => e.type === 'session-stop').length, 1);
+    b.adapter.stop(); b.adapter.revokeConsent();
+    const additional = ['explicit-stop', 'consent-revoked'].includes(reason) ? 0 : 1;
+    assert.equal(b.events.length, count + additional);
+    assert.equal(b.events.filter(e => e.type === 'session-stop').length, 1 + additional);
+    b.adapter.stop(); b.adapter.revokeConsent(); assert.equal(b.events.length, count + additional);
     assert.equal(b.timers.size + b.watches.size + b.document.count() + b.platform.count(), 0);
     assert.ok(count <= b.config.budget.maxEvents + 1);
   }
@@ -1209,4 +1218,134 @@ test('N13 queued location events are redacted on sink withdrawal before subseque
   assert.equal(fixes[1].data.coordinates, null); assert.equal(fixes[1].data.redaction, 'consent-withdrawn');
   assert.equal(JSON.stringify(adapter.snapshot()).includes('-12.04318'), false);
   assert.deepEqual(b.cleared, [993]); assert.equal(adapter.snapshot().summary.sinkErrors, 0);
+});
+
+// New contract regressions from Robert's review 5560875615 of 0912520.
+test('DEMO52 stale after-error query cannot cancel a newer gesture GPS request', async () => {
+  for (const watch of [false, true]) {
+    const b = fixture(); const late = deferred(); let queries = 0;
+    b.statuses.geolocation.state = 'prompt';
+    b.platform.navigator.permissions.query = () => ++queries === 1 ?
+      Promise.resolve(b.statuses.geolocation) : late.promise;
+    b.adapter.start(context()); b.adapter.acquireLocation({ watch }); await settle();
+    (watch ? b.latestWatch() : b.requests.at(-1)).failure({ code: 1 });
+    assert.equal(b.adapter.acquireLocation({ watch }).ok, true);
+    const retry = watch ? b.latestWatch() : b.requests.at(-1);
+    late.resolve({ state: 'prompt' }); await settle();
+    retry.success(fix());
+    assert.equal(b.events.filter(e => e.type === 'geolocation').length, 1);
+    if (watch) assert.equal(b.watches.size, 1);
+    b.adapter.stop();
+  }
+});
+
+test('DEMO52 resume preserves denied or revoked GPS without saved location intent', async () => {
+  for (const grantedFirst of [false, true]) {
+    const b = fixture(); b.statuses.geolocation.state = grantedFirst ? 'granted' : 'denied';
+    b.adapter.start(context()); b.adapter.acquireLocation({ watch: true }); await settle();
+    if (grantedFirst) { b.statuses.geolocation.state = 'prompt'; b.statuses.geolocation.dispatch('change'); }
+    b.adapter.stopLocation(); b.platform.dispatch('pagehide');
+    assert.equal((await b.adapter.resume()).reason, 'permission-denied-or-revoked');
+    assert.equal(b.adapter.acquireLocation({ watch: true }).ok, false);
+    assert.equal(b.watches.size, 0); b.adapter.stop();
+  }
+});
+
+test('DEMO52 unsupported wake-lock polling preserves GPS history and session budget', async () => {
+  const b = fixture(); b.adapter.start(context()); b.adapter.acquireLocation({ watch: true });
+  b.latestWatch().success(fix());
+  for (let n = 0; n < 1000; n += 1) assert.equal((await b.adapter.requestWakeLock()).reason, 'api-unavailable');
+  const snap = b.adapter.snapshot();
+  assert.equal(snap.state, 'started'); assert.ok(snap.events.some(e => e.type === 'geolocation'));
+  assert.equal(b.events.filter(e => e.type === 'wake-lock').length, 1);
+  assert.equal(snap.summary.requests, 1); assert.equal(snap.summary.suppressedBlocked, 999);
+  b.adapter.stop();
+});
+
+test('DEMO52 explicit stop after suspension sends one final nonresumable intent update', () => {
+  const b = fixture(); let depth = 0, maxDepth = 0, adapter;
+  adapter = createPhoneObservationAdapter({ ...b.config, sink(event) {
+    depth += 1; maxDepth = Math.max(maxDepth, depth); b.events.push(event);
+    if (event.type === 'session-stop' && !event.data.resumable) adapter.stop();
+    depth -= 1;
+  } });
+  adapter.start(context()); adapter.acquireLocation({ watch: true }); b.platform.dispatch('pagehide');
+  assert.equal(b.last('session-stop').data.resumable, true);
+  adapter.stop();
+  assert.deepEqual(b.last('session-stop').data, { reason: 'explicit-stop', sharingState: 'stopped', resumable: false });
+  assert.equal(b.events.filter(e => e.type === 'session-stop').length, 2);
+  adapter.stop(); assert.equal(b.events.filter(e => e.type === 'session-stop').length, 2);
+  assert.equal(maxDepth, 1);
+});
+
+test('DEMO52 failed trip start cannot leave resumable capture after wake request suspension', async () => {
+  const b = queuedTripFixture(); const wake = deferred(); let calls = 0;
+  b.platform.navigator.wakeLock = { request: () => wake.promise };
+  const sink = b.pipeline.sink;
+  b.pipeline.sink = (event) => { sink(event); if (event.type === 'wake-lock' && event.data.state === 'requested') b.platform.dispatch('pagehide'); };
+  const watch = b.geo.watchPosition; b.geo.watchPosition = (...args) => { calls += 1; return watch(...args); };
+  assert.equal(b.controller.startSharing(trustedClick(b)).ok, false);
+  assert.equal((await b.controller.resumeSharing(trustedClick(b))).ok, false);
+  assert.equal(calls, 1); assert.equal(b.controller.snapshot().stopReason, 'explicit-stop');
+  let releases = 0; wake.resolve({ release() { releases += 1; } }); await settle(); assert.equal(releases, 1);
+});
+
+test('DEMO52 resumed location result settles after a synchronous sink stop', async () => {
+  const b = fixture(); let adapter; let stop = false;
+  adapter = createPhoneObservationAdapter({ ...b.config, sink(event) {
+    if (stop && event.type === 'geolocation') adapter.stop();
+  } });
+  adapter.start(context()); adapter.acquireLocation({ watch: true }); b.platform.dispatch('pagehide');
+  b.geo.watchPosition = success => { success(fix()); return 883; }; stop = true;
+  const result = await adapter.resume();
+  assert.equal(result.ok, false); assert.equal(result.location.ok, false);
+  assert.equal(result.location.reason, 'session-stopped'); assert.equal(adapter.snapshot().state, 'stopped');
+});
+
+test('DEMO52 synchronous watch cancellation cannot report successful acquisition', () => {
+  const b = fixture(); let adapter;
+  adapter = createPhoneObservationAdapter({ ...b.config, sink(event) {
+    if (event.type === 'geolocation') adapter.stopLocation();
+  } });
+  b.geo.watchPosition = success => { success(fix()); return 884; };
+  adapter.start(context()); assert.equal(adapter.acquireLocation({ watch: true }).ok, false); adapter.stop();
+});
+
+test('DEMO52 wake lock has no GPS gesture or OS permission gate', async () => {
+  for (const denied of [false, true]) {
+    const b = fixture(); const sentinel = Object.assign(new Target(), { released: false, release() {} });
+    let calls = 0; b.platform.navigator.wakeLock = { request() { calls += 1; return Promise.resolve(sentinel); } };
+    b.statuses.geolocation.state = denied ? 'denied' : 'granted';
+    b.adapter.start(context()); b.adapter.acquireLocation({ watch: true }); await settle();
+    if (!denied) b.latestWatch().failure({ code: 1 });
+    b.platform.navigator.userActivation.isActive = false;
+    assert.equal((await b.adapter.requestWakeLock()).ok, true); assert.equal(calls, 1);
+    assert.equal(b.adapter.acquireLocation({ watch: true }).ok, false); b.adapter.stop();
+  }
+});
+
+test('DEMO52 suspended consent withdrawal publishes terminal nonresumable state', async () => {
+  const b = fixture(); b.adapter.start(context()); b.adapter.acquireLocation({ watch: true }); b.platform.dispatch('pagehide');
+  b.adapter.revokeConsent();
+  assert.equal(b.adapter.snapshot().stopReason, 'consent-revoked');
+  assert.deepEqual(b.last('session-stop').data, { reason: 'consent-revoked', sharingState: 'stopped', resumable: false });
+  assert.equal((await b.adapter.resume()).ok, false);
+  b.adapter.revokeConsent(); assert.equal(b.events.filter(e => e.type === 'session-stop').length, 2);
+});
+
+test('DEMO52 global drain resumes for other trips only after this trip wipe succeeds', async () => {
+  const b = queuedTripFixture(); b.controller.startSharing(); const deletion = b.controller.revokeConsent();
+  assert.equal((await b.controller.drain()).ok, false); assert.equal(b.trace.includes('drain'), false);
+  b.pending.resolve(0); assert.equal((await deletion).ok, true);
+  await b.controller.drain(); assert.equal(b.trace.filter(x => x === 'drain').length, 1);
+  assert.equal(b.controller.startSharing().ok, false); assert.equal((await b.controller.resumeSharing()).ok, false);
+  assert.equal((await b.controller.flush()).ok, false);
+});
+
+test('DEMO52 trip factory needs no unused template sessionId', () => {
+  const b = fixture();
+  const controller = createTripPhoneObservations({ ...b.config, trip: { tripId: context().tripId, revision: context().revision },
+    reviewedContext: { key: b.config.contextKey, qualification: b.config.qualification, budget: b.config.budget },
+    locationConsent: { granted: true, tripId: context().tripId, reference: 'synthetic-consent' } });
+  assert.equal(controller.startSharing().ok, true); assert.ok(controller.snapshot().sessionId); controller.stopSharing();
 });
