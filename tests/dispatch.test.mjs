@@ -117,7 +117,7 @@ test('account and channel budgets persist and preserve emergency reserve across 
 test('early callbacks persist unmatched, exact response ID correlates, duplicates and contradictory late HTTP cannot regress delivery', async t => {
   const d=await runtime();const f=await fixture(t);const {jobs}=await sos(f);const p=provider();
   const attempt=await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,jobs[0],'a'),p);
-  const event={id:'evt_early',type:'message.delivered',timestamp:f.ctx.clock().getTime(),projectId:'prj_fixture',senderId:'snd_fixture',data:{messageId:'msg_early',channel:jobs[0].channel,to:'+15555550100',status:'delivered'}};
+  const event={id:'evt_early',type:'message.delivered',timestamp:f.ctx.clock().getTime(),projectId:'prj_fixture',senderId:'snd_fixture',data:{messageId:'msg_early',channel:jobs[0].channel,to:f.phoneFor('contact'),status:'delivered'}};
   await d.saveCallback(f.ctx,event,Buffer.from(JSON.stringify(event)));await d.saveCallback(f.ctx,event,Buffer.from(JSON.stringify(event)));
   assert.equal((await f.ctx.pool.query('SELECT disposition FROM provider_events')).rows[0].disposition,'unmatched');
   await d.finishAttempt(f.ctx,attempt,{state:'unknown'});
@@ -196,7 +196,7 @@ test('global revoke-first blocks every authorization and no grant lock upgrades 
 test('delivery facts never regress on late failed/queued/unknown callbacks and voice never implies human answer', async t => {
   const d=await runtime();const f=await fixture(t);const {jobs}=await sos(f);const sms=jobs.find(j=>j.channel==='sms');const voice=jobs.find(j=>j.channel==='voice');
   await d.runJob(f.ctx,sms,provider(),'sms');
-  const base={type:'message.delivered',timestamp:f.ctx.clock().getTime(),projectId:'prj_fixture',senderId:'snd_fixture',data:{messageId:'msg_fixture_1',channel:'sms',to:'+15555550100',status:'delivered'}};
+  const base={type:'message.delivered',timestamp:f.ctx.clock().getTime(),projectId:'prj_fixture',senderId:'snd_fixture',data:{messageId:'msg_fixture_1',channel:'sms',to:f.phoneFor('contact'),status:'delivered'}};
   for(const status of ['delivered','failed','queued','made_up']){const event={...base,id:'event_'+status,type:'message.'+status,data:{...base.data,status}};await d.saveCallback(f.ctx,event,Buffer.from(JSON.stringify(event)));}
   assert.equal((await f.ctx.pool.query('SELECT delivery_status FROM dispatch_attempts')).rows[0].delivery_status,'delivered');
   await d.runJob(f.ctx,voice,provider({async send(){return {state:'accepted',messageId:'msg_voice',status:'queued'};}}),'voice');

@@ -336,7 +336,7 @@ test('status shows the open check only to the driver and incident-scope contacts
   const f = await fixture(t);
   const scoped = async (subject, scope) => {
     const jwt = await f.token(subject); const id = (await f.req('GET', '/v1/me', undefined, jwt)).body.id;
-    const invitation = (await f.req('POST', '/v1/contacts', {contactId: id, phone: '+15555550100', map: true, incident: true})).body.id;
+    const invitation = (await f.req('POST', '/v1/contacts', {contactId: id, phone: f.phoneFor(subject), map: true, incident: true})).body.id;
     assert.equal((await f.req('POST', `/v1/contacts/${invitation}/accept`, scope, jwt)).status, 200);
     return {jwt, grant: invitation};
   };

@@ -16,6 +16,14 @@ preserve his PR59 fixes `935d1ed` (verify first) and `578600c` (calendar/hour24)
 including his source validation and regression. Existing PR59 history is preserved.
 PR81 remains a separate child; Robert owns approval and merge.
 
+PR65's catalog repair integrates main `5ea57adc73ee7872e1cbfc53e2beb9809a34ffad`
+after PR59 and PR81 merged. Its profile and standing-contact DTOs omit every phone value,
+including demo destinations and token claims. Shared SDK decoders follow
+`docs/contracts/client-read.md`: profile verification belongs to the current
+request, contacts carry their stored role, and trip summaries preserve nullable
+`expectedArrivalAt` and `sharingStoppedAt`. Invitation inputs still require the
+explicit destination phone; catalog responses never project it.
+
 | Operation | Actual HTTP contract |
 | --- | --- |
 | `getIdentity` | GET `/v1/me`; verified backend UUID, not an OIDC subject |
@@ -118,11 +126,11 @@ uses source times, never the current browser clock, and does not qualify either
 bound for field safety.
 
 All five PR65 read envelopes require their actual server readAt. Bootstrap has one
-root time, not invented timestamps on its profile/list entries. At de9e455 the server
-samples its handler clock before a repeatable-read read-only transaction. Preserve
-that value without assigning a different instant to the database snapshot. The
-older3ea6e1b implementation used read committed; its earlier evidence is not proof
-of de9e455 isolation. This client has not independently established SQL isolation.
+root time, not invented timestamps on its profile/list entries. The repaired server
+pins a repeatable-read read-only snapshot on telemetry capacity before sampling
+its clock. Preserve that value without substituting browser time. API integration
+tests cover the actual signed backend and shared SDK; PostgreSQL regressions cover
+snapshot consistency and independent read/SOS capacity.
 
 Lists preserve bounds and truncation:100 trucks,100 standing contacts,50 active and
 20 recent trips. Revoked grants retain historical accepted scopes without granting
@@ -130,8 +138,9 @@ current access. Errors stay errors. Collection404 is unsupported/endpoint_unavai
 not an empty list or missing individual resource. Recipient invitation/trip discovery
 remains a separate PR86 dependency.
 
-Phone access and projection remain backend authority; these client checks do not
-qualify live phone-number privacy or permit exposing live numbers in the demo.
+Catalog decoders discard phone properties even from legacy responses. The demo
+privacy regression uses a fictional configured live destination and performs no
+provider send; it does not qualify live participant or provider behavior.
 Trip summaries exclude raw draft text and coordinates.
 
 ## Journey and foundation integration
@@ -179,7 +188,9 @@ trusted release callback. The gateway has no built-in provider or demo identity.
 
 `getTripStatus` preserves the server's trip state/expected arrival, nullable asking
 check and `askUntil`, latest active or resolved incident, and individual job delivery
-states. Arrival can coexist with an active incident. A job's accepted/unknown/delivered
+states. The incident keeps its #77 `label` (robo/intento_robo/falsa_alarma/sin_senal/otro
+or null); an unknown label fails as invalid_response, and a backend without labels leaves
+the field absent. Arrival can coexist with an active incident. A job's accepted/unknown/delivered
 status is not contact acknowledgement or proof of help. The projection excludes
 phones, recipient IDs and coordinates; optional location is omitted when the route
 omits it. The response has no trip ID or readAt: bind it to the requested trip and
@@ -221,11 +232,10 @@ because tokens are never persisted; the backend's abandoned-world rule then stop
 automatic checks on the old trip, while an explicit SOS keeps escalating.
 
 `web/tests/api/runtime.test.mjs` covers this with synthetic HTTP. The real-backend
-`runtime.integration.mjs` extracts PR74 at 4c138ca, PR65's read module at 3ea6e1b and
-Q46's resource helper at c2501a4 (test-only archive) and needs an owned PostgreSQL:
+`runtime.integration.mjs` compiles the current tracked backend and migrations in a
+test-only archive, using Q46's resource helper at c2501a4 for owned PostgreSQL:
 
 ```sh
-git fetch origin pull/74/head pull/73/head pull/65/head
 APP_INTEGRATION_PG_BIN=/absolute/path/to/postgresql/bin \
 APP_INTEGRATION_PG_PORT=<owned-free-port> \
 ANDES_BACKEND_NODE_MODULES=/absolute/path/to/existing/backend/node_modules \
@@ -233,8 +243,10 @@ ANDES_TYPESCRIPT_TSC=/absolute/path/to/existing/typescript/bin/tsc \
   node --test web/tests/api/runtime.integration.mjs
 ```
 
-Those pins predate PR65's repeatable-read change (de9e455); results there are not
-evidence for the current backend's isolation.
+The previous frozen runtime/read pins are no longer its contract oracle. The test
+uses the actual app registration and checks phone-free catalogs, stored roles,
+arrival and sharing state through the shared SDK and real signed HTTP. Snapshot
+isolation and independent read/SOS capacity have separate PostgreSQL regressions.
 
 ## Reproduction and current evidence
 
@@ -278,7 +290,8 @@ removed afterward; CI uses PostgreSQL18. No browser, physical iOS, provider deli
 complete-app acceptance or general backend-isolation qualification follows.
 
 On #81 the API suite adds runtime.test.mjs (status, sharing and demo world), and
-`runtime.integration.mjs` passes7 real HTTP/PostgreSQL checks at its stated pins.
+`runtime.integration.mjs` covers7 real HTTP/PostgreSQL checks; PR65 rebinds those
+checks to the current backend instead of the former runtime/read pins.
 
 The frozen contact view store at e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6 confirms both
 contact and driver views remain closed after401, protected data clears, and explicit

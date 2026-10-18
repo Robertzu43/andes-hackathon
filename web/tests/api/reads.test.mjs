@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MemorySession, createApiClient } from '../../src/lib/api/index.ts';
 
-// Wire oracle: PR65 docs/contracts/client-read.md and src/client-read/routes.ts. Catalogs carry no phone values.
+// Wire oracle: PR65 docs/contracts/client-read.md and its actual backend integration tests.
 const id = n => `${n.toString(16).padStart(8, '0')}-1111-4111-8111-111111111111`;
 const stamp = '2026-10-17T12:00:00.000Z';
 const profileData = { id: id(1), phoneVerified: true };
@@ -67,7 +67,7 @@ test('bootstrap preserves revoked management facts, regional fields, selected gr
   assert.equal('readAt' in result.profile, false); // Bootstrap has one root timestamp, not a row clock.
 });
 
-test('empty focused lists and an unverified profile remain real empty/unverified facts', async () => {
+test('empty focused lists and unverified profiles remain real empty/unverified facts', async () => {
   const { api } = fixture(async url => url.pathname.endsWith('/profile')
     ? Response.json({ id: id(1), phoneVerified: false, readAt: stamp })
     : Response.json({ trucks: [], limit: 100, hasMore: false, readAt: stamp }));
@@ -92,8 +92,11 @@ test('list bounds, duplicate identities, wrong limits and contradictory buckets 
 
 test('unverified and malformed consent/profile responses cannot become accepted capabilities', async () => {
   const cases = [
-    ['getProfile', { id: id(1), phoneVerified: 'yes' }],
+    ['getProfile', { id: id(1), phoneVerified: 'true' }],
+    ['getProfile', { id: id(1) }],
     ['listContacts', { contacts: [{ ...contact, role: 'boss' }], limit: 100, hasMore: false }],
+    ['listTrips', { ...trips, active: [{ ...summary, expectedArrivalAt: 'tomorrow' }] }],
+    ['listTrips', { ...trips, active: [{ ...summary, sharingStoppedAt: 'yesterday' }] }],
     ['listContacts', { contacts: [{ ...contact, status: 'accepted', revokedAt: null, revokedBy: null, acceptedAt: null }], limit: 100, hasMore: false }],
     ['listContacts', { contacts: [{ ...contact, map: { requested: false, accepted: true } }], limit: 100, hasMore: false }],
     ['listContacts', { contacts: [{ ...contact, status: 'pending', revokedAt: null, revokedBy: null }], limit: 100, hasMore: false }],
@@ -101,6 +104,23 @@ test('unverified and malformed consent/profile responses cannot become accepted 
   for (const [method, body] of cases) {
     const { api } = fixture(async () => Response.json({ readAt: stamp, ...body }));
     await assert.rejects(api[method](), error => error.kind === 'invalid_response');
+  }
+});
+
+test('catalog decoders never project phone values even if a legacy reply contains them', async () => {
+  const phone = '+15555550123';
+  const legacyContact = { ...contact, phone };
+  const responses = [
+    ['getProfile', { ...profile, phone }, profile],
+    ['listContacts', { contacts: [legacyContact], limit: 100, hasMore: false, readAt: stamp },
+      { contacts: [contact], limit: 100, hasMore: false, readAt: stamp }],
+    ['getBootstrap', { ...bootstrap, profile: { ...profileData, phone }, contacts: [legacyContact] }, bootstrap],
+  ];
+  for (const [method, wire, expected] of responses) {
+    const { api } = fixture(async () => Response.json(wire));
+    const result = await api[method]();
+    assert.deepEqual(result, expected);
+    assert.ok(!JSON.stringify(result).includes(phone));
   }
 });
 

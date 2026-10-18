@@ -31,6 +31,8 @@ void more; void limit;
 api.getBootstrap({ ownerId: 'another-actor' });
 // The source server read time is required on the envelope, never invented per row.
 const readAt: string = loaded.readAt;
+const arrivalAt: string | null | undefined = loaded.trips.active[0]?.expectedArrivalAt;
+void arrivalAt;
 // @ts-expect-error only the whole bootstrap carries the source read-start timestamp
 const nestedReadAt: string = loaded.profile.readAt;
 // @ts-expect-error summaries never include raw draft text

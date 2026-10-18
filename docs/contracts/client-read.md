@@ -20,11 +20,11 @@ Authentication and catalog queries use `telemetryPool`, separate from the comman
 
 All queries in a response use that pinned snapshot. Concurrent commits after acquisition remain invisible to the response, so a trip cannot move from active to recent halfway through bootstrap. Profile identity and verification describe the authenticated request; they intentionally do not follow a parallel token updating the shared identities row. `readAt` describes snapshot acquisition, not the age of location, event, delivery or participant evidence. It is not a freshness claim and is never derived from the client clock. Separate requests may see different committed states.
 
-`readTransaction` delegates to the common transaction helper with a fixed BEGIN statement; commit, rollback and release have one implementation. Migration `009-client-read-indexes.sql` adds indexes matching owner predicates and catalog ordering for trucks, standing contacts, active trips and recent trips.
+`readTransaction` delegates to the common transaction helper with a fixed BEGIN statement; commit, rollback and release have one implementation. Append-only migration `009-client-read-indexes.sql` adds indexes matching owner predicates and catalog ordering for trucks, standing contacts, active trips and recent trips, after the reconciled runtime's migrations. Existing runtime migration files are unchanged.
 
 ## Relation to the other trip shapes
 
-`role`, `expectedArrivalAt` and `sharingStoppedAt` are the stored columns added by `003-security-checks.sql` (see `docs/contracts/runtime.md`).
+This branch integrates `main` at `5ea57adc73ee7872e1cbfc53e2beb9809a34ffad`, including the merged #74/#80/#83 runtime and #59/#81 shared SDK. Queries select the real `contact_grants.role`, `trips.expected_arrival_at` and `trips.sharing_stopped_at` columns directly. Unset arrival and sharing timestamps remain null. App registration preserves the runtime's demo, checks and insights routes and the authentication presence clock while mounting the five catalog routes. Tests exercise the actual demo session issuer with a fictional configured live destination, persisted roles, draft confirmation, sharing stop/resume, owner detail and `/status`. The shared SDK's DTOs and decoders consume this phone-free contract, preserve its runtime fields and discard any legacy phone properties; API integration tests run that SDK against the actual signed backend and PostgreSQL.
 
 | Catalog field | Existing owner detail (`GET /v1/trips/:id`) | Runtime `/status` |
 | --- | --- | --- |
