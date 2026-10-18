@@ -86,6 +86,9 @@ test('image contains migration SQL/CA and CI runs real PostgreSQL tests without 
   assert.match(docker,/FROM node:24-bookworm-slim/g);assert.match(docker,/COPY db \.\/db/);
   assert.match(docker,/scripts\/bootstrap\.mjs/);assert.match(docker,/COPY infra\/rds-global-bundle\.pem/);assert.match(docker,/USER node/);assert.match(docker,/COPY public \.\/public/);
   assert.match(text('.dockerignore'),/!infra\/rds-global-bundle\.pem/);
+  assert.match(docker,/COPY web \.\//);assert.match(docker,/RUN npm run build/);assert.match(docker,/COPY --from=web \/app\/web\/dist \.\/web\/dist/);
+  // Host node_modules (macOS binaries) must never overwrite the image's own install.
+  assert.match(text('.dockerignore'),/^\*\*\/node_modules$/m);assert.match(text('.dockerignore'),/^\*\*\/dist$/m);
   const ci=text('.github/workflows/ci.yml');
   assert.match(ci,/postgres:18-bookworm/);assert.match(ci,/ZAVU_LIVE_SEND: "false"/);assert.ok(!ci.includes('aws-actions/configure-aws-credentials'));
   assert.match(text('compose.yaml'),/127\.0\.0\.1:5432:5432/);
