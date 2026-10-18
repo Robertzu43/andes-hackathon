@@ -1,71 +1,314 @@
-# ANDES (hackathon) · GOAT
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/design/assets/tandem-logo-white.svg">
+    <img src="docs/design/assets/tandem-logo-ink.svg" alt="Tándem" width="320">
+  </picture>
+</p>
 
-Phone-based safety support for independent Latin American freight truck drivers and owner-operators with one or two trucks. The core problems are robbery during transportation and driver fatigue/sleepiness. Separate from SurcoCheck.
+<h1 align="center">Tándem · Hack the Andes 2026</h1>
 
-Status: evidence tooling in progress (#8 evidence kit, preparatory #9 iPhone recorder). All 44 task issues remain open. No participant interviews or physical-device results are complete, Android is untested, and there is no production app or evidence of product efficacy.
+<p align="center"><strong>Tu gente, contigo en ruta.</strong></p>
 
-## Executable backend
+<p align="center">Track Seguridad · Equipo GOAT</p>
 
-An engineering backend now implements confirmed trips, consented timestamped location, explicit SOS, durable SQL/outbox dispatch and independent provider-channel attempts. It is not deployed or qualified for live delivery. AWS [artifacts and runbook](infra/README.md) include zero-task bootstrap/live-send gates, local Docker/Compose instructions, CI and operational limits. The [architecture diagram](docs/architecture/diagrams/andes-infrastructure.png) shows the actual template topology. The [runtime contract](docs/contracts/runtime.md) describes actual API/process/environment behavior; [implementation evidence](docs/evidence/backend-implementation.md) records what was checked.
+<p align="center">
+  <a href="#para-el-jurado-cómo-entrar"><code>Demo · en construcción</code></a>
+  <a href="docs/submission/deck/index.html"><code>Pitch deck</code></a>
+  <a href="https://github.com/Bimbi-Dev/andes-hackathon/actions/workflows/ci.yml?query=branch%3Amain"><code>CI · main ↗</code></a>
+</p>
 
-With Node 24 and a disposable PostgreSQL database, run `npm ci`, set `TEST_DATABASE_URL`, then `npm test` and `npm run demo`. The demo uses signed synthetic identities and test-only provider/queue boundaries; it includes actual child-process restart with simulated lease time and makes no live sends. See the runbook for least-privilege local bootstrap and trusted OIDC setup. No audio interpretation, automatic nonresponse escalation, physical-device qualification or provider activation is implied.
+Tándem es una app para el transportista que maneja su propio camión. Las personas que él elige (su familia, sus colegas) ven dónde va y hace cuánto se tomó esa ubicación. Si pide ayuda con el botón SOS, o si deja de dar señales y no responde «Estoy bien», el servidor les avisa por SMS, WhatsApp y llamada. No hay central de monitoreo: la red de apoyo es la gente que el conductor ya tiene.
 
-The [integrated backend baseline](docs/testing/integrated-backend.md) combines this runtime with the reviewed offline toolkits. With Python 3.10+ available, `npm run test:all` runs both sets of checks; `npm run test:tooling` runs only the offline tools.
+Hoy funciona y está probado el backend completo. La app del conductor en el teléfono se está construyendo y todavía no hay nada desplegado; el detalle está en [Qué funciona hoy y qué no](#qué-funciona-hoy-y-qué-no).
 
-## Start here
+ANDES es el nombre del repositorio y del proyecto; Tándem es la app; GOAT es el equipo.
 
-[Reconstruct freight trip incidents](https://github.com/Bimbi-Dev/andes-hackathon/issues/8) is the first task. Follow the section gates and GitHub blocked-by links.
+## Para el jurado: cómo entrar
 
-## Work sections
+> [!IMPORTANT]
+> **La demo guiada está EN CONSTRUCCIÓN y todavía no hay URL.** El recorrido de abajo es el diseño aprobado, no algo que ya se pueda abrir. Lo define la spec `docs/superpowers/specs/2026-10-18-functional-phone-demo-design.md`, en la rama `docs/functional-phone-demo-spec`, que aún no está en `main`.
 
-| Section | Issue | Tasks |
+**Demo:** [[PENDIENTE: URL de la demo]]
+
+Se abrirá en una ventana privada, sin cuenta, sin pedir acceso y sin archivos locales. El botón **Empezar** crea una sesión de demostración aislada con el modo demo que ya existe en el backend ([`POST /v1/demo/session`](docs/contracts/runtime.md#demo-mode)). El único permiso que pedirá el navegador será la ubicación, y solo al tocar «Compartir ubicación».
+
+Recorrido previsto:
+
+1. **Empezar.**
+2. **Registra tu camión** (placa o apodo).
+3. **Agrega a tu contacto de emergencia** con su número. El contacto abre su link en otro teléfono y **verifica su propio número con un código SMS**.
+4. **El contacto acepta.** Sin un contacto aceptado no se puede crear el viaje: el backend une a los contactos al viaje solo al confirmarlo.
+5. **Crea el viaje**: origen, destino, hora estimada de llegada y camión. Revisas y confirmas.
+6. **Comparte la ubicación.** El contacto la ve con su hora y su precisión.
+7. **SOS** (avisa al instante) o **Estoy bien** (responde a un check del servidor).
+8. **Llegué**: termina el viaje y deja de compartir la ubicación.
+
+Lo que ya se puede verificar sin la URL: el [CI de `main`](https://github.com/Bimbi-Dev/andes-hackathon/actions/workflows/ci.yml?query=branch%3Amain) y, en local con un PostgreSQL desechable, `npm run demo` (ver [comandos](#estructura-del-repositorio-y-comandos)). El repositorio es privado por ahora: [[PENDIENTE: el repositorio debe ser público]].
+
+## Navegación rápida
+
+| Empieza aquí | Qué encuentras |
+|---|---|
+| [Para el jurado: cómo entrar](#para-el-jurado-cómo-entrar) | La demo y su estado real |
+| [El problema](#el-problema) · [Para quién](#para-quién) · [Cómo funciona](#cómo-funciona) | La propuesta |
+| [Qué funciona hoy y qué no](#qué-funciona-hoy-y-qué-no) | Lo construido, lo pendiente y lo no validado |
+| [Arquitectura e infraestructura](#arquitectura-e-infraestructura) · [ADR-002](docs/architecture/ADR-002-aws-durable-dispatch.md) · [Justificación](docs/architecture/justificacion-arquitectura.md) | Las decisiones técnicas y la falla que evita cada una |
+| [Contrato de ejecución](docs/contracts/runtime.md) | Las rutas HTTP y el comportamiento exacto del backend |
+| [Calidad y verificación](#calidad-y-verificación) | CI, conteo de pruebas y proceso de revisión |
+| [Tracción](#tracción) · [Limitaciones](#limitaciones) | Lo que falta probar con personas reales |
+| [Diseño](#diseño) · [Pitch deck](docs/submission/deck/index.html) · [Descripción de la entrega](docs/submission/descripcion.md) | Sistema de diseño y material de la entrega |
+
+El deck es una página HTML: ábrelo en un navegador (GitHub muestra su código fuente). Su URL publicada está pendiente.
+
+## El problema
+
+En carretera hay dos riesgos que motivan el proyecto: el robo o intento de robo al camión de carga, y el cansancio o el sueño al manejar ([plan](docs/PLAN.md)).
+
+Durante un asalto, puede que el conductor no logre pedir ayuda: le quitan el celular o lo amenazan. Las grandes flotas tienen telemetría y una central de monitoreo. El **hombre-camión**, el dueño que maneja su propio camión, no tiene una central que siga su viaje: tiene a sus personas cercanas y sus grupos de WhatsApp de choferes.
+
+Nuestra hipótesis es que entre el momento en que algo sale mal y el momento en que alguien actúa pasa un tiempo evitable. Todavía no la hemos comprobado: es lo primero que deben confirmar o descartar las entrevistas ([#8](https://github.com/Bimbi-Dev/andes-hackathon/issues/8)).
+
+Las cifras de contexto que usamos son las del [deck](docs/submission/deck/index.html), cada una con su fuente. Según el MTC (flota formal de carga al cierre de 2021, citado en P. Ruiz Rodríguez, *Predictiva21*, 2023), 96 de cada 100 vehículos de carga formales están en empresas con menos de 250 unidades, y 3 de cada 4 de esas empresas son hombre-camión. Para el cansancio no encontramos cifras publicadas sobre choferes de carga; el estudio peruano más cercano es una encuesta a 166 conductores de ómnibus interprovincial de Arequipa (*Rev Peru Med Exp Salud Publica*, 2014). No usamos otras cifras.
+
+Un teléfono en silencio no prueba un robo ni que el conductor se durmió, y Tándem no lo trata como si lo probara.
+
+## Para quién
+
+- **El conductor:** transportistas de carga independientes en Latinoamérica, incluido Brasil, que tienen u operan uno o dos camiones. El cliente es el conductor, no una empresa: no hace falta una cuenta de flota ni una central de control.
+- **Su gente:** las personas de confianza que él elige, en dos roles, **familia** y **colegas**. Cada contacto acepta por su cuenta, con su número verificado, y cualquiera de los dos lados puede revocar el permiso.
+- **El encaje con el track:** el track Seguridad cubre la seguridad de empresas y operadores de transporte. Tándem apunta al operador más pequeño, el que es dueño y chofer a la vez.
+
+La interfaz se diseña para español y portugués de Brasil. La demo usa Perú (corredor Panamericana Sur, número de emergencia 105). Los datos de un corredor no validan toda la región.
+
+## Cómo funciona
+
+**1. Viaje confirmado.** Con el camión detenido, el conductor escribe su viaje y completa los campos: origen, destino, hora estimada de llegada (que debe estar en el futuro), camión, país, idioma y zona horaria. Elige a sus contactos ya aceptados (hasta diez), revisa y confirma. Nada se activa sin esa confirmación. Dictar el viaje por voz no está implementado: el backend responde 422 `unsupported_audio`.
+
+**2. Ubicación con frescura honesta.** El contacto con permiso de mapa ve la última ubicación con su hora de captura, su antigüedad y su precisión. Hasta 120 segundos es «reciente»; después, «antigua»; sin muestras, «no disponible». La app nunca inventa una posición. El permiso se revisa en cada lectura, así que al revocar o al llegar se niegan de inmediato las lecturas nuevas.
+
+**3. Pausa.** Al descansar, el conductor pone Pausa: se suspenden los checks y los avisos ordinarios, pero el mapa no se apaga a escondidas y el SOS sigue disponible.
+
+**4. Check «Estoy bien».** El servidor, no el celular, abre un check cuando se deja de compartir la ubicación, cuando no hay señales de vida durante un tiempo o cuando la llegada se atrasa. Pregunta una sola vez, con un botón grande: «Estoy bien». En la demo, los tiempos son 2 minutos sin señal, 1 minuto para responder y 2 minutos de gracia para la llegada. Son valores para el escenario, no umbrales de seguridad validados ([#11](https://github.com/Bimbi-Dev/andes-hackathon/issues/11)), y la plantilla de producción los deja sin definir.
+
+**5. Escalamiento.** Si no responde a tiempo, el servidor abre un incidente y avisa igual que con un SOS. El mensaje dice qué no se confirmó y da la última ubicación con su antigüedad, y cierra con «No sabemos qué pasó. Llámalo; si no responde, llama al 105». Un «Estoy bien» tardío queda registrado, pero no cancela la alerta: solo el conductor la cierra de forma explícita, porque un OK dado bajo amenaza no debe silenciar al resto.
+
+**6. Botón SOS.** Un toque avisa al instante. En una sola transacción se guardan el incidente y un trabajo por cada destinatario y canal, y todos los canales salen en paralelo:
+
+| Quién | Canales |
+|---|---|
+| Familia | SMS, WhatsApp y llamada |
+| Colegas | SMS y WhatsApp |
+| Grupo de WhatsApp de choferes | Diseñado como un trabajo aparte, pero hoy **siempre queda «no disponible»** (`group_support_unverified`): no hemos verificado que el proveedor entregue a grupos. Los mensajes individuales nunca lo reemplazan. |
+
+Tocar SOS varias veces no duplica avisos: todos los toques se unen al mismo episodio. «Llegué» no cierra un SOS abierto. La entrega real por Zavu no está confirmada todavía; sin ella, la demo muestra cada canal como «no habilitado».
+
+**7. Los contactos registran lo que hicieron.** Un contacto puede marcar que recibió la alerta y registrar qué acción tomó. Son hechos separados: entregado no es leído, y leído no es ayuda.
+
+**8. Etiquetas de incidentes.** El conductor etiqueta cada incidente: robo, intento de robo, falsa alarma, sin señal u otro. Al mapa solo llegan los robos y los intentos, junto con los reportes directos de robo o intento (máximo 5 por persona al día).
+
+**9. Mapa de zonas.** La página pública `/mapa` muestra celdas de unos 5 km, de día y de noche, en los últimos 90 días. Cada número cuenta **personas distintas**, no reportes: quien reporta diez veces cuenta una vez. Una zona solo aparece con **al menos 3 personas distintas con teléfono verificado**, así que un solo usuario no puede inventar un punto peligroso. Si hay datos de demostración, la página lo dice («incluye datos de demostración»). El consejo por zona es una regla de conteo, no un modelo de riesgo.
+
+## Qué funciona hoy y qué no
+
+**En `main`, con pruebas automáticas** (verificado en `23e9f33`):
+
+| Pieza | Dónde |
+|---|---|
+| Backend completo: API de camiones, contactos, viajes, ubicación, comandos (Pausa, Estoy bien, Llegué), SOS, incidentes, etiquetas, reportes y estado | [`src/`](src/), [contrato](docs/contracts/runtime.md) |
+| Envío durable: outbox, colas SQS, intentos independientes por canal, conciliación, adaptador Zavu y callbacks firmados | [`src/notifications/`](src/notifications/) |
+| Checks de seguridad y escalamiento en el servidor | [`src/checks/`](src/checks/) |
+| Modo demo sin cuenta (personas sintéticas aisladas) | [`src/demo.ts`](src/demo.ts) |
+| Datos de incidentes: mapa público y consejo por zona | [`src/insights/`](src/insights/), [`public/mapa.html`](public/mapa.html) |
+| Cliente tipado de la API y sesión en memoria | [`web/src/lib/api/`](web/src/lib/api/) |
+| Controlador del recorrido del conductor (sin pantalla) | [`web/src/features/driver/`](web/src/features/driver/) |
+| Pantallas del contacto y de privacidad | [`web/src/features/contacts/`](web/src/features/contacts/), [`web/src/features/privacy/`](web/src/features/privacy/) |
+| Adaptador de GPS del teléfono y cola durable de subida. **No están conectados a ninguna pantalla.** | [`src/phone-observations/`](src/phone-observations/), [`web/src/lib/observations/`](web/src/lib/observations/) |
+| Arnés de integración y prueba de navegador contra el backend real, en CI | [`scripts/app-integration/`](scripts/app-integration/), [guía](docs/testing/local-app.md) |
+
+**Todavía no:**
+
+- **La app web de producción es un cascarón.** [`web/src/main.tsx`](web/src/main.tsx) monta el shell sin rutas ni sesión: las pantallas de cada función aparecen como «no disponible».
+- **Las pantallas del conductor y el recorrido guiado** se están construyendo (spec en la rama `docs/functional-phone-demo-spec`).
+- **Nada está desplegado.** El script de la demo existe, pero no se ha ejecutado y no hay URL.
+- **La entrega real por Zavu no está confirmada.** Los envíos están apagados por defecto (`ZAVU_LIVE_SEND=false`).
+- **El viaje por voz** no está implementado.
+
+**Sin validar** (gates de evidencia abiertos):
+
+| Gate | Estado |
+|---|---|
+| [#8](https://github.com/Bimbi-Dev/andes-hackathon/issues/8) Entrevistas con transportistas y sus contactos | El kit está listo; no se ha hecho ninguna entrevista |
+| [#9](https://github.com/Bimbi-Dev/andes-hackathon/issues/9) Límites del teléfono físico | La [matriz](docs/evidence/phone-capability/result-matrix.csv) está toda en `not-run`; Android sin probar |
+| [#10](https://github.com/Bimbi-Dev/andes-hackathon/issues/10) Recibos reales del proveedor | Sin envíos reales |
+| [#11](https://github.com/Bimbi-Dev/andes-hackathon/issues/11) Umbrales de seguridad | Los tiempos de los checks son valores de demo |
+
+## Arquitectura e infraestructura
+
+![Arquitectura de ANDES en AWS. El conductor y el contacto entran por un ALB HTTPS a la API en ECS/Fargate. La API guarda incidente, trabajos y outbox en un solo commit en RDS PostgreSQL Multi-AZ. El worker de control lee la intención y publica en dos colas SQS, emergencia y ordinaria, cada una con su DLQ, que solo llevan ID y versión. Los servicios de entrega autorizan en SQL, liberan la conexión y llaman a Zavu para SMS, WhatsApp y llamada. Zavu devuelve callbacks firmados a la API. Secrets Manager y CloudWatch dan soporte. Pendiente de validar: despliegue en AWS, Zavu real, GPS en el dispositivo y carga.](docs/architecture/diagrams/andes-infrastructure-professional.png)
+
+[SVG editable](docs/architecture/diagrams/andes-infrastructure-professional.svg) · [Captura en Figma](docs/architecture/diagrams/andes-architecture-figma.jpg) · [Vista detallada original](docs/architecture/diagrams/andes-infrastructure.png) · [Notas del diagrama](docs/architecture/diagrams/README.md). El diagrama describe lo implementado y la plantilla de AWS, **no un despliegue ejecutado**.
+
+La decisión está en [ADR-002](docs/architecture/ADR-002-aws-durable-dispatch.md): una API modular en **TypeScript/Fastify** y workers en **ECS/Fargate** (una sola imagen y cuatro procesos: API, control, entrega de emergencia y entrega ordinaria), **RDS PostgreSQL** como única autoridad de estado, un **outbox transaccional** que publica en **SQS** con colas separadas de emergencia y ordinaria, y **Zavu** como proveedor de SMS, WhatsApp y llamada. Cada decisión clave responde a una falla concreta:
+
+| Decisión | Falla que evita |
+|---|---|
+| PostgreSQL es la autoridad; el teléfono y la memoria de un proceso no lo son | Que una alerta se pierda porque el teléfono se apagó o un proceso se reinició |
+| Outbox: el incidente, sus trabajos de envío y la intención de publicar se guardan en un solo commit | «Guardé el SOS pero no lo encolé»: si un proceso cae después del commit, la alerta sale al reiniciar |
+| Colas SQS separadas de emergencia y ordinaria, cada una con su DLQ, que solo llevan ID, versión y clase | Que el trabajo ordinario retrase un SOS, o que teléfonos y ubicaciones viajen por la cola |
+| Un solo intento autorizado por trabajo y versión; un resultado perdido queda «desconocido» y se concilia consultando al proveedor | Una alarma doble a ciegas |
+| Cupos por canal en cada consumidor (2 SMS, 2 WhatsApp y 2 llamadas por réplica) | Que un WhatsApp lento frene el SMS y la llamada |
+| Transacciones cortas, solo SQL: ninguna conexión ni lock queda abierto durante la llamada a Zavu; pools separados para comandos, telemetría y callbacks | Agotar la base esperando al proveedor, o que un pico de ubicaciones deje sin conexión al SOS |
+| Cerrar el viaje o revocar un permiso serializa con la autorización de envíos, en una transacción corta por viaje | Que después de revocar se autorice un aviso nuevo con la ubicación |
+| Los checks corren en el servidor, cada viaje en su propia transacción | Depender de un temporizador del navegador, o perder o duplicar un escalamiento en un reinicio |
+
+Ningún componente promete entrega «exactamente una vez» de punta a punta; el diseño la acota con autorización única por intento y conciliación. La [justificación](docs/architecture/justificacion-arquitectura.md) explica por qué escala, por qué no Lambda, Step Functions, DynamoDB, Kubernetes, Kafka o Redis, y qué no promete.
+
+**Dos formas de desplegar:**
+
+- **Demo reducida:** [`infra/demo/deploy.sh`](infra/demo/deploy.sh) usa ECS Express Mode con una sola tarea Fargate (API y worker de control), RDS PostgreSQL 18.3 `db.t4g.micro` en una sola zona y las dos colas SQS. Va paso a paso (`prepare`, `image`, `database`, `bootstrap`, `lock`, `service`, `url`, `teardown`) y se niega a correr si la cuenta del perfil no es la indicada en `ANDES_AWS_ACCOUNT`. Los comentarios del script estiman unos 2 USD al día. No demuestra alta disponibilidad. **No se ha ejecutado.**
+- **Objetivo de alta disponibilidad:** [`infra/template.json`](infra/template.json) es una plantilla CloudFormation con los cuatro servicios Fargate en dos zonas, RDS Multi-AZ privado y cifrado, ALB HTTPS, SQS con DLQ, Secrets Manager y CloudWatch. Los servicios se crean en cero hasta que el bootstrap termina bien. Pasa `cfn-lint` en CI, pero **no se ha aplicado**. El [runbook](infra/README.md) describe los requisitos y la secuencia.
+
+## Diseño
+
+El sistema de diseño de Tándem está en [`docs/design/`](docs/design/README.md), con su [especificación](docs/design/specification.md) y el contrato raíz [`DESIGN.md`](DESIGN.md).
+
+- **Identidad:** dos caminos que avanzan juntos y forman una T: el conductor y su contacto. Los logos en SVG están en [`docs/design/assets/`](docs/design/assets/).
+- **Tipografía:** Manrope, incluida en el repositorio con su licencia SIL OFL.
+- **Tokens:** [`tokens.json`](docs/design/tokens.json) es la fuente canónica y [`tokens.css`](docs/design/tokens.css) se genera a partir de ella. Tinta `#132C3A`, petróleo de acción `#086F79` y marfil `#F7F5F0`. El rojo de emergencia `#B42332` se reserva para el SOS.
+- **Controles:** objetivos táctiles de al menos 48 px, acciones principales de 64 px y acciones en ruta de 80 px. El orden Estoy bien, Pausa, SOS no cambia.
+- **Pantallas de referencia:** seis composiciones de 390 × 844 en [`docs/design/screens/`](docs/design/screens/). Se revisaron catorce pares de contraste ([verificación](docs/design/evidence/verification.md)).
+
+<p align="center">
+  <img src="docs/design/screens/review.svg" alt="Pantalla de referencia: revisar y confirmar el viaje" width="220">
+  <img src="docs/design/screens/active.svg" alt="Pantalla de referencia: viaje en marcha con Estoy bien, Pausa y SOS" width="220">
+  <img src="docs/design/screens/incident.svg" alt="Pantalla de referencia: el contacto ve un incidente" width="220">
+</p>
+
+Son referencias de diseño, no capturas de la app. Llevar este sistema a la app web es parte del trabajo en curso.
+
+## Calidad y verificación
+
+Cada push y cada PR corren el workflow [`Backend checks`](.github/workflows/ci.yml), con tres jobs independientes. Los conteos son de la última verificación: la corrida de CI en `main` sobre `23e9f33`, toda en verde.
+
+| Job | Qué corre | Resultado |
 |---|---|---|
-| Validate the promise | [#1](https://github.com/Bimbi-Dev/andes-hackathon/issues/1) | 5 |
-| Prepare a safe trip | [#2](https://github.com/Bimbi-Dev/andes-hackathon/issues/2) | 5 |
-| Track available signals | [#3](https://github.com/Bimbi-Dev/andes-hackathon/issues/3) | 5 |
-| Adapt safety check-ins | [#4](https://github.com/Bimbi-Dev/andes-hackathon/issues/4) | 6 |
-| Escalate and resolve | [#5](https://github.com/Bimbi-Dev/andes-hackathon/issues/5) | 8 |
-| Verify and pilot | [#6](https://github.com/Bimbi-Dev/andes-hackathon/issues/6) | 2 |
-| Learn from shared data | [#7](https://github.com/Bimbi-Dev/andes-hackathon/issues/7) | 6 |
+| `backend` | Typecheck; `npm test` contra PostgreSQL 18 real; cliente compartido contra el backend; `npm run demo`; herramientas offline; `cfn-lint` de la plantilla; `docker compose config`; imagen Docker `linux/amd64` | 176/176 pruebas del backend; 31/31 de herramientas y 50/50 escenarios sintéticos; demo sin envíos reales |
+| `web` | Typecheck; `npm test`; tipos de la API en modos NodeNext y Bundler; integraciones del límite de la API | 349 pruebas (344 pasan, 5 omitidas en ese paso, 0 fallan); 179/179 de integración |
+| `app-integration` | Arnés del backend con un PostgreSQL propio; prueba de navegador contra el backend real; oráculo de aceptación | Arnés 206/206; navegador 8/8; oráculo 34/34 |
 
-The insights section is a later, conditional phase. The verify section includes the original decision/repair loops; those are decision gates, not fabricated completed tasks.
+Hay además workflows con filtro de rutas para el kit de entrevistas, la cola de observaciones y el adaptador del teléfono. Ninguna prueba envía mensajes reales: todos los teléfonos e identidades son sintéticos.
 
-## Ownership
+**Revisión.** A la fecha hay 37 PRs fusionados (algunos a ramas de integración que luego llegaron a `main`). Las reglas están en [`CONTRIBUTING.md`](CONTRIBUTING.md): Robert fusiona todos los PRs, incluidos los suyos; cada hallazgo accionable se resuelve en su hilo con el commit del arreglo y su prueba de regresión; y la fusión se hace con `--match-head-commit` sobre el SHA revisado, para que un cambio de último minuto la rechace. Antes de fusionar se exigen los arreglos pedidos en la revisión, cada uno con su prueba de regresión, y los revisores usan pruebas de mutación para comprobar que esa prueba falla si se revierte el arreglo. El [oráculo de aceptación](evidence/app-acceptance/README.md), por ejemplo, registra los contraejemplos que fallaban antes de su corrección. Los límites aceptados en vez de arreglados quedan escritos (ver [Limitaciones](#limitaciones)).
 
-Each issue has one accountable owner. Sebastian (`sebasbimbi`, 20 issues) owns driver evidence, provider access, mobile and contact UX, consent and pilot decisions. Robert (`Robertzu43`, 24 issues) owns architecture, server state, durable jobs, channel integrations and reproducible evaluation. Sebastian starts with [#8](https://github.com/Bimbi-Dev/andes-hackathon/issues/8); Robert's first task is [#12](https://github.com/Bimbi-Dev/andes-hackathon/issues/12), still blocked by #11. See the [ownership matrix](docs/OWNERSHIP.md) for every issue and handoff.
+## Tracción
 
-## Product and evidence
+> [!WARNING]
+> **[[PENDIENTE: entrevistas y uso real]]** Todavía no hay entrevistas, usuarios ni uso real. No presentamos tracción que no existe.
 
-Robert’s [issue-by-issue backend roadmap](docs/superpowers/plans/2026-10-17-robert-issue-roadmap.md) links 24 proposed implementation plans, shared contracts, the integration order and subagent review workflow. These are planning artifacts; original evidence gates and open issue states remain unchanged. Robert delegated the architecture decision: [ADR-002](docs/architecture/ADR-002-aws-durable-dispatch.md) selects AWS ECS/Fargate, RDS PostgreSQL and SQS, with independent channel attempts and nonblocking trip/map closure. No runtime deployment or capacity is claimed.
+Lo que sí está listo:
 
-Project: ANDES (hackathon). Team: GOAT. This project has its own workspace and GitHub repository, separate from SurcoCheck.
+- **Kit de evidencia** ([PR #46](https://github.com/Bimbi-Dev/andes-hackathon/pull/46)): un verificador sin dependencias ([`evidence/incident_kit.py`](evidence/incident_kit.py)) que revisa las planillas y exporta solo los casos con doble consentimiento, redacción revisada y trazabilidad independiente.
+- **Materiales de entrevista** ([PR #79](https://github.com/Bimbi-Dev/andes-hackathon/pull/79)): [guías](evidence/guides/) en español y portugués de Brasil para el conductor y su contacto, guías para que cada persona revise su propio relato, el [brief de la cohorte](evidence/cohort-brief.md) y [planillas en blanco](evidence/templates/).
+- **El protocolo** ([#8](https://github.com/Bimbi-Dev/andes-hackathon/issues/8)): cinco pares de conductor y contacto; cada par reconstruye un viaje preocupante y uno normal. Es exploratorio: no mide prevalencia ni eficacia.
 
-Product scope: independent freight truck drivers and owner-operators across Latin America, including Brazil, who typically own or operate one or two trucks (camiones/caminhões). The individual driver is the primary customer. Freight transport is the target use case, covering local and interurban haulage; a corporate fleet account or control centre is not required. The product is designed around the phone and trusted contacts the driver already has.
+| Evidencia | Estado |
+|---|---|
+| Entrevistas realizadas | [[PENDIENTE: número]] |
+| Aprendizaje principal | [[PENDIENTE]] |
+| Uso de la demo por personas externas | [[PENDIENTE]] |
 
-Core problems: robbery or attempted robbery during freight transportation, and fatigue or falling asleep while driving. ANDES aims to help drivers request support, keep trusted contacts informed and preserve useful security/fatigue evidence. Record phone and route observations, bounded check-ins, driving/rest context, attributed fatigue or sleepiness reports, and reported security incidents. Keep unknown, self-reported, suspected and independently corroborated events distinct.
+## Limitaciones
 
-Positioning: a direct-to-driver service for small owner-operators, with simple onboarding and individual control over sharing. The founder identifies a gap in products oriented toward large fleets. Whether current alternatives fail this segment, how common one/two-truck ownership is and what drivers will pay remain research questions; no market-share statistic or competitor capability is asserted.
+**Del producto:**
 
-Design for Spanish and Brazilian Portuguese, configurable country/locale, international phone numbers and local time zones. Additional language coverage must be stated explicitly. Validation may start with a small evidence-selected cohort and corridor in any Latin American country. Record the countries, languages and conditions actually tested; a local sample does not validate the whole region. Each enabled country/channel/language combination needs its own support evidence, with unsupported conditions shown honestly.
+- No evitamos robos ni detectamos armas, sueño o fatiga.
+- Sin respuesta es «estado sin confirmar», nunca «robo confirmado».
+- Si el ladrón presiona «Estoy bien», hoy no lo podemos distinguir.
+- Los tiempos de los checks son valores de demo, no umbrales validados.
+- El aviso a grupos de WhatsApp no está verificado (`group_support_unverified`).
+- Los mensajes de alerta están solo en español.
+- El viaje por voz no está implementado.
+- No sabemos aún cómo se comporta la ubicación con la pantalla bloqueada o la app en segundo plano: eso se mide en [#9](https://github.com/Bimbi-Dev/andes-hackathon/issues/9).
 
-Critical scenarios: a freight driver requests help or reports a security incident; a driver reports tiredness and needs a safe rest/support action; or an agreed check-in/arrival is missed and the trusted contact cannot tell whether to act. Intended benefit: reduce avoidable delay to appropriate contact action without increasing driving distraction or alarm burden. Phone signal -> qualified observation/report -> bounded check-in or explicit help -> attributed/uncertain alert -> contact acknowledgement -> recorded action is the causal chain to test. Phone telemetry and missed replies alone do not establish sleep or robbery. Any later automatic detection or stronger safety claim requires independent validation; weapon detection is not an implemented capability.
+**Del despliegue de la demo:**
 
-H1: a bounded check-in can obtain useful status without unsafe distraction. H2: escalation can get an appropriate trusted-contact action sooner than current arrangements under supported conditions. H3: contributed observations can describe response patterns; stronger fatigue/crime/road-risk claims need independent outcomes.
+- Es una «demo reducida»: una tarea y una zona, sin alta disponibilidad, sin autoscaling y sin prueba de carga.
+- En `23e9f33`, [`deploy.sh`](infra/demo/deploy.sh) arranca solo la API y el worker de control (no los consumidores de entrega) y fija `ZAVU_LIVE_SEND=false`. La imagen Docker sirve la API y `/mapa`, pero todavía no la app web.
+- El modo demo corre en una sola instancia: la clave de firma vive en memoria, así que los tokens terminan al reiniciar. Hay un máximo de 30 mundos por minuto, los datos de demo quedan en la base hasta borrarla y un mundo abandonado no avisa a nadie.
+- El modo demo nunca se debe activar con usuarios reales ([contrato](docs/contracts/runtime.md#demo-mode)).
 
-Heartbeat means an “I’m OK” check-in, not cardiac pulse. Device liveness, prompt delivery, driver response and wellbeing are different facts. An OK reply is time-specific self-report; a missing reply is unknown. A careful driver on a curve may respond slowly. More prompting on that curve can manufacture a misleading hotspot.
+**Límites del backend aceptados para la demo** ([contrato](docs/contracts/runtime.md#known-backend-limits-accepted-for-the-demo)). Una revisión encontró 15 problemas. Se arreglaron los 5 críticos; de los otros 10, aceptados como límites, uno ya se arregló y estos nueve siguen abiertos:
 
-Robbery and fatigue are the product's motivating problems. Their measurement must distinguish an attributed report (for example tiredness, suspected threat or a reported attempted robbery), the app's observations and any independently corroborated outcome. A missing reply is never a substitute for an incident label.
+1. La conciliación puede volver a encolar sin fin ciertos intentos aceptados o desconocidos.
+2. Si SQL falla después de llamar al proveedor, un envío aceptado puede quedar como `authorized` o `unknown`.
+3. Las rutas de lectura toman el lock de la fila del viaje (salvo `/status`).
+4. La recuperación corre nueve consultas, casi sin índices, cada segundo en cada réplica de control.
+5. Diferir mensajes cuenta para el límite de recepciones de SQS y puede mandar trabajo válido a la DLQ; SQL lo recupera.
+6. El ciclo de recepción no atrapa algunos errores transitorios de la base o de SQS.
+7. Las filas de idempotencia nunca se borran.
+8. El relay publica una fila cada 100 ms por tarea, sin dar prioridad a las emergencias.
+9. El hash del destino es SHA-256 sin sal y se guarda indefinidamente.
 
-## Trip creation and live sharing
+**Del mapa de zonas** (aceptados en [PR #76](https://github.com/Bimbi-Dev/andes-hackathon/pull/76), ver [contrato](docs/contracts/runtime.md#incident-data-and-insights)):
 
-Core journey: while stationary, a freight driver describes a haul by voice note or natural-language text, reviews and confirms the proposed trip, then starts phone-based live location sharing with selected accepted trusted contacts. Contacts follow current location while supported observations are available, with timestamp, accuracy and explicit stale/unavailable states. The trip continues through the existing rest, check-in, help, escalation, contact-action and arrival flows. Voice/text interpretation never activates a trip or grants access without driver confirmation.
+- Tres cuentas verificadas que se coordinan pueden publicar una celda que contiene el reporte de otra persona. Antes de usar datos reales hay que subir el mínimo, ponderar por antigüedad de la cuenta o agregar ruido a los conteos.
+- El mapa se recalcula cada hora, así que un cambio en una celda publicada se puede atar a esa hora.
+- Las coordenadas de incidentes y reportes todavía no tienen una política de borrado.
 
-Robert owns the intake backend (#12/#16), event contracts (#18), authorised location delivery and reconnect behaviour (#21), and trip-end sharing termination (#17). Sebastian owns voice/text capture and confirmation UX (#13), contact consent (#15), phone capture (#19) and the live contact map (#22). Physical-device checks (#9) establish supported cadence, freshness and background behaviour; these features are requirements, not implemented capabilities.
+**Gates de evidencia abiertos:** entrevistas ([#8](https://github.com/Bimbi-Dev/andes-hackathon/issues/8)), teléfonos físicos ([#9](https://github.com/Bimbi-Dev/andes-hackathon/issues/9), Android sin probar), recibos reales del proveedor ([#10](https://github.com/Bimbi-Dev/andes-hackathon/issues/10)) y umbrales de seguridad ([#11](https://github.com/Bimbi-Dev/andes-hackathon/issues/11)).
 
-## Working agreement
+## Estructura del repositorio y comandos
 
-Authorised now: publish this existing Codus plan as open GitHub issues in the separate private Bimbi-Dev/andes-hackathon repository, team GOAT, and invite Robertzu43 with write access. The scope is independent freight truck drivers/owner-operators across Latin America, including Brazil, typically with one or two trucks. Robbery during transport and fatigue/sleepiness are the core problems; the individual driver is the primary customer. The seven sections, 63 nodes and 44 task nodes are retained; the regional requirements are incorporated into existing tasks. Sebastian has authorised starting his assigned engineering work: the #8 evidence kit and preparatory #9 iPhone recorder/protocol are in progress. Android remains untested. Real participant interviews, provider activation, trip collection and live pilots have not started; tooling does not satisfy those evidence gates.
+| Carpeta | Qué contiene |
+|---|---|
+| [`src/`](src/) | Backend TypeScript: API Fastify, envío durable, checks, demo, insights y el adaptador del teléfono |
+| [`db/migrations/`](db/migrations/) | Migraciones SQL numeradas, con hash verificado |
+| [`web/`](web/README.md) | App web React + Vite: shell, cliente tipado, pantallas del contacto, controlador del conductor y cola de observaciones |
+| [`public/`](public/) | La página pública del mapa (`/mapa`) |
+| [`scripts/`](scripts/) | Migración, bootstrap, semilla de demo, demo sintética y arnés de integración |
+| [`tests/`](tests/) | Pruebas del backend contra PostgreSQL real |
+| [`infra/`](infra/README.md) | Plantilla CloudFormation, script de la demo reducida y runbook |
+| [`evidence/`](evidence/README.md) | Kit de entrevistas, oráculo de aceptación y herramientas offline |
+| [`docs/`](docs/) | Plan, ADRs, contratos, diseño, pruebas y entrega |
 
-ANDES is separate from SurcoCheck, with independent code, configuration, data and delivery ownership. Before starting a section, satisfy its evidence gate. Missing or inconclusive evidence is not a pass. Use issue closure only for completed work supported by evidence. Invitation acceptance must be reported separately from sending the invitation. Hosting deployment, spending and live pilots remain separately scoped.
+Se necesita Node 24–26. Las pruebas del backend necesitan un PostgreSQL 15+ desechable; nunca uses datos reales. Las herramientas offline necesitan Python 3.10+.
 
-Read the [complete plan](docs/PLAN.md), [portable plan and issue map](docs/plan.json) and [contribution guide](CONTRIBUTING.md).
+| Comando | Para qué |
+|---|---|
+| `npm ci` | Instala las dependencias del backend |
+| `npm run typecheck` | Revisa los tipos del backend |
+| `TEST_DATABASE_URL=… npm test` | Compila y corre las pruebas del backend (cada prueba crea y borra su propio esquema) |
+| `npm run demo` | Recorrido sintético: confirmación, ubicación reciente y antigua, SOS duplicado, reinicio sin reenvío y revocación |
+| `npm run test:tooling` · `npm run test:all` | Herramientas offline · backend y herramientas juntos |
+| `npm run build` · `npm start` | Compila · arranca la API |
+| `npm run migrate` · `npm run bootstrap` | Migraciones locales · bootstrap de administrador (login de la app, migraciones y permisos) |
+| `SEED_DEMO=1 npm run seed:demo` | Datos sintéticos para el mapa (después de `npm run build`) |
+| `npm run worker:control` · `npm run worker:emergency` · `npm run worker:ordinary` | Los workers; los de entrega se niegan a arrancar con `ZAVU_LIVE_SEND=false` |
+| `npm run infra:check` | Revisiones de la plantilla de infraestructura |
+| `npm ci --prefix web` · `npm --prefix web test` | Instala y prueba la app web (la prueba compila primero) |
+| `npm --prefix web run dev` · `npm --prefix web run build` · `npm --prefix web run preview` | Servidor de desarrollo · build de producción · vista previa del build |
+| `node scripts/app-integration/run.mjs` | Arnés de integración con su propio PostgreSQL |
+| `node scripts/app-integration/check-browser-seam.mjs` | Prueba de navegador contra el backend (requiere `npm ci` en `web/`) |
+| `node --test evidence/app-acceptance/oracle.test.mjs` | Oráculo de aceptación |
+
+Con Docker Compose (solo datos sintéticos locales; antes define `LOCAL_ADMIN_PASSWORD` y `LOCAL_APP_PASSWORD`, de uso local):
+
+```sh
+docker compose up -d db
+docker compose run --rm bootstrap
+# Antes, define OIDC_ISSUER, OIDC_AUDIENCE y OIDC_JWKS_URL de un emisor real
+docker compose --profile api up -d api
+```
+
+El trabajo se organiza en siete secciones con 44 issues; el [plan completo](docs/PLAN.md) y la [división del trabajo](docs/OWNERSHIP.md) están en `docs/`.
+
+## Equipo y licencia
+
+Somos el equipo **GOAT**. El nombre de la app viene de su idea central: el conductor y su gente avanzan juntos, en tándem, y por eso el símbolo son dos caminos que forman una T.
+
+| | Responsabilidades principales |
+|---|---|
+| **Robert** ([@Robertzu43](https://github.com/Robertzu43)) | Arquitectura, estado del servidor y contratos de eventos, envío durable, integraciones de canales, infraestructura y evaluación reproducible |
+| **Sebastian** ([@sebasbimbi](https://github.com/sebasbimbi)) | Evidencia con conductores, acceso al proveedor, la app web (base, cliente tipado, recorridos del conductor y del contacto), captura del teléfono, consentimiento y decisiones de piloto; el pitch deck |
+
+**Licencia:** sin licencia definida todavía. El repositorio no tiene archivo `LICENSE`.
