@@ -1,4 +1,4 @@
-# Executable backend contract — Task 1
+# Backend runtime contract
 
 Engineering implementation, not a device/provider/AWS qualification. No live delivery or audio transcription is enabled. Automatic missed-check escalation runs only when all four check timings are configured (see [Security checks](#security-checks-part-1)). All test identities, phones and trips are synthetic.
 
@@ -64,7 +64,7 @@ SOS snapshots accepted unrevoked incident recipients, deduplicated by standing d
 
 Close, resolve and either revoke cancel only pending/claimed affected jobs (incrementing job version); authorized/unknown/in-flight facts remain. Stale transport must be rechecked against SQL. Trip closure never automatically resolves SOS, and SOS after closure must never gain fresh map coordinates. Contact incident read/ack/action needs incident consent but does not require active map, so an open security episode can continue after arrival without fresh coordinates. Fields in `src/contracts.ts` export Actor, Trip, Job, Outbox and Channel/ChannelSupport for the next runtime slice.
 
-## Task 2 — executable durable dispatch
+## Durable dispatch
 
 `npm run build` then `npm run migrate` applies ordered, hash-checked numbered SQL migrations, including `002-dispatch`; `001-core.sql` remains unchanged. API `npm start`, control `npm run worker:control`, emergency `npm run worker:emergency`, ordinary `npm run worker:ordinary` are separate processes/services built from the same image. No migration runs on startup. Workers require `DATABASE_URL`, `AWS_REGION`, `SQS_EMERGENCY_URL`, `SQS_ORDINARY_URL`; use task-role AWS credentials and HTTPS Standard queues, with separate DLQs. SQS permissions: control `sqs:SendMessage`; each consumer `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `sqs:ChangeMessageVisibility` on its class queue. No blind DLQ redrive grants sending authority.
 
@@ -96,15 +96,15 @@ wait grants no new authority; an expired job is cancelled without an attempt.
 
 Callbacks arriving before HTTP response remain unmatched by exact message ID. Only a subsequently persisted response ID can map them; phone/time/text never correlate attempts. Timeout without ID remains unresolved, even if a matching-phone event exists. Reconciliation only GETs the known official message ID; it never POSTs or lists by guessed correlation. ID/channel/destination must match read evidence. Delivered/read facts do not regress under late queued, failed, unknown or HTTP timeout results. Voice receipts remain evidence without claiming human answer/playback semantics; existing-group sends remain unavailable. Source-unspecified key TTL, cancellation and read-only key lookup remain unsupported. See [Zavu research](zavu-research.md) for exact source contracts and qualification gaps. No test key is safe for network tests.
 
-## Task 3 — deployment/startup database seam
+## Deployment and startup database seam
 
 API, workers and one-off scripts share `databaseConfig(env)` from `src/db.ts`. Existing local `DATABASE_URL` is preserved. With it unset, complete raw `PGHOST`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` and optional `PGPORT` form an in-memory URL with encoded credential components. AWS uses fixed database `andes`. `PGSSLROOTCERT` reads the committed official RDS CA bundle and explicitly enables `rejectUnauthorized:true`; URL `ssl*` parameters and `PGSSLMODE` cannot replace that verified configuration. Tests exercise the pinned driver and real local PostgreSQL; real RDS TLS remains unqualified.
 
 `createContext` accepts the prior URL string or a `pg.PoolConfig`, preserving existing pool ceilings. `npm run bootstrap` is the admin-only one-off command (two connections): provision/update the generated application login, run the existing numbered migrations, grant application DML/schema USAGE/sequence rights, and deny migration-bookkeeping writes and schema CREATE. Runtime tasks receive only the app credential. Migration does not run on service startup. `/health` still checks SELECT 1; operators must confirm the bootstrap container exit code 0 before enabling any service. See [AWS runbook](../../infra/README.md) for exact task commands, zero-task defaults, credential rotation, fixed two-replica/rolling connection budget, disabled-delivery services, IAM boundaries and evidence limits.
 
-## Security checks (Part 1)
+## Security checks
 
-Spec: [security checks and incident data design](../superpowers/specs/2026-10-17-security-checks-incident-data-design.md). The control worker runs `checkOnce` (`src/checks/sweep.ts`) every `CHECK_SWEEP_MS` only when `SILENCE_MS`, `ASK_GRACE_MS`, `ARRIVAL_GRACE_MS` and `CHECK_SWEEP_MS` are all set. Setting only some of them fails startup. Demo values are 120000/60000/120000/5000 so a check fires on stage. They are not evidence-backed safety thresholds (#11 limits stay unset), and the production `infra/template.json` deliberately leaves them unset.
+The control worker runs `checkOnce` (`src/checks/sweep.ts`) every `CHECK_SWEEP_MS` only when `SILENCE_MS`, `ASK_GRACE_MS`, `ARRIVAL_GRACE_MS` and `CHECK_SWEEP_MS` are all set. Setting only some of them fails startup. Demo values are 120000/60000/120000/5000 so a check fires on stage. They are not evidence-backed safety thresholds (#11 limits stay unset), and the production `infra/template.json` deliberately leaves them unset.
 
 A sign of life is the latest of: location receipt (`latest_locations.received_at`, which only moves when a newer capture time arrives, so a heartbeat must carry a new `capturedAt`), a driver `checkin_ok` or `resume` command, an incident resolution, or trip creation. An active, unpaused trip with check-ins on, no active incident and no open check opens one `security_checks` row (`asking`, `ask_until = now + ASK_GRACE_MS`) for the first matching reason:
 

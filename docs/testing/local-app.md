@@ -22,7 +22,7 @@ APP_INTEGRATION_PG_BIN=/opt/homebrew/opt/postgresql@16/bin \
 APP_INTEGRATION_PG_PORT=56446 node scripts/app-integration/run.mjs
 ```
 
-The command typechecks and builds the backend, runs every `tests/*.test.mjs` and
+The command builds (and so typechecks) the backend, runs every `tests/*.test.mjs` and
 `tests/app-integration/*.test.mjs` check, then cleans up. It exits nonzero on any
 setup, check or cleanup failure. A missing dependency or occupied port is a
 failure, never a skipped or simulated run. The harness never reads `.env`, never
@@ -73,8 +73,6 @@ Only `postgres:`/`postgresql:` URLs with a loopback host and no query options ar
 accepted. Never pass a production or shared-data URL. The role must be able to
 create databases and run the bootstrap privilege tests. The input database is
 not reset or migrated, and the server is not stopped.
-`node scripts/app-integration/check-ci-seam.mjs` runs the suite this way against
-a second owned server and checks that its input data and database list survive.
 
 ## Scenario coverage and limits
 
@@ -92,7 +90,6 @@ a second owned server and checks that its input data and database list survive.
 | Arrival/resolution | Arrival closes map while SOS remains readable/actionable | Further location upload denied; only driver resolves; pending work cancels |
 | Revocation | Contact revokes trip grant; owner revokes standing grant | Contact loses incident read; later confirmation denied; closure and revocation survive another API restart |
 | Runtime guard | Generated local test database | Remote/schema-bearing admin URLs and borrowed database names rejected; child environment leaks nothing |
-| Receipt export | A passing run writes a receipt | Changed or ignored backend source, a failing run and an interrupt write nothing |
 
 The fixture uses `createApp`'s signed-key resolver and clock seams with real
 HTTP sockets, SQL migrations and process restarts. It does not exercise remote
@@ -105,58 +102,6 @@ device, human, participant or provider evidence is collected.
 
 The typed web client is tested against the real backend by its own integration
 tests; this harness keeps no copy of it.
-
-## Redacted acceptance receipts
-
-To export receipts from a run, pass a **new** absolute directory outside Git:
-
-```sh
-APP_INTEGRATION_EVIDENCE_DIR=/tmp/andes-q46-receipts-unique node scripts/app-integration/run.mjs
-node evidence/app-acceptance/check.mjs /tmp/andes-q46-receipts-unique/acceptance-receipt.json
-```
-
-The journey writes its observations to a private file in the run directory. Only
-after every check and owned-resource cleanup passed does `run.mjs` create the
-evidence directory and write
-`http-records.json` (selected redacted HTTP observations) and
-`acceptance-receipt.json` (the twelve ordered cases for the checker). A failing
-or interrupted run, including a failure during cleanup after every test passed,
-writes no receipt. The cleanup-failure regression injects its exception after
-actually releasing the nested database, so the control leaves no test resources.
-Both files are mode 0600 and bounded to
-512 KiB. The receipt records `suiteResult: "pass"` and `producerRevision`, the
-producer's `HEAD` (with `+dirty` when the tree has changes); the adapter refuses
-an isolated-run receipt without both. Do not commit or paste receipts into a PR.
-
-Checker exit 0 means `backend-receipt-checks-pass` only, and `wholeAppAccepted`
-stays false. A missing case is pending (exit 2); a failed predicate is exit 1.
-
-Captured fields are aliased: opaque IDs, place/action text and idempotency keys
-keep equality without their values. Tokens, headers, phone values, coordinates
-and raw trip text are not captured. Source `capturedAt`, server
-`receivedAt`/`readAt` and `ageMs` stay unchanged. Partial cases are omitted,
-never filled from synthetic examples, and observed failures stay failures.
-
-## Backend binding
-
-The producer and the checker share one constant, `BACKEND_SHA` in
-[`evidence/app-acceptance/oracle.mjs`](../../evidence/app-acceptance/oracle.mjs);
-[`rebindings.md`](../../evidence/app-acceptance/rebindings.md) names the current
-target and its source review. Export first
-checks that `src/`, `db/`, the manifests and the compiler config match it,
-including unstaged, untracked and Git-ignored files (the migrator runs an ignored
-numbered SQL file), and checks again before writing. Export needs a Git checkout
-containing that commit.
-
-When the backend changes, the harness still runs and CI stays meaningful, but
-export is refused until the binding is updated: review the source delta for the
-twelve cases, record it in
-[`rebindings.md`](../../evidence/app-acceptance/rebindings.md), then change
-`BACKEND_SHA`. Changing a receipt's revision label is never evidence.
-`tests/app-integration/source-pin.test.mjs` checks the guard on the pinned
-source in a private clone (checked out with `--no-overlay`, so backend files
-added after the pin are removed): clean source passes, and an ignored migration is
-refused before any evidence directory exists.
 
 ## Browser seam: the web app's proxy against the real backend
 

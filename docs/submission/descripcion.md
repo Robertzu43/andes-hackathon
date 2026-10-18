@@ -6,13 +6,13 @@ Equipo GOAT · Hack the Andes 2026 · Track Seguridad. ANDES es el nombre del re
 
 - Demo: https://an-1dc2ae9cdfee46e6bfe399ec607092d5.ecs.us-east-1.on.aws
 - Presentación: https://an-1dc2ae9cdfee46e6bfe399ec607092d5.ecs.us-east-1.on.aws/deck.html
-- Código: https://github.com/Robertzu43/andes-hackathon [[PENDIENTE: el repositorio debe ser público]]
+- Código: https://github.com/Robertzu43/andes-hackathon
 
 ## Problema
 
 En carretera hay dos riesgos: el robo o intento de robo al camión de carga, y el cansancio o el sueño al manejar. Durante un asalto, puede que el conductor no logre pedir ayuda: le quitan el celular o lo amenazan. Las grandes flotas tienen telemetría y una central de monitoreo. El hombre-camión, el dueño que maneja su propio camión, no tiene una central que siga su viaje: tiene a sus personas cercanas y sus grupos de WhatsApp de choferes.
 
-Nuestra hipótesis es que entre el momento en que algo sale mal y el momento en que alguien actúa pasa un tiempo evitable. Todavía no la hemos comprobado con entrevistas.
+Nuestra hipótesis es que entre el momento en que algo sale mal y el momento en que alguien actúa pasa un tiempo evitable. Todavía no la hemos comprobado: hay una sola entrevista.
 
 ## Para quién
 
@@ -33,17 +33,15 @@ El aviso al grupo de WhatsApp de choferes está diseñado como un trabajo aparte
 
 ## Qué funciona hoy y qué no
 
-- **Funciona en `main`, con pruebas automáticas sobre PostgreSQL real** (176 pruebas del backend en la última corrida de CI):
+- **Funciona en `main`, con pruebas automáticas sobre PostgreSQL real:**
   - viajes con confirmación explícita, consentimiento de contactos y ubicación con frescura honesta;
   - SOS con envío multicanal durable;
   - Pausa y checks «Estoy bien» con escalamiento;
   - endpoint de estado para las pantallas;
   - etiquetas de incidentes, reportes y mapa agregado;
   - acceso de demostración sin cuenta.
-- **También en `main`:** el cliente tipado de la API, el controlador del recorrido del conductor, las pantallas del contacto y de privacidad, y el adaptador de GPS con su cola de subida (sin conectar a ninguna pantalla).
-- **En construcción:** la app web de producción es todavía un cascarón. Las pantallas del conductor y el recorrido guiado se están construyendo.
-- **No desplegado:** el script de la demo reducida en AWS existe, pero no se ha ejecutado.
-- **Entrega real por Zavu (SMS, WhatsApp, llamada):** sin confirmar; los envíos están apagados por defecto, así que cada trabajo de envío queda en estado `unavailable` y la pantalla del contacto lo muestra como «No disponible». [[PENDIENTE: confirmar la entrega real antes de entregar]]
+- **App web desplegada en AWS** (ECS Express, una tarea): registrar el viaje, «Estoy bien», SOS, estado de cada aviso y la vista del contacto, sobre una sesión de demostración sin cuenta. Todavía no captura el GPS del teléfono.
+- **Envío real en la demo:** el SMS sale por Zavu y la llamada por Twilio, solo al número autorizado para la prueba; cualquier otro destino se rechaza antes de llamar al proveedor. WhatsApp y la entrega a escala siguen sin verificar.
 - **No implementado:** dictar el viaje por voz y extraer los datos de un texto libre. Hoy el conductor llena los campos.
 - **Idea, no producto:** que aseguradoras, gremios o autoridades usen el mapa; un modelo de riesgo. Hoy el consejo es una regla de conteo.
 
@@ -53,7 +51,7 @@ El aviso al grupo de WhatsApp de choferes está diseñado como un trabajo aparte
 - **Canales independientes.** Un WhatsApp lento no frena el SMS ni la llamada.
 - **Nunca una alarma doble a ciegas.** Un envío con resultado perdido queda «desconocido» y se verifica con el proveedor antes de cualquier otra acción.
 - **Los checks corren en el servidor.** Cada viaje se procesa en su propia transacción corta: un reinicio no pierde ni duplica un escalamiento.
-- **Arquitectura objetivo:** AWS ECS/Fargate, RDS PostgreSQL Multi-AZ y SQS con colas separadas de emergencia y ordinaria (ver `docs/architecture/ADR-002-aws-durable-dispatch.md` y `docs/architecture/justificacion-arquitectura.md`). La demo correrá en una versión reducida: una tarea y una zona de disponibilidad.
+- **Arquitectura objetivo:** AWS ECS/Fargate, RDS PostgreSQL Multi-AZ y SQS con colas separadas de emergencia y ordinaria (ver `docs/architecture/ADR-002-aws-durable-dispatch.md` y `docs/architecture/justificacion-arquitectura.md`). La demo corre en una versión reducida: una tarea y una zona de disponibilidad.
 
 ## Limitaciones honestas
 
@@ -66,8 +64,8 @@ El aviso al grupo de WhatsApp de choferes está diseñado como un trabajo aparte
 - La demo reducida no tiene alta disponibilidad ni prueba de carga, y el backend tiene nueve límites aceptados y documentados (`docs/contracts/runtime.md`).
 - Los mensajes de alerta están solo en español por ahora.
 - No hemos probado la app en teléfonos físicos; Android sigue sin probar.
-- Entrevistas con transportistas: [[PENDIENTE: número y hallazgos, o decir que aún no las hay]]. Las guías de entrevista en español y portugués están listas.
+- Una sola entrevista: un camionero de Colombia quiere usar Tándem y declaró que pagaría hasta US$100 al mes. Es intención declarada, no una venta ni una validación representativa. Las guías para más entrevistas, en español y portugués, están en `docs/research/`.
 
 ## Próximos pasos
 
-Entrevistar a transportistas y a sus familias; terminar las pantallas del conductor y desplegar la demo; enviar mensajes reales con Zavu a contactos que acepten; probar en teléfonos reales con la pantalla bloqueada; y dictado por voz.
+Entrevistar a transportistas y a sus familias; capturar el GPS del teléfono en la app; verificar WhatsApp y la entrega a contactos que acepten; probar en teléfonos reales con la pantalla bloqueada; y dictado por voz.

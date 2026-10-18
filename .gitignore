@@ -30,6 +30,7 @@ dist/
 infra/*.local.json
 
 # Real participant material stays outside Git
+docs/research/private/
 evidence/private/
 
 # Python bytecode

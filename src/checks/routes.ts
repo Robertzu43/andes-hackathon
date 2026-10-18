@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { owner, problem, type Trip } from '../contracts.js';
-import { transaction, withTripTransaction, type Context } from '../db.js';
+import { readTransaction, withTripTransaction, type Context } from '../db.js';
 import { idempotent } from '../api/mutations.js';
 import { idParams, object } from '../api/schemas.js';
 import { latestLocation } from '../location/routes.js';
@@ -20,8 +20,7 @@ export function checkRoutes(app: FastifyInstance, ctx: Context) {
     });
   }));
   // A polled read: one consistent snapshot on command capacity, no trip lock, so polls never queue behind writers or starve telemetry.
-  app.get('/v1/trips/:id/status', { schema: { params: idParams } }, request => transaction(ctx.pool, async client => {
-    await client.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+  app.get('/v1/trips/:id/status', { schema: { params: idParams } }, request => readTransaction(ctx.pool, async client => {
     const trip = (await client.query<Trip>('SELECT * FROM trips WHERE id=$1', [(request.params as { id: string }).id])).rows[0];
     if (!trip) problem(404, 'trip_not_found');
     const driver = trip.driver_id === request.actor.id;

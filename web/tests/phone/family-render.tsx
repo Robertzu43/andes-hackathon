@@ -1,6 +1,6 @@
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { I18nProvider } from '../../src/foundation/index.ts';
 import { createPhoneRoutes } from '../../src/app/phone-routes.tsx';
 import type { PhoneDemoRuntime } from '../../src/app/runtime.ts';

@@ -40,7 +40,7 @@ test('trips stored with a non-canonical locale before the fix still match every 
   const d = await runtime(); const f = await fixture(t); const grant = await f.grant(); const trip = await f.trip([grant]);
   await f.ctx.pool.query("UPDATE trips SET locale='pt-br' WHERE id=$1", [trip]); // a row written before canonical storage
   const incident = (await f.req('POST', `/v1/trips/${trip}/sos`, {})).body.id;
-  const jobs = (await f.ctx.pool.query("SELECT id,version,class,channel,status FROM jobs WHERE incident_id=$1 AND channel<>'group' ORDER BY channel", [incident])).rows;
+  const jobs = (await f.ctx.pool.query("SELECT id,id AS \"jobId\",version,class,channel,status FROM jobs WHERE incident_id=$1 AND channel<>'group' ORDER BY channel", [incident])).rows;
   assert.deepEqual(jobs.map(j => `${j.channel}:${j.status}`), ['sms:pending', 'voice:pending', 'whatsapp:pending']);
   for (const job of jobs) assert.ok(await d.authorizeJob(f.ctx, await d.claimJob(f.ctx, job, 'legacy-locale'), provider()), job.channel);
 });

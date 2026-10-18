@@ -1,5 +1,5 @@
 import { useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useI18n } from './i18n.tsx';
 import { formattedTimestamp } from './time.ts';
 

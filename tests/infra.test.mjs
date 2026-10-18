@@ -77,7 +77,7 @@ test('backend CI job runs each check as its own exact step, gated only by instal
   const job=text('.github/workflows/ci.yml').split(/^  (?=\S)/m).find(part=>part.startsWith('backend:'));
   assert.ok(job,'backend job');
   const steps=job.split('\n').map(line=>line.trim()).filter(line=>line.startsWith('- '));
-  for(const command of ['npm ci','npm run typecheck','npm test','npm run demo','npm run test:tooling','pip install cfn-lint==1.57.2','cfn-lint infra/template.json','docker build --platform linux/amd64 -t andes-backend:ci .'])
+  for(const command of ['npm ci','npm run typecheck','npm test','npm run demo','pip install cfn-lint==1.57.2','cfn-lint infra/template.json','docker build --platform linux/amd64 -t andes-backend:ci .'])
     assert.ok(steps.includes(`- run: ${command}`),command);
   // Web or client checks belong in the web job: here a failure would skip the backend tests.
   const gate=steps.slice(0,steps.indexOf('- run: npm test'));
@@ -97,12 +97,11 @@ test('image contains migration SQL/CA and CI runs real PostgreSQL tests without 
   assert.match(text('compose.yaml'),/127\.0\.0\.1:5432:5432/);
 });
 
-test('app-integration CI job runs the isolated harness, the browser seam and the receipt oracle tests',()=>{
+test('app-integration CI job runs the isolated harness and the browser seam',()=>{
   const job=text('.github/workflows/ci.yml').split(/^  (?=\S)/m).find(part=>part.startsWith('app-integration:'));
   assert.ok(job,'app-integration job');
   const steps=job.split('\n').map(line=>line.trim());
-  for(const step of ['- run: npm ci','- run: node scripts/app-integration/run.mjs','- run: node scripts/app-integration/check-browser-seam.mjs','- run: node --test evidence/app-acceptance/oracle.test.mjs'])assert.ok(steps.includes(step),step);
-  assert.ok(steps.includes('fetch-depth: 0'),'The source gate needs the pinned backend commit');
+  for(const step of ['- run: npm ci','- run: node scripts/app-integration/run.mjs','- run: node scripts/app-integration/check-browser-seam.mjs'])assert.ok(steps.includes(step),step);
 });
 
 test('demo deploy: consumers only with live sends, their queue actions, optional demo secrets and the demo environment',()=>{

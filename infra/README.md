@@ -1,6 +1,6 @@
 # AWS backend artifacts and runbook
 
-This is an offline-reviewed deployment design, not an AWS deployment or provider qualification. `template.json` uses plain CloudFormation. No AWS account APIs, authentication, spending or live Zavu requests were used. See the reviewed [architecture image](../docs/architecture/diagrams/andes-infrastructure.png) and [editable SVG](../docs/architecture/diagrams/andes-infrastructure.svg).
+`template.json` is the production design in plain CloudFormation (linted by `cfn-lint` in CI). It has not been deployed. The live hackathon demo runs from [`demo/deploy.sh`](demo/deploy.sh) on ECS Express with a single task. See the [architecture diagram](../docs/architecture/diagrams/andes-infrastructure-professional.svg).
 
 ## Boundaries and required inputs
 
@@ -132,6 +132,6 @@ Unresolved attempts are SQL facts, not an invented CloudWatch custom metric. Dur
 - Restore/deletion: test an isolated RDS restore before live use. RDS, app secret, queues, logs and reserved bucket are retained. Retained queues/secrets/data may continue billing and remain operator-owned after stack deletion. Deletion protection must be deliberately reviewed; no destructive cleanup was performed here.
 - Live collection still needs qualified core location/raw-draft/audit deletion policies, phone/mobile background tests, Spanish/Brazilian Portuguese/country/provider evidence, callback/recovery/failover/restore tests and human contact UX. Audio/voice interpretation, automatic fatigue/nonresponse escalation and verified human voice-answer semantics are not implemented.
 
-## Evidence limits in this environment
+## Evidence limits
 
-Node 24 typecheck/build, PostgreSQL 18 tests, synthetic process-restart demo, Compose config validation and cfn-lint ran locally. Docker CLI is present but its daemon is unavailable; image build and Compose service execution were **not** run, and no virtualization was installed/started. Files/commands were checked statically; CI will repeat config validation and build the image when run. No RDS handshake, AWS deployment, alarm delivery, container/AZ interruption, provider send or real-device result is claimed.
+CI runs the Node 24 typecheck and build, the PostgreSQL 18 tests, the synthetic process-restart demo, cfn-lint, Compose config validation and the linux/amd64 image build on every push. The template itself has not been deployed. No RDS handshake through the template, alarm delivery, container/AZ interruption or real-device result is claimed.

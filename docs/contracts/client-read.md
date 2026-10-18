@@ -24,7 +24,7 @@ All queries in a response use that pinned snapshot. Concurrent commits after acq
 
 ## Relation to the other trip shapes
 
-This branch integrates `main` at `5ea57adc73ee7872e1cbfc53e2beb9809a34ffad`, including the merged #74/#80/#83 runtime and #59/#81 shared SDK. Queries select the real `contact_grants.role`, `trips.expected_arrival_at` and `trips.sharing_stopped_at` columns directly. Unset arrival and sharing timestamps remain null. App registration preserves the runtime's demo, checks and insights routes and the authentication presence clock while mounting the five catalog routes. Tests exercise the actual demo session issuer with a fictional configured live destination, persisted roles, draft confirmation, sharing stop/resume, owner detail and `/status`. The shared SDK's DTOs and decoders consume this phone-free contract, preserve its runtime fields and discard any legacy phone properties; API integration tests run that SDK against the actual signed backend and PostgreSQL.
+Queries select the real `contact_grants.role`, `trips.expected_arrival_at` and `trips.sharing_stopped_at` columns directly. Unset arrival and sharing timestamps remain null. App registration preserves the runtime's demo, checks and insights routes and the authentication presence clock while mounting the five catalog routes. Tests exercise the actual demo session issuer with a fictional configured live destination, persisted roles, draft confirmation, sharing stop/resume, owner detail and `/status`. The shared SDK's DTOs and decoders consume this phone-free contract, preserve its runtime fields and discard any legacy phone properties; API integration tests run that SDK against the actual signed backend and PostgreSQL.
 
 | Catalog field | Existing owner detail (`GET /v1/trips/:id`) | Runtime `/status` |
 | --- | --- | --- |
@@ -36,4 +36,15 @@ This branch integrates `main` at `5ea57adc73ee7872e1cbfc53e2beb9809a34ffad`, inc
 
 The bounded catalog projection remains distinct deliberately: copying raw detail would expose internal owner columns, while copying the status envelope would require per-trip incident/location work and widen the read surface. Existing detail and status responses are not changed. The named exported DTO and regression comparison against owner detail make that distinction explicit without silently changing existing clients.
 
-These reads exclude phone values, bearer tokens, raw draft text, coordinates/history, provider/job/outbox state, and other actors' records. They are bounded first-page reads with truthful `hasMore`, not a cursor/pagination contract. Recipient discovery belongs to PR #86's separate actor-bound routes; these five routes do not claim to provide it.
+These reads exclude phone values, bearer tokens, raw draft text, coordinates/history, provider/job/outbox state, and other actors' records. They are bounded first-page reads with truthful `hasMore`, not a cursor/pagination contract. Recipients discover their own invitations and shared trips through the two routes below.
+
+## Recipient routes
+
+Implemented in `src/client-read/recipient.ts`. Both derive the recipient from the verified `request.actor.id`, accept no driver/contact/phone selector, use the same `readSnapshot` (telemetry pool, pinned snapshot before `readAt`), return no phone value, and send a fixed first page of at most 100 rows with `hasMore` from a 101st row. Neither writes state, enqueues work or sends messages.
+
+| Route | Response |
+| --- | --- |
+| `GET /v1/contact/invitations` | `{invitations, readAt, limit:100, hasMore}`. Rows `{id, driverId, requested:{map,incident}, accepted:{map,incident}, status, acceptedAt, revokedAt}` for `contact_grants.contact_id = actor`, ordered by grant id. `status` is `pending`, `accepted` or `revoked` (revocation wins). Accepting still goes through `POST /v1/contacts/:id/accept`, which rechecks the verified phone and scopes. |
+| `GET /v1/contact/trips` | `{trips, readAt, limit:100, hasMore}`. Rows `{tripId, grantId, driverId, status, scopes:{map,incident}, activeIncidentId}`. A trip appears only with an explicit `trip_grants` attachment, accepted standing consent, no standing or per-trip revocation and at least one accepted scope. A closed trip appears only for incident scope with an active incident. Incident-scoped active incidents sort first (map-only rows never reveal an incident through ordering), then trip creation time and id descending. |
+
+Every protected follow-up read (status, snapshot, incident, acknowledgement, action, revoke) rechecks authorization. Creating a contact still needs the recipient's account UUID, and no inviter display name is stored.

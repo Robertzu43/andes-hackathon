@@ -1,5 +1,5 @@
 import { Component, useCallback, useEffect, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from 'react';
-import { BrowserRouter, Link, Route, Routes, useLocation, useMatch, useParams } from 'react-router-dom';
+import { BrowserRouter, Link, Route, Routes, useLocation, useMatch, useParams } from 'react-router';
 import { I18nProvider, LanguageSwitch, useI18n } from './i18n.tsx';
 import { message, type Locale, type MessageKey } from './messages.ts';
 import { routeDefinitions, validRouteParams, type RouteId } from './routes.ts';
@@ -8,7 +8,7 @@ import { EmptyState, ErrorRecovery, HomeLink, PrimaryAction } from './primitives
 
 export interface FeatureRouteProps { params: Readonly<Record<string, string>> }
 export type FeatureRoutes = Partial<Record<RouteId, ComponentType<FeatureRouteProps>>>;
-export type FoundationOptions = { routes?: FeatureRoutes; session?: SessionGateway; initialLocale?: Locale; criticalActions?: ReactNode };
+export type FoundationOptions = { routes?: FeatureRoutes; session?: SessionGateway; initialLocale?: Locale };
 const initialSession = () => unconfiguredSession;
 function useSession(gateway?: SessionGateway) {
   const subscribe = useCallback((listener: () => void) => gateway ? gateway.subscribe(listener) : () => {}, [gateway]);
@@ -122,11 +122,9 @@ function RouteRecovery({ onRetry }: { onRetry: () => void }) {
   return <section data-route-recovery><PageIdentity title={t('viewError')} /><p>{t('viewRecovery')}</p>
     <div className="andes-actions"><PrimaryAction onClick={onRetry}>{t('retry')}</PrimaryAction><HomeLink /></div></section>;
 }
-export function FoundationApp({ routes = {}, session, criticalActions }: FoundationOptions) {
-  const { pathname } = useLocation(); const { t } = useI18n();
+export function FoundationApp({ routes = {}, session }: FoundationOptions) {
+  const { pathname } = useLocation();
   return <AppShell session={session}><NavigationFocus />
-    {criticalActions && <RenderBoundary fallback={retry => <ErrorRecovery title={t('viewError')} onRetry={retry} />}>
-      <div data-foundation-critical-actions>{criticalActions}</div></RenderBoundary>}
     <RenderBoundary key={pathname} fallback={retry => <RouteRecovery onRetry={retry} />}>
     <Routes>{routeDefinitions.map(definition => <Route key={definition.id} path={definition.path}
       element={definition.id === 'session' ? <SessionRoute session={session} /> : <RouteFrame definition={definition} Component={routes[definition.id]} />} />)}

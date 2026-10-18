@@ -2,7 +2,7 @@ import { createElement, useCallback, useRef, useState, useSyncExternalStore, typ
 import { PrimaryAction, useMessages, type FeatureRouteProps, type FeatureRoutes } from '../foundation/index.ts';
 import { createContactRoutes } from '../features/contacts/routes.tsx';
 import { driverMessages } from '../features/driver/messages.ts';
-import { Alerts, CheckIn, Home, Prepare, Summary, TripHome, Trucks } from '../features/driver/screens.tsx';
+import { Home, Prepare, Trip, Trucks } from '../features/driver/screens.tsx';
 import type { PhoneDemoRuntime } from './runtime.ts';
 
 function useFamily(gateway: PhoneDemoRuntime['familyGateway']) {
@@ -45,10 +45,10 @@ export function createPhoneRoutes(runtime: PhoneDemoRuntime): FeatureRoutes {
     home: () => <Home runtime={runtime} />,
     trucks: () => <Trucks runtime={runtime} />,
     tripNew: () => <Prepare runtime={runtime} />,
-    activeTrip: ({ params }) => <TripHome runtime={runtime} tripId={params.tripId!} />,
-    checkIn: ({ params }) => <CheckIn runtime={runtime} tripId={params.tripId!} />,
-    alerts: ({ params }) => <Alerts runtime={runtime} tripId={params.tripId!} />,
-    summary: ({ params }) => <Summary runtime={runtime} tripId={params.tripId!} />,
+    activeTrip: ({ params }) => <Trip runtime={runtime} tripId={params.tripId!} mode="active" />,
+    checkIn: ({ params }) => <Trip runtime={runtime} tripId={params.tripId!} mode="checkin" />,
+    alerts: ({ params }) => <Trip runtime={runtime} tripId={params.tripId!} mode="alerts" />,
+    summary: ({ params }) => <Trip runtime={runtime} tripId={params.tripId!} mode="summary" />,
     contacts: driverContacts.contacts,
     privacy: driverContacts.privacy,
     invitation: familyPage(runtime, familyContacts.invitation),
