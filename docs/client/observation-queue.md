@@ -86,10 +86,12 @@ frontend foundation exists. Concurrent-tab writers are out of scope here.
   (Per-trip consent revocation via `wipeScope` IS persisted: it must survive
   restart to block re-entry.) Used by `pipeline.signOut()`.
 - **Ambiguous intent is durable**: `setStickyIntent(scope, {samples, key,
-  queueIds})` persists an unacknowledged batch's exact content + idempotency
-  key into queue meta; `stickyIntent` / `stickyScopes` / `clearStickyIntent`
-  expose it. A reload cannot lose the original intent, so a retry can never
-  regrow or rekey. Wipes clear the intent with the records.
+  queueIds, sessionId})` persists an unacknowledged batch as its own meta
+  record (`intent:<userId> →<tripId>`) holding the exact replay contract —
+  `intent: { key, body, userId, tripId, sessionId }` — plus the owning
+  `queueIds`. `stickyIntent` / `stickyScopes` / `clearStickyIntent` expose
+  it. A reload cannot lose the original intent, so a retry can never regrow
+  or rekey. Wipes delete the intent record with the records.
 
 ## Upload bridge (`upload.mjs`)
 
@@ -115,13 +117,16 @@ Receipt handling — a batch is deleted only when the response **proves** it:
   must equal the target trip id and `body.received` must equal the number of
   samples sent. Anything else is a `receipt-mismatch` — and it is treated as
   AMBIGUOUS (the server may have persisted the batch): nothing is deleted,
-  the exact intent is pinned durably, `receiptMismatches` is counted and the
-  pump halts for operator attention. The next flush replays the identical
-  payload under the identical key.
+  the records settle back to `pending` as retained unsent work, the exact
+  intent is pinned durably, `receiptMismatches` is counted and the pump halts
+  for operator attention. The next flush replays the identical payload under
+  the identical key.
 - **Ambiguous outcomes are sticky AND durable.** On a network error, 5xx or
-  unverifiable receipt the server may already hold the batch, so the records
-  stay `uploading` and the exact `(samples, idempotency key, queueIds)` are
-  persisted per scope in queue meta (`setStickyIntent`). The next flush —
+  unverifiable receipt the server may already hold the batch, so the exact
+  `(body, idempotency key)` are persisted per scope as a durable intent
+  record (`setStickyIntent`) and the records are released back to `pending`
+  — `uploading` only ever means "a request is in flight right now"; the
+  retry contract lives in the intent, not in record state. The next flush —
   including the first flush after a page reload or crash — retries that
   identical payload BEFORE any new batch is taken; newer samples always
   follow as their own batch with their own key. A retry never regrows or

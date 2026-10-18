@@ -97,12 +97,13 @@ export function createLocationUploader({
     }, backoffMs);
   }
 
-  // Ambiguous outcome (network error or 5xx): count attempts, retain the
-  // sticky intent for the survivors, and fail out records that exhausted
-  // their budget. If any record exhausted, the batch composition can no
-  // longer be preserved — the sticky key is discarded and the survivors
-  // regroup under a new key next flush; the server's per-capture-timestamp
-  // dedupe keeps that safe.
+  // Ambiguous outcome (network error or 5xx): count attempts, release the
+  // records back to pending (record state is not the retry contract), and
+  // pin the durable sticky intent — the exact body + key the retry must
+  // replay. If any record exhausted, the batch composition can no longer be
+  // preserved — the sticky key is discarded and the survivors regroup under
+  // a new key next flush; the server's per-capture-timestamp dedupe keeps
+  // that safe.
   async function noteAmbiguousFailure(scope, records, samples, key, errorCode, userId) {
     const updated = await queue.noteAttempt(records.map((r) => r.queueId), errorCode);
     const exhausted = updated.filter((record) => record.attempts >= maxAttempts);
@@ -112,7 +113,13 @@ export function createLocationUploader({
       await queue.releaseBatch(survivors, errorCode, { countAttempt: false });
       await queue.clearStickyIntent(scope);
     } else {
-      await queue.setStickyIntent(scope, { queueIds: records.map((r) => r.queueId), samples, key });
+      await queue.setStickyIntent(scope, {
+        queueIds: records.map((r) => r.queueId),
+        samples,
+        key,
+        sessionId: records[0]?.sessionId ?? null,
+      });
+      await queue.releaseBatch(records, errorCode, { countAttempt: false });
     }
     consecutiveFailures += 1;
     scheduleRetry(userId);
@@ -136,7 +143,8 @@ export function createLocationUploader({
           await queue.clearStickyIntent(scope);
           continue;
         }
-        ({ samples, key } = stuck);
+        samples = stuck.intent.body.observations;
+        key = stuck.intent.key;
       } else {
         records = await queue.takeBatch({ ...scope, limit: batchSize });
         if (records.length === 0) return scopeOutcome;
@@ -198,11 +206,15 @@ export function createLocationUploader({
       if (response.status >= 200 && response.status < 300) {
         const body = await response.json().catch(() => null);
         // Post-response retirement: a stop()/signOut()/revokeTrip() that ran
-        // while the request was in flight means NO local side effects — no
-        // receipt write, no deletion, no counters. Unconfirmed records are
-        // never deleted; the durable sticky intent survives for a later
-        // session to replay under the same key.
-        if (stopped || queue.isScopeRevoked(scope)) return scopeOutcome;
+        // while the request was in flight means NO delivery side effects —
+        // no receipt write, no deletion, no counters. Records settle back to
+        // pending (a no-op if a wipe already deleted them) so 'uploading'
+        // only ever means "request in flight right now"; the durable sticky
+        // intent survives for a later session to replay under the same key.
+        if (stopped || queue.isScopeRevoked(scope)) {
+          await queue.releaseBatch(records, 'stopped', { countAttempt: false });
+          return scopeOutcome;
+        }
         if (body && body.id === scope.tripId && body.received === samples.length) {
           await queue.confirmUploaded(records);
           await queue.clearStickyIntent(scope);
@@ -213,16 +225,26 @@ export function createLocationUploader({
         // A 2xx that does not echo the requested trip and exact sample count
         // is not a receipt — and it is AMBIGUOUS: the server may have
         // persisted the batch. Nothing is deleted, the defect is counted,
-        // the original intent is pinned durably (never regrown/rekeyed) and
-        // the pump halts for this scope instead of confirming a lie.
-        await queue.setStickyIntent(scope, { queueIds: records.map((r) => r.queueId), samples, key });
+        // the records settle back to pending as retained unsent work, the
+        // original intent is pinned durably (never regrown/rekeyed) and the
+        // pump halts for this scope instead of confirming a lie.
+        await queue.setStickyIntent(scope, {
+          queueIds: records.map((r) => r.queueId),
+          samples,
+          key,
+          sessionId: records[0]?.sessionId ?? null,
+        });
+        await queue.releaseBatch(records, 'receipt-mismatch', { countAttempt: false });
         await queue.noteReceiptMismatch(records.length);
         lastError = 'receipt-mismatch';
         return scopeOutcome;
       }
 
       const code = await bodyCode(response);
-      if (stopped || queue.isScopeRevoked(scope)) return scopeOutcome;
+      if (stopped || queue.isScopeRevoked(scope)) {
+        await queue.releaseBatch(records, 'stopped', { countAttempt: false });
+        return scopeOutcome;
+      }
       lastError = code;
       if (response.status === 401 || response.status === 403) {
         await queue.releaseBatch(records, code, { countAttempt: false });

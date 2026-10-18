@@ -106,8 +106,8 @@ test('reconnect retry reuses the same idempotency key for the same batch', async
   await uploader.flush({ userId: 'user-1' });
   assert.equal(calls.length, 1);
   const countsAfterFailure = await queue.counts();
-  assert.equal(countsAfterFailure.uploading, 1, 'unacknowledged batch stays sticky in uploading');
-  assert.equal(countsAfterFailure.pending, 0);
+  assert.equal(countsAfterFailure.uploading, 0, 'no request is in flight after the failure settled');
+  assert.equal(countsAfterFailure.pending, 1, 'unacknowledged batch is retained as pending unsent work');
   assert.equal(timers.scheduled.length, 1, 'a backoff retry is scheduled');
   timers.runNext();
   await uploader.flush({ userId: 'user-1' }); // joins the in-flight retry
@@ -145,7 +145,8 @@ test('network errors consume attempts and exhausted records are retained as fail
   });
   await uploader.flush({ userId: 'user-1' });
   let counts = await queue.counts();
-  assert.equal(counts.uploading, 1);
+  assert.equal(counts.uploading, 0, 'no request in flight once the failure settled');
+  assert.equal(counts.pending, 1, 'unacknowledged batch retained as pending');
   await uploader.flush({ userId: 'user-1' });
   counts = await queue.counts();
   assert.equal(counts.uploading, 0);
@@ -161,7 +162,8 @@ test('500 responses consume attempts and retain exhausted records as failed', as
   });
   await uploader.flush({ userId: 'user-1' });
   let counts = await queue.counts();
-  assert.equal(counts.uploading, 1);
+  assert.equal(counts.uploading, 0);
+  assert.equal(counts.pending, 1, 'unacknowledged batch retained as pending');
   await uploader.flush({ userId: 'user-1' });
   counts = await queue.counts();
   assert.equal(counts.uploading, 0);
@@ -324,8 +326,8 @@ test('a 2xx with the wrong trip id or wrong count is not a receipt', async () =>
     let counts = await queue.counts();
     assert.equal(counts.uploaded, 0, `nothing confirmed for body ${JSON.stringify(body)}`);
     assert.equal(counts.receiptMismatches, 1);
-    assert.equal(counts.pending, 0);
-    assert.equal(counts.uploading, 1, 'sample retained as sticky uploading, not deleted on an unvalidated receipt');
+    assert.equal(counts.uploading, 0, 'no request in flight once the defective receipt settled');
+    assert.equal(counts.pending, 1, 'sample retained as pending unsent work, not deleted on an unvalidated receipt');
     let state = await uploader.state();
     assert.equal(state.lastError, 'receipt-mismatch');
     assert.equal(state.unacknowledgedBatches, 1, 'original intent pinned durably');
@@ -385,6 +387,33 @@ test('the sticky intent survives a full queue + uploader restart, content and ke
   assert.equal(second.calls[1].body.observations.length, 1, 'the post-restart sample follows as its own batch');
   assert.notEqual(second.calls[1].init.headers['Idempotency-Key'], originalKey);
   assert.equal((await queue2.counts()).uploaded, 2);
+});
+
+test('the ambiguous intent persists as its own meta record with the exact replay contract', async () => {
+  const timers = silentTimers();
+  const stores = createMemoryStores();
+  const queue = await openObservationQueue({ records: stores.records, meta: stores.meta, clock });
+  await queue.enqueue({
+    sample: sampleAt(NOW - 2000),
+    scope: { ...scope, sessionId: 'session-A' },
+    provenance: { eventId: 'evt-1', requestId: 'req-1' },
+  });
+  const { fetch, calls } = fakeFetch([new TypeError('lost response')]);
+  const uploader = createLocationUploader({
+    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: fetch, timers,
+  });
+  await uploader.flush({ userId: 'user-1' });
+  assert.equal(calls.length, 1);
+  const intents = (await stores.meta.getAll()).filter((entry) => entry.intent);
+  assert.equal(intents.length, 1, 'one durable intent record per scope');
+  assert.deepEqual(intents[0].intent, {
+    key: calls[0].init.headers['Idempotency-Key'],
+    body: calls[0].body,
+    userId: scope.userId,
+    tripId: scope.tripId,
+    sessionId: 'session-A',
+  }, 'the persisted intent is exactly { key, body, userId, tripId, sessionId }');
+  assert.deepEqual(intents[0].queueIds, ['q-1']);
 });
 
 test('revocation landing during the pre-flight store re-read still blocks the POST', async () => {

@@ -59,17 +59,53 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
     throw new RangeError('capacity must be a bounded positive integer');
   }
   const stored = await meta.get('meta');
-  const state = stored ?? { id: 'meta', seq: 0, counts: { ...INITIAL_COUNTS }, revokedScopes: [], stickyIntents: {} };
+  const state = stored ?? { id: 'meta', seq: 0, counts: { ...INITIAL_COUNTS }, revokedScopes: [] };
   // Counters added in later revisions default to 0 for existing databases.
   state.counts = { ...INITIAL_COUNTS, ...state.counts };
   state.revokedScopes ??= [];
-  state.stickyIntents ??= {};
   // Session-only revocations (owner sign-out): same re-entry protection as a
   // persisted revocation but deliberately NOT written to storage, so sign-out
   // leaves no owner/trip plaintext behind.
   const sessionRevoked = new Set();
   const persist = () => meta.put('meta', state);
   const isRevoked = (scope) => sessionRevoked.has(scopeKey(scope)) || state.revokedScopes.includes(scopeKey(scope));
+
+  // Durable ambiguous-upload intents, one meta record per scope
+  // (`intent:<userId> →<tripId>`). The `intent` field holds exactly the
+  // replay contract — { key, body, userId, tripId, sessionId } — while the
+  // owning queue ids sit alongside it. A page reload / crash re-reads these
+  // records, so the original request is replayed byte-identical under the
+  // original idempotency key instead of being regrown or rekeyed.
+  const intents = new Map();
+  const intentId = (scope) => `intent:${scopeKey(scope)}`;
+  for (const entry of await meta.getAll()) {
+    if (entry && typeof entry === 'object' && entry.intent && typeof entry.intent === 'object') {
+      intents.set(scopeKey(entry.intent), { intent: entry.intent, queueIds: [...(entry.queueIds ?? [])] });
+    }
+  }
+  // Legacy: intents briefly lived inside the meta document. Move them onto
+  // their own records so the on-disk shape is uniform.
+  if (state.stickyIntents && typeof state.stickyIntents === 'object') {
+    for (const legacy of Object.values(state.stickyIntents)) {
+      if (!legacy || typeof legacy !== 'object') continue;
+      const scope = { userId: legacy.userId, tripId: legacy.tripId };
+      const record = {
+        id: intentId(scope),
+        intent: {
+          key: legacy.key,
+          body: { observations: legacy.samples },
+          userId: legacy.userId,
+          tripId: legacy.tripId,
+          sessionId: legacy.sessionId ?? null,
+        },
+        queueIds: [...(legacy.queueIds ?? [])],
+      };
+      intents.set(scopeKey(scope), { intent: record.intent, queueIds: record.queueIds });
+      await meta.put(record.id, record);
+    }
+    delete state.stickyIntents;
+    await persist();
+  }
 
   const interrupted = (await records.getAll()).filter((record) => record.state === 'uploading');
   for (const record of interrupted) {
@@ -125,6 +161,10 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
       state: 'pending',
       tripId: scope.tripId,
       userId: scope.userId,
+      // The capture session the scope was opened under; carried onto the
+      // durable sticky intent so a replay after restart is attributable to
+      // the session that produced the original request.
+      sessionId: text(scope.sessionId) ? scope.sessionId : null,
       sample: { capturedAt: sample.capturedAt, latitude: sample.latitude, longitude: sample.longitude, accuracy: sample.accuracy },
       capturedAtMs,
       provenance: {
@@ -192,9 +232,10 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
     return found;
   }
 
-  // Count an upload attempt without changing state (sticky retries keep the
-  // records in 'uploading'). Returns the updated records so the caller can
-  // apply its own exhaustion policy.
+  // Count an upload attempt without changing record state. Returns the
+  // updated records so the caller can apply its own exhaustion policy
+  // (survivors are then released back to 'pending' by the caller; the
+  // durable sticky intent — not record state — carries the retry contract).
   async function noteAttempt(queueIds, errorCode) {
     const updated = [];
     for (const queueId of queueIds) {
@@ -253,7 +294,8 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
       state.revokedScopes.push(key);
       if (state.revokedScopes.length > QUEUE_LIMITS.revokedScopeRetention) state.revokedScopes.shift();
     }
-    delete state.stickyIntents[key];
+    intents.delete(key);
+    await meta.delete(intentId({ tripId, userId }));
     state.counts.wipedByRevocation += scoped.length;
     await persist();
     return scoped.length;
@@ -269,8 +311,10 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
     if (!text(userId)) return 0;
     const mine = (await allRecords()).filter((r) => r.userId === userId);
     for (const record of mine) await records.delete(record.queueId);
-    for (const key of Object.keys(state.stickyIntents)) {
-      if (state.stickyIntents[key]?.userId === userId) delete state.stickyIntents[key];
+    for (const [key, held] of intents) {
+      if (held.intent.userId !== userId) continue;
+      intents.delete(key);
+      await meta.delete(`intent:${key}`);
     }
     for (const record of mine) sessionRevoked.add(scopeKey(record));
     state.counts.wipedBySignout += mine.length;
@@ -279,26 +323,33 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
   }
 
   // Durable ambiguous-upload intent. When a batch's outcome is unknown (the
-  // server may already hold it), the exact samples + idempotency key are
-  // persisted per scope, so a page reload / crash cannot lose the original
-  // intent and accidentally regrow or rekey the retry.
-  async function setStickyIntent(scope, intent) {
-    state.stickyIntents[scopeKey(scope)] = {
-      tripId: scope.tripId,
-      userId: scope.userId,
-      samples: intent.samples,
-      key: intent.key,
-      queueIds: intent.queueIds,
+  // server may already hold it), the exact request body + idempotency key
+  // are persisted as their own meta record, so a page reload / crash cannot
+  // lose the original intent and accidentally regrow or rekey the retry.
+  // `intent` is exactly { key, body, userId, tripId, sessionId } — the full
+  // replay contract; queueIds identify the local records the body came from.
+  async function setStickyIntent(scope, { key, samples, queueIds, sessionId = null }) {
+    const record = {
+      id: intentId(scope),
+      intent: {
+        key,
+        body: { observations: samples },
+        userId: scope.userId,
+        tripId: scope.tripId,
+        sessionId,
+      },
+      queueIds: [...queueIds],
     };
-    await persist();
+    intents.set(scopeKey(scope), { intent: record.intent, queueIds: record.queueIds });
+    await meta.put(record.id, record);
   }
-  const stickyIntent = (scope) => state.stickyIntents[scopeKey(scope)] ?? null;
-  const stickyScopes = () => Object.values(state.stickyIntents).map(({ tripId, userId }) => ({ tripId, userId }));
+  const stickyIntent = (scope) => intents.get(scopeKey(scope)) ?? null;
+  const stickyScopes = () => [...intents.values()].map(({ intent }) => ({ tripId: intent.tripId, userId: intent.userId }));
   async function clearStickyIntent(scope) {
     const key = scopeKey(scope);
-    if (!(key in state.stickyIntents)) return;
-    delete state.stickyIntents[key];
-    await persist();
+    if (!intents.has(key)) return;
+    intents.delete(key);
+    await meta.delete(intentId(scope));
   }
 
   async function counts() {
