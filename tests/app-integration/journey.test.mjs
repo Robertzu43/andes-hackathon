@@ -48,7 +48,7 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
     } finally { clearTimeout(timer); controller.abort(); }
   }
   async function token(subject, extra = {}, signingKey = privateKey) {
-    return new SignJWT({phone_number: '+551155550100', phone_number_verified: true, ...extra})
+    return new SignJWT({phone_number: '+15555550100', phone_number_verified: true, ...extra})
       .setProtectedHeader({alg: 'RS256'}).setIssuer('https://andes-integration.invalid')
       .setAudience('andes-q46').setSubject(subject).setIssuedAt().setExpirationTime('1h').sign(signingKey);
   }
@@ -100,7 +100,7 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
   });
 
   await t.test('only intended verified contact can accept scoped standing invitation', async () => {
-    grant = (await request('POST', '/v1/contacts', {contactId, phone: '+551155550100', map: true, incident: true}, driver, {bindings: [['setup', 2]]})).id;
+    grant = (await request('POST', '/v1/contacts', {contactId, phone: '+15555550100', map: true, incident: true}, driver, {bindings: [['setup', 2]]})).id;
     await request('POST', `/v1/contacts/${grant}/accept`, {map: true, incident: true}, stranger, {status: 403});
     await request('POST', `/v1/contacts/${grant}/accept`, {map: true, incident: true}, await token('synthetic-contact', {phone_number_verified: false}), {status: 409});
     assert.equal((await request('POST', `/v1/contacts/${grant}/accept`, {map: true, incident: true}, contact, {bindings: [['setup', 3]]})).status, 'accepted');

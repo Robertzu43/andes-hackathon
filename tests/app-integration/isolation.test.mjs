@@ -17,9 +17,15 @@ test('integration runtime rejects remote databases and borrowed schemas', () => 
 });
 
 test('test child environment excludes inherited live credentials and production configuration', () => {
-  const env = testEnvironment();
-  assert.equal(env.ZAVU_LIVE_SEND, 'false');
-  for (const name of ['DATABASE_URL', 'AWS_ACCESS_KEY_ID', 'AWS_PROFILE', 'ZAVU_API_KEY', 'OIDC_JWKS_URL']) {
-    assert.equal(Object.hasOwn(env, name), false);
+  // Set them first: an environment that leaked everything would otherwise still pass.
+  const names = ['DATABASE_URL', 'AWS_ACCESS_KEY_ID', 'AWS_PROFILE', 'ZAVU_API_KEY', 'OIDC_JWKS_URL', 'ZAVU_LIVE_SEND'];
+  const saved = Object.fromEntries(names.map(name => [name, process.env[name]]));
+  try {
+    for (const name of names) process.env[name] = name === 'ZAVU_LIVE_SEND' ? 'true' : 'synthetic-must-not-leak';
+    const env = testEnvironment();
+    assert.equal(env.ZAVU_LIVE_SEND, 'false');
+    for (const name of names.slice(0, -1)) assert.equal(Object.hasOwn(env, name), false, name);
+  } finally {
+    for (const name of names) if (saved[name] === undefined) delete process.env[name]; else process.env[name] = saved[name];
   }
 });
