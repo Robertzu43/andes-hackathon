@@ -74,3 +74,33 @@ for (const changed of [false, true]) {
     if (changed) assert.deepEqual(await state(f, job), {status: 'cancelled', version: job.version + 1});
   });
 }
+
+for (const elapsed of [0, 1001]) {
+  test(`claiming reads the clock after the trip lock: waited ${elapsed} ms`, {timeout: 15000}, async t => {
+    const f = await fixture(t); const {trip, job} = await smsJob(f);
+    await f.ctx.pool.query('UPDATE jobs SET expires_at=$2 WHERE id=$1', [job.id, new Date(f.ctx.clock().getTime() + 1000)]);
+    const connection = await f.ctx.pool.connect(); await connection.query('BEGIN'); await connection.query('SELECT id FROM trips WHERE id=$1 FOR UPDATE', [trip]);
+    const op = operationContext(f);
+    const result = await finishBlocked(work.claimJob(op.ctx, job, 'race-claim'), connection, async () => {
+      await blocked(f, op.target, 'SELECT * FROM trips WHERE id=$1 FOR UPDATE%'); if (elapsed) await delay(elapsed); f.advance(elapsed);
+    });
+    assert.equal(Boolean(result), elapsed < 1000, 'never claim work that expired while waiting for the trip lock');
+    if (result) assert.equal((await f.ctx.pool.query('SELECT claim_until FROM jobs WHERE id=$1', [job.id])).rows[0].claim_until.getTime(), f.ctx.clock().getTime() + 30000);
+  });
+}
+
+test('a still-valid job whose claim lapsed is republished as soon as recovery returns it to pending', {timeout: 15000}, async t => {
+  const f = await fixture(t); const {job} = await smsJob(f);
+  await f.ctx.pool.query('UPDATE jobs SET expires_at=$2 WHERE id=$1', [job.id, new Date(f.ctx.clock().getTime() + 120000)]);
+  const claim = await work.claimJob(f.ctx, job, 'race-lease');
+  await f.ctx.pool.query('UPDATE outbox SET published_at=$2 WHERE job_id=$1', [job.id, f.ctx.clock()]);
+  f.advance(29900); const p = qualified(), connection = await quotaBlock(f, p), op = operationContext(f);
+  const attempt = await finishBlocked(work.authorizeJob(op.ctx, claim, p), connection, async () => {
+    await blocked(f, op.target, 'SELECT project_id FROM quota_accounts%'); await delay(101); f.advance(101);
+  });
+  assert.equal(attempt, null); await work.recoverWork(f.ctx);
+  assert.equal((await state(f, job)).status, 'pending');
+  const sent = []; const transport = {async publish(value) { sent.push(value); }};
+  for (let n = 0; n < 8 && await work.relayOnce(f.ctx, transport, 'control'); n++) {}
+  assert.equal(sent.filter(value => value.jobId === job.id).length, 1, 'no 30 s wait for the published-outbox timeout');
+});

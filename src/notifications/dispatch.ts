@@ -45,10 +45,12 @@ export async function relayOnce(ctx: Context, transport: Pick<Transport, 'publis
   return true;
 }
 export async function claimJob(ctx: Context, input: Envelope, owner: string): Promise<Claim | null> {
-  const message = envelope(input); const now = ctx.clock();
+  const message = envelope(input);
   const found = (await ctx.pool.query('SELECT trip_id FROM jobs WHERE id=$1', [message.jobId])).rows[0];
   if (!found) return null;
   return withTripTransaction(ctx, found.trip_id, async client => {
+    // Read the clock under the trip lock: a pre-wait time could claim work that expired while waiting.
+    const now = ctx.clock();
     const job = (await client.query('SELECT * FROM jobs WHERE id=$1 FOR UPDATE', [message.jobId])).rows[0];
     if (!job || job.version !== message.version || job.class !== message.class || job.due_at > now || (job.expires_at && job.expires_at <= now) || !['pending', 'claimed'].includes(job.status) || (job.status === 'claimed' && job.claim_until > now)) return null;
     if ((await client.query('SELECT 1 FROM dispatch_attempts WHERE job_id=$1 AND job_version=$2', [job.id, job.version])).rowCount) return null;
@@ -214,8 +216,11 @@ export async function recoverWork(ctx: Context): Promise<void> {
     // Never turn an authorized/unknown external attempt back into sendable work.
     await client.query("UPDATE dispatch_attempts SET state='unknown' WHERE state='authorized' AND authorized_at<=$1", [after(now, -30000)]);
     await client.query("UPDATE jobs j SET status='unknown' FROM dispatch_attempts a WHERE a.job_id=j.id AND a.job_version=j.version AND a.state='unknown' AND j.status='authorized'");
-    await client.query(`UPDATE jobs j SET status='pending',claim_token=NULL,claim_owner=NULL,claim_until=NULL
-      WHERE j.status='claimed' AND j.claim_until<=$1 AND NOT EXISTS(SELECT 1 FROM dispatch_attempts a WHERE a.job_id=j.id AND a.job_version=j.version)`, [now]);
+    // A lapsed claim's message was already consumed, so republish its outbox now instead of waiting for the 60 s rule below.
+    await client.query(`WITH reset AS (UPDATE jobs j SET status='pending',claim_token=NULL,claim_owner=NULL,claim_until=NULL
+      WHERE j.status='claimed' AND j.claim_until<=$1 AND NOT EXISTS(SELECT 1 FROM dispatch_attempts a WHERE a.job_id=j.id AND a.job_version=j.version) RETURNING j.id,j.version)
+      UPDATE outbox o SET published_at=NULL,next_publish_at=$1 FROM reset r WHERE o.job_id=r.id AND o.job_version=r.version
+        AND o.published_at IS NOT NULL AND (o.lease_until IS NULL OR o.lease_until<=$1)`, [now]);
     await client.query(`INSERT INTO outbox(id,job_id,job_version,class,created_at,next_publish_at)
       SELECT gen_random_uuid(),j.id,j.version,j.class,$1,$1 FROM jobs j WHERE j.status='pending' AND j.due_at<=$1 AND (j.expires_at IS NULL OR j.expires_at>$1)
       AND NOT EXISTS(SELECT 1 FROM dispatch_attempts a WHERE a.job_id=j.id AND a.job_version=j.version) ON CONFLICT(job_id,job_version) DO NOTHING`, [now]);
