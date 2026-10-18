@@ -21,7 +21,8 @@ export function locationRoutes(app: FastifyInstance, ctx: Context) {
       if (!trip.map_active || trip.status !== 'active') problem(409, 'location_stopped');
       const now = ctx.clock(); const observations = (request.body as { observations: Observation[] }).observations;
       // shortcut: synthetic freshness/retention bounds; qualify phone cadence before live use.
-      if (observations.some(o => Date.parse(o.capturedAt) > now.getTime() + 30000 || Date.parse(o.capturedAt) < now.getTime() - 86400000)) problem(400, 'capture_time_out_of_bounds');
+      // Some RFC 3339 forms that pass the schema parse to NaN, which would slip past both bounds: fail closed.
+      if (observations.some(o => { const at = Date.parse(o.capturedAt); return !Number.isFinite(at) || at > now.getTime() + 30000 || at < now.getTime() - 86400000; })) problem(400, 'capture_time_out_of_bounds');
       for (const o of observations) {
         const args = [trip.id, o.capturedAt, now, o.latitude, o.longitude, o.accuracy];
         await client.query('INSERT INTO locations VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING', args);

@@ -3,6 +3,32 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Check API types in NodeNext and Bundler modes
+        run: |
+          node node_modules/typescript/bin/tsc -p tests/api/tsconfig.json
+          node node_modules/typescript/bin/tsc -p tests/api/tsconfig.json --module ESNext --moduleResolution Bundler
+      - name: Test API boundary and pinned feature integrations
+        run: node --test tests/api/*.test.mjs tests/api/contact-view.integration.mjs tests/api/contacts.integration.mjs tests/api/foundation.integration.mjs
+        env:
+          ANDES_TYPESCRIPT_TSC: ${{ github.workspace }}/web/node_modules/typescript/bin/tsc
+          ANDES_FOUNDATION_NODE_MODULES: ${{ github.workspace }}/web/node_modules
   backend:
     runs-on: ubuntu-latest
     services:
@@ -21,15 +47,17 @@ jobs:
       ZAVU_LIVE_SEND: "false"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - run: npm run typecheck:client-api
       - run: npm test
-      - run: npm run test:client-api
+      - name: Test shared client SOS reactivation against the actual backend
+        run: node --test web/tests/api/shared-sdk.integration.mjs
       - run: npm run demo
       - uses: actions/setup-python@v5
         with:

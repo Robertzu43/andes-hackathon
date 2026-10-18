@@ -140,7 +140,7 @@ test('write requires a bounded visible-ASCII key and UUID resources cannot escap
   for (const key of [undefined, '', 'space key', 'line\nbreak', 'é', 'a'.repeat(129)]) {
     await assert.rejects(api.createTruck({ label: 'synthetic' }, { idempotencyKey: key }), e => e.kind === 'invalid_input' && e.outcome === 'not_sent');
   }
-  assert.throws(() => api.getTrip('../me?token=secret'), e => e.kind === 'invalid_input');
+  await assert.rejects(api.getTrip('../me?token=secret'), e => e.kind === 'invalid_input' && e.outcome === 'not_applicable');
   assert.equal(calls, 0);
   assert.match(createIdempotencyKey(), /^[0-9a-f-]{36}$/);
 });
@@ -212,7 +212,7 @@ test('session replacement aborts old work and a stale 401 cannot erase the new s
   s.setCredentials({ issuer: 'https://identity.example.invalid', subject: 'B', accessToken: 'synthetic.token.B', expiresAt: Date.now() + 60_000 });
   assert.equal(signal.aborted, true);
   finish(json({ code: 'unauthorized' }, 401));
-  await assert.rejects(pending, e => e.kind === 'session_changed' && e.outcome === 'unknown');
+  await assert.rejects(pending, e => e.status === 401 && e.outcome === 'rejected');
   assert.equal(s.snapshot().subject, 'B');
 });
 
@@ -238,7 +238,7 @@ test('invalid success, HTML and impossible snapshots remain protocol errors', as
 
 test('stale location and attributed action facts are preserved', async () => {
   const result = { tripId: id, readAt: stamp, freshness: 'stale', ageMs: 200_000,
-    location: { capturedAt: stamp, receivedAt: stamp, latitude: -12.1, longitude: -77.1, accuracy: 15 } };
+    location: { capturedAt: '2026-10-17T11:56:40.000Z', receivedAt: stamp, latitude: -12.1, longitude: -77.1, accuracy: 15 } };
   const { api } = fixture(async () => json(result));
   assert.deepEqual(await api.getSnapshot(id), result);
 });

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/runtime.mjs';
-import {contactFor, jobsOf, expectedFanOut, cfg, sweep, checksOf, asking} from './helpers/checks.mjs';
+import {contactFor, jobsOf, expectedFanOut, cfg, sweep, checksOf, asking, pending, groupFact} from './helpers/checks.mjs';
+import {waitForBlockedQueries} from './helpers/db-barriers.mjs';
 
 test('drafts keep an optional expected arrival; invitations take a family or colleague role', async t => {
   const f = await fixture(t);
@@ -11,7 +12,7 @@ test('drafts keep an optional expected arrival; invitations take a family or col
   assert.deepEqual(roles, [{id: colleague.grant, role: 'colleague'}, {id: family.grant, role: 'family'}]);
   const other = await f.token('other');
   const otherId = (await f.req('GET', '/v1/me', undefined, other)).body.id;
-  assert.equal((await f.req('POST', '/v1/contacts', {contactId: otherId, phone: '+5511999990000', map: true, incident: true, role: 'boss'})).status, 400);
+  assert.equal((await f.req('POST', '/v1/contacts', {contactId: otherId, phone: '+15555550100', map: true, incident: true, role: 'boss'})).status, 400);
   const draft = await f.draft({expectedArrivalAt: '2026-10-17T18:00:00Z'});
   assert.equal(draft.status, 200);
   const trip = await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: [family.grant]});
@@ -32,7 +33,7 @@ test('SOS alerts family on three channels, colleagues on two and records the gro
   assert.deepEqual((await f.ctx.pool.query('SELECT trigger,check_reason FROM incidents')).rows, [{trigger: 'sos', check_reason: null}]);
 });
 
-test('SOS while a check is asking closes it with the SOS incident; SOS upgrades a missed-check incident without new sends', async t => {
+test('SOS while a check is asking closes it with the SOS incident; SOS upgrades a missed-check incident with its own SOS alerts', async t => {
   const f = await fixture(t); const family = await contactFor(f, 'family'); const trip = await f.trip([family.grant]);
   await f.ctx.pool.query("INSERT INTO security_checks VALUES(gen_random_uuid(),$1,'silence','asking',$2,$2,$2,NULL,NULL)", [trip, f.ctx.clock()]);
   const sos = (await f.req('POST', `/v1/trips/${trip}/sos`, {})).body.id;
@@ -41,8 +42,8 @@ test('SOS while a check is asking closes it with the SOS incident; SOS upgrades 
   const g = await fixture(t); const other = await contactFor(g, 'family'); const second = await g.trip([other.grant]);
   await g.ctx.pool.query("INSERT INTO incidents(id,trip_id,driver_id,created_at,trigger,check_reason) VALUES(gen_random_uuid(),$1,$2,$3,'missed_check','silence')", [second, g.me.id, g.ctx.clock()]);
   const upgraded = (await g.req('POST', `/v1/trips/${second}/sos`, {})).body.id;
-  assert.deepEqual((await g.ctx.pool.query('SELECT id,trigger FROM incidents')).rows, [{id: upgraded, trigger: 'sos'}]);
-  assert.equal((await g.ctx.pool.query('SELECT count(*)::int n FROM jobs')).rows[0].n, 0);
+  assert.deepEqual((await g.ctx.pool.query('SELECT id,trigger,check_reason FROM incidents')).rows, [{id: upgraded, trigger: 'sos', check_reason: null}]);
+  assert.deepEqual(await jobsOf(g, upgraded), [pending('family', 'sms'), pending('family', 'voice'), pending('family', 'whatsapp'), groupFact]);
 });
 
 test('check timings are all-or-nothing and positive', async () => {
@@ -51,6 +52,8 @@ test('check timings are all-or-nothing and positive', async () => {
   assert.throws(() => checkConfig({SILENCE_MS: '120000'}), /Complete check timing/);
   assert.throws(() => checkConfig({SILENCE_MS: '0', ASK_GRACE_MS: '1', ARRIVAL_GRACE_MS: '1', CHECK_SWEEP_MS: '1'}), /Complete check timing/);
   assert.deepEqual(checkConfig({SILENCE_MS: '120000', ASK_GRACE_MS: '60000', ARRIVAL_GRACE_MS: '120000', CHECK_SWEEP_MS: '5000'}), cfg);
+  assert.deepEqual(checkConfig({SILENCE_MS: '120000', ASK_GRACE_MS: '60000', ARRIVAL_GRACE_MS: '120000', CHECK_SWEEP_MS: '5000', DEMO_MODE: 'true'}), {...cfg, demo: true});
+  assert.deepEqual(checkConfig({SILENCE_MS: '120000', ASK_GRACE_MS: '60000', ARRIVAL_GRACE_MS: '120000', CHECK_SWEEP_MS: '5000', DEMO_MODE: 'TRUE'}), cfg);
 });
 
 test('silence opens one check; OK closes it and the same reason does not reopen at once', async t => {
@@ -127,9 +130,13 @@ test('one failing trip does not stop the sweep for the others', async t => {
   const f = await fixture(t); const broken = await f.trip(); const healthy = await f.trip();
   await f.ctx.pool.query(`CREATE FUNCTION fail_check() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.trip_id = '${broken}' THEN RAISE EXCEPTION 'synthetic failure'; END IF; RETURN NEW; END $$`);
   await f.ctx.pool.query('CREATE TRIGGER fail_check BEFORE INSERT ON security_checks FOR EACH ROW EXECUTE FUNCTION fail_check()');
-  f.advance(120001); await sweep(f);
+  f.advance(120001);
+  const logged = []; const write = process.stderr.write;
+  process.stderr.write = chunk => { logged.push(String(chunk)); return true; };
+  try { await sweep(f); } finally { process.stderr.write = write; }
   assert.deepEqual(await checksOf(f, broken), []);
   assert.deepEqual(await checksOf(f, healthy), [asking('silence')]);
+  assert.deepEqual(logged, [`Security check failed for trip ${broken} (P0001)\n`], 'opaque trip ID and SQLSTATE only, never the error text');
 });
 
 test('sharing stopped opens a check at once; resume clears it; both are audited', async t => {
@@ -161,9 +168,9 @@ test('status drives both screens without phone numbers and follows grant scopes'
   f.advance(60000); await sweep(f);
   const alerted = (await f.req('GET', path, undefined, family.jwt)).body;
   assert.equal(alerted.check, null);
-  assert.deepEqual({...alerted.incident, id: typeof alerted.incident.id}, {id: 'string', trigger: 'missed_check', checkReason: 'silence', status: 'active', createdAt: '2026-10-17T12:03:00.001Z'});
+  assert.deepEqual({...alerted.incident, id: typeof alerted.incident.id}, {id: 'string', trigger: 'missed_check', checkReason: 'silence', status: 'active', label: null, createdAt: '2026-10-17T12:03:00.001Z'});
   assert.deepEqual(alerted.deliveries.map(d => `${d.role}:${d.channel}:${d.status}`), ['family:sms:pending', 'family:voice:pending', 'family:whatsapp:pending', 'group:group:unavailable']);
-  assert.doesNotMatch(JSON.stringify(alerted), /\+55|contact|recipient/);
+  assert.doesNotMatch(JSON.stringify(alerted), /\+1555|contact|recipient/);
   await f.ctx.pool.query('UPDATE contact_grants SET map_accepted=false');
   assert.equal((await f.req('GET', path, undefined, family.jwt)).body.location, undefined);
   assert.equal((await f.req('GET', path, undefined, f.stranger)).status, 403);
@@ -178,7 +185,7 @@ test('alert wording names the truck, keeps the incident ID and never invents loc
     location: {latitude: -12.1, longitude: -77.03, accuracy: 18.4, captured_at: new Date('2026-10-17T12:02:00Z')}};
   const env = {EMERGENCY_NUMBERS: '{"PE":"105"}', CONTACT_APP_URL: 'https://andes.example'};
   assert.equal(alertSummary({...base, incident: {id: 'i-1', trigger: 'sos', check_reason: null}}, env),
-    'ALERTA: el conductor del camión ABC-123 pidió ayuda (posible robo). Incidente i-1. Última ubicación hace 3 min (±18 m): https://maps.google.com/?q=-12.1,-77.03. Llámalo. Si no responde, llama al 105. Ver: https://andes.example/incidents/i-1');
+    'ALERTA: el conductor del camión ABC-123 pidió ayuda (posible robo). Incidente i-1. Última ubicación a las 07:02 (hace 3 min, ±18 m): https://maps.google.com/?q=-12.1,-77.03. Llámalo. Si no responde, llama al 105. Ver: https://andes.example/incidents/i-1');
   assert.equal(alertSummary({...base, location: null, signalAt: new Date('2026-10-17T11:58:00Z'), incident: {id: 'i-2', trigger: 'missed_check', check_reason: 'silence'}}, {}),
     'el conductor del camión ABC-123 no confirmó su estado (sin señal desde 06:58). Incidente i-2. Última ubicación no disponible. No sabemos qué pasó. Llámalo.');
   assert.match(alertSummary({...base, incident: {id: 'i-3', trigger: 'missed_check', check_reason: 'arrival_overdue'}}, env), /no llegó a la hora prevista\). Incidente i-3\..*Llámalo; si no responde, llama al 105\./);
@@ -187,7 +194,7 @@ test('alert wording names the truck, keeps the incident ID and never invents loc
   assert.match(alertSummary({...base, truck: 'ABC\n123\t'.padEnd(80, 'x'), incident: {id: 'i-6', trigger: 'sos', check_reason: null}}, {}), /camión ABC 123 x{32} pidió/);
   const spoken = alertSummary({...base, voice: true, incident: {id: 'i-7', trigger: 'sos', check_reason: null}}, env);
   assert.doesNotMatch(spoken, /https?:/);
-  assert.match(spoken, /Incidente i-7\. Última ubicación hace 3 min, precisión de 18 metros\. Llámalo\./);
+  assert.match(spoken, /Incidente i-7\. Última ubicación a las 07:02, hace 3 min, precisión de 18 metros\. Llámalo\./);
 });
 
 test('the control worker runs the sweeper only when check timings are configured', async t => {
@@ -219,11 +226,171 @@ test('resolving an overdue alert or resuming after the expected arrival does not
   assert.deepEqual(await checksOf(f, trip), [{reason: 'arrival_overdue', status: 'escalated', incident_id: incident}, asking('arrival_overdue')]);
 });
 
-test('a trip confirmed after its expected arrival gets the full grace period first', async t => {
-  const f = await fixture(t); f.advance(3600000);
-  const draft = await f.draft({expectedArrivalAt: '2026-10-17T12:30:00Z'});
-  const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: []})).body.id;
-  const quiet = {...cfg, silenceMs: 86400000};
-  f.advance(120000); await sweep(f, quiet); assert.deepEqual(await checksOf(f, trip), []);
-  f.advance(1); await sweep(f, quiet); assert.deepEqual(await checksOf(f, trip), [asking('arrival_overdue')]);
+// Robert: an arrival time that has already passed is a typo, not a plan. It is checked wherever it enters, and again at
+// confirmation, because a draft that was valid when written can go stale before the driver confirms it.
+test('expected arrival must be strictly in the future when drafted, corrected and confirmed', async t => {
+  const f = await fixture(t); // server clock 2026-10-17T12:00:00Z
+  const rejected = {status: 400, body: {code: 'invalid_input', reason: 'expected_arrival_not_in_future'}};
+  const confirm = (id, fields) => f.req('POST', `/v1/trip-drafts/${id}/confirm`, {confirmed: true, contactGrantIds: [], ...(fields ? {fields} : {})});
+  for (const at of ['2026-10-17T11:59:59.999Z', '2026-10-17T12:00:00Z', '2026-10-17T07:00:00-05:00', '0001-01-01T00:00:00Z']) assert.deepEqual(await f.draft({expectedArrivalAt: at}), rejected, at);
+  assert.equal((await f.draft({expectedArrivalAt: '2026-10-17T12:00:00.001Z'})).status, 200);
+  const open = await f.draft(); assert.equal(open.status, 200, 'still optional');
+  assert.deepEqual(await confirm(open.body.id, {expectedArrivalAt: '2026-10-17T11:00:00Z'}), rejected, 'a corrected field is checked too');
+  const stale = await f.draft({expectedArrivalAt: '2026-10-17T12:30:00Z'}); assert.equal(stale.status, 200);
+  f.advance(30 * 60000); // valid when drafted, due by confirmation
+  assert.deepEqual(await confirm(stale.body.id), rejected);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM trips')).rows[0].n, 0);
+  assert.equal((await confirm(stale.body.id, {expectedArrivalAt: '2026-10-17T13:00:00Z'})).status, 200, 'a corrected time confirms');
+  assert.equal((await confirm(open.body.id)).status, 200);
+  assert.deepEqual((await f.ctx.pool.query('SELECT expected_arrival_at FROM trips ORDER BY expected_arrival_at')).rows.map(r => r.expected_arrival_at), [new Date('2026-10-17T13:00:00Z'), null]);
+});
+
+test('a check opened after waiting for the trip lock gets its full grace window from when it opens', async t => {
+  const f = await fixture(t); const waited = await f.trip(); const control = await f.trip();
+  const askUntil = async trip => (await f.ctx.pool.query("SELECT created_at,ask_until FROM security_checks WHERE trip_id=$1 AND status='asking'", [trip])).rows[0];
+  f.advance(120001); await sweep(f);
+  assert.deepEqual(await askUntil(control), {created_at: new Date('2026-10-17T12:02:00.001Z'), ask_until: new Date('2026-10-17T12:03:00.001Z')});
+  await f.ctx.pool.query("DELETE FROM security_checks WHERE trip_id=$1", [waited]);
+  const blocker = await f.ctx.pool.connect(); let running;
+  try {
+    await blocker.query('BEGIN'); await blocker.query('SELECT 1 FROM trips WHERE id=$1 FOR UPDATE', [waited]);
+    running = sweep(f);
+    await waitForBlockedQueries(f.ctx.pool, 'SELECT * FROM trips WHERE id=$1 FOR UPDATE%', 1);
+    f.advance(50000);
+  } finally { await blocker.query('COMMIT'); blocker.release(); await running; }
+  assert.deepEqual(await askUntil(waited), {created_at: new Date('2026-10-17T12:02:50.001Z'), ask_until: new Date('2026-10-17T12:03:50.001Z')});
+  f.advance(10000); await sweep(f);
+  assert.deepEqual((await checksOf(f, waited)).map(c => c.status), ['asking'], 'not escalated before its own grace window ends');
+});
+
+async function escalated(f) {
+  const family = await contactFor(f, 'family'); const trip = await f.trip([family.grant]);
+  f.advance(120001); await sweep(f); f.advance(60000); await sweep(f);
+  return {trip, incident: (await f.ctx.pool.query("SELECT id FROM incidents WHERE trigger='missed_check'")).rows[0].id};
+}
+const sendable = async (f, incident) => (await f.ctx.pool.query(`SELECT j.id AS "jobId",j.version,j.class,j.channel FROM jobs j JOIN outbox o ON o.job_id=j.id AND o.job_version=j.version
+  WHERE j.incident_id=$1 AND j.status='pending' AND j.expires_at>$2 ORDER BY j.channel`, [incident, f.ctx.clock()])).rows;
+
+test('SOS after the missed-check alerts expired sends a new SOS-worded alert on every channel', async t => {
+  const f = await fixture(t); const {trip, incident} = await escalated(f);
+  f.advance(16 * 60000);
+  assert.deepEqual(await sendable(f, incident), [], 'missed-check alerts have expired');
+  const sos = await f.req('POST', `/v1/trips/${trip}/sos`, {});
+  assert.deepEqual(sos, {status: 200, body: {id: incident, tripId: trip, status: 'active', groupCapability: 'unavailable'}});
+  assert.deepEqual((await sendable(f, incident)).map(j => j.channel), ['sms', 'voice', 'whatsapp']);
+  assert.deepEqual((await f.ctx.pool.query('SELECT trigger,check_reason FROM incidents')).rows, [{trigger: 'sos', check_reason: null}]);
+  // A repeated tap shares the episode: no third wave.
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sos`, {})).status, 200);
+  assert.equal((await sendable(f, incident)).length, 3);
+  const {authorizeJob, claimJob} = await import('../dist/notifications/dispatch.js');
+  const {provider} = await import('./helpers/dispatch.mjs');
+  const [sms] = await sendable(f, incident);
+  assert.match((await authorizeJob(f.ctx, await claimJob(f.ctx, sms, 'sos-upgrade'), provider())).payload.text, /ALERTA: el conductor del camión SYNTHETIC truck pidió ayuda/);
+  const status = (await f.req('GET', `/v1/trips/${trip}/status`)).body;
+  assert.deepEqual(status.incident.checkReason, null);
+  assert.deepEqual(status.deliveries.map(d => `${d.role}:${d.channel}:${d.status}`), ['family:sms:authorized', 'family:voice:pending', 'family:whatsapp:pending', 'group:group:unavailable']);
+});
+
+test('SOS after missed-check alerts were accepted adds SOS alerts and keeps the accepted facts', async t => {
+  const f = await fixture(t); const {trip, incident} = await escalated(f);
+  const {runJob} = await import('../dist/notifications/dispatch.js');
+  const {provider} = await import('./helpers/dispatch.mjs');
+  const accepting = provider({async send(payload) { return {state: 'accepted', messageId: `msg_${payload.metadata.attemptId}`, status: 'queued'}; }});
+  for (const job of await sendable(f, incident)) await runJob(f.ctx, job, accepting, 'missed-check');
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sos`, {})).status, 200);
+  assert.deepEqual((await f.ctx.pool.query(`SELECT j.trigger,j.status,count(*)::int n FROM jobs j WHERE j.incident_id=$1 AND j.channel<>'group' GROUP BY 1,2 ORDER BY 1`, [incident])).rows,
+    [{trigger: 'missed_check', status: 'accepted', n: 3}, {trigger: 'sos', status: 'pending', n: 3}]);
+  assert.equal((await sendable(f, incident)).length, 3);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM dispatch_attempts')).rows[0].n, 3, 'no prior attempt is resent or rewritten');
+});
+
+test('a late OK after escalation keeps the incident and its alerts; it never cancels an SOS', async t => {
+  const f = await fixture(t); const {trip, incident} = await escalated(f);
+  f.advance(1000);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'checkin_ok'})).status, 200);
+  assert.deepEqual((await f.ctx.pool.query('SELECT status FROM incidents')).rows, [{status: 'active'}]);
+  assert.equal((await sendable(f, incident)).length, 3, 'only an explicit resolve cancels alerts');
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sos`, {})).status, 200);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'checkin_ok'})).status, 200);
+  assert.deepEqual((await f.ctx.pool.query("SELECT trigger,status FROM incidents")).rows, [{trigger: 'sos', status: 'active'}]);
+  assert.equal((await f.ctx.pool.query("SELECT count(*)::int n FROM jobs WHERE incident_id=$1 AND trigger='sos' AND status='pending'", [incident])).rows[0].n, 3);
+});
+
+test('resuming sharing closes the open sharing-stopped check, so a screen lock is not a false alarm', async t => {
+  const f = await fixture(t); const family = await contactFor(f, 'family'); const trip = await f.trip([family.grant]);
+  f.advance(1000); await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'page_hidden'});
+  await sweep(f); assert.deepEqual(await checksOf(f, trip), [asking('sharing_stopped')]);
+  f.advance(2000);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'resumed', reason: 'user'})).status, 200);
+  await f.req('POST', `/v1/trips/${trip}/locations`, {observations: [{capturedAt: f.ctx.clock().toISOString(), latitude: -12, longitude: -77, accuracy: 9}]});
+  assert.deepEqual(await checksOf(f, trip), [{reason: 'sharing_stopped', status: 'cancelled', incident_id: null}]);
+  f.advance(60000); await sweep(f);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM incidents')).rows[0].n, 0);
+  // An open check for another reason is not the resume's to close.
+  f.advance(120001); await sweep(f); assert.deepEqual((await checksOf(f, trip)).at(-1), asking('silence'));
+  await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'resumed', reason: 'user'});
+  assert.deepEqual((await checksOf(f, trip)).at(-1), asking('silence'));
+});
+
+test('status shows the open check only to the driver and incident-scope contacts', async t => {
+  const f = await fixture(t);
+  const scoped = async (subject, scope) => {
+    const jwt = await f.token(subject); const id = (await f.req('GET', '/v1/me', undefined, jwt)).body.id;
+    const invitation = (await f.req('POST', '/v1/contacts', {contactId: id, phone: f.phoneFor(subject), map: true, incident: true})).body.id;
+    assert.equal((await f.req('POST', `/v1/contacts/${invitation}/accept`, scope, jwt)).status, 200);
+    return {jwt, grant: invitation};
+  };
+  const mapOnly = await scoped('map-only', {map: true, incident: false});
+  const incidentOnly = await scoped('incident-only', {map: false, incident: true});
+  const trip = await f.trip([mapOnly.grant, incidentOnly.grant]);
+  f.advance(120001); await sweep(f);
+  const path = `/v1/trips/${trip}/status`;
+  const map = (await f.req('GET', path, undefined, mapOnly.jwt)).body;
+  assert.deepEqual({check: map.check, incident: map.incident, freshness: map.location.freshness}, {check: null, incident: null, freshness: 'unavailable'});
+  const incident = (await f.req('GET', path, undefined, incidentOnly.jwt)).body;
+  assert.deepEqual({check: incident.check?.reason, location: incident.location}, {check: 'silence', location: undefined});
+  assert.equal((await f.req('GET', path)).body.check.reason, 'silence');
+});
+
+test('status reads never wait on the trip lock or use telemetry capacity', async t => {
+  const f = await fixture(t); const busy = await f.trip(); const other = await f.trip();
+  const blocker = await f.ctx.pool.connect(); await blocker.query('BEGIN');
+  await blocker.query('SELECT 1 FROM trips WHERE id=$1 FOR UPDATE', [busy]);
+  try {
+    const polls = [f.req('GET', `/v1/trips/${busy}/status`), f.req('GET', `/v1/trips/${busy}/status`)];
+    await new Promise(resolve => setTimeout(resolve, 200));
+    const started = Date.now();
+    const upload = await f.req('POST', `/v1/trips/${other}/locations`, {observations: [{capturedAt: f.ctx.clock().toISOString(), latitude: -12, longitude: -77, accuracy: 9}]});
+    assert.equal(upload.status, 200, 'an unrelated trip upload must not starve behind status polls');
+    assert.ok(Date.now() - started < 2000);
+    assert.deepEqual((await Promise.all(polls)).map(p => p.status), [200, 200], 'status answers while the trip lock is held');
+  } finally { await blocker.query('COMMIT'); blocker.release(); }
+});
+
+test('a new sharing stop after an OK opens a new check', async t => {
+  const f = await fixture(t); const trip = await f.trip(); f.advance(1000);
+  await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'page_hidden'}); await sweep(f);
+  f.advance(1000); assert.equal((await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'checkin_ok'})).status, 200);
+  f.advance(1000); await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'stopped', reason: 'permission_denied'}); await sweep(f);
+  assert.deepEqual(await checksOf(f, trip), [{reason: 'sharing_stopped', status: 'ok', incident_id: null}, asking('sharing_stopped')]);
+});
+
+test('expected arrival accepts any future RFC 3339 instant and status returns it normalized', async t => {
+  const f = await fixture(t);
+  const cases = {'2026-10-17t18:00:00z': '2026-10-17T18:00:00.000Z', '2026-10-17T23:59:60Z': '2026-10-18T00:00:00.000Z', '2026-10-17T13:00:00-05:00': '2026-10-17T18:00:00.000Z', '9999-12-31T23:59:59Z': '9999-12-31T23:59:59.000Z'};
+  for (const [given, stored] of Object.entries(cases)) {
+    const draft = await f.draft({expectedArrivalAt: given});
+    assert.equal(draft.body.fields.expectedArrivalAt, given, 'draft fields echo what was sent');
+    const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: []})).body.id;
+    assert.equal((await f.req('GET', `/v1/trips/${trip}/status`)).body.trip.expectedArrivalAt, stored);
+  }
+});
+
+test('commands report truthfully whether the sweeper can still escalate the trip', async t => {
+  const command = async (f, trip, type) => (await f.req('POST', `/v1/trips/${trip}/commands`, {type})).body.automaticEscalation;
+  const off = await fixture(t); const quiet = await off.trip();
+  assert.equal(await command(off, quiet, 'checkin_ok'), false, 'no check timings configured');
+  const f = await fixture(t, {automaticChecks: true}); const trip = await f.trip();
+  assert.deepEqual([await command(f, trip, 'checkin_ok'), await command(f, trip, 'pause'), await command(f, trip, 'rest_report'), await command(f, trip, 'resume'), await command(f, trip, 'arrived')],
+    [true, false, false, true, false]);
 });
