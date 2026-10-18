@@ -87,7 +87,7 @@ test('revoke retires a slow catalog even when the HTTP fixture ignores abort', a
   } finally { pending.resolve(json({})); view.stop(); f.cleanup(); }
 });
 
-test('401 through the actual client clears every bound feature and its catalog', async () => {
+test('401 clears both bound views, exposes session recovery and permits explicit re-authentication', async () => {
   let unauthorized = false;
   const f = fixture(call => unauthorized && call.path.endsWith('/snapshot') ? json({ code: 'unauthorized' }, 401) : undefined);
   const contact = createContactView(f.host, 'contact', ids.trip); const driver = createContactView(f.host, 'driver');
@@ -96,7 +96,20 @@ test('401 through the actual client clears every bound feature and its catalog',
     unauthorized = true; await contact.loadLocation();
     assert.equal(contact.getSnapshot().journey.session, null); assert.equal(driver.getSnapshot().journey.session, null);
     assert.equal(driver.getSnapshot().catalog.data, null); assert.equal(contact.getSnapshot().journey.incident.data, null);
+    assert.equal(contact.getSnapshot().journey.location.data, null);
     assert.equal(f.host.session.snapshot().status, 'anonymous');
+    assert.equal(f.host.gateway.getSnapshot().state, 'signed-out');
+    assert.equal(contact.getSnapshot().status, 'closed');
+    assert.equal(driver.getSnapshot().status, 'closed');
+
+    unauthorized = false; await f.host.gateway.begin();
+    await until(() => contact.getSnapshot().journey.location.data && contact.getSnapshot().journey.incident.data
+      && driver.getSnapshot().catalog.data);
+    assert.equal(f.host.gateway.getSnapshot().state, 'authenticated');
+    assert.equal(contact.getSnapshot().status, 'ready');
+    assert.equal(driver.getSnapshot().status, 'ready');
+    assert.equal(contact.getSnapshot().journey.session.actorId, ids.contact);
+    assert.equal(driver.getSnapshot().journey.session.actorId, ids.contact);
   } finally { contact.stop(); driver.stop(); f.cleanup(); }
 });
 
