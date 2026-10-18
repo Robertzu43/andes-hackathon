@@ -1,8 +1,8 @@
 # Route and state acceptance matrix
 
-Backend reference: `5591c9b55fe7f4505e36ccee96d27aa913e0debf`.
-All API route/payload/schema bindings below are unchanged from the prior source;
-the exact dispatch/package delta is recorded in rebindings.md. Historical ebc
+Backend reference: `BACKEND_SHA` in `oracle.mjs`, the target named in rebindings.md.
+The twelve receipt cases' routes and payloads are unchanged from `5591c9b`; each
+reviewed delta is recorded in rebindings.md. Historical ebc
 receipts remain separate and cannot be promoted to this binding.
 UI path patterns: bound to Brain's validated foundation packet below. The actual
 production-preview origin and UI states remain pending49; every browser row is

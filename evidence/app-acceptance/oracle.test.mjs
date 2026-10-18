@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { evaluate, CASES, BACKEND_SHA } from './oracle.mjs';
@@ -27,15 +27,19 @@ test('absent cases are pending; no response is never counted as success', () => 
   const r = evaluate(data); assert.equal(r.disposition, 'inconclusive');
   assert.ok(r.cases.every(c => c.status === 'pending'));
 });
-test('only the reviewed559 backend binding is current; legacy receipts stay rejected', () => {
-  assert.equal(BACKEND_SHA, '5591c9b55fe7f4505e36ccee96d27aa913e0debf');
+test('only the reviewed main backend binding is current; legacy receipts stay rejected', () => {
+  // No second copy of the SHA: the one constant must be a full commit with a recorded source review.
+  assert.match(BACKEND_SHA, /^[0-9a-f]{40}$/);
+  assert.ok(readFileSync(new URL('./rebindings.md', import.meta.url), 'utf8').includes(`Current oracle target: \`main\` at \`${BACKEND_SHA}\`.`),
+    'Record the source review in rebindings.md when rebinding');
   const data = syntheticControl();
   assert.equal(data.backendSha, BACKEND_SHA);
-  data.backendSha = 'ebc8fb1d36f441ef012ca585201cefabf61383d6';
-  const old = evaluate(data);
-  assert.equal(old.disposition, 'fix');
-  assert.ok(old.errors.includes('backend revision differs; rebind and review oracle before reuse'));
-  assert.equal(old.wholeAppAccepted, false);
+  for (const legacy of ['ebc8fb1d36f441ef012ca585201cefabf61383d6', '5591c9b55fe7f4505e36ccee96d27aa913e0debf', '3a1491a4be1e32a1daa24a72d1afd374760147fd']) {
+    const old = evaluate({ ...data, backendSha: legacy });
+    assert.equal(old.disposition, 'fix');
+    assert.ok(old.errors.includes('backend revision differs; rebind and review oracle before reuse'));
+    assert.equal(old.wholeAppAccepted, false);
+  }
 });
 
 const adverse = [

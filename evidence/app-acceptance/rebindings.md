@@ -1,7 +1,54 @@
 # Reviewed backend binding and predicate repair
 
-Current oracle target: `5591c9b55fe7f4505e36ccee96d27aa913e0debf`.
-Historical target: `ebc8fb1d36f441ef012ca585201cefabf61383d6`.
+Current oracle target: `main` at `3c867f03cfb322aeafef0bc8d4969449beb2e326`.
+Historical targets: `3a1491a4be1e32a1daa24a72d1afd374760147fd`,
+`5591c9b55fe7f4505e36ccee96d27aa913e0debf`,
+`ebc8fb1d36f441ef012ca585201cefabf61383d6`.
+
+`oracle.test.mjs` requires the first line above to name `BACKEND_SHA`, so a
+rebind without a recorded review fails.
+
+## Rebinding `3a1491a` → `main` `3c867f0` (#86, fixer pass on #71)
+
+Protected-source delta, all from #86. Nothing changed in `db/`, `package*.json`
+or `tsconfig.json`.
+
+| Source area | Delta since `3a1491a` | Effect on the receipt cases |
+| --- | --- | --- |
+| `src/client-read/recipient.ts` (new, +67) | `GET /v1/contact/invitations` and `GET /v1/contact/trips`: recipient reads on the telemetry pool, no writes | Additive reads. None of the twelve cases calls them, and `routeFor` rejects them as unregistered receipt paths |
+| `src/api/app.ts` (+2/-1) | Mounts `recipientReadRoutes` next to `clientReadRoutes` | The twelve route patterns, actors and status codes are unchanged |
+| `src/client-read/routes.ts` (+1/-1) | `readSnapshot` is exported for reuse | No behavior change |
+
+At the stale `3a1491a` pin the export was refused (exit 1, no directory). This
+change added `recipient.ts` after the pin, which also exposed an overlay
+checkout in the source-gate test's private clone; it now uses `--no-overlay`.
+Rebound, the harness passes, a fresh receipt passes all twelve cases, and a
+receipt bound to `3a1491a` is rejected.
+
+## Rebinding `5591c9b` → `main` `3a1491a` (fixer pass on #71)
+
+`5591c9b` was no longer on `main`, so the producer's source gate refused every
+export and its positive control failed: the harness ran 150/151 at `1a7bf70`
+(176/177 at `02f3647`). That one failure was the stale pin, not a backend
+defect. While this pass ran, #62 changed contact acceptance on `main` again, so the
+binding is `3a1491a`. Rebound, the full harness passes and a fresh export passes all twelve
+cases with exit 0. The producer now imports `BACKEND_SHA` from `oracle.mjs`.
+
+Protected-source delta (`src`, `db`, manifests, compiler config) reviewed for the
+twelve cases:
+
+| Source area | Delta since `5591c9b` | Effect on the receipt cases |
+| --- | --- | --- |
+| `src/api/app.ts` | Registers check, demo, insights and client-read routes; error bodies may add `reason` next to `code` | Same twelve route patterns, actors and status codes. New routes are outside the receipt |
+| `src/auth.ts` | Only a verified phone claim updates the stored phone; demo sign-in records `last_seen_at` | Same identity and contact acceptance in the harness (verified claims, no demo issuer) |
+| `src/contacts/routes.ts` | Optional `role` (`family` default); self-invite compared case-insensitively; acceptance checks the identity row's verified phone, and a token phone claim can only refuse (#62) | `setup` and `revocation` unchanged; the unverified-claim acceptance is still 409 |
+| `src/demo.ts` | Demo tokens carry no phone claim (#62) | No demo issuer in the harness |
+| `src/trips/routes.ts` | Canonical locale storage; optional future-only `expectedArrivalAt`; commands close open checks; `automaticEscalation` is true only when check timings are configured and the trip can still escalate | Harness sends no arrival time and configures no check timings, so `explicit-confirm`, `duplicate-confirm`, `arrival-preserves-sos` and `self-report` (`automaticEscalation:false`) hold. A receipt from a run with check timings set would need that predicate revisited |
+| `src/incidents/*` | Shared `createIncident` fan-out; SOS on a missed-check incident re-notifies with SOS wording; labels | `sos-acceptance`, `acknowledgement-action`, `owner-resolution` responses unchanged |
+| `src/location/routes.ts` | Shared `latestLocation`; unparseable capture times rejected | Snapshot fields, freshness bound (120 s) and age rule unchanged |
+| `src/notifications/*`, `src/worker.ts`, `src/checks/*`, `src/demo.ts`, `src/insights/*`, `src/client-read/*`, `src/phone-observations/*` | Dispatch retry, alert wording, checks sweeper, demo gates, insights, catalog reads | No receipt case reads these. Zero delivered jobs is still asserted by the journey |
+| `db/migrations/003`–`009`, `package.json` | New tables and columns, one script | No case predicate depends on them |
+
 The prior published checker/receipts remain frozen evidence. New receipts must
 come from a fresh run of the actual current runtime under the producer's source
 guard. Changing an old receipt's revision label does not produce evidence.
