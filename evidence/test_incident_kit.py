@@ -38,6 +38,12 @@ class SyntheticCohortTest(unittest.TestCase):
         _, report = kit.check(FIXTURE)
         self.assertEqual(report.errors, [])
         expected = ["pair SYN-B: has no ordinary-trip case"]
+        expected += [
+            f"timeline.csv line {line} ({event}): verify message authorship against reported_by "
+            "in the original during independent trace review"
+            for line, event in ((4, "SYN-A-W-E03"), (18, "SYN-A-W-E16"),
+                                (24, "SYN-A-O-E05"), (31, "SYN-B-W-E07"))
+        ]
         if not kit.ZONES:
             expected.insert(0, "time zones: no time-zone database found, so zone names and offsets were not checked")
         self.assertEqual(report.warnings, expected)
@@ -52,7 +58,7 @@ class SyntheticCohortTest(unittest.TestCase):
         events = events_of(result)
         self.assertEqual(sorted(cases), ["SYN-A-W", "SYN-B-W"])
         self.assertEqual(result["excluded_cases"],
-                         [{"case_id": "SYN-A-O", "reasons": ["redaction"]}])
+                         {"count": 1, "by_reason": {"redaction": 1, "trace_review": 1}})
 
         brazil = cases["SYN-A-W"]
         self.assertEqual(brazil["anchor_local_hour"], 14)  # trip start remembered from 14:00
@@ -108,7 +114,8 @@ class SyntheticCohortTest(unittest.TestCase):
             code, out, _ = run_cli("export", FIXTURE, "--out", target)
             self.assertEqual(code, 0)
             self.assertEqual(target.read_text(encoding="utf-8"), GOLDEN.read_text(encoding="utf-8"))
-            self.assertIn("excluded SYN-A-O: redaction", out)
+            self.assertIn("excluded reason redaction: 1", out)
+            self.assertNotIn("SYN-A-O", out)
 
 
 class KitFilesTest(unittest.TestCase):
@@ -233,14 +240,14 @@ class RuleTest(unittest.TestCase):
 
     def test_sources_must_exist_in_the_same_case(self):
         self.edit("timeline", "SYN-A-W-E01", source_ids="SYN-A-W-S9")
-        self.assertRejected("source SYN-A-W-S9 is not in sources.csv")
+        self.assertRejected("a cited source is not in sources.csv")
         self.edit("timeline", "SYN-A-W-E01", source_ids="SYN-B-W-S1")
-        self.assertRejected("source SYN-B-W-S1 belongs to case SYN-B-W")
+        self.assertRejected("a cited source belongs to another case")
 
     def test_conflicts_stay_inside_the_case(self):
         for target, message in (("SYN-A-W-E06", "an event cannot conflict with itself"),
-                                ("SYN-A-W-E99", "conflicts_with SYN-A-W-E99 is not in timeline.csv"),
-                                ("SYN-B-W-E01", "conflicts_with SYN-B-W-E01 belongs to another case")):
+                                ("SYN-A-W-E99", "conflicts_with is not in timeline.csv"),
+                                ("SYN-B-W-E01", "conflicts_with belongs to another case")):
             with self.subTest(target=target):
                 self.edit("timeline", "SYN-A-W-E06", conflicts_with=target)
                 self.assertRejected(message)
@@ -531,8 +538,8 @@ class RuleTest(unittest.TestCase):
         self.edit("participants", "SYN-B-C", consent_share_redacted="pending")
         result, _ = kit.export(self.folder)
         self.assertEqual([case["case_id"] for case in result["cases"]], ["SYN-A-W"])
-        self.assertIn({"case_id": "SYN-B-W", "reasons": ["consent"]},
-                      result["excluded_cases"])
+        self.assertEqual(result["excluded_cases"]["by_reason"]["consent"], 1)
+        self.assertNotIn("SYN-B", json.dumps(result))
         self.assertNotIn("SYN-B", json.dumps(result["participants"]))
 
     def test_exclusion_reasons_never_disclose_refusing_participant(self):
@@ -542,7 +549,8 @@ class RuleTest(unittest.TestCase):
         text = json.dumps(result)
         for private in ("SYN-B-C", "consent_share_redacted", "redaction_status"):
             self.assertNotIn(private, text)
-        self.assertIn({"case_id": "SYN-B-W", "reasons": ["consent"]}, result["excluded_cases"])
+        self.assertEqual(result["excluded_cases"]["by_reason"]["consent"], 1)
+        self.assertNotIn("SYN-B", text)
 
     def assert_incomplete_pair_excluded(self, missing_role):
         # Keep only the enrolled person's ordinary-trip account for pair A.
@@ -578,12 +586,13 @@ class RuleTest(unittest.TestCase):
         self.assertEqual(code, 0, err)
         result = json.loads(target.read_text(encoding="utf-8"))
         self.assertEqual([case["case_id"] for case in result["cases"]], ["SYN-B-W"])
-        self.assertEqual(result["excluded_cases"], [
-            {"case_id": "SYN-A-O", "reasons": ["consent"]},
-        ])
+        self.assertEqual(result["excluded_cases"], {
+            "count": 1, "by_reason": {"consent": 1, "participant_review": 1, "trace_review": 1},
+        })
         self.assertEqual({person["pair_id"] for person in result["participants"]}, {"SYN-B"})
         self.assertEqual(result["coverage"]["pairs"], 1)
-        self.assertIn("excluded SYN-A-O: consent", out)
+        self.assertIn("excluded reason consent: 1", out)
+        self.assertNotIn("SYN-A-O", out)
         self.assertIn(f"export blocked: no {missing_role} enrolled", kit.summary(self.folder, data, report))
 
     def test_export_excludes_driver_only_pair(self):
@@ -606,7 +615,7 @@ class RuleTest(unittest.TestCase):
     def test_added_columns_are_never_exported(self):
         self.edit("participants", "SYN-A-D", phone_note="SYNTHETIC added column")
         _, report = kit.check(self.folder)
-        self.assertIn("participants.csv: extra columns are ignored and never exported: phone_note", report.warnings)
+        self.assertIn("participants.csv: 1 extra column(s) are ignored and never exported", report.warnings)
         self.assertNotIn("SYNTHETIC added column", json.dumps(kit.export(self.folder)[0]))
 
     def test_semicolon_separated_files_are_read(self):
@@ -682,6 +691,141 @@ class RuleTest(unittest.TestCase):
     def test_missing_table_is_reported(self):
         (self.folder / "sources.csv").unlink()
         self.assertRejected("sources.csv: file not found")
+
+    def test_duplicate_headers_cannot_override_consent(self):
+        self.edit("participants", "SYN-B-C", consent_share_redacted="no")
+        path = self.folder / "participants.csv"
+        original = path.read_text(encoding="utf-8")
+        for duplicate in ("consent_share_redacted", " consent_share_redacted "):
+            with self.subTest(duplicate=duplicate):
+                rows = list(csv.reader(io.StringIO(original)))
+                rows[0].append(duplicate)
+                for row in rows[1:]:
+                    row.append("yes")
+                out = io.StringIO()
+                csv.writer(out).writerows(rows)
+                path.write_text(out.getvalue(), encoding="utf-8")
+                result, report = kit.export(self.folder)
+                self.assertIsNone(result)
+                self.assertTrue(any("duplicate column" in e for e in report.errors), report.errors)
+
+    def test_duplicate_headers_reject_every_table(self):
+        for table in kit.SCHEMA:
+            with self.subTest(table=table):
+                path = self.folder / f"{table}.csv"
+                original = path.read_text(encoding="utf-8")
+                rows = list(csv.reader(io.StringIO(original)))
+                rows[0].append(rows[0][0])
+                for row in rows[1:]:
+                    row.append(row[0])
+                out = io.StringIO()
+                csv.writer(out).writerows(rows)
+                path.write_text(out.getvalue(), encoding="utf-8")
+                self.assertRejected("duplicate column")
+                path.write_text(original, encoding="utf-8")
+
+    def test_excluded_cases_leave_only_generic_counts_in_json_and_cli(self):
+        self.edit("participants", "SYN-B-C", consent_share_redacted="no")
+        target = self.folder / "out.json"
+        code, out, err = run_cli("export", self.folder, "--out", target)
+        self.assertEqual(code, 0, err)
+        text = target.read_text(encoding="utf-8")
+        for private in ("SYN-B", "SYN-A-O", "consent_share_redacted", "redaction_status"):
+            self.assertNotIn(private, text + out + err)
+        result = json.loads(text)
+        self.assertEqual(result["excluded_cases"]["count"], 2)
+        self.assertEqual(result["excluded_cases"]["by_reason"]["consent"], 1)
+
+    def test_export_requires_completed_participant_and_trace_reviews(self):
+        defaults = dict(driver_review="confirmed", contact_review="corrected", trace_review="traced")
+        for column, states in (("driver_review", ("pending", "declined", "disputed")),
+                               ("contact_review", ("pending", "declined", "disputed")),
+                               ("trace_review", ("pending", "not_traceable", "inconclusive"))):
+            for state in states:
+                with self.subTest(column=column, state=state):
+                    self.edit("cases", "SYN-A-W", **{**defaults, column: state})
+                    result, report = kit.export(self.folder)
+                    self.assertEqual(report.errors, [])
+                    self.assertEqual([c["case_id"] for c in result["cases"]], ["SYN-B-W"])
+        self.edit("cases", "SYN-A-W", **defaults)
+        self.assertEqual(len(kit.export(self.folder)[0]["cases"]), 2)
+
+    def test_corroborated_rest_requires_a_participant_account(self):
+        self.add_source("SYN-A-W-S9", kind="independent_record", evidence_basis="independent_observation")
+        self.edit("timeline", "SYN-A-W-E03", event_type="rest_start", occurrence="corroborated",
+                  source_ids="SYN-A-W-S9", basis_source_id="SYN-A-W-S9",
+                  basis_note="SYNTHETIC tracker stop", time_basis="unknown",
+                  observed_time="", observed_source_id="")
+        self.assertRejected("rest_start needs a participant account")
+        self.edit("timeline", "SYN-A-W-E03", source_ids="SYN-A-W-S9;SYN-A-W-S1")
+        self.assertEqual(self.errors(), [])
+
+    def test_zone_fields_reject_identifiers_without_a_zone_database(self):
+        for table, row, column in (("timeline", "SYN-A-W-E02", "time_zone"),
+                                    ("sources", "SYN-A-W-S3", "source_time_zone")):
+            for value in ("MARIA SILVA +55 00 00000-0000", "MARIA-SILVA", "person@example.com"):
+                with self.subTest(table=table, value=value), patch.object(kit, "ZONES", set()):
+                    self.edit(table, row, **{column: value})
+                    result, report = kit.export(self.folder)
+                    self.assertIsNone(result)
+                    self.assertTrue(any(column in e for e in report.errors), report.errors)
+                    self.assertNotIn(value, "\n".join(report.errors))
+            self.edit(table, row, **{column: "America/Sao_Paulo"})
+        with patch.object(kit, "ZONES", set()):
+            self.assertEqual(self.errors(), [])
+
+    def test_missing_source_reference_is_not_echoed(self):
+        self.edit("timeline", "SYN-A-W-E02", source_ids="MARIA-SILVA")
+        code, out, err = run_cli("check", self.folder)
+        self.assertEqual(code, 1)
+        self.assertNotIn("MARIA-SILVA", out + err)
+        self.assertIn("not in sources.csv", out)
+
+    def test_ordinary_notes_and_reserved_code_ids_remain_valid(self):
+        for value in ("300 km de serra", "1500 kg", "tank at 1/2", "open 24/7", "stopped.Then"):
+            with self.subTest(value=value):
+                self.edit("timeline", "SYN-A-W-E02", note_redacted=value)
+                self.assertEqual(self.errors(), [])
+        for code in ("SYN-1234", "CAS-0001"):
+            with self.subTest(code=code):
+                self.assertIsNone(kit.KINDS["id"](code))
+
+    def test_id_scan_rejects_identifiers_directly(self):
+        for value, fragment in (("ABC1D23", "vehicle plate"), ("D-5511987654321", "phone number"),
+                                ("C-2026-09-14", "calendar date")):
+            with self.subTest(value=value):
+                self.assertIn(fragment, kit._id(value) or "")
+                self.assertIn(fragment, kit.KINDS["id"](value) or "")
+
+    def test_short_dates_and_coordinates_without_seconds_are_rejected(self):
+        for value in ("14-09-26", "14.09", "14 setembro", "14 septiembre", "23°33′S 46°38′W"):
+            with self.subTest(value=value):
+                self.edit("timeline", "SYN-A-W-E02", note_redacted=value)
+                self.assertRejected("note_redacted seems to contain")
+
+    def test_extra_headers_never_echo_and_are_cp1252_safe(self):
+        self.edit("participants", "SYN-A-D", **{"PRIVATE-秘密": "ignored"})
+        code, out, err = run_cli("check", self.folder)
+        self.assertEqual(code, 0)
+        self.assertNotIn("PRIVATE-秘密", out + err)
+        child = (
+            "import runpy,sys; sys.stdout.reconfigure(encoding='cp1252',errors='strict'); "
+            "sys.argv=sys.argv[1:]; runpy.run_path(sys.argv[0],run_name='__main__')"
+        )
+        process = subprocess.run([sys.executable, "-I", "-c", child, str(KIT / "incident_kit.py"),
+                                  "check", str(self.folder)], capture_output=True)
+        self.assertEqual(process.returncode, 0, process.stderr)
+        self.assertNotIn(b"Traceback", process.stderr)
+
+    def test_message_accounts_flag_authorship_for_trace_review(self):
+        _, report = kit.check(self.folder)
+        self.assertTrue(any("message authorship" in w for w in report.warnings), report.warnings)
+
+    def test_cell_error_does_not_hide_other_rows_provenance_errors(self):
+        self.edit("participants", "SYN-B-C", preferred_language="bad!")
+        self.edit("timeline", "SYN-A-W-E03", source_ids="SYN-A-W-S2", time_basis="unknown",
+                  observed_time="", observed_source_id="")
+        self.assertRejected("self_reported needs the participant's own attributed account")
 
 
 if __name__ == "__main__":

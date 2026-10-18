@@ -26,7 +26,7 @@ Record how each pair was found, for example a drivers' WhatsApp group, a truck s
 
 ## Coverage record
 
-Fill this from the coverage block that `check` prints. A dimension with nobody in it is a gap to report.
+Fill this from the participant and case sheets. Count interviews collected separately from cases approved for sharing. A dimension with nobody in it is a gap to report.
 
 | Dimension | Represented | Not represented |
 |---|---|---|

@@ -24,9 +24,9 @@ RUNBOOK.md
 # dependencies
 node_modules/
 
-# issue #8 evidence: real participant material never enters Git
+# Real participant material stays outside Git
 evidence/private/
 
-# Python
+# Python bytecode
 __pycache__/
-*.pyc
+*.py[cod]

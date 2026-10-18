@@ -141,15 +141,18 @@ TIME = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})")
 CLOCK_TIMES = re.compile(r"\b\d{1,2}:\d{2}(:\d{2})?\b")
 IDENTIFIERS = [
     ("a calendar date", re.compile(
-        r"\d{4}-\d{2}-\d{2}|\b\d{1,2}/\d{1,2}(?:/\d{2,4})?\b|"
-        r"\b\d{1,2}\s+de\s+(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|"
+        r"\d{4}-\d{2}-\d{2}|\b(?:0?[1-9]|[12][0-9]|3[01])[/.-](?:0?[1-9]|1[0-2])[/.-](?:[0-9]{4}|[0-9]{2})\b|"
+        r"\b(?:0[1-9]|[12][0-9]|3[01])[/.-](?:0[1-9]|1[0-2])\b|"
+        r"\b\d{1,2}\s+(?:de\s+)?(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|"
         r"septiembre|setiembre|octubre|noviembre|diciembre|janeiro|fevereiro|março|"
         r"maio|junho|julho|setembro|outubro|novembro|dezembro)\b", re.IGNORECASE)),
     ("an email address", re.compile(r"[\w.%+-]+@[\w-]+(\.[\w-]+)+")),
-    ("a link", re.compile(r"https?://|www\.|\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b", re.IGNORECASE)),
+    ("a link", re.compile(
+        r"https?://|www\.|\b(?:[a-z0-9-]+\.)+(?:[a-z]{2,}/|"
+        r"(?:[a-z]{2}|com|org|net|app|info|site|dev|online|travel)\b)", re.IGNORECASE)),
     ("coordinates", re.compile(
         r"[+-]?\d{1,2}[.,]\d{3,}\s*[,;\s]\s*[+-]?\d{1,3}[.,]\d{3,}|"
-        r"\d{1,3}\s*[°º]\s*\d{1,2}\s*['′’]\s*\d{1,2}(?:[.,]\d+)?\s*[\"″”]\s*[NSEWO]",
+        r"\d{1,3}\s*[°º]\s*\d{1,2}\s*['′’]\s*(?:\d{1,2}(?:[.,]\d+)?\s*[\"″”]\s*)?[NSEWO]",
         re.IGNORECASE)),
     ("a phone number", re.compile(r"\+?\d(?:[\s().-]?\d){6,}")),
     ("a vehicle plate", re.compile(
@@ -220,7 +223,22 @@ def _member(allowed: set):
 def _id(value: str) -> str | None:
     if not ID.fullmatch(value):
         return "must use capital letters, digits and hyphens, with at least one letter"
+    # These reserved namespaces disambiguate assigned codes from plate-shaped
+    # text. Other plate formats remain forbidden, including ABC1D23 and ZZZ-0000.
+    if re.fullmatch(r"(?:SYN|CAS)-[0-9]{4}", value):
+        return None
     return find_identifier(value)
+
+
+def _zone(value: str) -> str | None:
+    problem = find_identifier(value)
+    if problem:
+        return problem
+    if value == "unknown" or value in ZONES:
+        return None
+    if not ZONES and re.fullmatch(r"UTC|GMT|(?:[A-Za-z_+-]+/)+[A-Za-z0-9_+-]+", value):
+        return None
+    return "must be an IANA time zone such as America/Sao_Paulo, or unknown"
 
 
 _country = _pattern(COUNTRY, "must be a two-letter country code such as BR")
@@ -238,9 +256,7 @@ KINDS = {
     "time": lambda v: None if parse_time(v) else (
         "must be a date and time with its UTC offset, such as 2026-09-14T21:40-03:00"
     ),
-    "zone": lambda v: None if v == "unknown" or not ZONES or v in ZONES else (
-        "must be an IANA time zone such as America/Sao_Paulo, or unknown"
-    ),
+    "zone": _zone,
     "text": find_identifier,
     "private": lambda v: None,
 }
@@ -281,13 +297,16 @@ def read_tables(folder: Path, report: Report) -> dict[str, list[dict]]:
                 delimiter = ";" if ";" in first_line and "," not in first_line else ","
                 reader = csv.DictReader(handle, delimiter=delimiter, strict=True)
                 header = [name.strip() for name in reader.fieldnames or []]
+                if len(header) != len(set(header)):
+                    report.error(path.name, "duplicate columns are not allowed (including whitespace variants)")
+                    continue
                 missing = [name for name in columns if name not in header]
                 if missing:
                     report.error(path.name, "missing columns: " + ", ".join(missing))
                     continue
                 extra = [name for name in header if name and name not in columns]
                 if extra:
-                    report.warn(path.name, "extra columns are ignored and never exported: " + ", ".join(extra))
+                    report.warn(path.name, f"{len(extra)} extra column(s) are ignored and never exported")
                 for raw in reader:
                     cells = {key.strip(): (value or "").strip() for key, value in raw.items() if isinstance(key, str)}
                     row = {name: cells.get(name, "") for name in columns}
@@ -299,8 +318,10 @@ def read_tables(folder: Path, report: Report) -> dict[str, list[dict]]:
                     if raw.get(None):
                         report.error(row["_where"], "row has more cells than the header")
                     rows.append(row)
+                    errors_before = len(report.errors)
                     for name, spec in columns.items():
                         check_cell(report, row["_where"], name, spec, row[name])
+                    row["_valid"] = len(report.errors) == errors_before and not raw.get(None)
         except UnicodeDecodeError:
             # Excel on Spanish/Portuguese Windows saves cp1252 by default.
             rows.clear()
@@ -313,20 +334,22 @@ def read_tables(folder: Path, report: Report) -> dict[str, list[dict]]:
     return tables
 
 
-def is_own_account(source: dict, participant_id: str) -> bool:
+def is_own_account(source: dict, participant_id: str, *, allow_messages: bool = True) -> bool:
     """Match an account to its reporter; a message supplier may differ from its author.
 
     For message sources the trace reviewer must verify the reporter's words in
     the original. The source declaration alone cannot prove message authorship.
     """
     return source["evidence_basis"] == "attributed_account" and (
-        source["provided_by"] == participant_id or source["kind"] in {"whatsapp_export", "sms"}
+        source["provided_by"] == participant_id or (allow_messages and source["kind"] in {"whatsapp_export", "sms"})
     )
 
 
 def index(rows: list[dict], key: str, report: Report) -> dict[str, dict]:
     found: dict[str, dict] = {}
     for row in rows:
+        if not row.get("_valid", True):
+            continue
         if row[key] in found:
             shown = f" {row[key]}" if _id(row[key]) is None else ""
             report.error(row["_where"], f"duplicate {key}{shown}")
@@ -372,11 +395,11 @@ def check_sources(data: dict, report: Report) -> None:
         where = source["_where"]
         case = data["cases"].get(source["case_id"])
         if not case:
-            report.error(where, f"case_id {source['case_id']} is not in cases.csv")
+            report.error(where, "case_id is not in cases.csv")
             continue
         interview_role = INTERVIEW_ROLE.get(source["kind"])
         if not in_pair(data, source["provided_by"], case):
-            report.error(where, f"provided_by {source['provided_by']} is not a participant in pair {case['pair_id']}")
+            report.error(where, "provided_by is not a participant in this case's pair")
         elif interview_role and data["people"][source["provided_by"]]["role"] != interview_role:
             report.error(where, f"{source['kind']} must be provided by the pair's {interview_role}")
         if interview_role and source["timestamped_record"] == "yes":
@@ -397,30 +420,30 @@ def check_events(data: dict, report: Report) -> None:
         where = event["_where"]
         case = data["cases"].get(event["case_id"])
         if not case:
-            report.error(where, f"case_id {event['case_id']} is not in cases.csv")
+            report.error(where, "case_id is not in cases.csv")
             continue
         by_case[event["case_id"]].append(event)
         cited = []
         for source_id in split(event["source_ids"]):
             source = data["sources"].get(source_id)
             if not source:
-                report.error(where, f"source {source_id} is not in sources.csv")
+                report.error(where, "a cited source is not in sources.csv")
             elif source["case_id"] != event["case_id"]:
-                report.error(where, f"source {source_id} belongs to case {source['case_id']}")
+                report.error(where, "a cited source belongs to another case")
             else:
                 cited.append(source)
         reporter = data["people"].get(event["reported_by"])
         if event["reported_by"] != "record" and not in_pair(data, event["reported_by"], case):
-            report.error(where, f"reported_by {event['reported_by']} is not a participant in pair {case['pair_id']}")
+            report.error(where, "reported_by is not a participant in this case's pair")
         check_occurrence(event, reporter, cited, report)
         check_times(event, cited, report)
         for other in split(event["conflicts_with"]):
             if other == event["event_id"]:
                 report.error(where, "an event cannot conflict with itself")
             elif other not in data["events"]:
-                report.error(where, f"conflicts_with {other} is not in timeline.csv")
+                report.error(where, "conflicts_with is not in timeline.csv")
             elif data["events"][other]["case_id"] != event["case_id"]:
-                report.error(where, f"conflicts_with {other} belongs to another case")
+                report.error(where, "conflicts_with belongs to another case")
     for case_id, events in by_case.items():
         check_order(case_id, events, report)
 
@@ -444,6 +467,11 @@ def check_occurrence(event: dict, reporter: dict | None, cited: list[dict], repo
         if event_type in REST_REPORTS:
             report.error(where, f"{event_type} needs a participant account; location or contact metadata "
                                 "can only record a stop")
+    elif event_type in REST_REPORTS and not any(s["evidence_basis"] == "attributed_account" for s in cited):
+        report.error(where, f"{event_type} needs a participant account; independent location records only show a stop")
+    if reporter and occurrence in {"self_reported", "reported_second_hand", "suspected"}:
+        if any(s["kind"] in {"whatsapp_export", "sms"} and is_own_account(s, event["reported_by"]) for s in cited):
+            report.warn(where, "verify message authorship against reported_by in the original during independent trace review")
     if occurrence == "recorded":
         if not any(source["timestamped_record"] == "yes" for source in cited):
             report.error(where, "occurrence recorded needs a cited timestamped record")
@@ -472,7 +500,7 @@ def check_occurrence(event: dict, reporter: dict | None, cited: list[dict], repo
     elif occurrence == "suspected":
         if not reporter:
             report.error(where, "a suspicion needs the participant who held it in reported_by")
-        if not basis or basis["evidence_basis"] != "attributed_account" or basis["provided_by"] != event["reported_by"]:
+        if not basis or not is_own_account(basis, event["reported_by"], allow_messages=False):
             report.error(where, "suspicion needs a cited account supplied by the participant; no reply alone stays unknown")
     elif occurrence == "corroborated":
         if not any(source["kind"] == "independent_record" for source in cited):
@@ -515,8 +543,8 @@ def check_times(event: dict, cited: list[dict], report: Report) -> None:
     if recalled:
         if event["reported_by"] == "record":
             report.error(where, "recalled times need the participant who recalled them in reported_by")
-        if not any(source["timestamped_record"] == "no" and source["provided_by"] == event["reported_by"] and
-                   source["evidence_basis"] == "attributed_account" for source in cited):
+        if not any(source["timestamped_record"] == "no" and
+                   is_own_account(source, event["reported_by"], allow_messages=False) for source in cited):
             report.error(where, "recalled times need the named participant's own attributed account "
                                 "(an untimestamped source)")
         earliest, latest = parse_time(event["recalled_earliest"]), parse_time(event["recalled_latest"])
@@ -567,7 +595,7 @@ def check_cases(data: dict, report: Report) -> None:
     for case in data["cases"].values():
         where, start_id, end_id = case["_where"], case["window_start_event"], case["window_end_event"]
         if case["pair_id"] not in data["pairs"]:
-            report.error(where, f"pair_id {case['pair_id']} has no enrolled participants")
+            report.error(where, "pair_id has no enrolled participants")
         if "none" in split(case["concerns"]) and len(split(case["concerns"])) > 1:
             report.error(where, "concerns cannot combine none with other values")
         if "none" in split(case["arrangement_channels"]) and len(split(case["arrangement_channels"])) > 1:
@@ -585,7 +613,7 @@ def check_cases(data: dict, report: Report) -> None:
         for event_id in (start_id, end_id):
             event = data["events"].get(event_id)
             if not event or event["case_id"] != case["case_id"]:
-                report.error(where, f"window event {event_id} is not in this case's timeline")
+                report.error(where, "a window event is not in this case's timeline")
             else:
                 ends.append(event)
         if len(ends) < 2:
@@ -610,11 +638,8 @@ def check(folder) -> tuple[dict, Report]:
         "sources": index(tables["sources"], "source_id", report),
         "events": index(tables["timeline"], "event_id", report),
     }
-    # Malformed cells have already been diagnosed by file/line/column. Do not
-    # echo them in cross-reference diagnostics or interpret incomplete rows.
-    if report.errors:
-        data["pairs"] = {}
-        return data, report
+    # Index only valid rows; keep diagnosing other rows without interpreting or
+    # echoing malformed cells. Export still refuses the entire cohort on error.
     data["pairs"] = check_people(data, report)
     check_sources(data, report)
     check_events(data, report)
@@ -636,6 +661,11 @@ def export_blockers(case: dict, members: list[dict], *, private: bool = False) -
         if person["consent_share_redacted"] != "yes":
             reasons.append(f"{person['participant_id']} consent_share_redacted is {person['consent_share_redacted']}"
                            if private else "consent")
+    if case["trace_review"] != "traced":
+        reasons.append(f"trace_review is {case['trace_review']}" if private else "trace_review")
+    for role in ("driver", "contact"):
+        if case[f"{role}_review"] not in {"confirmed", "corrected"}:
+            reasons.append(f"{role}_review is {case[f'{role}_review']}" if private else "participant_review")
     return list(dict.fromkeys(reasons))
 
 
@@ -782,18 +812,19 @@ def export(folder) -> tuple[dict | None, Report]:
     data, report = check(folder)
     if report.errors:
         return None, report
-    ready, excluded = [], []
+    ready, excluded_count, excluded_reasons = [], 0, Counter()
     for case_id, case in sorted(data["cases"].items()):
         reasons = export_blockers(case, data["pairs"][case["pair_id"]])
         if reasons:
-            excluded.append({"case_id": case_id, "reasons": reasons})
+            excluded_count += 1
+            excluded_reasons.update(reasons)
         else:
             ready.append(case)
     pair_ids = sorted({case["pair_id"] for case in ready})
     people = sorted((p for pair_id in pair_ids for p in data["pairs"][pair_id]), key=lambda p: p["participant_id"])
     return {
         "format": "andes-incident-export",
-        "format_version": 1,
+        "format_version": 2,
         "issue": 8,
         "caveat": CAVEAT,
         "coverage": {"pairs": len(pair_ids), "cases": len(ready), **coverage(people, ready)},
@@ -804,7 +835,7 @@ def export(folder) -> tuple[dict | None, Report]:
             )
         } for p in people],
         "cases": [case_export(case, data) for case in ready],
-        "excluded_cases": excluded,
+        "excluded_cases": {"count": excluded_count, "by_reason": dict(sorted(excluded_reasons.items()))},
     }, report
 
 
@@ -871,8 +902,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if report.errors else 0
 
     result, report = export(args.folder)
-    for warning in report.warnings:
-        print("Warning: " + warning, file=sys.stderr)
+    if report.warnings:
+        print(f"Warning: {len(report.warnings)} collection warning(s); run check locally for details", file=sys.stderr)
+        if not ZONES:
+            print("Warning: no time-zone database; zone names and offsets were not checked", file=sys.stderr)
     if result is None:
         print("Export refused. Fix these errors first:", *report.errors, sep="\n  ", file=sys.stderr)
         return 1
@@ -881,9 +914,10 @@ def main(argv: list[str] | None = None) -> int:
     except OSError as problem:
         print(f"Could not write {args.out}: {problem}", file=sys.stderr)
         return 1
-    print(f"Wrote {len(result['cases'])} case(s) to {args.out}; excluded {len(result['excluded_cases'])}.")
-    for item in result["excluded_cases"]:
-        print(f"  excluded {item['case_id']}: {'; '.join(item['reasons'])}")
+    excluded = result["excluded_cases"]
+    print(f"Wrote {len(result['cases'])} case(s) to {args.out}; excluded {excluded['count']}.")
+    for reason, count in excluded["by_reason"].items():
+        print(f"  excluded reason {reason}: {count}")
     return 0
 
 

@@ -1,6 +1,6 @@
 {
   "format": "andes-incident-export",
-  "format_version": 1,
+  "format_version": 2,
   "issue": 8,
   "caveat": "Exploratory reconstruction of a small cohort. It cannot show prevalence, regional demand or safety efficacy. Recalled times are memories; only observed times come from records. No reply alone leaves the incident unknown; it does not establish a suspicion of fatigue, sleep or robbery. A filed complaint alone does not corroborate its allegation.",
   "coverage": {
@@ -872,12 +872,11 @@
       ]
     }
   ],
-  "excluded_cases": [
-    {
-      "case_id": "SYN-A-O",
-      "reasons": [
-        "redaction"
-      ]
+  "excluded_cases": {
+    "count": 1,
+    "by_reason": {
+      "redaction": 1,
+      "trace_review": 1
     }
-  ]
+  }
 }
