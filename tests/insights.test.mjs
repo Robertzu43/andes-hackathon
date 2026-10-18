@@ -35,6 +35,19 @@ test('reports reject future, stale, unparseable, unknown-kind or unauthenticated
   assert.equal((await report(f, 'robo', 0, 0, '2026-10-17T11:00:00Z')).status, 429); // five reports per identity per day
 });
 
+// The budget belongs to the identity, not the request: fresh idempotency keys sent at once must not slip past it.
+test('the daily report budget holds under concurrent submissions', async t => {
+  const f = await fixture(t); const { waitForBlockedQueries } = await import('./helpers/db-barriers.mjs');
+  const holder = await f.ctx.callbackPool.connect(); let racing; // holds inserts back until every racer has checked the budget
+  try {
+    await holder.query('BEGIN'); await holder.query('LOCK TABLE reports IN EXCLUSIVE MODE');
+    racing = Promise.all(Array.from({ length: 8 }, () => report(f, 'robo', 0, 0, '2026-10-17T11:00:00Z')));
+    await waitForBlockedQueries(f.ctx.telemetryPool, '%reports%', 6); // the whole command pool is inside the race
+  } finally { await holder.query('ROLLBACK'); holder.release(); }
+  assert.deepEqual((await racing).map(r => r.status).sort(), [200, 200, 200, 200, 200, 429, 429, 429]);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int AS n FROM reports')).rows[0].n, 5);
+});
+
 // Returning small cells, identifiers or arbitrary windows would expose individual drivers to anyone with the public link.
 test('hotspots are public aggregates over one fixed window: suppressed, synthetic counted, no identifiers', async t => {
   const f = await fixture(t); const night = '2026-10-16T04:30:00Z'; // 23:30 in Lima

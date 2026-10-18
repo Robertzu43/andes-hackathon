@@ -69,6 +69,8 @@ export function insightRoutes(app: FastifyInstance, ctx: Context, demo = false) 
     const body = request.body as { kind: string; latitude: number; longitude: number; occurredAt: string };
     const now = ctx.clock(); const at = Date.parse(body.occurredAt);
     if (!(at <= now.getTime() + 30000 && at >= now.getTime() - 365 * DAY)) problem(400, 'occurred_at_out_of_bounds');
+    // The budget is per identity, so concurrent requests with different idempotency keys queue here until the count is current.
+    await client.query(`SELECT pg_advisory_xact_lock(hashtextextended('reports:' || $1, 0))`, [request.actor.id]);
     if ((await client.query('SELECT count(*)::int AS n FROM reports WHERE reporter_id=$1 AND created_at > $2', [request.actor.id, new Date(now.getTime() - DAY)])).rows[0].n >= REPORTS_PER_DAY) problem(429, 'report_rate_limited');
     const id = randomUUID();
     await client.query('INSERT INTO reports(id,reporter_id,kind,latitude,longitude,occurred_at,created_at,synthetic) VALUES($1,$2,$3,$4,$5,$6,$7,$8)', [id, request.actor.id, body.kind, body.latitude, body.longitude, new Date(at), now, demo]);
