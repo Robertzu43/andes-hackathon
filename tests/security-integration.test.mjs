@@ -23,8 +23,9 @@ async function connection(t) {
     return { status: response.status, body: await response.json() };
   }
   const driver = client('driver', f.driver), contact = client('contact', f.contact);
+  // The invite must carry the phone verified in the contact's own token (fictional fixture value).
   const invitation = await driver.inviteContact({ contactId: f.contactIdentity.id,
-    phone: '+5511999990000', map: true, incident: true }, intent());
+    phone: f.phoneFor('contact'), map: true, incident: true }, intent());
   await contact.acceptContact(invitation.id, { map: true, incident: true }, intent());
   const truck = await driver.createTruck({ label: 'SYNTHETIC integration truck' }, intent());
   const draft = await driver.createDraft({ text: 'SYNTHETIC private trip text', fields: {
@@ -78,7 +79,7 @@ test('accepted typed SOS and resolution operations agree with the new native sta
   assert.equal(before.check, null);
   assert.deepEqual(before.deliveries.filter(d => d.role === 'family').map(d => d.channel).sort(), ['sms', 'voice', 'whatsapp']);
   assert.equal(before.deliveries.find(d => d.role === 'group').status, 'unavailable');
-  assert.ok(!JSON.stringify(before).includes('+5511999990000'));
+  for (const phone of [f.phoneFor('driver'), f.phoneFor('contact')]) assert.ok(!JSON.stringify(before).includes(phone));
   assert.ok(!JSON.stringify(before).includes(f.contactIdentity.id));
   assert.equal((await contact.acknowledgeIncident(incident.id, intent())).recorded, 'acknowledged');
   await driver.commandTrip(trip.id, 'arrived', intent());
