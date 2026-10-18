@@ -6,7 +6,8 @@ export interface TripFields {
   expectedArrivalAt?: string;
 }
 export interface IdResponse { id: UUID }
-export interface InvitationInput extends ConsentScopes { contactId: UUID; phone: string; role?: 'family' | 'colleague' }
+export type ContactRole = 'family' | 'colleague';
+export interface InvitationInput extends ConsentScopes { contactId: UUID; phone: string; role?: ContactRole }
 export interface PendingInvitation extends IdResponse { status: 'pending' }
 export interface AcceptedInvitation extends IdResponse, ConsentScopes { status: 'accepted' }
 export interface RevokedInvitation extends IdResponse { revoked: true }
@@ -73,7 +74,7 @@ export interface DemoWorld {
 /** Explicit demo-only exception: unauthenticated POST, no actor/idempotency key yet. */
 export interface DemoSessionOptions extends RequestOptions { demo: true }
 
-/** PR65/3ea6e1b server read-start time; read-committed statements are not one snapshot. */
+/** PR65/de9e455 supplies its server read-start timestamp; never substitute a local clock. */
 export interface ServerRead { readAt: string }
 export interface Profile extends IdResponse, ServerRead { phone: string | null; phoneVerified: boolean }
 export interface TruckSummary extends IdResponse { label: string }

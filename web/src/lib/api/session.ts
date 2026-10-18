@@ -12,6 +12,7 @@ export type SessionSnapshot = { status: 'anonymous' | 'expired' }
 export interface SessionLease {
   readonly authorization: string;
   readonly revision: number;
+  readonly credentialRevision: number;
   readonly expiresAt: number;
   readonly signal: AbortSignal;
 }
@@ -21,6 +22,8 @@ export class MemorySession {
   #credentials: SessionCredentials | null = null;
   #status: 'anonymous' | 'expired' = 'anonymous';
   #revision = 0;
+  #credentialRevision = 0;
+  #rejectedCredentialRevision: number | null = null;
   #controller = new AbortController();
   #clock: () => number;
   #listeners = new Set<() => void>();
@@ -37,8 +40,16 @@ export class MemorySession {
       || !Number.isFinite(credentials.expiresAt) || credentials.expiresAt <= this.#clock()) {
       throw new ApiError('invalid_input');
     }
-    this.#transition({ issuer: credentials.issuer, subject: credentials.subject,
-      accessToken: credentials.accessToken, expiresAt: credentials.expiresAt }, 'anonymous');
+    this.#expire();
+    const next = { issuer: credentials.issuer, subject: credentials.subject,
+      accessToken: credentials.accessToken, expiresAt: credentials.expiresAt };
+    if (this.#credentials?.issuer === next.issuer && this.#credentials.subject === next.subject) {
+      // A trusted refresh changes credentials, not the account or its accepted receipts.
+      this.#credentials = next;
+      this.#credentialRevision += 1;
+      this.#rejectedCredentialRevision = null;
+      this.#scheduleExpiry();
+    } else this.#transition(next, 'anonymous');
   }
 
   clear(): void {
@@ -54,11 +65,13 @@ export class MemorySession {
     return () => { this.#listeners.delete(listener); this.#scheduleExpiry(); };
   }
 
-  #transition(credentials: SessionCredentials | null, status: 'anonymous' | 'expired'): void {
+  #transition(credentials: SessionCredentials | null, status: 'anonymous' | 'expired', rejected: number | null = null): void {
     const oldController = this.#controller;
     this.#credentials = credentials;
     this.#status = status;
     this.#revision += 1;
+    this.#credentialRevision += 1;
+    this.#rejectedCredentialRevision = rejected;
     this.#controller = new AbortController();
     oldController.abort();
     if (!this.#notifying) {
@@ -94,6 +107,7 @@ export class MemorySession {
     this.#expire();
     if (!this.#credentials) throw new ApiError(this.#status === 'expired' ? 'session_expired' : 'unauthenticated');
     return Object.freeze({ authorization: `Bearer ${this.#credentials.accessToken}`, revision: this.#revision,
+      credentialRevision: this.#credentialRevision,
       expiresAt: this.#credentials.expiresAt, signal: this.#controller.signal });
   }
 
@@ -102,8 +116,17 @@ export class MemorySession {
     return this.#credentials !== null && lease.revision === this.#revision;
   }
 
-  invalidate(lease: SessionLease): void { if (this.isCurrent(lease)) this.clear(); }
-  remainingMs(lease: SessionLease): number { return Math.max(0, lease.expiresAt - this.#clock()); }
+  invalidate(lease: SessionLease): void {
+    if (this.isCredentialCurrent(lease)) this.#transition(null, 'anonymous', lease.credentialRevision);
+  }
+  isCredentialCurrent(lease: SessionLease): boolean {
+    return this.isCurrent(lease) && lease.credentialRevision === this.#credentialRevision;
+  }
+  /** Token-free bookkeeping distinguishes verifier refusal from explicit sign-out. */
+  wasInvalidated(lease: SessionLease): boolean { return this.#rejectedCredentialRevision === lease.credentialRevision; }
+  remainingMs(lease: SessionLease): number {
+    return this.isCurrent(lease) ? Math.max(0, this.#credentials!.expiresAt - this.#clock()) : 0;
+  }
 
   #expire(): void {
     if (this.#credentials && this.#credentials.expiresAt <= this.#clock()) {

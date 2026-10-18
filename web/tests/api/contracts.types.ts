@@ -1,5 +1,9 @@
 import { createApiClient, MemorySession } from '../../src/lib/api/index.ts';
-import type { LocationSnapshot, TripDraft } from '../../src/lib/api/index.ts';
+import type { LocationSnapshot, TripDraft, TripFields, InvitationInput } from '../../src/lib/api/index.ts';
+
+const arrival: Partial<TripFields> = { expectedArrivalAt: '2026-10-18T12:00:00.000Z' };
+const colleague: InvitationInput = { contactId: 'synthetic', phone: '+5511000000000', map: true, incident: true, role: 'colleague' };
+void arrival; void colleague;
 
 const api = createApiClient({ baseUrl: 'https://api.example.invalid', session: new MemorySession() });
 const key = { idempotencyKey: 'one-explicit-intent' };
@@ -25,6 +29,7 @@ const limit: 50 = loaded.limits.activeTrips;
 void more; void limit;
 // @ts-expect-error owner selection is authenticated, not an input parameter
 api.getBootstrap({ ownerId: 'another-actor' });
+// The source server read time is required on the envelope, never invented per row.
 const readAt: string = loaded.readAt;
 // @ts-expect-error only the whole bootstrap carries the source read-start timestamp
 const nestedReadAt: string = loaded.profile.readAt;

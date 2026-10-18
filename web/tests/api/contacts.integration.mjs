@@ -10,7 +10,7 @@ import { MemorySession, createApiClient, createContactApi, createDriverTransport
 // Explicit dependency: these immutable controller objects must have been fetched.
 // No feature source is copied into the author branch and no missing dependency is silently skipped.
 const CONTACT = 'b95bdbaa3f106f33d30b3aa8b0127ca3b691ee0e';
-const DRIVER = '80e9d45f9a234de54b1017e856e8349c097b8760';
+const DRIVER = '127c82ad109702a329e5bec008708b0fbc67487b';
 const repo = fileURLToPath(new URL('../../../', import.meta.url));
 const archive = mkdtempSync(join(tmpdir(), 'andes-api-feature-integration-'));
 after(() => rmSync(archive, { recursive: true, force: true }));
@@ -235,7 +235,9 @@ test('actual driver blocks cross-trip work and a fresh bound context cannot reus
     calls.push({ path: url.pathname, body: init.body, key: init.headers['Idempotency-Key'] });
     if (url.pathname === '/v1/me') return Response.json({ id: DRIVER_ID });
     if (url.pathname.endsWith('/snapshot') || url.pathname.startsWith('/v1/incidents/')) return defaultReply(url);
-    if (url.pathname.endsWith('/sos')) return Response.json({ id: nextIncident, tripId: nextTrip,
+    if (url.pathname.endsWith('/sos')) return Response.json({
+      id: url.pathname.includes(nextTrip) ? nextIncident : INCIDENT,
+      tripId: url.pathname.includes(nextTrip) ? nextTrip : TRIP,
       status: 'active', createdAt: stamp, resolvedAt: null, groupCapability: 'unavailable' });
     const id = url.pathname.split('/').at(-1);
     return Response.json({ id, driver_id: DRIVER_ID, truck_id: GRANT, origin: 'Synthetic origin',
@@ -256,8 +258,9 @@ test('actual driver blocks cross-trip work and a fresh bound context cannot reus
     assert.deepEqual(await driver.saveDraft(), { kind: 'blocked', code: 'journey-already-bound' });
     assert.deepEqual(await driver.confirmTrip({ confirmed: true }), { kind: 'blocked', code: 'journey-already-bound' });
     assert.deepEqual(await driver.openTrip(nextTrip), { kind: 'blocked', code: 'journey-already-bound' });
+    assert.equal(calls.length, before, 'Blocked cross-trip intents must send nothing');
     assert.equal((await driver.requestHelp()).data.tripId, TRIP);
-    assert.equal(calls.length, before, 'Blocked cross-trip intents and same-trip cached help must send nothing');
+    assert.equal(calls.length, before + 1, 'A cached incident must not swallow an explicit SOS tap');
   } finally { binding.dispose(); driver.dispose(); }
   const next = createDriverJourney({ transport: createDriverTransport(api), keyFactory: () => 'explicit-new-context' });
   const nextBinding = bindJourneySession(session, api, id => next.setSession(id));
@@ -269,7 +272,10 @@ test('actual driver blocks cross-trip work and a fresh bound context cannot reus
     assert.equal(result.kind, 'ok'); assert.equal(result.data.id, nextIncident);
     assert.equal(result.data.tripId, nextTrip); assert.equal(next.snapshot().tripId, nextTrip);
     const sos = calls.filter(call => call.path.endsWith('/sos'));
-    assert.deepEqual(sos, [{ path: `/v1/trips/${nextTrip}/sos`, body: '{}', key: 'explicit-new-context' }]);
+    assert.deepEqual(sos, [
+      { path: `/v1/trips/${TRIP}/sos`, body: '{}', key: 'explicit-old-context' },
+      { path: `/v1/trips/${nextTrip}/sos`, body: '{}', key: 'explicit-new-context' },
+    ]);
   } finally { nextBinding.dispose(); next.dispose(); session.clear(); }
 });
 

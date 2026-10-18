@@ -1,6 +1,6 @@
 import type { ApiClient } from './client.ts';
 import { ApiError } from './errors.ts';
-import type { MemorySession, SessionCredentials } from './session.ts';
+import type { MemorySession, SessionCredentials, SessionLease } from './session.ts';
 
 /** Token-free structural boundary supplied by foundation49; no React dependency. */
 export interface GatewaySnapshot {
@@ -26,7 +26,7 @@ export function createSessionGateway(config: SessionGatewayConfig) {
   let generation = 0;
   let disposed = false;
   let ownTransition = false;
-  let active: { generation: number; abort: AbortController } | null = null;
+  let active: { generation: number; abort: AbortController; lease?: SessionLease } | null = null;
   let pending: Promise<void> | null = null;
   function publish(state: GatewaySnapshot['state']) {
     if (snapshot.state === state) return;
@@ -48,38 +48,46 @@ export function createSessionGateway(config: SessionGatewayConfig) {
   }
   const unsubscribe = session.subscribe(() => {
     if (ownTransition || disposed) return;
+    const refused = active?.lease && session.wasInvalidated(active.lease);
     cancel();
-    publish(session.snapshot().status === 'expired' ? 'expired' : acquire ? 'signed-out' : 'unconfigured');
+    publish(refused ? 'error' : session.snapshot().status === 'expired' ? 'expired' : acquire ? 'signed-out' : 'unconfigured');
   });
 
-  function begin(): Promise<void> {
-    if (disposed || !acquire) return Promise.resolve();
+  function connect(existing = false): Promise<void> {
+    if (disposed || (!existing && !acquire)) return Promise.resolve();
     if (pending) return pending;
-    const run = { generation: ++generation, abort: new AbortController() };
+    const run: NonNullable<typeof active> = { generation: ++generation, abort: new AbortController() };
     active = run;
     const current = () => !disposed && active === run && generation === run.generation;
     // Defer execution so even a synchronous provider failure cannot strand pending.
     const task = Promise.resolve().then(async () => {
       try {
         if (!current()) return;
-        const credentials = await acquire!({ signal: run.abort.signal });
-        if (!current()) return;
-        changeSession(() => session.setCredentials(credentials));
+        if (!existing) {
+          const credentials = await acquire!({ signal: run.abort.signal });
+          if (!current()) return;
+          changeSession(() => session.setCredentials(credentials));
+        }
         const lease = session.capture();
+        run.lease = lease;
         await api.getIdentity({ signal: run.abort.signal });
         if (current() && session.isCurrent(lease)) publish('authenticated');
       } catch {
         // Provider exceptions may contain credentials; expose only a fixed state.
-        if (current()) { changeSession(() => session.clear()); publish('error'); }
+        if (current()) {
+          if (!run.lease || session.isCredentialCurrent(run.lease)) changeSession(() => session.clear());
+          publish('error');
+        }
       } finally {
         if (active === run) { active = null; pending = null; }
       }
     });
     pending = task;
-    changeSession(() => session.clear());
+    if (!existing) changeSession(() => session.clear());
     if (current()) publish('connecting');
     return task;
   }
+  function begin() { return connect(); }
   function end() {
     if (disposed) return;
     cancel();
@@ -94,11 +102,13 @@ export function createSessionGateway(config: SessionGatewayConfig) {
       } catch { if (!disposed && generation === endedAt) publish('error'); }
     }
   }
+  if (session.snapshot().status === 'authenticated') void connect(true);
   return {
-    getSnapshot: () => snapshot,
+    getSnapshot: () => { if (!disposed) session.snapshot(); return snapshot; },
     subscribe(listener: () => void) {
       if (disposed || typeof listener !== 'function' || listeners.size >= 32) throw new ApiError('invalid_input');
       listeners.add(listener);
+      session.snapshot();
       return () => { listeners.delete(listener); };
     },
     ...(acquire ? { begin, end } : {}),

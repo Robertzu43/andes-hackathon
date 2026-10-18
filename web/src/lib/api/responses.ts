@@ -1,14 +1,28 @@
 import type * as T from './types.ts';
+import { isUuid } from './uuid.ts';
 
 export type Decoder<T> = (value: unknown) => T;
 function invalid(): never { throw new Error('Unexpected API response'); }
 const text: Decoder<string> = value => typeof value === 'string' ? value : invalid();
 const bool: Decoder<boolean> = value => typeof value === 'boolean' ? value : invalid();
-const uuid: Decoder<string> = value => typeof value === 'string'
-  && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value) ? value : invalid();
-const date: Decoder<string> = value => typeof value === 'string'
-  && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])$/.test(value)
-  && Number.isFinite(Date.parse(value)) ? value : invalid();
+const uuid: Decoder<string> = value => isUuid(value) ? value : invalid();
+const instant = /^(\d{4})-(\d{2})-(\d{2})T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.\d+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])$/;
+// Date.parse rolls impossible days forward (02-30 -> 03-02); require the calendar day to round-trip.
+const realDay = (m: RegExpExecArray) => {
+  const day = new Date(Date.UTC(+m[1]!, +m[2]! - 1, +m[3]!));
+  return day.getUTCFullYear() === +m[1]! && day.getUTCMonth() === +m[2]! - 1 && day.getUTCDate() === +m[3]!;
+};
+const date: Decoder<string> = value => {
+  const m = typeof value === 'string' ? instant.exec(value) : null;
+  return m && realDay(m) && Number.isFinite(Date.parse(m[0])) ? m[0] : invalid();
+};
+/** Normalize only explicit zoned instants; never infer a browser or route time zone. */
+export function normalizeDate(value: unknown): string {
+  if (typeof value !== 'string') invalid();
+  const compatible = value.replace('t', 'T').replace(/z$/i, 'Z')
+    .replace(/([+-]\d{2})(\d{2})$/, '$1:$2').replace(/([+-]\d{2})$/, '$1:00');
+  return new Date(date(compatible)).toISOString();
+}
 const number = (min: number, max = Infinity, integer = false): Decoder<number> => value =>
   typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max
   && (!integer || Number.isInteger(value)) ? value : invalid();
@@ -102,6 +116,10 @@ export const snapshot: Decoder<T.LocationSnapshot> = value => {
     return { tripId: parsed.tripId, readAt: parsed.readAt, location: null, freshness: 'unavailable', ageMs: null };
   }
   if (parsed.freshness === 'unavailable' || parsed.ageMs === null) invalid();
+  const readMs = Date.parse(parsed.readAt);
+  const age = readMs - Date.parse(parsed.location.capturedAt);
+  if (age < 0 || Date.parse(parsed.location.receivedAt) > readMs || parsed.ageMs !== age
+    || parsed.freshness !== (age <= 120_000 ? 'fresh' : 'stale')) invalid();
   return { tripId: parsed.tripId, readAt: parsed.readAt, location: parsed.location, freshness: parsed.freshness, ageMs: parsed.ageMs };
 };
 
