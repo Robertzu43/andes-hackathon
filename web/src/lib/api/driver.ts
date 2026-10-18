@@ -17,11 +17,13 @@ export type DriverTransportResult = { kind: 'ok'; data: unknown }
 
 /** Shared wire validation for a feature's injected decoder; correlation stays feature-owned. */
 export function decodeDriverResponse(request: Pick<DriverRequest, 'operation'>, value: unknown): unknown {
-  const decoders = { createTruck: decode.id, createDraft: decode.draft, confirmDraft: decode.confirmed,
+  const decoders: Record<string, (value: unknown) => unknown> = Object.assign(Object.create(null), {
+    createTruck: decode.id, createDraft: decode.draft, confirmDraft: decode.confirmed,
     command: decode.command, sos: decode.sos, resolveIncident: decode.resolution, readTrip: decode.trip,
-    readSnapshot: decode.snapshot, readIncident: decode.incident, readStatus: decode.tripStatus };
-  const decodeOperation = decoders[request.operation as keyof typeof decoders];
-  if (!Object.hasOwn(decoders, request.operation)) throw new ApiError('unsupported', {
+    readSnapshot: decode.snapshot, readIncident: decode.incident, readStatus: decode.tripStatus,
+  });
+  const decodeOperation = Object.hasOwn(decoders, request.operation) ? decoders[request.operation] : undefined;
+  if (!decodeOperation) throw new ApiError('unsupported', {
     operation: request.operation, code: 'unsupported_operation', outcome: 'not_applicable',
   });
   try { return decodeOperation(value); }

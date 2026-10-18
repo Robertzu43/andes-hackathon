@@ -29,11 +29,11 @@ test('a check-in command may say the sweeper can still escalate', () => {
 });
 
 // Prototype entries must never bypass SDK wire decoding.
-for (const operation of ['constructor', 'toString', 'unsupportedOperation']) {
+for (const operation of ['constructor', 'toString', 'valueOf', 'unsupportedOperation']) {
   test(`${operation} is unsupported by the decoder and never dispatches HTTP`, async () => {
     assert.throws(() => decodeDriverResponse({ operation }, { undecoded: true }),
       error => error.kind === 'unsupported' && error.code === 'unsupported_operation'
-        && error.outcome === 'not_applicable');
+        && error.operation === operation && error.outcome === 'not_applicable');
     const transport = createDriverTransport(new Proxy({}, {
       get() { assert.fail('unsupported operation reached the SDK'); },
     }));

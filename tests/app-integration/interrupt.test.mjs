@@ -34,9 +34,7 @@ async function freePort() {
   return port;
 }
 
-// One file-level test serializes all five owned PostgreSQL scenarios.
-test('an interrupted integration run removes only its own resources', {timeout: 450000, concurrency: 1}, async t => {
-for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on an owned-cluster run stops its PostgreSQL and removes its directory`, {timeout: 90000}, async t => {
+for (const signal of ['SIGINT', 'SIGTERM']) test(`${signal} on an owned-cluster run stops its PostgreSQL and removes its directory`, {timeout: 90000}, async t => {
   const discovery = process.env.APP_INTEGRATION_PG_BIN ? null : spawnSync('pg_config', ['--bindir'], {encoding: 'utf8'});
   const bin = process.env.APP_INTEGRATION_PG_BIN ?? (discovery.status === 0 ? discovery.stdout.trim() : '');
   if (!existsSync(join(bin, 'initdb'))) return t.skip('No PostgreSQL server binaries for an owned cluster');
@@ -79,7 +77,7 @@ async function sharedControl(t, registerCleanup = cleanup => t.after(cleanup)) {
   return {client, server};
 }
 
-await t.test('The shared-server fixture closes its observer before dropping its database', {timeout: 90000}, async t => {
+test('The shared-server fixture closes its observer before dropping its database', {timeout: 90000}, async t => {
   let cleanup, teardown, releaseWireEnd;
   t.after(async () => {
     releaseWireEnd?.();
@@ -122,7 +120,7 @@ await t.test('The shared-server fixture closes its observer before dropping its 
   assert.equal(existsSync(server.directory), false, 'The fixture directory must be removed');
 });
 
-for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on a shared-server run drops only its own database`, {timeout: 90000}, async t => {
+for (const signal of ['SIGINT', 'SIGTERM']) test(`${signal} on a shared-server run drops only its own database`, {timeout: 90000}, async t => {
   const control = await sharedControl(t);
   if (!control) return;
   const {client, server} = control;
@@ -141,5 +139,4 @@ for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on a shared-
   assert.deepEqual((await client.query('SELECT value FROM interruption_control')).rows,
     [{value: 'synthetic-do-not-reset'}], 'The shared input database must retain its sentinel');
   assert.deepEqual(readdirSync(temp), []);
-});
 });
