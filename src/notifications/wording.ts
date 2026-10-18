@@ -1,3 +1,4 @@
+import { isIPv4 } from 'node:net';
 import type { Channel } from '../contracts.js';
 interface AlertInput {
   truck: string; country: string; timeZone: string; now: Date; signalAt: Date | null; channel: Channel;
@@ -17,10 +18,18 @@ function truckLabel(truck: string, channel: Channel): string {
   // Remove unsafe tokens before truncation, which could otherwise leave part of a URL or UUID.
   if (channel === 'sms' || channel === 'voice') {
     truck = truck.replace(/(?:\b[a-z][a-z\d+.-]*:\/\/|\/\/|\bwww\.)\S+/gi, ' ');
-    truck = truck.replace(/\b(?:[a-z\d-]+\.)+[a-z]{2,}(?![a-z\d-])(?:[/:?#]\S*)?/gi, ' ');
+    truck = truck.replace(/\b(?:[a-z\d-]+\.)+(?:xn--[a-z\d-]+|[a-z]{2,})(?![a-z\d-])(?:[/:?#]\S*)?/gi, ' ');
+    truck = truck.replace(/(?<![\w.])((?:\d{1,3}\.){3}\d{1,3})(?![\w-]|\.\w)(?:[/:?#]\S*)?/g,
+      (token, host: string) => isIPv4(host) ? ' ' : token);
   }
   if (channel === 'voice') truck = truck.replace(/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}/gi, ' ');
-  return truck.replace(/\s+/g, ' ').trim().slice(0, 40);
+  const label = truck.replace(/\s+/g, ' ').trim();
+  const bounded = label.slice(0, 40);
+  // Clipping a dotted plate can turn it into a domain. Keep whole dotted tokens or omit the clipped one.
+  if ((channel === 'sms' || channel === 'voice') && label.length > 40 && label[40] !== ' ') {
+    return bounded.replace(/\S*\.\S*$/, '').trimEnd();
+  }
+  return bounded;
 }
 /** Spanish-only for the demo, pt-BR trips included. ponytail: add pt-BR summaries when a Brazilian corridor is tested. */
 export function alertSummary(input: AlertInput, env: NodeJS.ProcessEnv = process.env): string {

@@ -230,6 +230,45 @@ test('alert wording removes truck-label links from SMS and voice before truncati
   });
 });
 
+test('alert wording does not create links when bounding safe dotted truck labels', async t => {
+  const {alertSummary} = await import('../dist/notifications/wording.js');
+  const base = {country: 'PE', timeZone: 'America/Lima', now: new Date('2026-10-17T12:05:00Z'), signalAt: null,
+    location: null, incident: {id: 'i-1', trigger: 'sos', check_reason: null}};
+  for (const channel of ['sms', 'voice']) for (const length of [32, 33, 34]) await t.test(`${channel}: plate crosses bound after ${length} characters`, () => {
+    const prefix = 'X'.repeat(length);
+    const summary = alertSummary({...base, truck: `${prefix} ABC.PE-123`, channel}, {});
+    assert.ok(summary.startsWith(`ALERTA: el conductor del camión ${prefix} pidió ayuda (posible robo).`), summary);
+    assert.doesNotMatch(summary, /ABC\.PE?/i);
+  });
+  for (const channel of ['sms', 'voice', 'whatsapp']) await t.test(`${channel}: whole dotted plate fits exactly`, () => {
+    const summary = alertSummary({...base, truck: `${'X'.repeat(29)} ABC.PE-123 tail`, channel}, {});
+    assert.ok(summary.startsWith(`ALERTA: el conductor del camión ${'X'.repeat(29)} ABC.PE-123 pidió ayuda (posible robo).`), summary);
+  });
+  await t.test('WhatsApp retains its existing character bound', () => {
+    const summary = alertSummary({...base, truck: `${'X'.repeat(33)} ABC.PE-123`, channel: 'whatsapp'}, {});
+    assert.ok(summary.startsWith(`ALERTA: el conductor del camión ${'X'.repeat(33)} ABC.PE pidió ayuda (posible robo).`), summary);
+  });
+});
+
+test('alert wording removes bare punycode and IPv4 links only from SMS and voice', async t => {
+  const {alertSummary} = await import('../dist/notifications/wording.js');
+  const base = {country: 'PE', timeZone: 'America/Lima', now: new Date('2026-10-17T12:05:00Z'), signalAt: null,
+    location: null, incident: {id: 'i-1', trigger: 'sos', check_reason: null}};
+  for (const link of ['tracker.xn--p1ai/path', 'TRACKER.XN--P1AI/path', '192.0.2.1/path', '192.0.2.1:8080/path', '192.0.2.1']) {
+    for (const channel of ['sms', 'voice', 'whatsapp']) await t.test(`${channel}: ${link}`, () => {
+      const summary = alertSummary({...base, truck: `ABC-123 ${link}`, channel}, {});
+      const want = channel === 'whatsapp' ? `ABC-123 ${link}` : 'ABC-123';
+      assert.ok(summary.startsWith(`ALERTA: el conductor del camión ${want} pidió ayuda (posible robo).`), summary);
+      if (channel !== 'whatsapp') assert.doesNotMatch(summary, /xn--|192\.0\.2\.1/i);
+      assert.match(summary, /Última ubicación no disponible\. Llámalo\.$/);
+    });
+  }
+  for (const channel of ['sms', 'voice']) await t.test(`${channel}: dotted serial is not an IPv4 link`, () => {
+    const summary = alertSummary({...base, truck: 'Serie 999.999.999.999', channel}, {});
+    assert.ok(summary.startsWith('ALERTA: el conductor del camión Serie 999.999.999.999 pidió ayuda (posible robo).'), summary);
+  });
+});
+
 test('voice removes truck-label UUIDs before truncation while SMS and WhatsApp retain identifiers', async t => {
   const {alertSummary} = await import('../dist/notifications/wording.js');
   const uuid = '0d3c2a9e-1b7f-4c55-9a51-3f1e2d4c5b6a';
