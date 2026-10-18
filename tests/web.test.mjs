@@ -5,8 +5,9 @@ import {mkdtempSync, mkdirSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fixture} from './helpers/runtime.mjs';
-import {spawnSync} from 'node:child_process';
+import {spawn, spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import net from 'node:net';
 import {generateKeyPair, SignJWT} from 'jose';
 
 // A synthetic build shaped like web/dist (index.html, fingerprinted assets/, root files), with a secret just outside it.
@@ -87,6 +88,64 @@ test('one trusted proxy hop: a client-forged X-Forwarded-For entry never becomes
   assert.equal(await ipFor(1, '203.0.113.9, 198.51.100.7'), '198.51.100.7', 'an entry the client wrote is ignored');
   assert.equal(await ipFor(undefined, '198.51.100.7'), '127.0.0.1', 'createApp trusts no proxy unless told');
   assert.equal(await ipFor(0, '198.51.100.7'), '127.0.0.1');
+});
+
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const {port} = server.address();
+      server.close(() => resolve(port));
+    });
+  });
+}
+// The server entry has no IP route. This loader adds request.ip to the public health body for this test only.
+function proxyProbe(t) {
+  const hook = join(tmpdir(), `andes-proxy-probe-${process.pid}-${Date.now()}.mjs`);
+  const code = `export async function load(url, context, nextLoad) {
+  if (!url.endsWith('/dist/api/app.js')) return nextLoad(url, context);
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const needle = "return { status: 'ok' };";
+  const source = readFileSync(fileURLToPath(url), 'utf8');
+  if (!source.includes(needle)) throw new Error('proxy probe missed the health body');
+  return { format: 'module', source: source.replace(needle, "return { status: 'ok', ip: _request.ip };"), shortCircuit: true };
+}`;
+  writeFileSync(hook, `import { register } from 'node:module';
+register('data:text/javascript,' + encodeURIComponent(${JSON.stringify(code)}));
+`);
+  t.after(() => rmSync(hook, {force: true}));
+  return hook;
+}
+async function listen(t, hook, hops) {
+  const port = await freePort();
+  const env = {PATH: process.env.PATH, DEMO_MODE: 'true', HOST: '127.0.0.1', PORT: String(port), DATABASE_URL: process.env.TEST_DATABASE_URL};
+  if (hops !== undefined) env.TRUST_PROXY_HOPS = hops;
+  const child = spawn(process.execPath, ['--import', hook, fileURLToPath(new URL('../dist/server.js', import.meta.url))], {env});
+  let stderr = '';
+  child.stderr.setEncoding('utf8'); child.stderr.on('data', chunk => { stderr += chunk; });
+  t.after(() => { child.kill('SIGTERM'); });
+  const deadline = Date.now() + 15000;
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) break;
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/health`, {headers: {'x-forwarded-for': '198.51.100.7'}});
+      if (response.status === 200) return response.json();
+    } catch { /* not listening yet */ }
+    await new Promise(resolve => setTimeout(resolve, 40));
+  }
+  throw new Error(`server did not serve health (TRUST_PROXY_HOPS=${hops}): ${stderr}`);
+}
+
+test('an unset TRUST_PROXY_HOPS ignores a client-written X-Forwarded-For', async t => {
+  const root = fileURLToPath(new URL('../web/dist', import.meta.url));
+  mkdirSync(root, {recursive: true});
+  writeFileSync(join(root, 'index.html'), '<!doctype html><title>SYNTHETIC app</title>');
+  t.after(() => rmSync(root, {recursive: true, force: true}));
+  const hook = proxyProbe(t);
+  assert.equal((await listen(t, hook, undefined)).ip, '127.0.0.1', 'a direct client cannot choose request.ip');
+  assert.equal((await listen(t, hook, '1')).ip, '198.51.100.7', 'one configured hop still trusts the proxy');
 });
 
 test('the server refuses a TRUST_PROXY_HOPS that is not a small integer', () => {

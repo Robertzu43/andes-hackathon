@@ -6,8 +6,8 @@ import { createApp } from './api/app.js';
 import { demoIssuer } from './demo.js';
 import { checkConfig } from './checks/sweep.js';
 const { OIDC_ISSUER, OIDC_AUDIENCE, OIDC_JWKS_URL } = process.env;
-// Exactly the proxies in front of the API: cloudflared locally, the ECS Express load balancer on AWS. Never `true`: any client could forge X-Forwarded-For.
-const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 1);
+// Default 0. HOST defaults to 0.0.0.0, so an unset count must ignore a client-written X-Forwarded-For. A deploy behind one proxy sets TRUST_PROXY_HOPS=1. Never `true`.
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 0);
 if (!Number.isSafeInteger(trustProxyHops) || trustProxyHops < 0 || trustProxyHops > 3) throw new Error('TRUST_PROXY_HOPS must be an integer from 0 to 3');
 const demo = process.env.DEMO_MODE === 'true' ? await demoIssuer(process.env) : undefined;
 if (!demo && (!OIDC_ISSUER || !OIDC_AUDIENCE || !OIDC_JWKS_URL)) throw new Error('Trusted OIDC configuration required');
