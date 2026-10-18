@@ -146,3 +146,25 @@ test('arrival inputs normalize before the server can commit and echo a different
     { idempotencyKey: 'invalid-arrival-intent' }), error => error.kind === 'invalid_input' && error.outcome === 'not_sent');
   assert.equal(calls, 0);
 });
+
+test('impossible calendar dates and hour 24 are rejected instead of rolling forward', async t => {
+  let calls = 0;
+  const f = fixture(async () => { calls++; return Response.json({}); });
+  for (const value of ['2027-02-29T10:00:00-05:00', '2026-02-30T10:00:00Z', '2026-04-31T10:00:00Z',
+    '2026-10-18T24:00:00Z', '2026-13-01T10:00:00Z', '2026-10-00T10:00:00Z']) {
+    await t.test(value, async () => {
+      await assert.rejects(f.api.createDraft({ text: 'Synthetic draft', fields: { expectedArrivalAt: value } },
+        { idempotencyKey: 'impossible-arrival-intent' }), error => error.kind === 'invalid_input' && error.outcome === 'not_sent');
+      assert.throws(() => decodeDriverResponse({ operation: 'readSnapshot' },
+        { tripId: id, readAt: value, location: null, freshness: 'unavailable', ageMs: null }),
+      error => error.kind === 'invalid_response');
+    });
+  }
+  assert.equal(calls, 0);
+  const sent = [];
+  const ok = fixture(async (url, init) => { const body = JSON.parse(init.body); sent.push(body);
+    return Response.json({ id, rawText: 'Synthetic draft', fields: body.fields, missingFields: [], status: 'draft' }); });
+  await ok.api.createDraft({ text: 'Synthetic draft', fields: { expectedArrivalAt: '2028-02-29T10:00:00-05:00' } },
+    { idempotencyKey: 'leap-day-intent' });
+  assert.equal(sent[0].fields.expectedArrivalAt, '2028-02-29T15:00:00.000Z'); // A real leap day still converts.
+});

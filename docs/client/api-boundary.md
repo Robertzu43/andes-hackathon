@@ -131,7 +131,9 @@ typed /v1/me and retires old activations. The callback must clear protected stat
 when given null. Disposal clears once and suppresses queued session notifications,
 including disposal by an earlier listener during the same dispatch. The independently
 reviewed75bdffa fix is preserved in this base. Same-account refresh does not call the
-reset callback; account replacement, clear, current401 and expiry do.
+reset callback, and `activate()` verifies /v1/me before touching the controller, so a
+re-activation for the same verified actor keeps its trip and accepted SOS; account replacement,
+clear, current401, expiry and a changed /v1/me actor do reset.
 
 `createDriverTransport(api)` preserves ok/not_sent/rejected/unknown and original
 intent ownership. Its current feature compatibility pin is

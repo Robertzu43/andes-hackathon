@@ -27,7 +27,8 @@ export function bindJourneySession(session: MemorySession, api: Pick<ApiClient, 
   setActor: (actorId: UUID | null) => void) {
   let generation = 0;
   let disposed = false;
-  const reset = () => { generation += 1; setActor(null); };
+  let bound: UUID | null = null;
+  const reset = () => { generation += 1; bound = null; setActor(null); };
   reset();
   const unsubscribe = session.subscribe(() => {
     // An earlier listener can dispose this binding during a notification snapshot.
@@ -36,14 +37,19 @@ export function bindJourneySession(session: MemorySession, api: Pick<ApiClient, 
   return {
     async activate(options?: RequestOptions) {
       if (disposed) throw new ApiError('session_changed', { operation: 'activateJourney' });
-      reset();
+      // Verify before touching the controller: a same-actor re-activation must not erase an accepted SOS.
+      // Account replacement, clear, current 401 and expiry already reset through the subscription.
       const started = generation;
       const lease = session.capture();
       const identity = await api.getIdentity(options);
       if (disposed || started !== generation || !session.isCurrent(lease)) {
         throw new ApiError('session_changed', { operation: 'activateJourney' });
       }
-      setActor(identity.id);
+      if (identity.id.toLowerCase() !== bound?.toLowerCase()) {
+        if (bound !== null) reset();
+        bound = identity.id;
+        setActor(identity.id);
+      }
       return identity;
     },
     dispose() {
