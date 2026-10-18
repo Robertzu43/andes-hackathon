@@ -177,12 +177,18 @@ A review of the backend at `c752de8` found 15 issues. Robert chose to fix the 5 
 - phone-claim downgrades cancelling SOS jobs;
 - terminal handling of 429/401/402/403.
 
-He accepted the other 10 as documented production limits for the hackathon:
+The reviews of this PR led to further fixes, each with a regression test (`tests/hardening.test.mjs`, `tests/dispatch-races.test.mjs`):
+- trips stored with a non-canonical locale before the fix (`pt-br`) are matched canonically;
+- a job whose lifetime and claim both lapse during the quota wait ends `cancelled`;
+- the contact's verified phone is re-read after the quota wait;
+- claims read the clock after the trip lock, and a lapsed claim's outbox is republished at once.
+
+He accepted the other 10 as documented production limits for the hackathon. Limit 3 has since been fixed; the other nine stand:
 
 1. **Endless reconciliation** (`dispatch.ts` reconcile). Accepted voice, SMS/WhatsApp ending `failed` or never `delivered`/`read`, and no-ID `unknown` attempts keep being re-queued for reconciliation.
 2. **Lost result after an SQL failure.** `finishAttempt` runs once, with no retry. A transient SQL failure after the provider call can leave an accepted send recorded as `authorized`/`unknown`.
-3. **Uppercase self-invite.** The self-invite guard compares the UUID as a case-sensitive string, so an uppercase self ID passes it.
-4. **Read paths take the trip row lock.** `withTripTransaction` takes `FOR UPDATE` for read-only snapshot, trip and incident reads too, and location ingest holds it while writing samples.
+3. **Uppercase self-invite. Fixed.** The guard compared the UUID case-sensitively, so an uppercase self ID passed it and hit the database CHECK: a 500 whose PostgreSQL detail (the failing row, phone included) could reach RDS/CloudWatch logs. It now compares case-insensitively and returns 400 `invalid_consent_request`.
+4. **Read paths take the trip row lock.** `withTripTransaction` takes `FOR UPDATE` for read-only snapshot, trip and incident reads too, and location ingest holds it while writing samples. (`GET /v1/trips/:id/status` no longer does: it is a lock-free snapshot on command capacity.)
 5. **Recovery scans.** `recoverWork` runs nine mostly unindexed statements in one transaction every second on each control replica.
 6. **Deferral can exhaust receives.** `consume` defers messages it can't fit in a slot, and each deferral counts toward SQS `maxReceiveCount` (5), so busy channels can push valid work to the DLQ. SQL recovery restores it.
 7. **Unguarded receive loop.** In `consume`, the job lookup, `ack` and `defer` calls have no try/catch, so one transient DB or SQS error ends that receive iteration.
@@ -190,5 +196,5 @@ He accepted the other 10 as documented production limits for the hackathon:
 9. **Slow, unordered relay.** The relay publishes one outbox row per 100 ms per control task, with no emergency-first ordering, and `publish_attempts` is never reset.
 10. **Unsalted destination hash.** `destination_hash` is an unsalted SHA-256 of the E.164 number and is kept indefinitely in attempts and callback evidence.
 
-None of these is fixed or claimed fixed. Each needs its own change and test before production use.
+Apart from limit 3, none of these is fixed or claimed fixed. Each needs its own change and test before production use.
 

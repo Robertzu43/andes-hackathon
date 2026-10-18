@@ -88,3 +88,9 @@ test('rate-limit and auth/payment rejections retry within a bounded persisted bu
   await d.runJob(f.ctx, voice, provider({async send() { return {state: 'rejected', code: 'invalid_number', retryable: false}; }}), 'permanent');
   assert.deepEqual((await f.ctx.pool.query('SELECT status,retry_count FROM jobs WHERE id=$1', [voice.id])).rows, [{status: 'rejected', retry_count: 0}]);
 });
+
+test('an uppercase self-invitation is refused as invalid, not a 500 that logs the phone', async t => {
+  const f = await fixture(t);
+  assert.deepEqual(await f.req('POST', '/v1/contacts', {contactId: f.me.id.toUpperCase(), phone: '+15555550100', map: true, incident: true}), {status: 400, body: {code: 'invalid_consent_request'}});
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM contact_grants')).rows[0].n, 0);
+});

@@ -7,7 +7,8 @@ import { empty, idParams, object, scopeChoices, uuid } from '../api/schemas.js';
 export function contactRoutes(app: FastifyInstance, ctx: Context) {
   app.post('/v1/contacts', { schema: { body: object({ contactId: uuid, phone: { type: 'string', pattern: '^\\+[1-9]\\d{6,14}$' }, ...scopeChoices, role: { enum: ['family', 'colleague'] } }, ['contactId', 'phone', 'map', 'incident']) } }, request => transaction(ctx.pool, client => idempotent(ctx, client, request, async () => {
     const body = request.body as { contactId: string; phone: string; map: boolean; incident: boolean; role?: 'family' | 'colleague' };
-    if ((!body.map && !body.incident) || body.contactId === request.actor.id) problem(400, 'invalid_consent_request');
+    // UUIDs are case-insensitive: an uppercase self ID would otherwise reach the CHECK constraint as a 500 whose detail logs the phone.
+    if ((!body.map && !body.incident) || body.contactId.toLowerCase() === request.actor.id) problem(400, 'invalid_consent_request');
     if (!(await client.query('SELECT id FROM identities WHERE id=$1', [body.contactId])).rowCount) problem(404, 'contact_not_found');
     const id = randomUUID();
     const inserted = await client.query(`INSERT INTO contact_grants(id,driver_id,contact_id,phone,map_requested,incident_requested,role) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(driver_id,contact_id) DO NOTHING`, [id, request.actor.id, body.contactId, body.phone, body.map, body.incident, body.role ?? 'family']);
