@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {fixture} from './helpers/runtime.mjs';
 import {runtime, sos, provider, qualification} from './helpers/dispatch.mjs';
 
@@ -41,6 +43,20 @@ test('demo sessions are rate limited, and demo mode refuses live sends', async t
   await assert.rejects(demoIssuer({ZAVU_LIVE_SEND: 'true', DEMO_LIVE_PHONE: '999'}), /DEMO_LIVE_PHONE/);
 });
 
+test('the real server entry stays off demo mode unless DEMO_MODE is exactly "true"', () => {
+  const start = env => spawnSync(process.execPath, [fileURLToPath(new URL('../dist/server.js', import.meta.url))], {encoding: 'utf8', timeout: 20000, env: {PATH: process.env.PATH, ...env}});
+  for (const mode of [undefined, '', 'false', 'TRUE', '1', 'yes']) {
+    const run = start(mode === undefined ? {} : {DEMO_MODE: mode});
+    assert.equal(run.status, 1, `DEMO_MODE=${mode}`);
+    assert.match(run.stderr, /Trusted OIDC configuration required/, `DEMO_MODE=${mode} must demand OIDC`);
+  }
+  // Control: only the explicit value skips OIDC and reaches the next startup requirement.
+  const demo = start({DEMO_MODE: 'true'});
+  assert.equal(demo.status, 1);
+  assert.doesNotMatch(demo.stderr, /OIDC/);
+  assert.match(demo.stderr, /Database URL or complete PostgreSQL components required/);
+});
+
 test('without demo mode the session route does not exist and real tokens are unaffected', async t => {
   const f = await fixture(t);
   assert.notEqual((await f.app.inject({method: 'POST', url: '/v1/demo/session', payload: {}})).statusCode, 200);
@@ -73,4 +89,15 @@ test('dispatch refuses any destination outside a configured allowlist without ca
   assert.ok(await d.authorizeJob(f.ctx, await d.claimJob(f.ctx, jobs[1], 'allowlist'), allowed));
   assert.equal(sends, 0);
   assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM dispatch_attempts')).rows[0].n, 1);
+});
+
+test('an empty allowlist refuses every destination before quota or the provider', async t => {
+  const d = await runtime(); const f = await fixture(t); const {jobs} = await sos(f);
+  let sends = 0;
+  const none = provider({qualification: {...qualification, allowedDestinations: []}, async send() { sends++; return {state: 'accepted', messageId: 'msg_x', status: 'queued'}; }});
+  for (const job of jobs) assert.equal(await d.authorizeJob(f.ctx, await d.claimJob(f.ctx, job, 'empty-allowlist'), none), null);
+  assert.deepEqual((await f.ctx.pool.query("SELECT status,unavailable_reason,count(*)::int n FROM jobs WHERE channel<>'group' GROUP BY 1,2")).rows,
+    [{status: 'unavailable', unavailable_reason: 'destination_not_allowed', n: 3}]);
+  assert.deepEqual((await f.ctx.pool.query('SELECT (SELECT count(*) FROM dispatch_attempts)::int attempts,(SELECT count(*) FROM quota_reservations)::int quota')).rows, [{attempts: 0, quota: 0}]);
+  assert.equal(sends, 0);
 });
