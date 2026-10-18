@@ -33,3 +33,11 @@ test('an unknown driver operation still throws unsupported', () => {
     error.kind === 'unsupported' && error.code === 'unsupported_operation'
     && error.operation === 'notAnOperation' && error.outcome === 'not_applicable');
 });
+
+test('inherited decoder names stay unsupported', () => {
+  for (const operation of ['constructor', 'toString', 'valueOf']) {
+    assert.throws(() => decodeDriverResponse({ operation }, { id }), error =>
+      error.kind === 'unsupported' && error.code === 'unsupported_operation'
+      && error.operation === operation && error.outcome === 'not_applicable', operation);
+  }
+});
