@@ -89,3 +89,15 @@ test('integrated adapter rejects earlier backend receipts rather than silently m
     assert.equal(old.backendSha, legacy);
   }
 });
+
+test('an isolated run receipt needs a recorded passing suite and producer revision', () => {
+  const raw = {...recorder(metadata).raw(), kind: 'isolated-backend-run'};
+  const producerRevision = '0123456789abcdef0123456789abcdef01234567';
+  for (const missing of [{}, {suiteResult: 'fail', producerRevision}, {suiteResult: 'pass'}, {suiteResult: 'pass', producerRevision: 'HEAD'}]) {
+    assert.throws(() => adapt({...raw, ...missing}), /passing suite and producer revision/);
+  }
+  for (const revision of [producerRevision, `${producerRevision}+dirty`]) {
+    const receipt = adapt({...raw, suiteResult: 'pass', producerRevision: revision});
+    assert.equal(receipt.suiteResult, 'pass'); assert.equal(receipt.producerRevision, revision);
+  }
+});

@@ -69,6 +69,10 @@ export function adapt(raw) {
   assert.ok(['synthetic-control', 'isolated-backend-run'].includes(raw.kind), 'Evidence kind required');
   assert.equal(raw.backendSha, BACKEND_SHA, 'Backend must be rebound through source review');
   assert.equal(raw.externalSends, false); assert.equal(raw.isolatedDatabase, true);
+  // run.mjs adds these only after the whole suite passed; a failing run never reaches the adapter.
+  if (raw.kind === 'isolated-backend-run') {
+    assert.ok(raw.suiteResult === 'pass' && /^[0-9a-f]{40}(\+dirty)?$/.test(raw.producerRevision ?? ''), 'Isolated run needs a passing suite and producer revision');
+  }
   assert.ok(Array.isArray(raw.exchanges) && raw.exchanges.length <= 80, 'Bounded exchanges required');
   const cases = [];
   for (const [id, length] of Object.entries(CASE_LENGTHS)) {
@@ -89,7 +93,8 @@ export function adapt(raw) {
   }
   return {schema: 'andes.app-acceptance.receipt/1', kind: raw.kind, backendSha: raw.backendSha,
     externalSends: raw.externalSends, isolatedDatabase: raw.isolatedDatabase,
-    producer: raw.producer, command: raw.command, cases};
+    producer: raw.producer, command: raw.command,
+    ...(raw.kind === 'isolated-backend-run' ? {suiteResult: raw.suiteResult, producerRevision: raw.producerRevision} : {}), cases};
 }
 
 export async function writeCapture(directory, raw) {
