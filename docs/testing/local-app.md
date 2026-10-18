@@ -134,8 +134,9 @@ never filled from synthetic examples, and observed failures stay failures.
 ## Backend binding
 
 The producer and the checker share one constant, `BACKEND_SHA` in
-[`evidence/app-acceptance/oracle.mjs`](../../evidence/app-acceptance/oracle.mjs),
-currently `main` at `3a1491a4be1e32a1daa24a72d1afd374760147fd`. Export first
+[`evidence/app-acceptance/oracle.mjs`](../../evidence/app-acceptance/oracle.mjs);
+[`rebindings.md`](../../evidence/app-acceptance/rebindings.md) names the current
+target and its source review. Export first
 checks that `src/`, `db/`, the manifests and the compiler config match it,
 including unstaged, untracked and Git-ignored files (the migrator runs an ignored
 numbered SQL file), and checks again before writing. Export needs a Git checkout
@@ -147,5 +148,6 @@ twelve cases, record it in
 [`rebindings.md`](../../evidence/app-acceptance/rebindings.md), then change
 `BACKEND_SHA`. Changing a receipt's revision label is never evidence.
 `tests/app-integration/source-pin.test.mjs` checks the guard on the pinned
-source in a private clone: clean source passes, and an ignored migration is
+source in a private clone (checked out with `--no-overlay`, so backend files
+added after the pin are removed): clean source passes, and an ignored migration is
 refused before any evidence directory exists.

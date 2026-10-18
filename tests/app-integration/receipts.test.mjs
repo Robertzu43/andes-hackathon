@@ -83,7 +83,7 @@ test('unsupported evidence/source metadata cannot be silently rebound', () => {
 });
 
 test('integrated adapter rejects earlier backend receipts rather than silently migrating their revision', () => {
-  for (const legacy of ['ebc8fb1d36f441ef012ca585201cefabf61383d6', '5591c9b55fe7f4505e36ccee96d27aa913e0debf']) {
+  for (const legacy of ['ebc8fb1d36f441ef012ca585201cefabf61383d6', '5591c9b55fe7f4505e36ccee96d27aa913e0debf', '3a1491a4be1e32a1daa24a72d1afd374760147fd']) {
     const old = {...recorder(metadata).raw(), backendSha: legacy};
     assert.throws(() => adapt(old), /rebound through source review/);
     assert.equal(old.backendSha, legacy);

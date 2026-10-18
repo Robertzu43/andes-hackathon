@@ -1,7 +1,7 @@
 # Route and state acceptance matrix
 
-Backend reference: `main` at `3a1491a4be1e32a1daa24a72d1afd374760147fd`.
-The twelve receipt cases' routes and payloads are unchanged from `5591c9b`; the
+Backend reference: `BACKEND_SHA` in `oracle.mjs`, the target named in rebindings.md.
+The twelve receipt cases' routes and payloads are unchanged from `5591c9b`; each
 reviewed delta is recorded in rebindings.md. Historical ebc
 receipts remain separate and cannot be promoted to this binding.
 UI path patterns: bound to Brain's validated foundation packet below. The actual

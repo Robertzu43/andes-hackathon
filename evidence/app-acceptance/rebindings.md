@@ -1,8 +1,29 @@
 # Reviewed backend binding and predicate repair
 
-Current oracle target: `main` at `3a1491a4be1e32a1daa24a72d1afd374760147fd`.
-Historical targets: `5591c9b55fe7f4505e36ccee96d27aa913e0debf`,
+Current oracle target: `main` at `3c867f03cfb322aeafef0bc8d4969449beb2e326`.
+Historical targets: `3a1491a4be1e32a1daa24a72d1afd374760147fd`,
+`5591c9b55fe7f4505e36ccee96d27aa913e0debf`,
 `ebc8fb1d36f441ef012ca585201cefabf61383d6`.
+
+`oracle.test.mjs` requires the first line above to name `BACKEND_SHA`, so a
+rebind without a recorded review fails.
+
+## Rebinding `3a1491a` → `main` `3c867f0` (#86, fixer pass on #71)
+
+Protected-source delta, all from #86. Nothing changed in `db/`, `package*.json`
+or `tsconfig.json`.
+
+| Source area | Delta since `3a1491a` | Effect on the receipt cases |
+| --- | --- | --- |
+| `src/client-read/recipient.ts` (new, +67) | `GET /v1/contact/invitations` and `GET /v1/contact/trips`: recipient reads on the telemetry pool, no writes | Additive reads. None of the twelve cases calls them, and `routeFor` rejects them as unregistered receipt paths |
+| `src/api/app.ts` (+2/-1) | Mounts `recipientReadRoutes` next to `clientReadRoutes` | The twelve route patterns, actors and status codes are unchanged |
+| `src/client-read/routes.ts` (+1/-1) | `readSnapshot` is exported for reuse | No behavior change |
+
+At the stale `3a1491a` pin the export was refused (exit 1, no directory). This
+change added `recipient.ts` after the pin, which also exposed an overlay
+checkout in the source-gate test's private clone; it now uses `--no-overlay`.
+Rebound, the harness passes, a fresh receipt passes all twelve cases, and a
+receipt bound to `3a1491a` is rejected.
 
 ## Rebinding `5591c9b` → `main` `3a1491a` (fixer pass on #71)
 
