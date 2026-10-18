@@ -1,6 +1,6 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { I18nProvider } from '../../src/foundation/index.ts';
 import { Home } from '../../src/features/driver/screens.tsx';
 import { createPhoneRoutes } from '../../src/app/phone-routes.tsx';
@@ -18,7 +18,7 @@ export function phoneRoutes(runtime: PhoneDemoRuntime) {
 export async function mountPhone(runtime: PhoneDemoRuntime, route: string, params = {}) {
   const { act } = await import('react');
   const { createRoot } = await import('react-dom/client');
-  const { useLocation } = await import('react-router-dom');
+  const { useLocation } = await import('react-router');
   const host = document.createElement('div');
   document.body.appendChild(host);
   const root = createRoot(host);

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { isLocale, messages, message, readLanguageChoice, saveLanguageChoice } from '../../src/foundation/messages.ts';
-import { routeDefinitions, routePath, validRouteParams } from '../../src/foundation/routes.ts';
+import { routeDefinitions, validRouteParams } from '../../src/foundation/routes.ts';
 
 test('all shared semantic keys have nonempty Spanish and Brazilian Portuguese values', () => {
   assert.deepEqual(Object.keys(messages.es).sort(), Object.keys(messages['pt-BR']).sort());
@@ -33,13 +33,9 @@ test('the router implements exactly the released utility route patterns without 
 });
 test('opaque UUID route identifiers are validated without adding user data to titles', () => {
   const id = '00000000-0000-4000-8000-000000000049';
-  assert.equal(routePath('activeTrip', { tripId: id }), `/trips/${id}`);
-  assert.equal(routePath('invitation', { grantId: id }), `/contact/invitations/${id}`);
   assert.equal(validRouteParams({ tripId: id }), true);
   for (const value of [undefined, '', '../session', 'name?token=secret', '<img>']) {
     assert.equal(validRouteParams({ tripId: value }), false);
-    assert.throws(() => routePath('activeTrip', { tripId: value }));
   }
-  assert.equal(routePath('session'), '/session');
   for (const locale of ['es', 'pt-BR']) for (const route of routeDefinitions) assert.ok(!message(locale, route.title).includes(id));
 });

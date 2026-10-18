@@ -142,6 +142,6 @@ Por eso se presenta como **demo reducida**, como exige ADR-002. Para pasar al ob
 
 ## Fuentes
 
-- [ADR-002](ADR-002-aws-durable-dispatch.md), [revisión de escalabilidad](reviews/2026-10-17-scalability-review.md), [contrato de ejecución](../contracts/runtime.md), [infraestructura](../../infra/README.md).
+- [ADR-002](ADR-002-aws-durable-dispatch.md), [contrato de ejecución](../contracts/runtime.md), [infraestructura](../../infra/README.md).
 - AWS: [patrón outbox transaccional](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html), [Lambda con SQS](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html), [autoscaling de ECS](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-auto-scaling.html), [RDS Multi-AZ](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html), [pinning en RDS Proxy](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy-pinning.html), [tipos de EventBridge Scheduler](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html).
 - [PostgreSQL `SELECT … FOR UPDATE / SKIP LOCKED`](https://www.postgresql.org/docs/current/sql-select.html), [Cloudflare D1](https://developers.cloudflare.com/d1/).

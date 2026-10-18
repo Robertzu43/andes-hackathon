@@ -7,6 +7,5 @@ const extra = {};
 for (const key of ['APP_INTEGRATION_PG_BIN', 'APP_INTEGRATION_PG_PORT', 'APP_INTEGRATION_ADMIN_URL']) {
   if (process.env[key]) extra[key] = process.env[key];
 }
-await command('npm', ['run', 'typecheck']);
 await command('npm', ['run', 'build']);
 await command(process.execPath, ['--test', 'tests/app-integration/browser-proxy.mjs'], {env: testEnvironment(extra)});

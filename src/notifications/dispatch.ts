@@ -24,9 +24,6 @@ const hash = (value: string | Buffer) => createHash('sha256').update(value).dige
 const after = (now: Date, ms: number) => new Date(now.getTime() + ms);
 // ponytail: fixed budget and backoff (30s, 60s, 120s); qualify per-channel limits with the provider before live use.
 const MAX_RETRIES = 3;
-function envelope(value: Envelope | (Omit<Envelope, 'jobId'> & { id: string })): Envelope {
-  return { jobId: 'jobId' in value ? value.jobId : value.id, version: value.version, class: value.class };
-}
 export async function relayOnce(ctx: Context, transport: Pick<Transport, 'publish'>, owner: string, signal?: AbortSignal): Promise<boolean> {
   const now = ctx.clock(); const token = `${owner}:${randomUUID()}`;
   const row = await transaction(ctx.pool, async client => (await client.query(`UPDATE outbox SET lease_owner=$2,lease_until=$3,publish_attempts=publish_attempts+1
@@ -44,8 +41,7 @@ export async function relayOnce(ctx: Context, transport: Pick<Transport, 'publis
   }
   return true;
 }
-export async function claimJob(ctx: Context, input: Envelope, owner: string): Promise<Claim | null> {
-  const message = envelope(input);
+export async function claimJob(ctx: Context, message: Envelope, owner: string): Promise<Claim | null> {
   const found = (await ctx.pool.query('SELECT trip_id FROM jobs WHERE id=$1', [message.jobId])).rows[0];
   if (!found) return null;
   return withTripTransaction(ctx, found.trip_id, async client => {
@@ -269,7 +265,7 @@ export async function consume(ctx: Context, transport: Transport, provider: Prov
     try { messages = await transport.receive(kind, signal); } catch { if (!signal.aborted) await delay(1000, undefined, { signal }).catch(() => {}); continue; }
     for (const message of messages) {
       if (signal.aborted) break;
-      const job = (await ctx.pool.query('SELECT channel,class FROM jobs WHERE id=$1', [message.body.jobId ?? (message.body as unknown as { id: string }).id])).rows[0];
+      const job = (await ctx.pool.query('SELECT channel,class FROM jobs WHERE id=$1', [message.body.jobId])).rows[0];
       if (!job || job.class !== kind || !['sms', 'whatsapp', 'voice'].includes(job.channel)) { await transport.ack(kind, message.receipt, signal); continue; }
       const channel = job.channel as Channel; const slots = active[channel];
       if (slots.size >= limits[channel]) { await transport.defer(kind, message.receipt, signal); continue; }

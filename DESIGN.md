@@ -8,7 +8,7 @@ Copy token values exactly, including surface/on-action white. The source palette
 
 Implement real responsive components against the prepare, review, active, offline, deferred and incident references in docs/design/screens. Do not render screen images as the app or infer runtime capabilities from them. Keep OK, pause and SOS order stable. SOS is independent of ordinary interaction gating; arrival does not resolve an open incident. Source observation, server receipt, delivery and human response remain separate facts.
 
-Support Spanish and Brazilian Portuguese, keyboard/touch, text enlargement, safe areas and reduced motion. Keep critical controls visible without a tour, illustration or animation. Optional visuals and the explicit Driver.js tour must not perform writes or hide SOS. Data comes from implemented authenticated backend contracts; missing, denied, offline and uncertain outcomes stay explicit.
+Support Spanish and Brazilian Portuguese, keyboard/touch, text enlargement, safe areas and reduced motion. Keep critical controls visible without a tour, illustration or animation. Optional visuals must not perform writes or hide SOS. Data comes from implemented authenticated backend contracts; missing, denied, offline and uncertain outcomes stay explicit.
 
 Design delivery and its recorded contrast/layout checks are not app, physical-device or live-channel qualification. Independent functional and visual review must cover the final assembled revision.
 

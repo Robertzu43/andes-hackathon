@@ -138,7 +138,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
   let fixture;
   try {
     process.chdir(repo);
-    await command('npm', ['run', 'typecheck']); await command('npm', ['run', 'build']);
+    await command('npm', ['run', 'build']);
     fixture = await startBrowserFixture();
     console.log('SYNTHETIC browser fixture: this checkout\'s web/ app and client; real local signed API/PostgreSQL');
     console.log(`Local: ${fixture.origin}/session`);

@@ -1,32 +1,8 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import test, { after } from 'node:test';
+import test from 'node:test';
 import { MemorySession, createApiClient, createDriverTransport, bindJourneySession } from '../../src/lib/api/index.ts';
-
-const archive = mkdtempSync(join(tmpdir(), 'andes-api-sos-driver-'));
-after(() => rmSync(archive, { recursive: true, force: true }));
-writeFileSync(join(archive, 'package.json'), '{"type":"module"}\n');
-for (const file of ['controller.mjs', 'validation.mjs']) {
-  const target = join(archive, file); mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, execFileSync('git', ['show',
-    `80e9d45f9a234de54b1017e856e8349c097b8760:web/src/features/driver/${file}`], {
-    cwd: fileURLToPath(new URL('../../../', import.meta.url)),
-  }));
-}
-const { createDriverJourney } = await import(pathToFileURL(join(archive, 'controller.mjs')));
-// Keep the original oracle above and reproduce explicit reactivation with the current controller.
-for (const file of ['controller.mjs', 'validation.mjs']) {
-  const target = join(archive, 'current', file); mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, execFileSync('git', ['show',
-    `20c08faad67fddbe27eebac7585c63b3366f31a8:web/src/features/driver/${file}`], {
-    cwd: fileURLToPath(new URL('../../../', import.meta.url)),
-  }));
-}
-const { createDriverJourney: createCurrentDriverJourney } = await import(pathToFileURL(join(archive, 'current/controller.mjs')));
+import { createDriverJourney } from '../../src/features/driver/controller.mjs';
+const createCurrentDriverJourney = createDriverJourney;
 const actor = '11111111-1111-4111-8111-111111111111';
 const trip = '22222222-2222-4222-8222-222222222222';
 const incident = '33333333-3333-4333-8333-333333333333';

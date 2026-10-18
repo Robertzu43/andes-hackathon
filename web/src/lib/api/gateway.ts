@@ -13,14 +13,13 @@ export interface SessionGatewayConfig {
   mode: 'external' | 'demo';
   /** Explicit trusted provider/test injection. No built-in login or synthetic fallback. */
   acquire?: (options: { signal: AbortSignal }) => Promise<SessionCredentials>;
-  release?: () => void | Promise<void>;
 }
 
 export function createSessionGateway(config: SessionGatewayConfig) {
   if (!['external', 'demo'].includes(config.mode)
     || (config.acquire !== undefined && typeof config.acquire !== 'function')
-    || (config.release !== undefined && typeof config.release !== 'function')) throw new ApiError('configuration');
-  const { session, api, acquire, release, mode } = config;
+    ) throw new ApiError('configuration');
+  const { session, api, acquire, mode } = config;
   let snapshot: Readonly<GatewaySnapshot> = Object.freeze({ state: acquire ? 'signed-out' : 'unconfigured', mode });
   const listeners = new Set<() => void>();
   let generation = 0;
@@ -91,16 +90,8 @@ export function createSessionGateway(config: SessionGatewayConfig) {
   function end() {
     if (disposed) return;
     cancel();
-    const endedAt = generation;
     changeSession(() => session.clear());
     publish(acquire ? 'signed-out' : 'unconfigured');
-    if (release) {
-      try {
-        Promise.resolve(release()).catch(() => {
-          if (!disposed && generation === endedAt) publish('error');
-        });
-      } catch { if (!disposed && generation === endedAt) publish('error'); }
-    }
   }
   if (session.snapshot().status === 'authenticated') void connect(true);
   return {

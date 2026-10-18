@@ -105,7 +105,7 @@ test('live demo sends stop at the per-incident and per-session budgets, checked 
   const limited = provider({qualification: {...qualification, allowedDestinations: ['+15555550100'], demoLimits: {perIncident: 2, perSession: 3}}, async send() { sends++; return {state: 'accepted', messageId: 'msg_x', status: 'queued'}; }});
   const sosAndAuthorize = async () => {
     const incident = (await f.req('POST', `/v1/trips/${await f.trip([grant])}/sos`, {})).body.id;
-    const jobs = (await f.ctx.pool.query("SELECT id,version,class FROM jobs WHERE incident_id=$1 AND channel<>'group' ORDER BY channel", [incident])).rows;
+    const jobs = (await f.ctx.pool.query("SELECT id,id AS \"jobId\",version,class FROM jobs WHERE incident_id=$1 AND channel<>'group' ORDER BY channel", [incident])).rows;
     const authorized = [];
     for (const job of jobs) authorized.push(Boolean(await d.authorizeJob(f.ctx, await d.claimJob(f.ctx, job, 'budget'), limited)));
     return authorized;
@@ -223,7 +223,7 @@ test('with phone-less tokens the live demo journey still runs and the family get
   f.advance(120001); await f.req('GET', `/v1/trips/${trip}/status`, undefined, world.family.token); await sweep(f, demoChecks);
   assert.deepEqual(await checksOf(f, trip), [asking('silence')]);
   const incident = (await f.req('POST', `/v1/trips/${trip}/sos`, {}, world.driver.token)).body.id;
-  const jobs = (await f.ctx.pool.query("SELECT j.id,j.version,j.class,cg.role FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 ORDER BY cg.role,j.channel", [incident])).rows;
+  const jobs = (await f.ctx.pool.query("SELECT j.id,j.id AS \"jobId\",j.version,j.class,cg.role FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 ORDER BY cg.role,j.channel", [incident])).rows;
   assert.deepEqual(jobs.map(j => j.role), ['colleague', 'colleague', 'family', 'family', 'family']);
   const d = await runtime();
   const live = provider({qualification: {...qualification, allowedDestinations: [consented], demoLimits: {perIncident: 6, perSession: 6}}});

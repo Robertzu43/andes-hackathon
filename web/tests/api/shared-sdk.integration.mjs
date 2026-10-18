@@ -1,27 +1,11 @@
-// Actual pinned SDK + signed API/SQL; test-owned fetch adapter calls Fastify injection.
+// Shared SDK + driver controller against the signed API/SQL; test-owned fetch adapter calls Fastify injection.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pathToFileURL, fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { after } from 'node:test';
 import { fixture } from '../../../tests/helpers/runtime.mjs';
 import { MemorySession, createApiClient, createDriverTransport, decodeDriverResponse, bindJourneySession } from '../../src/lib/api/index.ts';
-
-// Preserve the original Q50 counterexample with its actual published controller.
-const driverRoot = mkdtempSync(join(tmpdir(), 'andes-api-shared-sdk-'));
-after(() => rmSync(driverRoot, { recursive: true, force: true }));
-for (const name of ['controller.mjs', 'validation.mjs']) {
-  writeFileSync(join(driverRoot, name), execFileSync('git', ['show',
-    `20c08faad67fddbe27eebac7585c63b3366f31a8:web/src/features/driver/${name}`], {
-    cwd: fileURLToPath(new URL('../../../', import.meta.url)),
-  }));
-}
-const { createDriverJourney } = await import(pathToFileURL(join(driverRoot, 'controller.mjs')));
-const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
+import { createDriverJourney } from '../../src/features/driver/controller.mjs';
+const deferred = () => Promise.withResolvers();
 
 test('published shared SDK decoder and transport retain real SOS/OK facts across credential refresh', { timeout: 10000 }, async t => {
   const f = await fixture(t, { channelSupport: [] });

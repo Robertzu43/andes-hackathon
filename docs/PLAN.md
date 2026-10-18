@@ -140,7 +140,6 @@ Cover the two motivating problems in interviews without requiring a participant 
 
 Entry in this section.
 
-Codus node: `pn_mvcq4kwy_8aaba1`
 
 ### Test phone capability limits · #9
 
@@ -158,7 +157,6 @@ Test microphone capture and phone-to-contact location updates on physical device
 
 Incoming flow: Reconstruct freight trip incidents.
 
-Codus node: `pn_mvcq4l8x_bee2e7`
 
 ### Verify channel evidence · #10
 
@@ -172,7 +170,6 @@ Deliver a country/channel/language matrix with supported, conditional, unavailab
 
 Incoming flow: Test phone capability limits.
 
-Codus node: `pn_mvcq4lke_4912d2`
 
 ### Set evidence and stop gates · #11
 
@@ -190,7 +187,6 @@ The hazard table must cover explicit help/security reports, fatigue/rest-support
 
 Incoming flow: Verify channel evidence.
 
-Codus node: `pn_mvcq4lwg_71ec5d`
 
 ### Record evidence-led decisions · #12
 
@@ -206,7 +202,6 @@ Include voice/text trip intake and authorised live location sharing in the compo
 
 Incoming flow: Set evidence and stop gates.
 
-Codus node: `pn_mvcq4m7h_1e9695`
 
 ### Evidence available and missing · note
 
@@ -220,7 +215,6 @@ The founder's corrected brief identifies independent one/two-truck freight owner
 
 Entry in this section.
 
-Codus node: `pn_mvcq4mpt_a00d76`
 
 <a id="prepare"></a>
 ## Prepare a safe trip
@@ -239,7 +233,6 @@ Start Trip accepts a voice note or natural-language text while stationary. Show 
 
 Entry in this section.
 
-Codus node: `pn_mvcq4rfu_e36ab0`
 
 ### Verify driver and trucks · #14
 
@@ -253,7 +246,6 @@ Represent the driver's relationship to each freight truck without creating a fle
 
 Incoming flow: Validate the mobile journey.
 
-Codus node: `pn_mvcq4rrf_96d642`
 
 ### Validate the trusted circle · #15
 
@@ -267,7 +259,6 @@ Obtain per-trip consent for live location sharing with each selected accepted co
 
 Incoming flow: Verify driver and trucks.
 
-Codus node: `pn_mvcq4s7y_319dc6`
 
 ### Register the trip and limits · #16
 
@@ -283,7 +274,6 @@ Implement voice-note transcription and natural-language text extraction into a d
 
 Incoming flow: Validate the trusted circle.
 
-Codus node: `pn_mvcq4sje_2fe977`
 
 ### Prove pause and arrival rules · #17
 
@@ -297,7 +287,6 @@ On committed arrival or cancellation, end live location publication and contact-
 
 Incoming flow: Register the trip and limits.
 
-Codus node: `pn_mvcq4suz_0018d2`
 
 <a id="track"></a>
 ## Track available signals
@@ -316,7 +305,6 @@ Version the trip-draft/confirmation and location-sharing contracts: input modali
 
 Entry in this section.
 
-Codus node: `pn_mvcq4wd4_d71f24`
 
 ### Qualify phone observations · #19
 
@@ -328,7 +316,6 @@ During an active, confirmed trip, collect and send location updates only with th
 
 Incoming flow: Define auditable trip events.
 
-Codus node: `pn_mvcq4wu8_92366b`
 
 ### Qualify road and time context · #20
 
@@ -342,7 +329,6 @@ Use freight route/stop context where available, and keep a mapped rest stop sepa
 
 Incoming flow: Qualify phone observations.
 
-Codus node: `pn_mvcq4x6a_a6e550`
 
 ### Make coverage gaps explicit · #21
 
@@ -354,7 +340,6 @@ Implement authorised ingestion, current-location reads and update delivery for a
 
 Incoming flow: Qualify road and time context.
 
-Codus node: `pn_mvcq4xju_95fa11`
 
 ### Verify monitoring-state truth · #22
 
@@ -366,7 +351,6 @@ Provide a trusted-contact live map showing the latest authorised position, obser
 
 Incoming flow: Make coverage gaps explicit.
 
-Codus node: `pn_mvcq4xwo_59a114`
 
 <a id="checkins"></a>
 ## Adapt safety check-ins
@@ -381,7 +365,6 @@ Evidence: incident timelines, device limits and the STPA hazard table. Accept wh
 
 Entry in this section.
 
-Codus node: `pn_mvcq51hd_759a61`
 
 ### Test safe check-in interaction · #24
 
@@ -393,7 +376,6 @@ Acceptance: all mandatory suppression cases pass and the assessment stays within
 
 Incoming flow: Specify a falsifiable policy.
 
-Codus node: `pn_mvcq51tf_28691e`
 
 ### Separate delivery from response · #25
 
@@ -403,7 +385,6 @@ Keep missing delivery, suppressed opportunities and unanswered delivered prompts
 
 Incoming flow: Test safe check-in interaction.
 
-Codus node: `pn_mvcq524q_291400`
 
 ### Test adaptive follow-up rules · #26
 
@@ -415,7 +396,6 @@ Treat a security report/SOS as a request for help with attributed or uncertain f
 
 Incoming flow: Separate delivery from response.
 
-Codus node: `pn_mvcq52sw_695a01`
 
 ### Prove deadline and race handling · #27
 
@@ -425,7 +405,6 @@ Tools: fake clock/event replay, worker restart, delayed callbacks and independen
 
 Incoming flow: Test adaptive follow-up rules.
 
-Codus node: `pn_mvcq5359_fe25ec`
 
 ### Compare benefit and burden · #28
 
@@ -437,7 +416,6 @@ Accept adaptation only if it meets the preregistered benefit/attention limits wi
 
 Incoming flow: Prove deadline and race handling.
 
-Codus node: `pn_mvcq53mc_508b10`
 
 <a id="escalate"></a>
 ## Escalate and resolve
@@ -454,7 +432,6 @@ Represent the reason for escalation separately from delivery and action state: e
 
 Entry in this section.
 
-Codus node: `pn_mvcq57ru_d409aa`
 
 ### Prove durable notification jobs · #30
 
@@ -464,7 +441,6 @@ Evidence: crash/restart and duplicate-dispatch traces tied to trip/incident/vers
 
 Incoming flow: Define action and uncertainty.
 
-Codus node: `pn_mvcq58gp_395557`
 
 ### Qualify contact notifications · #31
 
@@ -478,7 +454,6 @@ Include the freight truck reference and minimum useful incident context; keep re
 
 Incoming flow: Prove durable notification jobs.
 
-Codus node: `pn_mvcq58ts_414113`
 
 ### Separate receipt from action · #32
 
@@ -488,7 +463,6 @@ Reconcile callbacks against an independent recipient/observer timeline, includin
 
 Incoming flow: Qualify contact notifications.
 
-Codus node: `pn_mvcq597s_396408`
 
 ### Bound retries and reconciliation · #33
 
@@ -498,7 +472,6 @@ Fault-inject acceptance followed by timeout, duplicate callbacks, queue restart,
 
 Incoming flow: Separate receipt from action.
 
-Codus node: `pn_mvcq59rg_7e0949`
 
 ### Gate colleague-group delivery · #34
 
@@ -508,7 +481,6 @@ Test scoped expiring links, revoked members, minimal payload and one clear respo
 
 Incoming flow: Bound retries and reconciliation.
 
-Codus node: `pn_mvcq5a3m_491aa7`
 
 ### Verify useful contact action · #35
 
@@ -518,7 +490,6 @@ Acceptance evidence: independently observed scenario outcome and participant acc
 
 Incoming flow: Gate colleague-group delivery.
 
-Codus node: `pn_mvcq5alm_7d649c`
 
 ### Test channels against ground truth · #36
 
@@ -530,7 +501,6 @@ Execute the applicable cases for each country/channel/language combination propo
 
 Incoming flow: Verify useful contact action.
 
-Codus node: `pn_mvcq5axp_b3a938`
 
 <a id="verify"></a>
 ## Verify and pilot
@@ -547,7 +517,6 @@ Add end-to-end voice/text draft → correction → confirmation → durable star
 
 Entry in this section.
 
-Codus node: `pn_mvcq5lk1_fd0e00`
 
 ### Attention and UX pass? · action
 
@@ -557,7 +526,6 @@ Pass requires no forced manual/visual response while moving and a successful ind
 
 Incoming flow: Run preregistered scenarios; Fix the mobile journey [Retest].
 
-Codus node: `pn_mvcq5lw6_a4fed2`
 
 ### Fix the mobile journey · action
 
@@ -565,7 +533,6 @@ Repair layout, accessibility or unsafe interaction in the failing screens, then 
 
 Incoming flow: Attention and UX pass? [No].
 
-Codus node: `pn_mvcq5ma5_740ad7`
 
 ### Trip state and meaning pass? · action
 
@@ -575,7 +542,6 @@ Independent expected transitions must match UI/server events through duplicate s
 
 Incoming flow: Attention and UX pass? [Yes]; Fix trip state transitions [Retest].
 
-Codus node: `pn_mvcq5mlq_44831e`
 
 ### Fix trip state transitions · action
 
@@ -583,7 +549,6 @@ Repair the failing state transition or access boundary, then rerun the lifecycle
 
 Incoming flow: Trip state and meaning pass? [No].
 
-Codus node: `pn_mvcq5mxk_82f2d6`
 
 ### Delivery and action pass? · action
 
@@ -593,7 +558,6 @@ Pass requires separate records for delivered, acknowledged and useful action, pl
 
 Incoming flow: Trip state and meaning pass? [Yes]; Fix dispatch or reconciliation [Retest].
 
-Codus node: `pn_mvcq5na7_c5a587`
 
 ### Fix dispatch or reconciliation · action
 
@@ -601,7 +565,6 @@ Repair the queue/provider/callback handling or remove an unsupported channel pro
 
 Incoming flow: Delivery and action pass? [No].
 
-Codus node: `pn_mvcq5nxe_d38509`
 
 ### Coverage failures stay honest? · action
 
@@ -611,7 +574,6 @@ Pass requires timestamp-correct degraded/unknown displays, server deadline recov
 
 Incoming flow: Delivery and action pass? [Yes]; Fix degraded operation [Retest].
 
-Codus node: `pn_mvcq5og8_b5b0b5`
 
 ### Fix degraded operation · action
 
@@ -619,7 +581,6 @@ Repair expiry, buffering, freshness or capability handling, then repeat the fail
 
 Incoming flow: Coverage failures stay honest? [No].
 
-Codus node: `pn_mvcq5os4_f8cbc4`
 
 ### Evidence and access pass? · action
 
@@ -629,7 +590,6 @@ An independent reviewer must trace every outward claim to evidence and distingui
 
 Incoming flow: Coverage failures stay honest? [Yes]; Fix access or measurements [Retest].
 
-Codus node: `pn_mvcq5p44_70e1c8`
 
 ### Fix access or measurements · action
 
@@ -637,7 +597,6 @@ Repair permissions, data minimisation or analytic definitions, then rerun the sp
 
 Incoming flow: Evidence and access pass? [No].
 
-Codus node: `pn_mvcq5pf4_72f791`
 
 ### Pilot eligibility reviewed · action
 
@@ -647,7 +606,6 @@ An untested promised mode, unset T_action/Delta_action/B_false/B_attention or un
 
 Incoming flow: Evidence and access pass? [Yes].
 
-Codus node: `pn_mvcq5pql_d275be`
 
 ### Compare a bounded pilot · #37
 
@@ -661,7 +619,6 @@ Do not inflate recruitment merely to claim regional coverage. Report unrepresent
 
 Incoming flow: Pilot eligibility reviewed.
 
-Codus node: `pn_mvcq5q95_fb987d`
 
 ### Decide against frozen criteria · #38
 
@@ -675,7 +632,6 @@ Record proceed/revise/stop or inconclusive by tested country/channel/language co
 
 Incoming flow: Compare a bounded pilot.
 
-Codus node: `pn_mvcq5qkj_0775cc`
 
 ### Repair and evidence limits · note
 
@@ -683,7 +639,6 @@ Maximum three repair attempts per failed axis, then record the concrete blocker.
 
 Entry in this section.
 
-Codus node: `pn_mvcq5qw1_118b60`
 
 <a id="insights"></a>
 ## Learn from shared data
@@ -698,7 +653,6 @@ Explain optional reuse of freight security reports and fatigue/rest reports, inc
 
 Entry in this section.
 
-Codus node: `pn_mvcq5fk5_cff5ef`
 
 ### Preserve analytical provenance · #40
 
@@ -712,7 +666,6 @@ Keep separate, source-linked records for fatigue/sleepiness reports, reported re
 
 Incoming flow: Gate voluntary data contribution.
 
-Codus node: `pn_mvcq5fw1_d523dd`
 
 ### Define honest rates and intervals · #41
 
@@ -726,7 +679,6 @@ Report fatigue self-reports and reported security incidents separately from inde
 
 Incoming flow: Preserve analytical provenance.
 
-Codus node: `pn_mvcq5g87_e40250`
 
 ### Test policy bias and privacy · #42
 
@@ -740,7 +692,6 @@ Check country, language, carrier and route selection as possible sources of miss
 
 Incoming flow: Define honest rates and intervals.
 
-Codus node: `pn_mvcq5gx4_dcdd0b`
 
 ### Gate claims before sharing · #43
 
@@ -754,7 +705,6 @@ Use freight-specific descriptive titles that distinguish reported security conce
 
 Incoming flow: Test policy bias and privacy.
 
-Codus node: `pn_mvcq5hbf_5a3c63`
 
 ### Verify a real reporting use · #44
 
@@ -764,4 +714,3 @@ Deliver methodology, data dictionary and a worked decision example reviewed by a
 
 Incoming flow: Gate claims before sharing.
 
-Codus node: `pn_mvcq5hqa_caef8a`

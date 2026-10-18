@@ -12,9 +12,9 @@ const ACTIVE_TRIP_LIMIT = 50;
 const RECENT_TRIP_LIMIT = 20;
 
 type Client = pg.PoolClient;
-type Row = pg.QueryResultRow;
+export type Row = pg.QueryResultRow;
 
-const iso = (value: Date | null | undefined) => value ? value.toISOString() : null;
+export const iso = (value: Date | null | undefined) => value ? value.toISOString() : null;
 
 function readProfile(actor: Actor): ClientProfile {
   return { id: actor.id, phoneVerified: actor.phoneVerified };
