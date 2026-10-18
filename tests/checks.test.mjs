@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/runtime.mjs';
-import {contactFor, jobsOf, expectedFanOut, cfg, sweep, checksOf, asking} from './helpers/checks.mjs';
+import {contactFor, jobsOf, expectedFanOut, cfg, sweep, checksOf, asking, pending, groupFact} from './helpers/checks.mjs';
 import {waitForBlockedQueries} from './helpers/db-barriers.mjs';
 
 test('drafts keep an optional expected arrival; invitations take a family or colleague role', async t => {
@@ -33,7 +33,7 @@ test('SOS alerts family on three channels, colleagues on two and records the gro
   assert.deepEqual((await f.ctx.pool.query('SELECT trigger,check_reason FROM incidents')).rows, [{trigger: 'sos', check_reason: null}]);
 });
 
-test('SOS while a check is asking closes it with the SOS incident; SOS upgrades a missed-check incident without new sends', async t => {
+test('SOS while a check is asking closes it with the SOS incident; SOS upgrades a missed-check incident with its own SOS alerts', async t => {
   const f = await fixture(t); const family = await contactFor(f, 'family'); const trip = await f.trip([family.grant]);
   await f.ctx.pool.query("INSERT INTO security_checks VALUES(gen_random_uuid(),$1,'silence','asking',$2,$2,$2,NULL,NULL)", [trip, f.ctx.clock()]);
   const sos = (await f.req('POST', `/v1/trips/${trip}/sos`, {})).body.id;
@@ -42,8 +42,8 @@ test('SOS while a check is asking closes it with the SOS incident; SOS upgrades 
   const g = await fixture(t); const other = await contactFor(g, 'family'); const second = await g.trip([other.grant]);
   await g.ctx.pool.query("INSERT INTO incidents(id,trip_id,driver_id,created_at,trigger,check_reason) VALUES(gen_random_uuid(),$1,$2,$3,'missed_check','silence')", [second, g.me.id, g.ctx.clock()]);
   const upgraded = (await g.req('POST', `/v1/trips/${second}/sos`, {})).body.id;
-  assert.deepEqual((await g.ctx.pool.query('SELECT id,trigger FROM incidents')).rows, [{id: upgraded, trigger: 'sos'}]);
-  assert.equal((await g.ctx.pool.query('SELECT count(*)::int n FROM jobs')).rows[0].n, 0);
+  assert.deepEqual((await g.ctx.pool.query('SELECT id,trigger,check_reason FROM incidents')).rows, [{id: upgraded, trigger: 'sos', check_reason: null}]);
+  assert.deepEqual(await jobsOf(g, upgraded), [pending('family', 'sms'), pending('family', 'voice'), pending('family', 'whatsapp'), groupFact]);
 });
 
 test('check timings are all-or-nothing and positive', async () => {
@@ -244,4 +244,57 @@ test('a check opened after waiting for the trip lock gets its full grace window 
   assert.deepEqual(await askUntil(waited), {created_at: new Date('2026-10-17T12:02:50.001Z'), ask_until: new Date('2026-10-17T12:03:50.001Z')});
   f.advance(10000); await sweep(f);
   assert.deepEqual((await checksOf(f, waited)).map(c => c.status), ['asking'], 'not escalated before its own grace window ends');
+});
+
+async function escalated(f) {
+  const family = await contactFor(f, 'family'); const trip = await f.trip([family.grant]);
+  f.advance(120001); await sweep(f); f.advance(60000); await sweep(f);
+  return {trip, incident: (await f.ctx.pool.query("SELECT id FROM incidents WHERE trigger='missed_check'")).rows[0].id};
+}
+const sendable = async (f, incident) => (await f.ctx.pool.query(`SELECT j.id AS "jobId",j.version,j.class,j.channel FROM jobs j JOIN outbox o ON o.job_id=j.id AND o.job_version=j.version
+  WHERE j.incident_id=$1 AND j.status='pending' AND j.expires_at>$2 ORDER BY j.channel`, [incident, f.ctx.clock()])).rows;
+
+test('SOS after the missed-check alerts expired sends a new SOS-worded alert on every channel', async t => {
+  const f = await fixture(t); const {trip, incident} = await escalated(f);
+  f.advance(16 * 60000);
+  assert.deepEqual(await sendable(f, incident), [], 'missed-check alerts have expired');
+  const sos = await f.req('POST', `/v1/trips/${trip}/sos`, {});
+  assert.deepEqual(sos, {status: 200, body: {id: incident, tripId: trip, status: 'active', groupCapability: 'unavailable'}});
+  assert.deepEqual((await sendable(f, incident)).map(j => j.channel), ['sms', 'voice', 'whatsapp']);
+  assert.deepEqual((await f.ctx.pool.query('SELECT trigger,check_reason FROM incidents')).rows, [{trigger: 'sos', check_reason: null}]);
+  // A repeated tap shares the episode: no third wave.
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sos`, {})).status, 200);
+  assert.equal((await sendable(f, incident)).length, 3);
+  const {authorizeJob, claimJob} = await import('../dist/notifications/dispatch.js');
+  const {provider} = await import('./helpers/dispatch.mjs');
+  const [sms] = await sendable(f, incident);
+  assert.match((await authorizeJob(f.ctx, await claimJob(f.ctx, sms, 'sos-upgrade'), provider())).payload.text, /ALERTA: el conductor del camión SYNTHETIC truck pidió ayuda/);
+  const status = (await f.req('GET', `/v1/trips/${trip}/status`)).body;
+  assert.deepEqual(status.incident.checkReason, null);
+  assert.deepEqual(status.deliveries.map(d => `${d.role}:${d.channel}:${d.status}`), ['family:sms:authorized', 'family:voice:pending', 'family:whatsapp:pending', 'group:group:unavailable']);
+});
+
+test('SOS after missed-check alerts were accepted adds SOS alerts and keeps the accepted facts', async t => {
+  const f = await fixture(t); const {trip, incident} = await escalated(f);
+  const {runJob} = await import('../dist/notifications/dispatch.js');
+  const {provider} = await import('./helpers/dispatch.mjs');
+  const accepting = provider({async send(payload) { return {state: 'accepted', messageId: `msg_${payload.metadata.attemptId}`, status: 'queued'}; }});
+  for (const job of await sendable(f, incident)) await runJob(f.ctx, job, accepting, 'missed-check');
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sos`, {})).status, 200);
+  assert.deepEqual((await f.ctx.pool.query(`SELECT j.trigger,j.status,count(*)::int n FROM jobs j WHERE j.incident_id=$1 AND j.channel<>'group' GROUP BY 1,2 ORDER BY 1`, [incident])).rows,
+    [{trigger: 'missed_check', status: 'accepted', n: 3}, {trigger: 'sos', status: 'pending', n: 3}]);
+  assert.equal((await sendable(f, incident)).length, 3);
+  assert.equal((await f.ctx.pool.query('SELECT count(*)::int n FROM dispatch_attempts')).rows[0].n, 3, 'no prior attempt is resent or rewritten');
+});
+
+test('a late OK after escalation keeps the incident and its alerts; it never cancels an SOS', async t => {
+  const f = await fixture(t); const {trip, incident} = await escalated(f);
+  f.advance(1000);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'checkin_ok'})).status, 200);
+  assert.deepEqual((await f.ctx.pool.query('SELECT status FROM incidents')).rows, [{status: 'active'}]);
+  assert.equal((await sendable(f, incident)).length, 3, 'only an explicit resolve cancels alerts');
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sos`, {})).status, 200);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/commands`, {type: 'checkin_ok'})).status, 200);
+  assert.deepEqual((await f.ctx.pool.query("SELECT trigger,status FROM incidents")).rows, [{trigger: 'sos', status: 'active'}]);
+  assert.equal((await f.ctx.pool.query("SELECT count(*)::int n FROM jobs WHERE incident_id=$1 AND trigger='sos' AND status='pending'", [incident])).rows[0].n, 3);
 });

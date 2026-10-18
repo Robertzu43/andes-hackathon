@@ -4,7 +4,7 @@ import type pg from 'pg';
 import { owner, problem, type ChannelSupport, type Trip } from '../contracts.js';
 import { withTripTransaction, type Context } from '../db.js';
 import { idempotent } from '../api/mutations.js';
-import { createIncident } from './create.js';
+import { createIncident, fanOut } from './create.js';
 import { empty, idParams, object, text } from '../api/schemas.js';
 export function incidentRoutes(app: FastifyInstance, ctx: Context, support: ChannelSupport[]) {
   app.post('/v1/trips/:id/sos', { schema: { params: idParams, body: empty } }, request => withTripTransaction(ctx, (request.params as { id: string }).id, async (client, trip) => {
@@ -12,8 +12,12 @@ export function incidentRoutes(app: FastifyInstance, ctx: Context, support: Chan
     return idempotent(ctx, client, request, async () => {
       let incident = (await client.query("SELECT id,trigger FROM incidents WHERE trip_id=$1 AND status='active'", [trip.id])).rows[0];
       if (!incident) incident = { id: await createIncident(client, trip, 'sos', null, support, ctx.clock()) };
-      // ponytail: pending missed-check jobs pick up SOS wording at authorization; re-notify sent ones later.
-      else if (incident.trigger === 'missed_check') await client.query("UPDATE incidents SET trigger='sos' WHERE id=$1", [incident.id]);
+      else if (incident.trigger === 'missed_check') {
+        // An explicit SOS always gets its own SOS-worded alerts: unsent missed-check work is superseded; attempted work keeps its facts.
+        await client.query("UPDATE incidents SET trigger='sos',check_reason=NULL WHERE id=$1", [incident.id]);
+        await client.query("UPDATE jobs SET status='cancelled',cancelled_at=$2,version=version+1,unavailable_reason='superseded_by_sos' WHERE incident_id=$1 AND status IN ('pending','claimed')", [incident.id, ctx.clock()]);
+        await fanOut(client, trip, incident.id, 'sos', support, ctx.clock());
+      }
       await client.query("UPDATE security_checks SET status='escalated',incident_id=$2,closed_at=$3 WHERE trip_id=$1 AND status='asking'", [trip.id, incident.id, ctx.clock()]);
       await client.query("INSERT INTO incident_events VALUES($1,$2,$3,'sos_report',NULL,$4)", [randomUUID(), incident.id, request.actor.id, ctx.clock()]);
       return { id: incident.id, tripId: trip.id, status: 'active', groupCapability: 'unavailable' };

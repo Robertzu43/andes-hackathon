@@ -24,8 +24,9 @@ export function checkRoutes(app: FastifyInstance, ctx: Context) {
     const now = ctx.clock();
     const check = (await client.query("SELECT reason,ask_until FROM security_checks WHERE trip_id=$1 AND status='asking'", [trip.id])).rows[0];
     const incident = driver || grant.incident_accepted ? (await client.query('SELECT id,trigger,check_reason,status,created_at FROM incidents WHERE trip_id=$1 ORDER BY created_at DESC,id DESC LIMIT 1', [trip.id])).rows[0] : undefined;
+    // Only the current alert wave: after an SOS upgrade, its SOS alerts replace the missed-check ones on screen.
     const deliveries = incident ? (await client.query(`SELECT COALESCE(cg.role,'group') AS role,j.channel,j.status,j.unavailable_reason FROM jobs j
-      LEFT JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 ORDER BY role,j.channel`, [incident.id])).rows : [];
+      LEFT JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 AND j.trigger=$2 ORDER BY role,j.channel`, [incident.id, incident.trigger])).rows : [];
     let location;
     if (trip.map_active && (driver || grant.map_accepted)) {
       const latest = await latestLocation(client, trip.id, now);

@@ -11,9 +11,9 @@ export async function contactFor(f, subject, role) {
 
 export const jobsOf = async (f, incident) => (await f.ctx.pool.query(`SELECT COALESCE(cg.role,'group') AS role,j.channel,j.status,j.unavailable_reason
   FROM jobs j LEFT JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 ORDER BY role,j.channel`, [incident])).rows;
-const pending = (role, channel) => ({role, channel, status: 'pending', unavailable_reason: null});
-export const expectedFanOut = [pending('colleague', 'sms'), pending('colleague', 'whatsapp'), pending('family', 'sms'), pending('family', 'voice'), pending('family', 'whatsapp'),
-  {role: 'group', channel: 'group', status: 'unavailable', unavailable_reason: 'group_support_unverified'}];
+export const pending = (role, channel) => ({role, channel, status: 'pending', unavailable_reason: null});
+export const groupFact = {role: 'group', channel: 'group', status: 'unavailable', unavailable_reason: 'group_support_unverified'};
+export const expectedFanOut = [pending('colleague', 'sms'), pending('colleague', 'whatsapp'), pending('family', 'sms'), pending('family', 'voice'), pending('family', 'whatsapp'), groupFact];
 
 const support = ['sms', 'whatsapp', 'voice'].map(channel => ({channel, country: 'BR', locale: 'pt-BR'}));
 export const cfg = {silenceMs: 120000, askGraceMs: 60000, arrivalGraceMs: 120000, sweepMs: 5000};
