@@ -132,4 +132,3 @@ Limits:
 - At most 30 worlds per minute per instance (429 `demo_rate_limited`).
 - The signing key lives in memory, so tokens end on restart and the demo must run a single instance.
 - Demo rows stay in the database until it is dropped after the event.
-
