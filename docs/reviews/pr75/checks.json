@@ -1,0 +1,64 @@
+{
+  "checkedAt": "2026-10-18T00:02:18.622Z",
+  "candidate": "010181997a659351f577d1480d34dbb55694615d",
+  "base": "5591c9b55fe7f4505e36ccee96d27aa913e0debf",
+  "source": [
+    {
+      "file": "docs/superpowers/specs/2026-10-17-contextual-checkin-contract-gaps.md",
+      "blob": "b3ce3998303b18a773698f013b1a423463334935",
+      "sha256": "ed6ad9f2262ba0186ff5f3a6ad4bfbd8294c64af774b8bcaed8d211b714cdb71",
+      "localLinks": [
+        {
+          "target": "../../PLAN.md",
+          "resolved": "docs/PLAN.md"
+        },
+        {
+          "target": "2026-10-17-contextual-checkin-scenarios.md",
+          "resolved": "docs/superpowers/specs/2026-10-17-contextual-checkin-scenarios.md"
+        },
+        {
+          "target": "../../contracts/runtime.md",
+          "resolved": "docs/contracts/runtime.md"
+        },
+        {
+          "target": "../../../src/trips/routes.ts",
+          "resolved": "src/trips/routes.ts"
+        },
+        {
+          "target": "../../../db/migrations/001-core.sql",
+          "resolved": "db/migrations/001-core.sql"
+        }
+      ]
+    },
+    {
+      "file": "docs/superpowers/specs/2026-10-17-contextual-checkin-scenarios.md",
+      "blob": "a42f3fe557bce59c7fdf5ebf459095937b305325",
+      "sha256": "96e432640efb970579b40ea0a6b29e420b9eda6feeca95a227d76b5241071de4",
+      "localLinks": [
+        {
+          "target": "2026-10-17-contextual-checkin-contract-gaps.md",
+          "resolved": "docs/superpowers/specs/2026-10-17-contextual-checkin-contract-gaps.md"
+        }
+      ]
+    }
+  ],
+  "baselineRuntimeEqual": "ebc8fb1 == c752de8 for src/db/manifests/tsconfig",
+  "linkSensitivity": "nonexistent Markdown target rejected",
+  "actual74": "4c138ca1d00742400a850cd72b0888cc59260a36",
+  "owner65Followup": "3ea6e1b06e6dc3d3d01360f28ae9c61751657830",
+  "externalReferences": [
+    {
+      "url": "https://www.w3.org/TR/geolocation/#request-a-position",
+      "checked": "visibility wait and fully active visible watch steps"
+    },
+    {
+      "url": "https://docs.mapbox.com/api/navigation/map-matching/",
+      "checked": "match confidence applies to trace/road match, not driver safety"
+    },
+    {
+      "url": "https://docs.here.com/routing/docs/routing-v8-truck-routing",
+      "checked": "truck transport mode documented; no country/coverage/provider selection accepted"
+    }
+  ],
+  "scope": "AI document review only; no runtime/policy/provider/device acceptance"
+}
