@@ -1,5 +1,10 @@
 # PR52: complete Robert correction disposition
 
+Historical disposition for `9f87e2c`. Robert's later
+[review5560757444](https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560757444)
+requires further corrections; see [the new finding-by-finding report](robert-5560757444-fixes.md).
+The independent acceptance below applies only to its original source revision.
+
 Corrected source: `a5a383f` on `sebasbimbi/test/andes-robert-phone`, preserving
 author handoff `4417cf699aee0f25337c23754a1d2561b334bd7f`. Source corrections
 for the PR owner to apply are `fd4b0bb` and `a5a383f`. This is a correction

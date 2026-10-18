@@ -1,4 +1,5 @@
 import { createPhoneObservationAdapter } from './adapter.mjs';
+import { newObservationSessionId } from './session-id.mjs';
 
 // The application selects a reviewed context packet; this helper cannot qualify
 // a phone. Consent belongs to this trip and is never inferred from permission.
@@ -26,10 +27,12 @@ export function createTripPhoneObservations({
       if (!consent) return { ok: false, reason: 'trip-location-consent-required' };
       if (adapter.snapshot().state === 'started') return { ok: false, reason: 'already-acquiring' };
       return gesture(event, () => {
-        adapter.start(context);
+        adapter.start({ ...context, sessionId: newObservationSessionId() });
         const location = adapter.acquireLocation({ watch: true, preciseConsent: consent });
         if (!location.ok) { adapter.stop(); return location; }
-        return { ...location, wakeLock: adapter.requestWakeLock() };
+        const wakeLock = adapter.requestWakeLock();
+        return adapter.snapshot().state === 'started' ? { ...location, wakeLock } :
+          { ok: false, reason: 'session-stopped', wakeLock };
       });
     },
     resumeSharing: (event) => gesture(event, () => adapter.resume()),
@@ -75,7 +78,7 @@ export function createQueuedTripPhoneObservations({ pipeline, trip, ...options }
     stopSharing: () => capture.stopSharing(),
     revokeConsent,
     snapshot: () => ({ ...capture.snapshot(), queueWithdrawal: withdrawal }),
-    drain: () => pipeline.drain(),
+    drain: () => withdrawn ? Promise.resolve(blocked()) : pipeline.drain(),
     flush: () => withdrawn ? Promise.resolve(blocked()) : pipeline.flush(),
     async status() {
       try {

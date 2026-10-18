@@ -33,6 +33,12 @@ and visibility/page lifecycle listeners; it neither queries permissions nor
 acquires sensors. Each new session needs an externally unique opaque `sessionId`,
 an opaque `tripId` and a build revision. An optional `truckId` remains an opaque
 reference. Caller context is copied. Calling `start` while active throws.
+Event IDs also include a cryptographically random adapter-instance identity, so
+recreating an adapter cannot repeat its event IDs. The trip factory generates
+a fresh runtime session ID on every start; resume generates another fresh session
+ID before resetting `sessionSequence`. The trip's input session ID is a template,
+and `snapshot().sessionId` exposes the actual runtime identity. Direct adapter
+callers must still provide a fresh session ID for each independently started session.
 
 Only explicit `acquireLocation({ watch: false })`,
 `acquireLocation({ watch: true })` or `acquireMotion()` can initiate acquisition.
@@ -61,10 +67,13 @@ not server receipt; a killed process may never execute lifecycle handlers.
 
 `resume()` requires an explicit new gesture on a visible page after suspension or
 a normal duration/event budget stop. It creates a new generation for the same
-trip/session context and restores requested location/motion/wake-lock intents.
+trip with a fresh runtime session ID and restores requested location/motion/wake-lock intents.
 Old callbacks remain inert. Consent withdrawal, explicit stop, denied/revoked
 permissions and clock failures cannot be bypassed by resume. Results retain each
 requested stream outcome; no location success is inferred from session start.
+Explicit stop while already suspended cancels resume intent as well. Denial of
+optional motion cannot block an otherwise permitted GPS resume; its separate
+motion result remains denied and no new motion request is made.
 
 `requestWakeLock()` optionally requests a screen wake lock with bounded waiting.
 Unsupported, rejected, timed-out and browser-released locks are explicit local
@@ -118,6 +127,9 @@ are queried only after explicit acquisition, with one passive subscription per
 permission name per session. Code1 can trigger a fresh status query because a
 dismissed prompt does not prove persistent denial. Only browser-confirmed denial
 is terminal; ambiguous errors retain unknown until fresh evidence arrives.
+After a native GPS code1 failure, a site-level granted status alone cannot enable
+passive GPS retries. A new user gesture is required until a useful position
+callback re-establishes acquisition; blocked polling consumes no request budget.
 Unsupported/rejected queries leave unknowns rather than asserting a
 grant or denial. `granted` becoming denied/prompt/unknown is recorded as `revoked`
 and retires that stream. A single sensor grant cannot restore a revoked combined
@@ -159,15 +171,23 @@ blocked; synchronous stop/consent withdrawal is supported.
 `PROVISIONAL_BUDGET` is exported for explicit inspection/override. These are
 software guardrails, **not preregistered or accepted #9/#11 capability limits**.
 No battery/data efficiency is claimed; the browser still controls sensor rate.
+Overrides must preserve the complete shape, including the separate prompt and
+raw-callback bounds. Start from the exported object rather than an old copied
+table; changed values still require matching independently reviewed qualification.
+
+```js
+import { PROVISIONAL_BUDGET } from '../../src/phone-observations/adapter.mjs';
+const budget = { ...PROVISIONAL_BUDGET, bufferCapacity: 128 };
+```
 
 | Input | Default | Meaning |
 | --- | --- | --- |
-| `revision` | `engineering-only/4` | Must match explicit qualification |
+| `revision` | `engineering-only/5` | Must match explicit qualification |
 | `bufferCapacity` | 128 | Retained local events; evictions counted |
-| `maxEvents` | 200000 | Ordinary emissions; one additional reserved stop event |
+| `maxEvents` | 400000 | Ordinary emissions; one additional reserved stop event |
 | `maxCallbacksPerStream` | 10000000 | Motion work after throttle; GPS callbacks before retiring that stream |
 | `maxRawCallbacksPerStream` | 10000000 | Independent raw-callback safety cap, including suppressed samples |
-| `maxRequests` | 100 | All acquisition attempts past the gates per session |
+| `maxRequests` | 100 | Supported acquisition requests; unavailable APIs and blocked calls consume none |
 | `maxSessionMs` | 86400000 | Local deadline; checked against monotonic elapsed time too |
 | `minEmitIntervalMs` | 1000 | Per-request observation emission spacing; no queued samples |
 | `requestTimeoutMs` | 10000 | GPS acquisition timeout after a known permission grant |
@@ -179,6 +199,10 @@ No battery/data efficiency is claimed; the browser still controls sensor rate.
 All inputs have finite upper bounds in `validateBudget`, including a seven-day
 maximum configurable session. Default duration is 24 hours, rather than five
 minutes. This is a software ceiling, not a measured capability/resource budget.
+The default ordinary cap covers a synthetic foreground day with one GPS fix,
+one transient GPS error and one motion emission per second. Custom rates and
+budgets still need their own reviewed resource evidence; a higher event rate can
+reach the finite cap earlier.
 Location requests default to `enableHighAccuracy: true`; an explicit boolean
 override and the original options remain observable on results and errors. The
 browser treats this as a hint: underlying source and achieved accuracy remain
@@ -224,6 +248,8 @@ to queue policy. `revokeConsent()` synchronously stops/purges capture first, the
 deletes and revokes that trip's queue scope. Await its `{ ok, reason }` result.
 `snapshot().queueWithdrawal` and `status()` expose pending/complete/failed deletion;
 a failed deletion is retryable while capture and wrapper uploads remain blocked.
+Both wrapper `drain()` and `flush()` stay blocked after withdrawal, including
+pending and failed deletion; queue-owned deletion uses its own internal drain.
 Copies already transmitted cannot be recalled. A local stop is not server sharing
 acknowledgement. Raw motion is retained only as explicit opt-in qualification and
 confounder evidence outside this active-trip controller; no incident rule consumes it.
