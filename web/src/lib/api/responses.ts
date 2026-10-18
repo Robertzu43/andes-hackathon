@@ -128,9 +128,10 @@ export const snapshot: Decoder<T.LocationSnapshot> = value => {
   return { tripId: parsed.tripId, readAt: parsed.readAt, location: parsed.location, freshness: parsed.freshness, ageMs: parsed.ageMs };
 };
 
+// Catalogs carry no phone values (PR65 contract); none is ever projected from a reply.
 const profileData: Decoder<Omit<T.Profile, 'readAt'>> = object({ id: uuid, phoneVerified: bool });
 export const profile: Decoder<T.Profile> = value => ({ ...profileData(value), readAt: object({ readAt: date })(value).readAt });
-const contactWire = object({ id: uuid, contactId: uuid, role: nullable(choice('family', 'colleague')),
+const contactWire = object({ id: uuid, contactId: uuid, role: choice('family', 'colleague'),
   map: object({ requested: bool, accepted: bool }), incident: object({ requested: bool, accepted: bool }),
   status: choice('pending', 'accepted', 'revoked'), acceptedAt: nullable(date), revokedAt: nullable(date),
   revokedBy: nullable(choice('driver', 'contact')) });

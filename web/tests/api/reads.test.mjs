@@ -16,7 +16,7 @@ const summary = { id: id(5), truckId: id(2), origin: 'Synthetic origin', destina
   checkinsActive: true, paused: false, version: 1, createdAt: stamp, closedAt: null,
   expectedArrivalAt: '2026-10-17T18:00:00.000Z', sharingStoppedAt: null, contactGrantIds: [id(3)] };
 const recent = { ...summary, id: id(6), status: 'arrived', mapActive: false, checkinsActive: false,
-  closedAt: '2026-10-17T13:00:00.000Z' };
+  closedAt: '2026-10-17T13:00:00.000Z', sharingStoppedAt: '2026-10-17T12:30:00.000Z' };
 const trips = { active: [summary], recent: [recent], limits: { active: 50, recent: 20 }, hasMore: { active: false, recent: false }, readAt: stamp };
 const bootstrap = { profile: profileData, trucks: [truck], contacts: [contact], trips: { active: [summary], recent: [recent] },
   limits: { trucks: 100, contacts: 100, activeTrips: 50, recentTrips: 20 },
@@ -122,6 +122,17 @@ test('catalog decoders never project phone values even if a legacy reply contain
     assert.deepEqual(result, expected);
     assert.ok(!JSON.stringify(result).includes(phone));
   }
+});
+
+// The server never sends phones; if a reply ever did, it must not reach client state.
+test('a phone value in a catalog reply is never projected', async () => {
+  const leaky = structuredClone(bootstrap);
+  leaky.profile.phone = '+15555550100';
+  leaky.contacts[0].phone = '+15555550101';
+  const { api } = fixture(async () => Response.json(leaky));
+  const text = JSON.stringify(await api.getBootstrap());
+  assert.doesNotMatch(text, /phone"/);
+  assert.doesNotMatch(text, /\+1555/);
 });
 
 test('read failures remain failures rather than fabricated empty catalogues', async () => {

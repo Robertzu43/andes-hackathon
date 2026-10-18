@@ -160,19 +160,71 @@ test('bootstrap bundles profile and owner lists with explicit bounds', async t =
   assert.equal(stranger.body.trips.recent.length, 0);
 });
 
+const CATALOGS = ['/v1/profile', '/v1/bootstrap', '/v1/trucks', '/v1/contacts', '/v1/trips'];
+// Any E.164-shaped value, so the check holds whatever phone a fixture or deployment uses.
+const assertNoPhone = (body, label) => {
+  const text = JSON.stringify(body);
+  assert.doesNotMatch(text, /"phone(_?number)?":/i, label);
+  assert.doesNotMatch(text, /\+[1-9]\d{6,14}/, label);
+};
+
 test('catalog responses never disclose stored or token phones', async t => {
   const f = await fixture(t);
   await f.grant();
+  const baselinePhones = (await f.ctx.pool.query('SELECT phone FROM identities')).rows.map(row => row.phone);
+  assert.ok(new Set(baselinePhones).size >= 2, 'fixture identities must have distinct phones');
+  const invitee = await f.token('invitee', { phone_number: '+15555550177' });
+  const inviteeId = (await f.req('GET', '/v1/me', undefined, invitee)).body.id;
+  assert.equal((await f.req('POST', '/v1/contacts', { contactId: inviteeId, phone: '+15555550178', map: true, incident: true })).status, 200);
   const phones = (await f.ctx.pool.query('SELECT phone FROM identities UNION SELECT phone FROM contact_grants')).rows.map(r => r.phone);
-  assert.ok(new Set(phones).size >= 2, 'fixture identities must have distinct phones');
-  for (const jwt of [f.driver, f.contact, f.stranger]) {
-    for (const path of ['/v1/profile', '/v1/bootstrap', '/v1/trucks', '/v1/contacts', '/v1/trips']) {
+  assert.ok(new Set(phones).size >= 3, 'stored phones exist to leak');
+  for (const jwt of [f.driver, f.contact, f.stranger, invitee]) {
+    for (const path of CATALOGS) {
       const response = await f.req('GET', path, undefined, jwt);
       assert.equal(response.status, 200);
-      const text = JSON.stringify(response.body);
-      assert.ok(!text.includes('"phone":'), path);
-      for (const phone of phones) assert.ok(!text.includes(phone), path);
+      assertNoPhone(response.body, path);
     }
+  }
+});
+
+// Gatekeeper item 1 repro: demo mode lets any anonymous visitor mint personas; with live sends the
+// family persona carries the real consented DEMO_LIVE_PHONE (a fictional stand-in here).
+test('anonymous demo personas never read a phone, including DEMO_LIVE_PHONE, from any catalog', async t => {
+  const { demoIssuer } = await import('../dist/demo.js');
+  const demo = await demoIssuer({ ZAVU_LIVE_SEND: 'true', DEMO_LIVE_PHONE: '+15555550123' });
+  const f = await fixture(t, { auth: demo.auth, demo });
+  const world = (await f.app.inject({ method: 'POST', url: '/v1/demo/session', payload: {} })).json();
+  for (const persona of ['driver', 'family', 'colleague']) {
+    for (const path of CATALOGS) {
+      const response = await f.req('GET', path, undefined, world[persona].token);
+      assert.equal(response.status, 200, `${persona} ${path}`);
+      assertNoPhone(response.body, `${persona} ${path}`);
+    }
+  }
+  const contacts = (await f.req('GET', '/v1/contacts', undefined, world.driver.token)).body.contacts;
+  assert.deepEqual(contacts.map(c => [c.id, c.role, c.status]).sort(), [
+    [world.colleague.grantId, 'colleague', 'accepted'], [world.family.grantId, 'family', 'accepted']].sort());
+});
+
+// Gatekeeper item 5: catalogs carry the reconciled backend's role, expected arrival and sharing state.
+test('catalogs project the runtime role, expected arrival and sharing-stopped time', async t => {
+  const f = await fixture(t);
+  const other = await f.token('colleague-1');
+  const otherId = (await f.req('GET', '/v1/me', undefined, other)).body.id;
+  const colleague = await f.req('POST', '/v1/contacts', { contactId: otherId, phone: f.phoneFor('colleague-1'), map: true, incident: true, role: 'colleague' });
+  assert.equal(colleague.status, 200);
+  const draft = await f.draft({ expectedArrivalAt: '2026-10-17T18:00:00.000Z' });
+  const trip = (await f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, { confirmed: true, contactGrantIds: [] })).body.id;
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sharing`, { state: 'stopped', reason: 'user' })).status, 200);
+  for (const path of ['/v1/contacts', '/v1/bootstrap']) {
+    const contacts = (await f.req('GET', path)).body.contacts;
+    assert.equal(contacts.find(c => c.id === colleague.body.id).role, 'colleague', path);
+  }
+  for (const path of ['/v1/trips', '/v1/bootstrap']) {
+    const body = (await f.req('GET', path)).body;
+    const summary = (body.trips ?? body).active.find(row => row.id === trip);
+    assert.equal(summary.expectedArrivalAt, '2026-10-17T18:00:00.000Z', path);
+    assert.equal(summary.sharingStoppedAt, '2026-10-17T12:00:00.000Z', path);
   }
 });
 
@@ -184,7 +236,7 @@ test('profile verification belongs to this request despite a parallel identity u
     pool.query = async (...args) => {
       const result = await query(...args);
       if (String(args[0]).includes('ON CONFLICT(issuer,subject)')) {
-        await query('UPDATE identities SET phone=$2,phone_verified=false WHERE id=$1', [result.rows[0]?.id ?? f.me.id, '+15555550199']);
+        await query('UPDATE identities SET phone=$3,phone_verified=false WHERE issuer=$1 AND subject=$2', [args[1][1], args[1][2], '+15555550199']);
       }
       return result;
     };

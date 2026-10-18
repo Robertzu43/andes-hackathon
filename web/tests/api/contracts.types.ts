@@ -31,19 +31,20 @@ void more; void limit;
 api.getBootstrap({ ownerId: 'another-actor' });
 // The source server read time is required on the envelope, never invented per row.
 const readAt: string = loaded.readAt;
-// @ts-expect-error catalog profiles omit all phone values
-loaded.profile.phone;
-// @ts-expect-error standing contact summaries omit all phone values
-loaded.contacts[0]?.phone;
-const role: 'family' | 'colleague' | null | undefined = loaded.contacts[0]?.role;
 const arrivalAt: string | null | undefined = loaded.trips.active[0]?.expectedArrivalAt;
-const stoppedAt: string | null | undefined = loaded.trips.active[0]?.sharingStoppedAt;
-void role; void arrivalAt; void stoppedAt;
+void arrivalAt;
 // @ts-expect-error only the whole bootstrap carries the source read-start timestamp
 const nestedReadAt: string = loaded.profile.readAt;
 // @ts-expect-error summaries never include raw draft text
 const rawText: string = loaded.trips.active[0]?.rawText;
 void readAt; void nestedReadAt; void rawText;
+// @ts-expect-error catalogs never carry a phone value
+const profilePhone: string = loaded.profile.phone;
+// @ts-expect-error catalogs never carry a phone value
+const contactPhone: string = loaded.contacts[0]?.phone;
+const role: 'family' | 'colleague' | undefined = loaded.contacts[0]?.role;
+const sharingStoppedAt: string | null | undefined = loaded.trips.active[0]?.sharingStoppedAt;
+void profilePhone; void contactPhone; void role; void sharingStoppedAt;
 
 import { createSessionGateway } from '../../src/lib/api/index.ts';
 const gateway = createSessionGateway({ session: new MemorySession(), api, mode: 'external' });

@@ -23,7 +23,8 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
     if (demo && request.routeOptions.url === '/v1/demo/session') return;
     if (request.routeOptions.url === '/health' || request.routeOptions.url === '/v1/insights/hotspots' || request.routeOptions.url === '/mapa' || (callbackConfig && request.routeOptions.url === '/v1/callbacks/zavu')) return;
     const telemetry = request.routeOptions.url?.endsWith('/locations') || request.routeOptions.url?.endsWith('/snapshot');
-    request.actor = await authenticate(request.headers.authorization, telemetry || request.routeOptions.config.clientRead ? ctx.telemetryPool : ctx.pool, ctx.clock());
+    // Client catalog reads authenticate on the telemetry pool too, so polling never borrows SOS connections.
+    request.actor = await authenticate(request.headers.authorization, telemetry || request.routeOptions.config?.clientRead ? ctx.telemetryPool : ctx.pool, ctx.clock());
   });
   app.setErrorHandler((error, _request, reply) => {
     const failure = error instanceof Error ? error as FastifyError : undefined;

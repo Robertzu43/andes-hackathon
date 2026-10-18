@@ -4,7 +4,7 @@ export interface ClientTruck { id: string; label: string }
 export interface ClientContact {
   id: string;
   contactId: string;
-  role: 'family' | 'colleague' | null;
+  role: 'family' | 'colleague';
   map: { requested: boolean; accepted: boolean };
   incident: { requested: boolean; accepted: boolean };
   status: 'pending' | 'accepted' | 'revoked';

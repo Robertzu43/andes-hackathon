@@ -32,7 +32,7 @@ async function readContacts(client: Client, actor: Actor): Promise<ClientContact
     contacts: rows.slice(0, CONTACT_LIMIT).map(row => ({
       id: row.id,
       contactId: row.contact_id,
-      role: row.role === 'family' || row.role === 'colleague' ? row.role : null,
+      role: row.role,
       map: { requested: row.map_requested, accepted: row.map_accepted },
       incident: { requested: row.incident_requested, accepted: row.incident_accepted },
       status: row.revoked_at ? 'revoked' : row.accepted_at ? 'accepted' : 'pending',
