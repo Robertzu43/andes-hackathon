@@ -30,3 +30,9 @@ test('the phone journey does not hardcode a screenshot directory', async () => {
   assert.equal(source.includes('/opt/'), false);
   assert.match(source, /process\.env\.ANDES_SCREENSHOT_DIR/);
 });
+
+test('the phone journey reserves a free PostgreSQL port', async () => {
+  const source = await readFile(new URL('./journey.mjs', import.meta.url), 'utf8');
+  assert.equal(source.includes('56448'), false);
+  assert.match(source, /listen\(0,\s*'127\.0\.0\.1'/);
+});
