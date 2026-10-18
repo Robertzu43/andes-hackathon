@@ -1,0 +1,102 @@
+[
+  {
+    "name": "Action/Primary/default",
+    "width": 342,
+    "height": 90
+  },
+  {
+    "name": "Action/Primary/pressed",
+    "width": 342,
+    "height": 90
+  },
+  {
+    "name": "Action/Primary/focus",
+    "width": 342,
+    "height": 90
+  },
+  {
+    "name": "Action/Primary/pending",
+    "width": 342,
+    "height": 90
+  },
+  {
+    "name": "Action/Primary/unavailable",
+    "width": 342,
+    "height": 90
+  },
+  {
+    "name": "Action/Secondary/default",
+    "width": 342,
+    "height": 90
+  },
+  {
+    "name": "Action/Emergency/default",
+    "width": 342,
+    "height": 90
+  },
+  {
+    "name": "Action/Emergency/pressed",
+    "width": 342,
+    "height": 90
+  },
+  {
+    "name": "Action/Emergency/pending",
+    "width": 342,
+    "height": 90
+  },
+  {
+    "name": "Status/Location/recent",
+    "width": 342,
+    "height": 96
+  },
+  {
+    "name": "Status/Location/stale",
+    "width": 342,
+    "height": 96
+  },
+  {
+    "name": "Status/Connection/offline",
+    "width": 342,
+    "height": 96
+  },
+  {
+    "name": "Status/Delivery/unknown",
+    "width": 342,
+    "height": 96
+  },
+  {
+    "name": "Contact/Consent/accepted",
+    "width": 342,
+    "height": 112
+  },
+  {
+    "name": "Contact/Consent/pending",
+    "width": 342,
+    "height": 112
+  },
+  {
+    "name": "Field/Destination/default",
+    "width": 342,
+    "height": 134
+  },
+  {
+    "name": "Field/Destination/error",
+    "width": 342,
+    "height": 134
+  },
+  {
+    "name": "Checkin/Context/deferred",
+    "width": 342,
+    "height": 152
+  },
+  {
+    "name": "Incident/Summary/active",
+    "width": 342,
+    "height": 240
+  },
+  {
+    "name": "Delivery/Evidence/mixed",
+    "width": 342,
+    "height": 232
+  }
+]
