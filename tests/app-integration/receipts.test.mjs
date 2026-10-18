@@ -82,8 +82,22 @@ test('unsupported evidence/source metadata cannot be silently rebound', () => {
   }
 });
 
-test('integrated adapter rejects original backend receipts rather than silently migrating their revision', () => {
-  const old = {...recorder(metadata).raw(), backendSha: 'ebc8fb1d36f441ef012ca585201cefabf61383d6'};
-  assert.throws(() => adapt(old), /rebound through source review/);
-  assert.equal(old.backendSha, 'ebc8fb1d36f441ef012ca585201cefabf61383d6');
+test('integrated adapter rejects earlier backend receipts rather than silently migrating their revision', () => {
+  for (const legacy of ['ebc8fb1d36f441ef012ca585201cefabf61383d6', '5591c9b55fe7f4505e36ccee96d27aa913e0debf', '3a1491a4be1e32a1daa24a72d1afd374760147fd']) {
+    const old = {...recorder(metadata).raw(), backendSha: legacy};
+    assert.throws(() => adapt(old), /rebound through source review/);
+    assert.equal(old.backendSha, legacy);
+  }
+});
+
+test('an isolated run receipt needs a recorded passing suite and producer revision', () => {
+  const raw = {...recorder(metadata).raw(), kind: 'isolated-backend-run'};
+  const producerRevision = '0123456789abcdef0123456789abcdef01234567';
+  for (const missing of [{}, {suiteResult: 'fail', producerRevision}, {suiteResult: 'pass'}, {suiteResult: 'pass', producerRevision: 'HEAD'}]) {
+    assert.throws(() => adapt({...raw, ...missing}), /passing suite and producer revision/);
+  }
+  for (const revision of [producerRevision, `${producerRevision}+dirty`]) {
+    const receipt = adapt({...raw, suiteResult: 'pass', producerRevision: revision});
+    assert.equal(receipt.suiteResult, 'pass'); assert.equal(receipt.producerRevision, revision);
+  }
 });

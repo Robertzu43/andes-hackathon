@@ -2,10 +2,11 @@
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 import pg from 'pg';
-import {command, disposableDatabase, testEnvironment} from './runtime.mjs';
+import {command, disposableDatabase, onInterrupt, testEnvironment} from './runtime.mjs';
 
 process.chdir(fileURLToPath(new URL('../../', import.meta.url)));
 assert.equal(process.env.APP_INTEGRATION_ADMIN_URL, undefined, 'This control owns its server; do not supply another service');
+onInterrupt();
 let outer, control;
 try {
   outer = await disposableDatabase();
@@ -23,7 +24,7 @@ try {
   console.log('CI seam passed: suite green; input database/control preserved; nested database cleaned');
 } catch {
   console.error('CI seam control failed (connection details redacted)');
-  process.exitCode = 1;
+  process.exitCode ??= 1;
 } finally {
   try { await control?.end(); } finally { await outer?.cleanup(); }
 }

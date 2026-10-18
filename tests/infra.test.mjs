@@ -69,13 +69,32 @@ test('exact process wiring, bootstrap/live gates and conservative rolling capaci
   assert.ok(r.ApiService.DependsOn.includes('HttpsListener'));
 });
 
+test('backend CI job runs each check as its own exact step, gated only by install and typecheck',()=>{
+  // Substring checks passed when the backend typecheck step was deleted, because other steps contain that text.
+  const job=text('.github/workflows/ci.yml').split(/^  (?=\S)/m).find(part=>part.startsWith('backend:'));
+  assert.ok(job,'backend job');
+  const steps=job.split('\n').map(line=>line.trim()).filter(line=>line.startsWith('- '));
+  for(const command of ['npm ci','npm run typecheck','npm test','npm run demo','npm run test:tooling','pip install cfn-lint==1.57.2','cfn-lint infra/template.json','docker build --platform linux/amd64 -t andes-backend:ci .'])
+    assert.ok(steps.includes(`- run: ${command}`),command);
+  // Web or client checks belong in the web job: here a failure would skip the backend tests.
+  const gate=steps.slice(0,steps.indexOf('- run: npm test'));
+  assert.ok(gate.every(step=>/^- uses: actions\/(checkout|setup-node)@/.test(step)||['- run: npm ci','- run: npm run typecheck'].includes(step)),gate.join('\n'));
+});
+
 test('image contains migration SQL/CA and CI runs real PostgreSQL tests without live credentials',()=>{
   const docker=text('Dockerfile');
   assert.match(docker,/FROM node:24-bookworm-slim/g);assert.match(docker,/COPY db \.\/db/);
-  assert.match(docker,/scripts\/bootstrap\.mjs/);assert.match(docker,/COPY infra\/rds-global-bundle\.pem/);assert.match(docker,/USER node/);
+  assert.match(docker,/scripts\/bootstrap\.mjs/);assert.match(docker,/COPY infra\/rds-global-bundle\.pem/);assert.match(docker,/USER node/);assert.match(docker,/COPY public \.\/public/);
   assert.match(text('.dockerignore'),/!infra\/rds-global-bundle\.pem/);
   const ci=text('.github/workflows/ci.yml');
-  for(const command of ['npm ci','npm run typecheck','npm test','npm run demo','cfn-lint==1.57.2','docker build'])assert.ok(ci.includes(command));
   assert.match(ci,/postgres:18-bookworm/);assert.match(ci,/ZAVU_LIVE_SEND: "false"/);assert.ok(!ci.includes('aws-actions/configure-aws-credentials'));
   assert.match(text('compose.yaml'),/127\.0\.0\.1:5432:5432/);
+});
+
+test('app-integration CI job runs the isolated harness and the receipt oracle tests',()=>{
+  const job=text('.github/workflows/ci.yml').split(/^  (?=\S)/m).find(part=>part.startsWith('app-integration:'));
+  assert.ok(job,'app-integration job');
+  const steps=job.split('\n').map(line=>line.trim());
+  for(const step of ['- run: npm ci','- run: node scripts/app-integration/run.mjs','- run: node --test evidence/app-acceptance/oracle.test.mjs'])assert.ok(steps.includes(step),step);
+  assert.ok(steps.includes('fetch-depth: 0'),'The source gate needs the pinned backend commit');
 });

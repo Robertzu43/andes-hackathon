@@ -2,10 +2,10 @@
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
+import {BACKEND_SHA} from '../../evidence/app-acceptance/oracle.mjs';
 
-export const BACKEND_SHA = '5591c9b55fe7f4505e36ccee96d27aa913e0debf';
-// Q48 independently accepted this source-reviewed integrated-backend checker.
-export const ORACLE_SHA = '7a7d28cbd711cfd6a1a86ec6d8a94ab6e044d366';
+// One binding: the in-tree checker owns the reviewed backend revision.
+export {BACKEND_SHA};
 export const CASE_LENGTHS = {'setup': 4, 'explicit-confirm': 2, 'duplicate-confirm': 3,
   'stale-snapshot': 2, 'unavailable-snapshot': 1, 'revocation': 3, 'sos-acceptance': 2,
   'acknowledgement-action': 2, 'arrival-preserves-sos': 4, 'owner-resolution': 2,
@@ -69,6 +69,10 @@ export function adapt(raw) {
   assert.ok(['synthetic-control', 'isolated-backend-run'].includes(raw.kind), 'Evidence kind required');
   assert.equal(raw.backendSha, BACKEND_SHA, 'Backend must be rebound through source review');
   assert.equal(raw.externalSends, false); assert.equal(raw.isolatedDatabase, true);
+  // run.mjs adds these only after the whole suite passed; a failing run never reaches the adapter.
+  if (raw.kind === 'isolated-backend-run') {
+    assert.ok(raw.suiteResult === 'pass' && /^[0-9a-f]{40}(\+dirty)?$/.test(raw.producerRevision ?? ''), 'Isolated run needs a passing suite and producer revision');
+  }
   assert.ok(Array.isArray(raw.exchanges) && raw.exchanges.length <= 80, 'Bounded exchanges required');
   const cases = [];
   for (const [id, length] of Object.entries(CASE_LENGTHS)) {
@@ -89,7 +93,8 @@ export function adapt(raw) {
   }
   return {schema: 'andes.app-acceptance.receipt/1', kind: raw.kind, backendSha: raw.backendSha,
     externalSends: raw.externalSends, isolatedDatabase: raw.isolatedDatabase,
-    producer: raw.producer, command: raw.command, cases};
+    producer: raw.producer, command: raw.command,
+    ...(raw.kind === 'isolated-backend-run' ? {suiteResult: raw.suiteResult, producerRevision: raw.producerRevision} : {}), cases};
 }
 
 export async function writeCapture(directory, raw) {

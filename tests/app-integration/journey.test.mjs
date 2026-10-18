@@ -9,7 +9,7 @@ import {generateKeyPair, exportJWK, SignJWT} from 'jose';
 import pg from 'pg';
 import {migrate} from '../../dist/db.js';
 import {command, runDatabaseUrl, stop, testEnvironment} from '../../scripts/app-integration/runtime.mjs';
-import {recorder, writeCapture} from '../../scripts/app-integration/receipts.mjs';
+import {recorder} from '../../scripts/app-integration/receipts.mjs';
 
 test('synthetic HTTP journey persists across actual API and dispatch-process restarts', {timeout: 45000}, async t => {
   assert.equal(process.env.ANDES_APP_INTEGRATION, 'synthetic-only', 'Run scripts/app-integration/run.mjs');
@@ -48,7 +48,7 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
     } finally { clearTimeout(timer); controller.abort(); }
   }
   async function token(subject, extra = {}, signingKey = privateKey) {
-    return new SignJWT({phone_number: '+551155550100', phone_number_verified: true, ...extra})
+    return new SignJWT({phone_number: '+15555550100', phone_number_verified: true, ...extra})
       .setProtectedHeader({alg: 'RS256'}).setIssuer('https://andes-integration.invalid')
       .setAudience('andes-q46').setSubject(subject).setIssuedAt().setExpirationTime('1h').sign(signingKey);
   }
@@ -58,8 +58,9 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
   const capture = recorder({kind: 'isolated-backend-run', backendSha: process.env.APP_INTEGRATION_BACKEND_SHA,
     externalSends: false, isolatedDatabase: true, producer: 'Q46 isolated PostgreSQL / loopback HTTP; synthetic signed identities',
     command: 'node scripts/app-integration/run.mjs'});
+  // Private run-directory file. run.mjs turns it into a receipt only after the whole suite passed.
   t.after(async () => {
-    if (process.env.APP_INTEGRATION_EVIDENCE_DIR) await writeCapture(process.env.APP_INTEGRATION_EVIDENCE_DIR, capture.raw());
+    if (process.env.APP_INTEGRATION_CAPTURE) await writeFile(process.env.APP_INTEGRATION_CAPTURE, JSON.stringify(capture.raw()), {mode: 0o600, flag: 'wx'});
   });
   async function request(method, path, body, jwt = driver, {key = randomUUID(), status = 200, bindings = []} = {}) {
     const response = await fetch(origin + path, {method, signal: AbortSignal.timeout(5000),
@@ -99,7 +100,7 @@ test('synthetic HTTP journey persists across actual API and dispatch-process res
   });
 
   await t.test('only intended verified contact can accept scoped standing invitation', async () => {
-    grant = (await request('POST', '/v1/contacts', {contactId, phone: '+551155550100', map: true, incident: true}, driver, {bindings: [['setup', 2]]})).id;
+    grant = (await request('POST', '/v1/contacts', {contactId, phone: '+15555550100', map: true, incident: true}, driver, {bindings: [['setup', 2]]})).id;
     await request('POST', `/v1/contacts/${grant}/accept`, {map: true, incident: true}, stranger, {status: 403});
     await request('POST', `/v1/contacts/${grant}/accept`, {map: true, incident: true}, await token('synthetic-contact', {phone_number_verified: false}), {status: 409});
     assert.equal((await request('POST', `/v1/contacts/${grant}/accept`, {map: true, incident: true}, contact, {bindings: [['setup', 3]]})).status, 'accepted');

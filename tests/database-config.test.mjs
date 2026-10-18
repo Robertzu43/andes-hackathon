@@ -29,9 +29,18 @@ test('non-superuser database owner bootstraps twice with app DML but no DDL or m
   const role = pg.escapeIdentifier(username), namespace='public';
   const password = `quotes'" and @/%? ${randomUUID()}`, ownerPassword=randomUUID();
   const admin = new pg.Pool({connectionString:process.env.TEST_DATABASE_URL,max:1});
+  // Pool.end() can resolve before its clients finish their socket shutdown.
+  // Wait for every scoped client before FORCE-dropping their database.
+  const clientEnds=[];
+  function scopedPool(config) {
+    const pool=new pg.Pool(config);
+    pool.on('connect',client=>clientEnds.push(new Promise(resolve=>client.once('end',resolve))));
+    return pool;
+  }
   let maintenance, migration;
   t.after(async()=> {
     await migration?.end();await maintenance?.end();
+    await Promise.all(clientEnds);
     await admin.query(`DROP DATABASE IF EXISTS ${pg.escapeIdentifier(database)} WITH (FORCE)`);
     await admin.query(`DROP ROLE IF EXISTS ${role}`);
     await admin.query(`DROP ROLE IF EXISTS ${pg.escapeIdentifier(owner)}`);await admin.end();
@@ -39,15 +48,15 @@ test('non-superuser database owner bootstraps twice with app DML but no DDL or m
   await admin.query(`CREATE ROLE ${pg.escapeIdentifier(owner)} LOGIN NOSUPERUSER CREATEDB CREATEROLE NOREPLICATION PASSWORD ${pg.escapeLiteral(ownerPassword)}`);
   const url=new URL(process.env.TEST_DATABASE_URL);
   const credentials={PGHOST:url.hostname,PGPORT:url.port,PGDATABASE:decodeURIComponent(url.pathname.slice(1)),PGUSER:owner,PGPASSWORD:ownerPassword};
-  maintenance=new pg.Pool({...databaseConfig(credentials),max:1});
+  maintenance=scopedPool({...databaseConfig(credentials),max:1});
   await maintenance.query(`CREATE DATABASE ${pg.escapeIdentifier(database)}`);
-  migration=new pg.Pool({...databaseConfig({...credentials,PGDATABASE:database}),max:2});
+  migration=scopedPool({...databaseConfig({...credentials,PGDATABASE:database}),max:2});
   const attributes=(await migration.query('SELECT rolsuper,rolcreatedb,rolcreaterole FROM pg_roles WHERE rolname=current_user')).rows[0];
   assert.deepEqual(attributes,{rolsuper:false,rolcreatedb:true,rolcreaterole:true});
   assert.equal((await migration.query('SELECT pg_get_userbyid(datdba)=current_user AS owned FROM pg_database WHERE datname=current_database()')).rows[0].owned,true);
   assert.equal((await migration.query("SELECT has_schema_privilege(current_user,'public','CREATE') AS create")).rows[0].create,true);
   await bootstrap(migration,username,password,namespace);await bootstrap(migration,username,password,namespace);
-  const app = new pg.Pool({...databaseConfig({...credentials,PGDATABASE:database,PGUSER:username,PGPASSWORD:password}),max:1});
+  const app = scopedPool({...databaseConfig({...credentials,PGDATABASE:database,PGUSER:username,PGPASSWORD:password}),max:1});
   try {
     await app.query("INSERT INTO identities(id,issuer,subject) VALUES (gen_random_uuid(),'synthetic','bootstrap')");
     assert.equal((await app.query('SELECT count(*)::int AS n FROM identities')).rows[0].n,1);
