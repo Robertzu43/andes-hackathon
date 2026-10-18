@@ -1,5 +1,5 @@
 // Compile only: no credentials, network, browser or server are started.
-import { createDriverJourney, type DriverRequest, type TransportResult } from '../../src/features/driver/controller.mjs';
+import { createDriverJourney, type DriverRequest, type TransportResult, type Outcome } from '../../src/features/driver/controller.mjs';
 
 const transport = async (_request: DriverRequest, _options: { signal: AbortSignal }): Promise<TransportResult> =>
   ({ kind: 'unknown', code: 'compile-only' });
@@ -11,6 +11,13 @@ void journey.confirmTrip({ confirmed: true });
 void journey.retryUnknown('confirm', { confirmed: true });
 void journey.sendCommand('rest_report');
 void journey.refreshStatus();
+const resolution: Promise<Outcome> = journey.resolveIncident();
+void resolution;
+void journey.retryUnknown('resolve', { confirmed: true });
+const resolutionRequest: DriverRequest = { operation: 'resolveIncident', params: { id: '00000000-0000-4000-8000-000000000002' }, body: {} };
+void resolutionRequest;
+const resolutionOperation: DriverRequest | undefined = journey.snapshot().operations.resolve?.request;
+void resolutionOperation;
 journey.editForm({ fields: { expectedArrivalAt: '2026-10-18T15:30:00.000Z' } });
 const zeroDispatch: TransportResult = { kind: 'not_sent', code: 'no_session' };
 void zeroDispatch;
