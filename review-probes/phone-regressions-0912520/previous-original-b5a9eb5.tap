@@ -1,0 +1,55 @@
+TAP version 13
+# Subtest: Q52 R01 factory explicit stop while suspended prevents a trusted resume
+ok 1 - Q52 R01 factory explicit stop while suspended prevents a trusted resume
+  ---
+  duration_ms: 3.550125
+  type: 'test'
+  ...
+# Subtest: Q52 R02 revocation during wake-lock delivery cannot report successful gesture start or retain late lock
+ok 2 - Q52 R02 revocation during wake-lock delivery cannot report successful gesture start or retain late lock
+  ---
+  duration_ms: 3.44425
+  type: 'test'
+  ...
+# Subtest: Q52 R03 site grant does not permit passive retry after native code1; explicit useful retry releases the latch
+ok 3 - Q52 R03 site grant does not permit passive retry after native code1; explicit useful retry releases the latch
+  ---
+  duration_ms: 3.3175
+  type: 'test'
+  ...
+# Subtest: Q52 R04 optional motion denial permits useful GPS resume while host withdrawal remains terminal
+ok 4 - Q52 R04 optional motion denial permits useful GPS resume while host withdrawal remains terminal
+  ---
+  duration_ms: 0.657541
+  type: 'test'
+  ...
+# Subtest: Q52 R05 no drain or flush delegation survives pending, failed or completed withdrawal
+not ok 5 - Q52 R05 no drain or flush delegation survives pending, failed or completed withdrawal
+  ---
+  duration_ms: 2.103625
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:122:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'ok')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-independent-091.test.mjs:128:147)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Q52 R06 identical trip templates recreate and resume with independent session/event identities
+ok 6 - Q52 R06 identical trip templates recreate and resume with independent session/event identities
+  ---
+  duration_ms: 1.4955
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 5
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 110.902459

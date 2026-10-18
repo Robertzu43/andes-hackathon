@@ -1,0 +1,198 @@
+TAP version 13
+# Subtest: Q52 N01 late after-error prompt cannot cancel an explicitly retried native watch
+not ok 1 - Q52 N01 late after-error prompt cannot cancel an explicitly retried native watch
+  ---
+  duration_ms: 5.525
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:92:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    successful explicit retry lost native watch after stale query
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:99:9)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Q52 N02 stopping location intent before suspension cannot forget revoked permission
+not ok 2 - Q52 N02 stopping location intent before suspension cannot forget revoked permission
+  ---
+  duration_ms: 1.364292
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:102:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    new acquisition bypassed revoked permission after location-only stop
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:107:9)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Q52 N03 unavailable wake-lock requests preserve useful GPS evidence with bounded diagnostics
+not ok 3 - Q52 N03 unavailable wake-lock requests preserve useful GPS evidence with bounded diagnostics
+  ---
+  duration_ms: 27.489833
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:110:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    unsupported wake lock evicted GPS fix
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:114:32)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Q52 N04 explicit stop publishes a terminal update after a resumable suspension
+not ok 4 - Q52 N04 explicit stop publishes a terminal update after a resumable suspension
+  ---
+  duration_ms: 0.667916
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:117:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    sink still advertises resumability after user stop
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:120:65)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Q52 N05 factory start reported failed during wake-lock callback cannot remain resumable
+not ok 5 - Q52 N05 factory start reported failed during wake-lock callback cannot remain resumable
+  ---
+  duration_ms: 0.672208
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:123:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    failed start remained resumable
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:128:9)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Q52 N06 GPS code1 retry latch does not block independent visible-screen wake lock
+not ok 6 - Q52 N06 GPS code1 retry latch does not block independent visible-screen wake lock
+  ---
+  duration_ms: 1.622
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:130:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    geolocation gesture latch incorrectly blocks wake-lock API
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:135:9)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Q52 N07 suspended host withdrawal updates terminal reason and sink resumability
+not ok 7 - Q52 N07 suspended host withdrawal updates terminal reason and sink resumability
+  ---
+  duration_ms: 0.4475
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:137:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    suspended revocation retained resumable reason
+    + actual - expected
+    
+    + 'pagehide'
+    - 'consent-revoked'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'consent-revoked'
+  actual: 'pagehide'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-gatekeeper-new-091.test.mjs:139:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Q52 C01 ordinary qualified synthetic watch emits one fix and live revocation blocks GPS
+ok 8 - Q52 C01 ordinary qualified synthetic watch emits one fix and live revocation blocks GPS
+  ---
+  duration_ms: 1.302333
+  type: 'test'
+  ...
+# Subtest: Q52 C02 unavailable geolocation already coalesces diagnostic-only work without spending native budget
+ok 9 - Q52 C02 unavailable geolocation already coalesces diagnostic-only work without spending native budget
+  ---
+  duration_ms: 3.767208
+  type: 'test'
+  ...
+# Subtest: Q52 C03 explicit stop while active publishes nonresumable terminal evidence
+ok 10 - Q52 C03 explicit stop while active publishes nonresumable terminal evidence
+  ---
+  duration_ms: 0.444083
+  type: 'test'
+  ...
+# Subtest: Q52 C04 active host withdrawal purges precise coordinates and blocks resume
+ok 11 - Q52 C04 active host withdrawal purges precise coordinates and blocks resume
+  ---
+  duration_ms: 0.945584
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 4
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 103.738

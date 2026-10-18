@@ -1,0 +1,278 @@
+TAP version 13
+# Subtest: DEMO52 stale after-error query cannot cancel a newer gesture GPS request
+not ok 1 - DEMO52 stale after-error query cannot cancel a newer gesture GPS request
+  ---
+  duration_ms: 6.288666
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1224:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1236:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: DEMO52 resume preserves denied or revoked GPS without saved location intent
+not ok 2 - DEMO52 resume preserves denied or revoked GPS without saved location intent
+  ---
+  duration_ms: 1.487792
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1242:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - 'permission-denied-or-revoked'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'permission-denied-or-revoked'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1248:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: DEMO52 unsupported wake-lock polling preserves GPS history and session budget
+not ok 3 - DEMO52 unsupported wake-lock polling preserves GPS history and session budget
+  ---
+  duration_ms: 18.208208
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1254:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(snap.events.some(e => e.type === 'geolocation'))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1259:47)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: DEMO52 explicit stop after suspension sends one final nonresumable intent update
+not ok 4 - DEMO52 explicit stop after suspension sends one final nonresumable intent update
+  ---
+  duration_ms: 0.861875
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1265:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      {
+    +   reason: 'pagehide',
+    +   resumable: true,
+    -   reason: 'explicit-stop',
+    -   resumable: false,
+        sharingState: 'stopped'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    reason: 'explicit-stop'
+    sharingState: 'stopped'
+    resumable: false
+  actual:
+    reason: 'pagehide'
+    sharingState: 'stopped'
+    resumable: true
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1275:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: DEMO52 failed trip start cannot leave resumable capture after wake request suspension
+not ok 5 - DEMO52 failed trip start cannot leave resumable capture after wake request suspension
+  ---
+  duration_ms: 0.792334
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1281:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1289:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: DEMO52 resumed location result settles after a synchronous sink stop
+not ok 6 - DEMO52 resumed location result settles after a synchronous sink stop
+  ---
+  duration_ms: 0.42675
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1293:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1301:42)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: DEMO52 synchronous watch cancellation cannot report successful acquisition
+not ok 7 - DEMO52 synchronous watch cancellation cannot report successful acquisition
+  ---
+  duration_ms: 0.19275
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1305:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1311:36)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: DEMO52 wake lock has no GPS gesture or OS permission gate
+not ok 8 - DEMO52 wake lock has no GPS gesture or OS permission gate
+  ---
+  duration_ms: 2.378041
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1314:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1322:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: DEMO52 suspended consent withdrawal publishes terminal nonresumable state
+not ok 9 - DEMO52 suspended consent withdrawal publishes terminal nonresumable state
+  ---
+  duration_ms: 0.723167
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1327:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'pagehide'
+    - 'consent-revoked'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'consent-revoked'
+  actual: 'pagehide'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1330:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: DEMO52 global drain resumes for other trips only after this trip wipe succeeds
+not ok 10 - DEMO52 global drain resumes for other trips only after this trip wipe succeeds
+  ---
+  duration_ms: 0.585708
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1336:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1340:38)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: DEMO52 trip factory needs no unused template sessionId
+not ok 11 - DEMO52 trip factory needs no unused template sessionId
+  ---
+  duration_ms: 0.170958
+  type: 'test'
+  location: '/private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1345:1'
+  failureType: 'testCodeFailure'
+  error: 'A bounded tripId, sessionId and revision are required'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    createTripPhoneObservations (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/src/phone-observations/trip-sharing.mjs:11:11)
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-narrow-repairs-yakh7sba/phone-author-red-091/tests/phone-observations/adapter.test.mjs:1347:22)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 0
+# fail 11
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 72.69225
