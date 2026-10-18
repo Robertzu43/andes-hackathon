@@ -1,6 +1,7 @@
 import { useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from './i18n.tsx';
+import { formattedTimestamp } from './time.ts';
 
 export function PrimaryAction({ children, busy = false, busyLabel, tone = 'primary', ...props }:
   ButtonHTMLAttributes<HTMLButtonElement> & { busy?: boolean; busyLabel?: string; tone?: 'primary' | 'secondary' | 'danger' }) {
@@ -13,24 +14,28 @@ export function ActionGroup({ children }: { children: ReactNode }) { return <div
 export function TripIdentity({ label, route }: { label: string; route?: string }) {
   return <div className="andes-trip-identity"><strong>{label}</strong>{route && <p>{route}</p>}</div>;
 }
-export function FactRow({ label, children, source, timestamp, ageLabel }:
-  { label: string; children: ReactNode; source?: string; timestamp?: string; ageLabel?: string }) {
+export function FactRow({ label, children, source, timestamp, ageLabel, timeZone, timestampKind = 'recorded' }:
+  { label: string; children: ReactNode; source?: string; timestamp?: string; ageLabel?: string; timeZone?: string;
+    timestampKind?: 'recorded' | 'captured' | 'received' | 'read' }) {
   const { t, locale } = useI18n();
-  const valid = timestamp !== undefined && Number.isFinite(Date.parse(timestamp));
+  const formatted = timestamp === undefined ? null : formattedTimestamp(timestamp, locale, timeZone);
+  const timeLabel = timestampKind === 'captured' ? 'capturedAt' : timestampKind === 'received' ? 'receivedAt' : timestampKind === 'read' ? 'readAt' : 'observedAt';
   return <div className="andes-fact-row"><dt>{label}</dt><dd><div>{children}</div>
-    {(source || timestamp || ageLabel) && <p className="andes-source">
+    {(source || timestamp !== undefined || ageLabel) && <p className="andes-source">
       {source && <span>{t('source')}: {source}</span>}
-      {timestamp && <span>{t('observedAt')}: {valid
-        ? <time dateTime={timestamp}>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(new Date(timestamp))} UTC</time>
+      {timestamp !== undefined && <span>{t(timeLabel)}: {formatted
+        ? <time dateTime={timestamp}>{formatted}</time>
         : t('unknown')}</span>}
       {ageLabel && <span>{ageLabel}</span>}
     </p>}
   </dd></div>;
 }
-export function AttributedUpdate({ source, children, timestamp }:
-  { source: string; children: ReactNode; timestamp?: string }) {
+export function AttributedUpdate({ source, children, timestamp, timeZone }:
+  { source: string; children: ReactNode; timestamp?: string; timeZone?: string }) {
+  const { t, locale } = useI18n();
+  const formatted = timestamp === undefined ? null : formattedTimestamp(timestamp, locale, timeZone);
   return <div className="andes-update"><strong>{source}</strong><div>{children}</div>
-    {timestamp && <p className="andes-source"><time dateTime={timestamp}>{timestamp}</time></p>}
+    {timestamp !== undefined && <p className="andes-source">{t('observedAt')}: {formatted ? <time dateTime={timestamp}>{formatted}</time> : t('unknown')}</p>}
   </div>;
 }
 export function Field({ label, hint, error, ...props }: InputHTMLAttributes<HTMLInputElement> &

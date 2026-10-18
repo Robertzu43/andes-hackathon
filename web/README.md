@@ -9,11 +9,11 @@ npm --prefix web test
 npm --prefix web run dev
 ```
 
-The default port is `0`: the server selects an available loopback port and prints the actual URL. This avoids changing persistent Codus port assignments. `ANDES_WEB_PORT` may explicitly select an already owned local port. This lane's observed preview was `http://127.0.0.1:59060`; it is local verification evidence, not a stable production domain. No server, DB, identity provider or notification worker is started by the web package.
+The default port is `0`: the server selects an available loopback port and prints the actual URL. This avoids changing persistent Codus port assignments. `ANDES_WEB_PORT` may explicitly select an already owned local port. No server, DB, identity provider or notification worker is started by the web package.
 
 ## API and session seam
 
-Set `ANDES_API_PROXY_TARGET` to the actual credential-free loopback origin of an owned API/fixture process, including its port. Both `dev` and **production-build `preview`** proxy `/v1` without rewriting paths. Without a target, both return JSON `503 {code:"api_unconfigured"}` for `/v1` instead of serving SPA HTML. Tests exercise actual preview sockets, status codes and idempotency headers against a synthetic HTTP fixture; they do not establish real backend authentication or PostgreSQL integration. Components 44/46 own the real local backend/runtime seam.
+Set `ANDES_API_PROXY_TARGET` to the actual credential-free loopback origin of an owned API/fixture process, including its port. Both `dev` and **production-build `preview`** proxy the exact `/v1` namespace without rewriting paths. Runtime configuration comes from explicit shell variables; the web dotenv files do not configure the API target. Without a target, both return JSON `503 {code:"api_unconfigured"}` for `/v1` instead of serving SPA HTML. Tests exercise actual preview sockets, status codes and idempotency headers against a synthetic HTTP fixture; they do not establish real backend authentication or PostgreSQL integration. Components 44/46 own the real local backend/runtime seam.
 
 ```sh
 ANDES_API_PROXY_TARGET=http://127.0.0.1:YOUR_OWNED_API_PORT npm --prefix web run dev
@@ -35,11 +35,11 @@ For explicitly local browser tests only, `ANDES_ENABLE_TEST_HOOKS=1` during **de
 - `PrimaryAction`, `ActionGroup`, `Field`, `SelectField`, `ConsentScope`, `TripIdentity`, `FactRow`, `AttributedUpdate`, `AsyncState`, `EmptyState`, `ErrorRecovery`, `PermissionState`, `HomeLink`, `Brand`.
 - `routeDefinitions`, `routePath`, `validRouteParams`. The 12 utility patterns match the released map; UUID route parameters are validated. Route titles are generic and append the brand once. No API route is invented by the browser router.
 
-Controls accept ordinary named props/translated strings. Fields retain caller-controlled values and connect error/hint descriptions. Busy actions remain focusable with `aria-disabled` and suppress new clicks; feature controllers must also own write deduplication/idempotency and ambiguous-write handling. `FactRow` displays provided values/source/timestamp/age labels, not inferred freshness. Display timestamps explicitly use UTC; this never sets a trip's timezone or moves an agreement. No browser tick owns a deadline and the parked PR #53 projection is not imported.
+Controls accept ordinary named props/translated strings. Fields retain caller-controlled values and connect error/hint descriptions. Busy actions remain focusable with `aria-disabled` and suppress new clicks; feature controllers must also own write deduplication/idempotency and ambiguous-write handling. `FactRow` displays provided values/source/timestamp/age labels, not inferred freshness. Timestamps require a complete ISO calendar value with `Z` or an explicit offset; malformed, incomplete or impossible values show the translated unknown label. `timeZone` selects the trip's known IANA zone, defaulting explicitly to UTC. `timestampKind` distinguishes recorded, captured, received and server-read facts; it never infers source age or changes an agreement. Attributed updates use the same localized display. No browser tick owns a deadline and the retired PR #53 projection is not imported.
 
 Tokens are in `src/styles/tokens.css`: `--canvas`, `--surface`, `--ink`, `--muted`, `--primary`, `--on-primary`, `--warning`, `--danger`, `--border`, `--font-ui`. They are exact OKLCH conversions of the approved identity colors. Respect the accent allowance and 44px/56px control targets. System UI is the deliberate licensed platform-font choice; no external font request or second display family is needed.
 
-49 owns the package/lock, entry, shared foundation/styles, global route/localisation and brand files. 45 owns API/session transport; 50 driver routes; 51 contact/privacy routes. 53/54/55 own optional Hairline/Anatomy visual modules and host; `@lucasmarkes/hairline` is pinned to **0.5.1** (MIT, React >=18 peer), and currently adds no code to the base bundle. Consume optional visuals lazily; their failure must not hide or disable task actions. No new illustration-only routes or live telemetry claims. Only component 44 integrates/merges after review.
+49 owns the package/lock, entry, shared foundation/styles, global route/localisation and brand files. 45 owns API/session transport; 50 driver routes; 51 contact/privacy routes. 53/54/55 own optional Hairline/Anatomy visual modules and host; No unused visual dependency is installed in this foundation. A feature that actually imports an optional library must coordinate its package/lock update with49. Consume optional visuals lazily; their failure must not hide or disable task actions. No new illustration-only routes or live telemetry claims. Only component 44 integrates/merges after review.
 
 ## What is runnable now
 
@@ -50,6 +50,22 @@ Development-only component inspection pages:
 - `/tests/fixtures/preview.html`: labelled ES/PT-BR fact rows, attributed updates, field validation, consent, loading/empty/error/permission/long content, and a synthetic save with no transport.
 - `/tests/fixtures/session.html`: labelled token-free simulation of unconfigured, signed-out, connecting, authenticated, expired and error UI. It does not sign in to an API.
 
-These HTML entries and the optional mount hook are absent from the default production build. `npm test` expects a preceding build for production-preview tests. Its loopback fixture servers close after each test. The brand set contains exact vector geometry, 16/32/48 RGBA favicon entries, 512px app icon, 180px Apple icon and generic 1200×630 share image.
+These HTML entries and the optional mount hook are absent from the default production build. `npm test` runs its strict build automatically before the native tests, including from a clean `npm ci`. Preview tests disable dotenv loading and use owned loopback fixtures. Its loopback fixture servers close after each test. The brand set contains exact vector geometry, 16/32/48 RGBA favicon entries, 512px app icon, 180px Apple icon and generic 1200×630 share image.
 
 Builder checks are provisional. Independent component 52 owns full app acceptance; component 56 owns optional visual acceptance. Physical-device capability, human comprehension, live-provider delivery, public deployment and issue evidence gates remain open. Private product/design/process documents stay outside served assets.
+
+## Recovery and focused regressions
+
+The session adapter preserves method receivers, including class gateways. Gateway-banner and route failures have separate recovery boundaries; a failed route keeps the shell navigation and footer. Optional `criticalActions` is a trusted host-supplied React node outside the route boundary, with its own boundary. Bind it to the actual verified trip/session and backend action; the foundation supplies no invented SOS request. A route exception cannot remove those independently hosted controls.
+
+Locale changes update text and metadata without moving focus or scrolling. Initial feature autofocus is retained. Actual path changes focus main only when the feature has not already focused a control. Trip titles are neutral until the feature has source-backed state.
+
+The development-only `/tests/fixtures/review.html` scenarios are synthetic counterexamples for gateway/route failure, timestamps, focus and recovery. With the dev server running, use Node24 and installed Chrome:
+
+```sh
+node web/tests/foundation/review.browser.mjs http://127.0.0.1:OWNED_PORT
+```
+
+The script prints the focused results and private temporary capture path. `ANDES_CHROME_BINARY` can select an installed Chrome binary. These fixtures never authenticate an account, call a provider or send information; they are absent from the default production build.
+
+The supplied Tándem system is in `docs/design` and root `DESIGN.md`; it supersedes the earlier visual proposal. This foundation repair does not claim that the delivered reference screens, app assembly or tour are implemented. The existing ANDES public assets have recorded provenance in `docs/brand`; their replacement by the supplied Tándem identity belongs to the coordinated design integration.

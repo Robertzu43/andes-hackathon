@@ -1,18 +1,19 @@
 {
   "schemaVersion": "1.0.0",
-  "contractId": "andes-operate-v1",
-  "createdAt": "2026-10-17T22:50:54.409515+00:00",
+  "contractId": "tandem-operate-v1",
+  "createdAt": "2026-10-18T01:35:38.935746+00:00",
   "surface": {
     "type": "web",
-    "name": "ANDES driver and trusted-contact app",
+    "name": "Tándem driver and trusted-contact app",
     "mode": "operate",
     "subject": "Freight trip and trusted-contact coordination",
     "audience": "LATAM freight owner-operators with one or two trucks and accepted contacts; es and pt-BR",
     "job": "Prepare/confirm a trip, share scoped source-aged facts, report intent and contact action, and distinguish unresolved delivery/help",
     "productTruth": [
       "PRODUCT.md",
-      "docs/seo/keyword-map.md",
-      "docs/contracts/runtime.md at backend ebc8fb1; actual source overrides provisional UI assumptions"
+      "DESIGN.md",
+      "docs/design/specification.md",
+      "docs/contracts/runtime.md"
     ]
   },
   "scope": {
@@ -48,35 +49,44 @@
     ]
   },
   "direction": {
-    "incumbentDisposition": "create",
-    "territory": "Radio check conversation record",
-    "rationale": "Show separate attributed updates and source times in a familiar phone-first task flow; one or two trucks need legible contact action rather than fleet surveillance. Seed87851eab selects grounded candidate3; see private selection record.",
-    "signature": "Named driver/contact/source update with explicit event time, adjacent to four separate fact rows and a stable permitted-action area; no fake chat capability",
+    "incumbentDisposition": "extend",
+    "territory": "Tándem supplied operational design system",
+    "rationale": "The user confirmed the supplied identity, semantic tokens, Manrope font and six reference states. Implement that system without inventing another visual direction.",
+    "signature": "Two paths together in the supplied outlined Tándem identity, stable labelled OK/pause/SOS actions and separate attributed trip facts.",
     "palette": [
-      "canvas #F2F6F6",
-      "surface #FCFDFD",
-      "ink #173139",
-      "muted #4D6268",
-      "primary #166675",
-      "onPrimary #F9FCFC",
-      "warning #805312",
-      "danger #A93232",
-      "border #CAD6D8"
+      "canvas #F7F5F0",
+      "surface #FFFFFF",
+      "ink #132C3A",
+      "muted #536570",
+      "border #73818A",
+      "subtle #E7ECEC",
+      "brand #087F8C",
+      "action #086F79",
+      "actionPressed #07545D",
+      "onAction #FFFFFF",
+      "positive #16634B",
+      "positiveSurface #E9F4EE",
+      "warning #825400",
+      "warningSurface #FFF2D6",
+      "danger #B42332",
+      "dangerPressed #8E1926",
+      "dangerSurface #FFF0F0",
+      "focus #132C3A"
     ],
     "typography": [
-      "One platform system-ui sans, regular/medium/semibold/bold; actual system rendering inspected at all target widths",
-      "Task labels16px+, supporting text14px+, headings24/30px, tabular times; product familiarity and fast local rendering override marketing display defaults"
+      "Bundled Manrope, SIL OFL; body18/28, support16/24, heading22/30, title28/36, labels18/24",
+      "Exact roles and weights from docs/design/tokens.json; no rasterized interface text"
     ],
-    "layout": "Mobile first single-task flow with clear labels, thumb-sized actions and persistent trip identity; wider layouts use bounded content and a supporting fact column. No nested card grids, decorative left rails or map dominating unknown facts. Shared blueprints specify every route.",
-    "motion": "150\u2013200ms state transitions only, visible-first, no page-load choreography; reduced-motion disables nonessential transitions",
+    "layout": "Use the supplied prepare/review/active/offline/deferred/contact-incident references as responsive component guidance. Keep critical actions stable and visible independently of optional illustrations or the tour.",
+    "motion": "Feedback120ms; reduced motion0; no driving decoration or automatic tour.",
     "density": "Low density for driver actions, compact labelled event rows for facts, generous separation between tasks; high-priority state stays in first390x844viewport",
-    "copyVoice": "Plain Spanish and Brazilian Portuguese, sentence case, named action verbs, source-attributed reports, explicit unknown and recovery. Camiones/Caminh\u00f5es, no jargon or implied emergency guarantee.",
+    "copyVoice": "Plain Spanish and Brazilian Portuguese, sentence case, named action verbs, source-attributed reports, explicit unknown and recovery. Camiones/Caminhões, no jargon or implied emergency guarantee.",
     "accessibility": [
-      "Text contrast>=4.5:1 and boundary/focus>=3:1 measured at runtime",
-      "44px minimum touch targets with56px primary driver actions; no screen input required while moving to prevent escalation",
-      "Keyboard/focus restoration, semantic labels/live status, no colour-only meaning",
-      "Spanish/pt-BR expanded text, no horizontal overflow at360px; reduced motion",
-      "No route/participant/coordinate data in share metadata; generic noindex task pages"
+      "Text contrast>=4.5:1 and boundaries/focus>=3:1 measured in the actual app",
+      "Targets minimum48px, primary64px, in-route80px, gap16px; text may enlarge",
+      "Preserve keyboard focus and scroll during locale changes; semantic labels and readable errors",
+      "ES/pt-BR, text enlargement and reduced motion without horizontal overflow",
+      "No personal trip or participant details in generic noindex metadata"
     ],
     "antiDefaults": [
       "No fake live map/green safety status",
@@ -91,44 +101,52 @@
       "id": "user-updated:impeccable",
       "kind": "project",
       "revision": "sha256:1e458a10d63318f89462c8d39bd48254ff39982f6628c1e45fe127d269cf043c",
-      "role": "craft and product register",
-      "reason": "Actual locally updated skill governs accessible product workflows; source-status verified",
-      "reference": "/Users/sebasbimbi/.claude/skills/impeccable"
+      "role": "primary accessible product craft floor",
+      "reason": "Apply product craft while the confirmed Tándem source overrides generic color and visual preferences; personal installation paths remain outside source",
+      "reference": "DESIGN.md"
     },
     {
-      "id": "user-updated:anthropic-frontend-design",
+      "id": "project:tandem-specification-md",
       "kind": "project",
-      "revision": "sha256:404fa218d2bceee72b50221c08cd30987242420d81f9528582e4cbaa2210b7f1",
-      "role": "subject-grounded originality",
-      "reason": "New UI needs a concrete trip/contact identity; product task constraints override expressive marketing suggestions",
-      "reference": "/Users/sebasbimbi/.claude/skills/frontend-design"
+      "revision": "sha256:a490aa857fff9804d8f32a4b72566dc53c1f89ad84afda05a467ed42bebb0a40",
+      "role": "user-confirmed visual and behavior contract",
+      "reason": "The supplied version1.0 design is the confirmed implementation source",
+      "reference": "docs/design/specification.md"
     },
     {
-      "id": "project:andes-product",
+      "id": "project:tandem-tokens-json",
       "kind": "project",
-      "revision": "sha256:e0e3cd59050a3818550a6d5c5124dbb59f38f48e1fe058a676299eb69af94ef6",
-      "role": "verified workflow and API truth",
-      "reason": "Actual backend APIs and user brief determine actions and honest unavailable states",
-      "reference": "PRODUCT.md"
+      "revision": "sha256:d91e8bf2488b75a46489ab155325057fd8f8b6c972540f38b51ba3e340906dbd",
+      "role": "exact semantic roles and values",
+      "reason": "The supplied version1.0 design is the confirmed implementation source",
+      "reference": "docs/design/tokens.json"
+    },
+    {
+      "id": "project:tandem-components-json",
+      "kind": "project",
+      "revision": "sha256:bbe4c17778b9266738295fbc241ca314fa9a984949e70fa57d3d246d934bc1db",
+      "role": "reusable states and reference components",
+      "reason": "The supplied version1.0 design is the confirmed implementation source",
+      "reference": "docs/design/components.json"
     }
   ],
   "implementation": {
-    "componentSystem": "One49-owned React/TypeScript/Vite web foundation with source-owned accessible controls, shared tokens/localisation and same-origin /v1 transport; supported versions pinned after package checks",
+    "componentSystem": "One existing React/TypeScript/Vite web foundation with shared Tándem tokens, controls, router and ES/pt-BR provider",
     "shadcnRole": "not-used",
     "constraints": [
       "web/package and shared UI belong49; root backend/CI belongs44; no duplicate dependency files",
       "41 additive read routes,45 transport,42 observation queue,50 driver,51 contact/privacy; typed interfaces reconcile through actual contracts",
-      "Use existing /snapshot and forthcoming verified /status; do not wire provisional PR53 projection before Robert comments are resolved",
       "No pretend login: real externally issuedOIDC or explicitly synthetic local test session only",
       "Required utility metadata/noindex, generic share assets, graceful404; no external analytics",
-      "Every module needs rendered state/control/viewport evidence and independent acceptance before software completion"
+      "Every module needs rendered state/control/viewport evidence and independent acceptance before software completion",
+      "Use only published authenticated backend contracts, independent route/gateway recovery, and a read-only explicit Driver.js tour; no second application or rasterized screens."
     ]
   },
   "acceptance": [
     {
       "id": "A01",
       "statement": "Driver can persist an owned truck, accepted contacts and explicitly confirmed trip against the actual backend; reload preserves facts",
-      "source": "User complete-app instruction; issues13\u201319; Robert runtime"
+      "source": "User complete-app instruction; issues13–19; Robert runtime"
     },
     {
       "id": "A02",
@@ -138,7 +156,7 @@
     {
       "id": "A03",
       "statement": "SOS is visibly pending until accepted; contact acknowledgement/action and owner resolution remain distinct and access scoped",
-      "source": "issues29\u201335; Robert runtime"
+      "source": "issues29–35; Robert runtime"
     },
     {
       "id": "A04",

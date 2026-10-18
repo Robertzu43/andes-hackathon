@@ -1,3 +1,5 @@
 # Brand asset manifest
 
-No photograph or generated illustration is required for this task interface.49 delivers the exact vector open-bracket mark/ANDES wordmark, favicon16/32/48, icon512, Apple180, generic share1200x630 and private mark-sheet captures. Source geometry and font/colour roles: docs/brand/identity.md. Assets are not yet produced; no supplied logo was overwritten. Record scaffold favicon before replacing it and inspect actual small sizes. No private trip/participant detail enters metadata assets.
+The user-supplied Tándem identity is delivered in docs/design/assets: outlined ink/white SVG wordmarks and marks, PNG companions, an app-icon source, and Manrope WOFF2/TTF with SIL OFL. Exact geometry, tokens and usage are documented in docs/design/specification.md. Screen SVGs and design evidence are references, not app UI or runtime capability proof.
+
+The existing web/public/brand set includes the earlier ANDES favicon16/32/48, app512, Apple180 and generic1200×630 share image; these were produced and checked. Tándem public-asset integration must replace that earlier identity coherently. No photographs, generated screen images, private participant facts or fake evidence badges belong in the task interface.
