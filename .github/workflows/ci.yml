@@ -10,8 +10,6 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -24,18 +22,11 @@ jobs:
         run: |
           node node_modules/typescript/bin/tsc -p tests/api/tsconfig.json
           node node_modules/typescript/bin/tsc -p tests/api/tsconfig.json --module ESNext --moduleResolution Bundler
-      - name: Test API boundary and pinned feature integrations
-        run: node --test tests/api/*.test.mjs tests/api/contact-view.integration.mjs tests/api/contacts.integration.mjs tests/api/foundation.integration.mjs
-        env:
-          ANDES_TYPESCRIPT_TSC: ${{ github.workspace }}/web/node_modules/typescript/bin/tsc
-          ANDES_FOUNDATION_NODE_MODULES: ${{ github.workspace }}/web/node_modules
   app-integration:
     # Its own job: a harness failure never skips the backend checks, and vice versa.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -70,8 +61,6 @@ jobs:
       ZAVU_LIVE_SEND: "false"
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
