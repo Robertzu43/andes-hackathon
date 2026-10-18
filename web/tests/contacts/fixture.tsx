@@ -42,7 +42,10 @@ const api = createApiClient({ baseUrl: 'https://synthetic.invalid', session, fet
   if (method === 'GET' && path === `/v1/incidents/${id.incident}`) return json({ id: id.incident, tripId: id.trip,
     status: fixture.mode === 'resolved' ? 'resolved' : 'active', createdAt: '2026-10-17T12:00:00.000Z',
     resolvedAt: fixture.mode === 'resolved' ? '2026-10-17T12:05:00.000Z' : null, groupCapability: 'unavailable' });
-  if (method === 'POST' && path === '/v1/contacts') return json({ id: id.grant, status: 'pending' });
+  if (method === 'POST' && path === '/v1/contacts') {
+    if (fixture.mode === 'unknown-invite' && fixture.attempts++ === 0) throw new TypeError('SYNTHETIC invitation reply lost');
+    return json({ id: id.grant, status: 'pending' });
+  }
   if (path.endsWith('/revoke')) {
     fixture.attempts++;
     if (fixture.mode === 'unknown-revoke' && fixture.attempts === 1) throw new TypeError('SYNTHETIC lost reply');

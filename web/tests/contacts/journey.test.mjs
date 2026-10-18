@@ -345,3 +345,51 @@ test('gatekeeper R5: refreshing the same incident preserves the contact own reco
   assert.equal(during[0]?.recorded, 'acknowledged');
   assert.deepEqual(journey.getState().receipts, during);
 });
+
+test('gatekeeper R3: repeated revoke cannot replace an uncertain command or mint another key', async () => {
+  for (const scope of ['standing', 'trip']) {
+    let attempts = 0;
+    const method = scope === 'standing' ? 'revokeContact' : 'revokeTripContact';
+    const { journey, calls } = setup('contact', { [method]: () => {
+      if (++attempts === 1) throw new TypeError('SYNTHETIC: response lost after commit');
+      return { id: ids.grant, revoked: true, ...(scope === 'trip' ? { tripId: ids.trip } : {}) };
+    } });
+    const revoke = () => scope === 'standing' ? journey.revokeStanding(ids.grant) : journey.revokeTrip(ids.grant);
+    assert.equal(await revoke(), 'uncertain');
+    await assert.rejects(revoke(), /unchanged command/);
+    assert.equal(calls.filter(call => call.method === method).length, 1);
+    assert.equal(journey.getState().operation.status, 'uncertain');
+    assert.equal(await journey.retryUncertainCommand(), 'recorded');
+    const writes = calls.filter(call => call.method === method);
+    assert.equal(writes[0].args.at(-1).idempotencyKey, writes[1].args.at(-1).idempotencyKey);
+  }
+});
+
+test('gatekeeper R4: duplicate revoke preserves the first in-flight committed result', async () => {
+  const committed = deferred();
+  const { journey, calls } = setup('contact', { revokeContact: () => committed.promise });
+  const first = journey.revokeStanding(ids.grant);
+  const second = journey.revokeStanding(ids.grant).catch(error => error);
+  committed.resolve({ id: ids.grant, revoked: true });
+  assert.equal(await first, 'recorded');
+  assert.match((await second).message, /already pending/);
+  assert.equal(calls.filter(call => call.method === 'revokeContact').length, 1);
+  assert.equal(calls[0].args[1].signal.aborted, false);
+});
+
+test('gatekeeper resolve: re-reading an uncertain resolution cannot replace its original retry key', async () => {
+  let attempts = 0;
+  const { journey, calls } = setup('driver', { resolveIncident: () => {
+    if (++attempts === 1) throw new TypeError('SYNTHETIC: resolution reply lost');
+    return { id: ids.incident, status: 'resolved' };
+  } });
+  await journey.loadIncident(ids.incident);
+  assert.equal(await journey.resolve(), 'uncertain');
+  await journey.loadIncident(ids.incident);
+  await assert.rejects(journey.resolve(), /unchanged command/);
+  assert.equal(journey.getState().operation.status, 'uncertain');
+  assert.equal(await journey.retryUncertainCommand(), 'recorded');
+  const writes = calls.filter(call => call.method === 'resolveIncident');
+  assert.equal(writes.length, 2);
+  assert.equal(writes[0].args[1].idempotencyKey, writes[1].args[1].idempotencyKey);
+});

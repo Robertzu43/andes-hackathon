@@ -133,6 +133,7 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
     try {
       const response = await request({ signal: controller.signal, idempotencyKey: key });
       if (started !== epoch) return 'superseded' as const;
+      requests.delete(controller);
       apply(object(response));
       state.operation = { kind, status: 'recorded', failure: null };
       return 'recorded' as const;
@@ -229,7 +230,7 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
     },
     revokeStanding(grantId: string) {
       session(); const id = uuid(grantId);
-      invalidate(); // Conceal protected data before any revoke outcome, including an ambiguous write.
+      conceal(); // Hide facts without replacing a pending or uncertain command and its original key.
       return write('revoke-standing', options => api.revokeContact(id, options), response => {
         match(uuid(response.id), id); match(response.revoked, true);
         invalidate();
@@ -238,7 +239,7 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
     },
     revokeTrip(grantId: string) {
       const selected = trip(); const id = uuid(grantId);
-      invalidate();
+      conceal();
       return write('revoke-trip', options => api.revokeTripContact(selected.id, id, options), response => {
         match(uuid(response.id), id); match(uuid(response.tripId), selected.id); match(response.revoked, true);
         invalidate();
@@ -293,11 +294,11 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
     },
     resolve() {
       const id = activeIncident('driver');
-      invalidate();
+      conceal();
       return write('resolve', options => api.resolveIncident(id, options), response => {
         match(uuid(response.id), id); match(response.status, 'resolved');
         // The write response has no resolution timestamp. Re-read before showing a resolved incident fact.
-        state.incident = unread(); state.receipts = [];
+        conceal();
       });
     },
     retryUncertainCommand() {

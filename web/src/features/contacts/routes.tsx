@@ -57,7 +57,7 @@ function scopeNames(row: ContactSummary, field: 'requested' | 'accepted', t: Tra
 }
 function Catalog({ store, snapshot }: { store: ContactView; snapshot: Snapshot }) {
   const t = useMessages(contactMessages); const catalog = snapshot.catalog;
-  const revokeBlocked = snapshot.journey.operation.kind.startsWith('revoke') && ['pending', 'uncertain'].includes(snapshot.journey.operation.status);
+  const revokeBlocked = ['pending', 'uncertain'].includes(snapshot.journey.operation.status);
   if (catalog.status === 'loading') return <AsyncState state="loading" />;
   if (catalog.status === 'error') return <ErrorRecovery title={t('catalogError')} onRetry={() => void store.loadContacts()} retryLabel={t('refresh')}>
     <p>{t(catalog.failure ?? 'unavailable')}</p></ErrorRecovery>;
@@ -72,7 +72,7 @@ function Catalog({ store, snapshot }: { store: ContactView; snapshot: Snapshot }
         {row.revokedAt && <FactRow label={t('revokedAt')} timestamp={row.revokedAt} source={t('sourceServer')}>{t('revoked')}</FactRow>}
       </dl>
       {row.status !== 'revoked' && <Revoke title={t('revoke')} hint={t('revokeHint')}
-        busy={snapshot.journey.operation.status === 'pending'} onConfirm={() => store.revokeStanding(row.id)} />}
+        busy={snapshot.journey.operation.status === 'pending'} disabled={revokeBlocked} onConfirm={() => store.revokeStanding(row.id)} />}
     </li>)}</ul><p className="andes-hint">{t('historical')}</p>
     {revokeBlocked && <p className="andes-hint">{t('unknownHint')}</p>}</>;
 }
@@ -188,7 +188,7 @@ function TripPage({ host, tripId }: { host: ContactHost; tripId: string }) {
       </dl></section></aside></div>
     <section className="andes-section andes-secondary-section"><h2>{t('permissions')}</h2>
       {knownGrant ? <Revoke title={t('revokeTrip')} hint={t('revokeTripHint')} busy={snapshot.journey.operation.status === 'pending'}
-        disabled={snapshot.journey.operation.status === 'uncertain' && snapshot.journey.operation.kind.startsWith('revoke')} onConfirm={store.revokeTrip} />
+        disabled={locked} onConfirm={store.revokeTrip} />
         : <p>{t('unavailableGrant')}</p>}
     </section></Gate></>;
 }
