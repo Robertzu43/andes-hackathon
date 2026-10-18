@@ -7,9 +7,10 @@ import { demoIssuer } from './demo.js';
 import { demoLimits, zavuSender } from './demo-phone.js';
 import { checkConfig } from './checks/sweep.js';
 const { OIDC_ISSUER, OIDC_AUDIENCE, OIDC_JWKS_URL } = process.env;
-// Default 0. HOST defaults to 0.0.0.0, so an unset count must ignore a client-written X-Forwarded-For. A deploy behind one proxy sets TRUST_PROXY_HOPS=1. Never `true`.
-const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 0);
-if (!Number.isSafeInteger(trustProxyHops) || trustProxyHops < 0 || trustProxyHops > 3) throw new Error('TRUST_PROXY_HOPS must be an integer from 0 to 3');
+// Unset means 0. Anything else must be the digit 0, 1, 2 or 3; blank and whitespace fail startup. HOST defaults to 0.0.0.0. A deploy behind one proxy sets TRUST_PROXY_HOPS=1. Never `true`.
+const rawHops = process.env.TRUST_PROXY_HOPS;
+if (rawHops !== undefined && !/^[0-3]$/.test(rawHops)) throw new Error('TRUST_PROXY_HOPS must be an integer from 0 to 3');
+const trustProxyHops = Number(rawHops ?? 0);
 const demo = process.env.DEMO_MODE === 'true' ? await demoIssuer(process.env) : undefined;
 if (!demo && (!OIDC_ISSUER || !OIDC_AUDIENCE || !OIDC_JWKS_URL)) throw new Error('Trusted OIDC configuration required');
 // Demo codes go out only with live sends; disabled sends return 503 before counting a request.
