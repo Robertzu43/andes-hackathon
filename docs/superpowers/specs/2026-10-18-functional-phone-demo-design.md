@@ -2,14 +2,6 @@
 
 Fecha: 2026-10-18. Estado: aprobado por Robert, sección por sección, en brainstorming. Revisión 3: incorpora dos revisiones de la spec. Base: `main` 23e9f33. Planes A, B y C congelados.
 
-## Revisiones de la spec
-
-El cuerpo del PR #96 dice que la spec tuvo tres revisiones aprobadas. Ni el cuerpo ni los comentarios traen enlaces:
-
-1. link pending
-2. link pending
-3. link pending
-
 ## Objetivo y criterio de éxito
 
 Tener una app de Tándem (ANDES) que funcione de punta a punta en dos teléfonos físicos, con alertas reales. La `DEMO_URL` del deck abre **la app del conductor**.
@@ -248,16 +240,16 @@ En la URL de los jueces (AWS), los envíos reales quedan **activados con tope**.
 
 ### Topes de SMS
 
-**Decided by Robert 2026-10-18.** Una sola tabla. `scripts/demo-local.sh` y la calificación usan estos números: 8 códigos/día y 6 alertas por número/día (`dailyLimit` 8, `channelDailyLimit` 6).
+**Decided by Robert 2026-10-18.** Una sola tabla. `scripts/demo-local.sh` usa 8 y 6. La calificación global (`dailyLimit` y `channelDailyLimit`) es 12.
 
 | Tope | Valor |
 |---|---|
 | `DEMO_SMS_DAILY_CAP` | 8 códigos/día |
 | `DEMO_ALERTS_PER_NUMBER_DAILY` | 6 alertas por número/día |
-| Calificación `dailyLimit` / `channelDailyLimit` | 8 / 6 |
+| `dailyLimit` y `channelDailyLimit` | 12 alertas/día, en total |
 | Techo de Zavu (plan gratis, no verificado) | 25 SMS/día |
 
-Un ensayo manda dos olas a la familia, así que `demoLimits.perIncident` y `perSession` siguen en al menos 6.
+8 + 12 = 20, bajo 25. Cada corrida manda dos alertas (check y SOS); un tope global de 6 dejaría unas tres corridas al día. Con solo SMS, `demoLimits` 8/8 es margen sobre esas dos alertas.
 
 ## 6. Privacidad y abuso
 

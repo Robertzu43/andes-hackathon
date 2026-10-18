@@ -30,7 +30,7 @@
 1. His AWS profile and account. Both are already in `.env`: `AWS_PROFILE=default` and `ANDES_AWS_ACCOUNT=645868669589`. **Decided by Robert 2026-10-18:** keep the account ID.
 2. Voice purchase is the appendix. Nothing here waits on it.
 3. Go-ahead for each AWS step marked `$` (Task 9).
-4. SMS caps: the single table in the spec («Topes de SMS»). **Decided by Robert 2026-10-18:** `DEMO_SMS_DAILY_CAP=8` codes/day and 6 alerts per number/day. `demo-local.sh` defaults and qualification `dailyLimit` / `channelDailyLimit` are 8/6, under Zavu's 25 SMS/day free plan.
+4. SMS caps: the single table in the spec («Topes de SMS»). **Decided by Robert 2026-10-18:** `DEMO_SMS_DAILY_CAP=8` codes/day, 6 alerts per number/day, qualification `dailyLimit` and `channelDailyLimit` 12. One run sends two alerts, so a global 6 would allow only about three runs a day. 8 + 12 = 20, under Zavu's 25 SMS/day free plan.
 5. Two phones. The **contact** phone must have a number whose country is in `DEMO_ALLOWED_COUNTRIES` and that is **not** +1. US and Canadian numbers need 10DLC to receive SMS (`403 ten_dlc_required`).
 6. The person holding the contact phone knows it is a test and **will not call 105/190**.
 
@@ -146,7 +146,7 @@ In the dashboard, record for the evidence file:
 
 Then work out how many SMS the $2 buys. At `402 insufficient_balance`, `zavu.ts:86` treats the reply as retryable: alerts retry three times and then end unsent.
 
-**Recommend that Robert runs «Verify»** (identity verification) in the dashboard. It raises the ceilings and does not cost money. If he does, record the new ceilings. The caps stay 8 codes/day and 6 alerts per number/day.
+**Recommend that Robert runs «Verify»** (identity verification) in the dashboard. It raises the ceilings and does not cost money. If he does, record the new ceilings. The caps stay 8 codes/day, 6 alerts per number/day, and 12 alerts/day globally.
 
 The 25 a day are shared by both stages and every judge, while the app's caps apply per database. A full stage 1 run uses 3 SMS (1 code and 2 alerts) and a short stage 2 run uses 2 (1 code and 1 alert). That leaves about 20 for judges on the same UTC day. Zavu's `429 daily_limit_exceeded` is the backstop.
 
@@ -186,7 +186,7 @@ Notes on the values:
 - `live` is not in the file: `loadQualification` takes it from `ZAVU_LIVE_SEND` (`src/notifications/zavu.ts:48`).
 - `smsMode: "oneway"` is Plan A's option. It sends SMS as `sms_oneway`, which the sender already had before the number.
 - There is no `allowedDestinations`, because Plan A drops it in `DEMO_MODE`.
-- `demoLimits` 8/8 stays above the spec minimum of 6. Qualification `dailyLimit` / `channelDailyLimit` are 8/6. **Decided by Robert 2026-10-18.**
+- SMS-only sends two alerts per run. `demoLimits` 8/8 is headroom over that. Qualification `dailyLimit` and `channelDailyLimit` are 12. **Decided by Robert 2026-10-18.**
 - The alert body is Spanish only (`src/notifications/wording.ts:15`). The `pt-BR` SMS prefix says so. No voice entries until the appendix.
 
 - [ ] **Step 1: Write the file** (SMS-only)
@@ -199,8 +199,8 @@ cat > "$MAIN/.env.qualification.json" <<JSON
   "senderId": "$ZAVU_SENDER_ID",
   "evidence": "Zavu project $ZAVU_PROJECT_ID, sender $ZAVU_SENDER_ID (Tándem Demo). 2026-10-18: GET /v1/me isTestMode=false; GET /v1/senders/$ZAVU_SENDER_ID channels include sms_oneway. SMS-only until the voice appendix.",
   "smsMode": "oneway",
-  "dailyLimit": 8,
-  "channelDailyLimit": 6,
+  "dailyLimit": 12,
+  "channelDailyLimit": 12,
   "minuteLimit": 30,
   "emergencyReserve": 5,
   "demoLimits": { "perIncident": 8, "perSession": 8 },
@@ -216,7 +216,7 @@ cat > "$MAIN/.env.qualification.json" <<JSON
 JSON
 ```
 
-`dailyLimit` 8 and `channelDailyLimit` 6 are the decided caps. `minuteLimit` 30 and `emergencyReserve` 5 are unchanged.
+`dailyLimit` and `channelDailyLimit` are 12 (global alerts, not per number). `minuteLimit` 30 and `emergencyReserve` 5 are unchanged.
 
 - [ ] **Step 2: Validate it against the real loader**
 
@@ -737,7 +737,7 @@ Reglas: aquí no se anotan números de teléfono, códigos, tokens, el link del 
 | Backend | laptop: API y 3 workers, Postgres 18 en Docker, SQS real | ECS Express: 1 tarea, RDS `db.t4g.micro`, SQS |
 | `ZAVU_LIVE_SEND` | `true` | `true` |
 | Canales calificados | PE · `es` y `pt-BR` · SMS (one-way). Llamada: «No disponible» | igual |
-| Topes | Decided by Robert 2026-10-18: 8 códigos/día, 6 alertas/número/día. Calificación 8/6 | igual |
+| Topes | Decided by Robert 2026-10-18: 8 códigos/día, 6 por número, 12 global | igual |
 | Plan y saldo de Zavu antes / después (USD) | | |
 | Verificación de URL de mapa (`POST /v1/urls`) | | — |
 
