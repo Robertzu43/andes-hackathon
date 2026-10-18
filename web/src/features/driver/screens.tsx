@@ -272,7 +272,9 @@ function TripBody({ runtime, view, tripId, mode }: { runtime: PhoneDemoRuntime; 
     {mode === 'summary' ? <p>{t('summaryBody')}</p> : <>
       {current && (check ? <p role="status">{t('checkOpen')} <time dateTime={check.askUntil}>{formattedTimestamp(check.askUntil, locale) ?? check.askUntil}</time></p>
         : <p>{t('noCheck')}</p>)}
-      <div className="tandem-sos"><PrimaryAction data-action="sos" tone="danger" busy={sos?.state === 'pending'} onClick={() => void runtime.journey.requestHelp()}>{t('sos')}</PrimaryAction></div>
+      <div className="tandem-sos"><PrimaryAction data-action="sos" tone="danger" busy={sos?.state === 'pending'} onClick={() => void runtime.journey.requestHelp()}>
+        <span className="tandem-sos-key">{t('sos')}</span><span className="tandem-sos-lead">{t('sosLead')}</span>
+      </PrimaryAction></div>
       <p className="andes-hint">{t('sosHint')}</p>
       <PrimaryAction data-action="checkin-ok" data-command-state={command?.state ?? 'idle'} tone="secondary" busy={command?.state === 'pending'}
         onClick={() => void runtime.journey.sendCommand('checkin_ok')}>{t('ok')}</PrimaryAction>
