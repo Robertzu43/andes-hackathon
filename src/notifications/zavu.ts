@@ -6,13 +6,15 @@ export interface QualifiedChannel extends ChannelSupport {
 export interface Qualification {
   live: boolean; accountId: string; senderId: string; evidence: string; entries: QualifiedChannel[];
   dailyLimit: number; channelDailyLimit: number; minuteLimit: number; emergencyReserve: number;
+  /** Optional: only these E.164 destinations may be sent to; any other is refused before the provider is called. */
+  allowedDestinations?: string[];
 }
 export interface SendInput { attemptId: string; to: string; channel: Channel; country: string; locale: string; summary: string }
 export interface Payload { to: string; channel: Channel; messageType: 'text' | 'template'; text?: string;
   content?: { templateId: string; templateVariables: Record<string, string> }; voiceLanguage?: string;
   fallbackEnabled: false; idempotencyKey: string; metadata: { attemptId: string } }
 export type Outcome = { state: 'accepted'; messageId: string; providerMessageId?: string; status: string }
-  | { state: 'rejected'; code: string } | { state: 'unknown' };
+  | { state: 'rejected'; code: string; retryable?: boolean } | { state: 'unknown' };
 export type ReadOutcome = Outcome | { state: 'missing' };
 export interface Provider { qualification: Qualification; payload(input: SendInput): Payload;
   send(payload: Payload, signal?: AbortSignal): Promise<Outcome>; read(messageId: string, signal?: AbortSignal, expected?: { channel: Channel; destinationHash: string }): Promise<ReadOutcome> }
@@ -31,6 +33,7 @@ export function loadQualification(env: NodeJS.ProcessEnv): Qualification | null 
       if (!Number.isSafeInteger(q[key]) || q[key] < (key === 'emergencyReserve' ? 0 : 1)) throw Error();
     }
     if (q.emergencyReserve >= Math.min(q.dailyLimit, q.channelDailyLimit, q.minuteLimit)) throw Error();
+    if (q.allowedDestinations !== undefined && (!Array.isArray(q.allowedDestinations) || q.allowedDestinations.length > 10 || q.allowedDestinations.some(to => typeof to !== 'string' || !/^\+[1-9]\d{6,14}$/.test(to)))) throw Error();
     const seen = new Set<string>();
     for (const entry of q.entries) {
       const key = `${entry.country}:${entry.locale}:${entry.channel}`;
@@ -76,7 +79,8 @@ export function createZavuProvider(qualification: Qualification, apiKey: string,
         const body = await response.json().catch(() => null);
         if (response.status === 202 || response.status === 409) return accepted(body, payload);
         const code = (body as { code?: unknown; error?: { code?: unknown } })?.code ?? (body as { error?: { code?: unknown } })?.error?.code;
-        if ([400, 401, 402, 403, 404, 429].includes(response.status) && bounded(code, 80) && /^[A-Za-z0-9_]+$/.test(code)) return { state: 'rejected', code };
+        // Definitive not-sent replies. Rate limits and auth/payment problems are transient or operator-fixable.
+        if ([400, 401, 402, 403, 404, 429].includes(response.status) && bounded(code, 80) && /^[A-Za-z0-9_]+$/.test(code)) return { state: 'rejected', code, retryable: [401, 402, 403, 429].includes(response.status) };
         return { state: 'unknown' };
       } catch { return { state: 'unknown' }; }
     },

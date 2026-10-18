@@ -4,6 +4,7 @@ import type pg from 'pg';
 import { transaction, withTripTransaction, type Context } from '../db.js';
 import type { Channel, Job, Trip } from '../contracts.js';
 import type { CallbackEvent, Outcome, Payload, Provider } from './zavu.js';
+import { alertSummary } from './wording.js';
 export type WorkClass = 'emergency' | 'ordinary';
 export interface Envelope { jobId: string; version: number; class: WorkClass }
 export interface Delivery { body: Envelope; receipt: string }
@@ -21,6 +22,8 @@ export interface Attempt extends pg.QueryResultRow {
 }
 const hash = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const after = (now: Date, ms: number) => new Date(now.getTime() + ms);
+// ponytail: fixed budget and backoff (30s, 60s, 120s); qualify per-channel limits with the provider before live use.
+const MAX_RETRIES = 3;
 function envelope(value: Envelope | (Omit<Envelope, 'jobId'> & { id: string })): Envelope {
   return { jobId: 'jobId' in value ? value.jobId : value.id, version: value.version, class: value.class };
 }
@@ -48,7 +51,7 @@ export async function claimJob(ctx: Context, input: Envelope, owner: string): Pr
   return withTripTransaction(ctx, found.trip_id, async client => {
     const job = (await client.query('SELECT * FROM jobs WHERE id=$1 FOR UPDATE', [message.jobId])).rows[0];
     if (!job || job.version !== message.version || job.class !== message.class || job.due_at > now || (job.expires_at && job.expires_at <= now) || !['pending', 'claimed'].includes(job.status) || (job.status === 'claimed' && job.claim_until > now)) return null;
-    if ((await client.query('SELECT 1 FROM dispatch_attempts WHERE job_id=$1', [job.id])).rowCount) return null;
+    if ((await client.query('SELECT 1 FROM dispatch_attempts WHERE job_id=$1 AND job_version=$2', [job.id, job.version])).rowCount) return null;
     const token = randomUUID();
     await client.query("UPDATE jobs SET status='claimed',claim_token=$2,claim_owner=$3,claim_until=$4 WHERE id=$1", [job.id, token, owner, after(now, 30000)]);
     return { jobId: job.id, tripId: job.trip_id, token, owner, version: job.version };
@@ -60,7 +63,7 @@ async function invalidate(client: pg.PoolClient, job: Job, now: Date, reason: st
 export async function authorizeJob(ctx: Context, claim: Claim | null, provider: Provider): Promise<Attempt | null> {
   if (!claim) return null;
   return withTripTransaction(ctx, claim.tripId, async (client, trip) => {
-    const now = ctx.clock();
+    let now = ctx.clock();
     const job = (await client.query('SELECT * FROM jobs WHERE id=$1 FOR UPDATE', [claim.jobId])).rows[0];
     if (!job || job.version !== claim.version || job.status !== 'claimed' || job.claim_token !== claim.token || job.claim_owner !== claim.owner || job.claim_until <= now) return null;
     const q = provider.qualification;
@@ -75,9 +78,19 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     if (!q.live || !q.entries.some(e => e.channel === job.channel && e.country === trip.country && e.locale === trip.locale)) {
       await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='country_channel_locale_unqualified' WHERE id=$1", [job.id]); return null;
     }
+    if (q.allowedDestinations && !q.allowedDestinations.includes(grant.phone)) {
+      await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='destination_not_allowed' WHERE id=$1", [job.id]); return null;
+    }
     // Account-row locking serializes reservations across channels and worker replicas.
     await client.query('INSERT INTO quota_accounts VALUES($1) ON CONFLICT DO NOTHING', [q.accountId]);
     await client.query('SELECT project_id FROM quota_accounts WHERE project_id=$1 FOR UPDATE', [q.accountId]);
+    // Both lifetimes can end while this transaction waits for account capacity.
+    // Derive authorization and quota timestamps from the refreshed clock too.
+    now = ctx.clock();
+    if (job.claim_until <= now) return null;
+    if (job.expires_at && job.expires_at <= now) {
+      await invalidate(client, job, now, 'authorization_no_longer_valid'); return null;
+    }
     const day = new Date(now); day.setUTCHours(0, 0, 0, 0);
     const counts = (await client.query(`SELECT count(*)::int AS daily,count(*) FILTER(WHERE channel=$3)::int AS channel FROM quota_reservations WHERE project_id=$1 AND reserved_at>=$2`, [q.accountId, day, job.channel])).rows[0];
     const requests = (await client.query('SELECT count(*)::int AS n FROM provider_requests WHERE project_id=$1 AND reserved_at>$2', [q.accountId, after(now, -60000)])).rows[0].n;
@@ -88,9 +101,9 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     }
     const id = randomUUID();
     const location = trip.map_active && grant.map_accepted ? (await client.query('SELECT * FROM latest_locations WHERE trip_id=$1', [trip.id])).rows[0] : null;
-    const locationText = location ? `última ubicación ${location.latitude},${location.longitude}; capturada ${location.captured_at.toISOString()}; precisión ${location.accuracy} m; ${now.getTime() - location.captured_at.getTime() <= 120000 ? 'reciente' : 'antigua'}` : 'ubicación no disponible';
-    const incidentTime = incident?.created_at ?? job.created_at;
-    const summary = `Viaje ${trip.id}; conductor ${trip.driver_id}; ${incident ? `Incidente ${incident.id}; ` : ''}creado ${incidentTime.toISOString()} (${trip.time_zone}); estado sin confirmar; ${locationText}.`;
+    const truck = (await client.query('SELECT label FROM trucks WHERE id=$1', [trip.truck_id])).rows[0]!.label as string;
+    const check = incident?.trigger === 'missed_check' ? (await client.query('SELECT signal_at FROM security_checks WHERE incident_id=$1 ORDER BY created_at LIMIT 1', [incident.id])).rows[0] : null;
+    const summary = alertSummary({ truck, country: trip.country, timeZone: trip.time_zone, now, signalAt: check?.signal_at ?? null, incident: incident ?? null, location: location ?? null, voice: job.channel === 'voice' });
     const payload = provider.payload({ attemptId: id, to: grant.phone, channel: job.channel, country: trip.country, locale: trip.locale, summary });
     const attempt = (await client.query(`INSERT INTO dispatch_attempts(id,job_id,job_version,owner,claim_token,project_id,sender_id,channel,state,payload,payload_hash,destination_hash,authorized_at,next_reconcile_at,evidence_expires_at)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'authorized',$9,$10,$11,$12,$13,$14) RETURNING *`, [id, job.id, job.version, claim.owner, claim.token, q.accountId, q.senderId, job.channel, payload, hash(JSON.stringify(payload)), hash(grant.phone), now, after(now, 30000), after(now, 86400000)])).rows[0] as Attempt;
@@ -144,16 +157,29 @@ export async function finishAttempt(ctx: Context, authorization: Attempt, result
       await correlate(client, { ...attempt, provider_message_id: result.messageId });
     } else if (['authorized', 'unknown'].includes(attempt.state) && !attempt.provider_message_id) {
       await client.query('UPDATE dispatch_attempts SET state=$2,rejection_code=$3,finished_at=$4,next_reconcile_at=$5 WHERE id=$1', [attempt.id, result.state, result.state === 'rejected' ? result.code : null, now, result.state === 'unknown' ? after(now, 300000) : null]);
-      await client.query('UPDATE jobs SET status=$2 WHERE id=$1 AND status IN (\'authorized\',\'unknown\')', [attempt.job_id, result.state]);
+      const job = (await client.query('SELECT * FROM jobs WHERE id=$1 FOR UPDATE', [attempt.job_id])).rows[0];
+      // A definitive retryable rejection means nothing was sent and our emitter is done, so a fresh attempt may
+      // follow after backoff within a persisted budget. It is authorized again, so resolution, revocation or
+      // expiry in between still stops it. Ambiguous results are never resent.
+      if (result.state === 'rejected' && result.retryable && job?.version === attempt.job_version && ['authorized', 'unknown'].includes(job.status) && job.retry_count < MAX_RETRIES) {
+        const due = after(now, 30000 * 2 ** job.retry_count);
+        await client.query("UPDATE jobs SET status='pending',version=version+1,retry_count=retry_count+1,due_at=$2,claim_token=NULL,claim_owner=NULL,claim_until=NULL WHERE id=$1", [job.id, due]);
+        await client.query('INSERT INTO outbox(id,job_id,job_version,class,created_at,next_publish_at) VALUES($1,$2,$3,$4,$5,$6)', [randomUUID(), job.id, job.version + 1, job.class, now, due]);
+      } else await client.query('UPDATE jobs SET status=$2 WHERE id=$1 AND status IN (\'authorized\',\'unknown\')', [attempt.job_id, result.state]);
     }
   });
 }
 export async function runJob(ctx: Context, message: Envelope, provider: Provider, owner: string, signal?: AbortSignal): Promise<void> {
+  // Shutdown stops new claims and authorizations; an unauthorized claim simply expires and is reclaimed.
+  if (signal?.aborted) return;
   const claim = await claimJob(ctx, message, owner);
+  if (signal?.aborted) return;
   const attempt = await authorizeJob(ctx, claim, provider);
   if (!attempt) return;
   let result: Outcome;
-  try { result = await provider.send(attempt.payload, signal); } catch { result = { state: 'unknown' }; }
+  // Never pass the shutdown signal: an authorized send always finishes (bounded by the provider's own
+  // 10-second timeout, inside the ECS StopTimeout), so its message ID is kept for reconciliation.
+  try { result = await provider.send(attempt.payload); } catch { result = { state: 'unknown' }; }
   await finishAttempt(ctx, attempt, result);
 }
 export async function saveCallback(ctx: Context, event: CallbackEvent, raw: Buffer): Promise<void> {
@@ -172,15 +198,15 @@ export async function recoverWork(ctx: Context): Promise<void> {
   await transaction(ctx.pool, async client => {
     // Never turn an authorized/unknown external attempt back into sendable work.
     await client.query("UPDATE dispatch_attempts SET state='unknown' WHERE state='authorized' AND authorized_at<=$1", [after(now, -30000)]);
-    await client.query("UPDATE jobs j SET status='unknown' FROM dispatch_attempts a WHERE a.job_id=j.id AND a.state='unknown' AND j.status='authorized'");
+    await client.query("UPDATE jobs j SET status='unknown' FROM dispatch_attempts a WHERE a.job_id=j.id AND a.job_version=j.version AND a.state='unknown' AND j.status='authorized'");
     await client.query(`UPDATE jobs j SET status='pending',claim_token=NULL,claim_owner=NULL,claim_until=NULL
-      WHERE j.status='claimed' AND j.claim_until<=$1 AND NOT EXISTS(SELECT 1 FROM dispatch_attempts a WHERE a.job_id=j.id)`, [now]);
+      WHERE j.status='claimed' AND j.claim_until<=$1 AND NOT EXISTS(SELECT 1 FROM dispatch_attempts a WHERE a.job_id=j.id AND a.job_version=j.version)`, [now]);
     await client.query(`INSERT INTO outbox(id,job_id,job_version,class,created_at,next_publish_at)
       SELECT gen_random_uuid(),j.id,j.version,j.class,$1,$1 FROM jobs j WHERE j.status='pending' AND j.due_at<=$1 AND (j.expires_at IS NULL OR j.expires_at>$1)
-      AND NOT EXISTS(SELECT 1 FROM dispatch_attempts a WHERE a.job_id=j.id) ON CONFLICT(job_id,job_version) DO NOTHING`, [now]);
+      AND NOT EXISTS(SELECT 1 FROM dispatch_attempts a WHERE a.job_id=j.id AND a.job_version=j.version) ON CONFLICT(job_id,job_version) DO NOTHING`, [now]);
     await client.query(`UPDATE outbox o SET published_at=NULL,next_publish_at=$1 FROM jobs j WHERE j.id=o.job_id AND j.version=o.job_version
       AND j.status='pending' AND j.due_at<=$1 AND o.published_at<=$2 AND (o.lease_until IS NULL OR o.lease_until<=$1)
-      AND NOT EXISTS(SELECT 1 FROM dispatch_attempts a WHERE a.job_id=j.id)`, [now, after(now, -60000)]);
+      AND NOT EXISTS(SELECT 1 FROM dispatch_attempts a WHERE a.job_id=j.id AND a.job_version=j.version)`, [now, after(now, -60000)]);
     // Retain minimal hashes/facts; discard sensitive immutable payload once recovery no longer needs it.
     await client.query('UPDATE dispatch_attempts SET payload=NULL WHERE payload IS NOT NULL AND evidence_expires_at<=$1', [now]);
     await client.query('DELETE FROM provider_events WHERE evidence_expires_at<=$1', [now]);
