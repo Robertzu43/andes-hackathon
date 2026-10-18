@@ -52,12 +52,6 @@ a:focus-visible{outline:3px solid var(--action);outline-offset:6px;border-radius
 .is-night .road-dot{outline-color:var(--night)}
 .is-night .count{color:var(--night-muted)}
 
-/* status chips: what exists today, what is still to build */
-.chip{display:inline-block;margin-top:10px;padding:7px 16px;border-radius:999px;font-size:22px;font-weight:600;line-height:1.35;white-space:nowrap}
-.chip.today{background:var(--subtle);color:var(--ink)}
-.chip.build{box-shadow:inset 0 0 0 2px var(--grey);color:var(--muted)}
-.chip.months{box-shadow:inset 0 0 0 2px var(--action);color:var(--action)}
-
 /* 1 · cover: the road at night */
 .night{background:var(--night);color:var(--night-text)}
 .cover{display:flex;flex-direction:column;justify-content:space-between;padding:96px 96px 152px}
@@ -78,7 +72,7 @@ a:focus-visible{outline:3px solid var(--action);outline-offset:6px;border-radius
 .legend li{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:16px}
 .legend .sw{width:28px;height:28px}
 .legend b{font-weight:800;font-variant-numeric:tabular-nums}
-.owners{display:flex;align-items:center;gap:32px;margin-top:36px;padding-top:32px;border-top:1px solid var(--line)}
+.owners{display:flex;align-items:center;gap:32px;margin-top:32px;padding:22px 28px;border-radius:16px;background:var(--subtle)}
 .four{display:grid;grid-template-columns:repeat(4,48px);gap:8px;flex:none}
 .four i{width:48px;height:48px}
 .four .empty{background:transparent;outline:3px solid var(--grey);outline-offset:-3px}
@@ -90,7 +84,7 @@ a:focus-visible{outline:3px solid var(--action);outline-offset:6px;border-radius
 .bars .track{height:36px;border-radius:4px;background:var(--subtle)}
 .bars .fill{display:block;height:100%;width:var(--v);border-radius:4px;background:var(--action)}
 .bars b{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
-.cause{margin-top:44px;padding-top:32px;border-top:1px solid var(--line);font-size:34px;font-weight:500;line-height:1.3;max-width:1300px}
+.cause{margin-top:64px;font-size:34px;font-weight:500;line-height:1.3;max-width:1300px}
 
 /* 4 · how it works, as a trip with stops */
 .trip{list-style:none;display:grid;grid-template-columns:repeat(6,1fr);gap:24px;margin-top:80px;position:relative}
@@ -99,7 +93,7 @@ a:focus-visible{outline:3px solid var(--action);outline-offset:6px;border-radius
 .stop{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--action);color:var(--surface);font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;box-shadow:0 0 0 14px var(--canvas)}
 .trip .warn .stop{background:var(--warning)}
 .trip p{font-size:26px;font-weight:600;line-height:1.3}
-.message{display:grid;grid-template-columns:48px 1fr;column-gap:24px;row-gap:12px;margin-top:80px;padding-top:48px;border-top:1px solid var(--line)}
+.message{display:grid;grid-template-columns:48px 1fr;column-gap:24px;row-gap:12px;margin-top:96px}
 .message svg{width:48px;height:48px;color:var(--warning);margin-top:2px}
 .message blockquote{font-size:40px;font-weight:700;line-height:1.2;letter-spacing:-.01em}
 .message figcaption{grid-column:2;font-size:26px;font-weight:500;line-height:1.4}
@@ -107,31 +101,25 @@ a:focus-visible{outline:3px solid var(--action);outline-offset:6px;border-radius
 
 /* 5 · the KPIs we will move */
 .kpi-lead{margin-top:20px;font-size:30px;font-weight:500;line-height:1.35}
-.north{display:flex;align-items:center;justify-content:space-between;gap:48px;margin-top:32px;padding:24px 0;border-block:1px solid var(--line)}
+.north{display:grid;grid-template-columns:1fr 300px;align-items:center;gap:56px;margin-top:36px;padding:32px 40px;border-radius:16px;background:var(--action);color:var(--surface)}
 .north p{font-size:38px;font-weight:500;line-height:1.2;letter-spacing:-.01em;max-width:1000px}
-.north .north-status{font-size:24px;font-weight:600;color:var(--muted);text-align:right;max-width:340px}
+.north .north-status{font-size:24px;font-weight:600;line-height:1.35}
 .kpi-status{margin-top:32px;font-size:26px;font-weight:600}
-.kpis{display:grid;grid-template-columns:1fr 1fr;margin-top:32px}
-.kpis>div{padding-right:64px}
-.kpis>div+div{padding:0 0 0 64px;border-left:1px solid var(--line)}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:96px;margin-top:40px}
 .kpis h3{margin-bottom:16px}
 .kpis ul{list-style:none;display:grid;gap:14px}
 .kpis li{font-size:28px;font-weight:600;line-height:1.3}
-.kpis li .chip{display:table;margin-top:8px}
 
 /* 6 · routes that learn */
 .learn{display:grid;grid-template-columns:560px 1fr;gap:96px;margin-top:56px}
-.steps{list-style:none;display:grid;gap:32px}
-.steps li{display:grid;grid-template-columns:64px 1fr;gap:24px;align-items:center;font-size:30px;font-weight:600;line-height:1.3}
-.steps svg{width:64px;height:64px;padding:14px;border-radius:50%;background:var(--surface);box-shadow:inset 0 0 0 2px var(--line);color:var(--ink)}
+.steps{list-style:none;display:grid;gap:40px;align-content:start;padding:44px 48px;border-radius:16px;background:var(--subtle)}
+.steps li{font-size:32px;font-weight:600;line-height:1.3}
 .learn .kpis-list{list-style:none;display:grid;gap:20px}
 .learn .kpis-list li{font-size:28px;font-weight:600;line-height:1.3}
 .learn .kpis-list li span{display:block;margin-top:4px;font-size:22px;font-weight:500;color:var(--muted)}
 
 /* 7 · limits, next step, close */
-.cols{display:grid;grid-template-columns:1fr 1fr;margin-top:48px}
-.cols>div{padding-right:64px}
-.cols>div+div{padding:0 0 0 64px;border-left:1px solid var(--line)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:96px;margin-top:48px}
 .sq{list-style:none;display:grid;gap:18px;font-size:28px;line-height:1.3}
 .sq li{position:relative;padding-left:40px}
 .sq li::before{content:"";position:absolute;left:0;top:.36em;width:16px;height:16px;border-radius:3px;background:var(--action)}
@@ -141,18 +129,33 @@ a:focus-visible{outline:3px solid var(--action);outline-offset:6px;border-radius
 .tagline{position:absolute;left:96px;right:96px;bottom:128px;display:flex;align-items:center;gap:28px;font-size:64px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
 .tagline .mark{width:72px;height:72px;flex:none;color:var(--ink)}
 
-.rotate{display:none}
-@media (orientation:portrait) and (max-width:700px){
-  .rotate{display:block;position:fixed;left:16px;right:16px;top:16px;font:600 15px/1.4 Manrope,system-ui,sans-serif;color:var(--muted);text-align:center}
-  .is-night .rotate{color:var(--night-muted)}
-}
+/* phones and narrow tablets (set by fit()): the slide reflows into one readable column and scrolls */
+.flow,.flow body{height:auto;overflow:visible}
+.flow .stage{position:relative;left:0;top:0;transform:none;zoom:var(--s);width:var(--w);height:auto;min-height:calc(100dvh / var(--s));display:flex;flex-direction:column}
+.flow .slide{position:relative;inset:auto;flex:1;padding:64px 40px 56px}
+.flow .cover{gap:72px}
+.flow .cover .logo{width:240px}
+.flow .cover h1{font-size:76px}
+.flow .cover-sub{font-size:30px}
+.flow h2{font-size:52px}
+.flow .foot{position:relative;left:auto;right:auto;bottom:auto;margin:0 40px 32px;gap:24px}
+.flow .foot .logo{width:112px}
+.flow .source,.flow .demo,.flow .tagline{position:static;margin-top:48px}
+.flow .evidence,.flow .kpis,.flow .learn,.flow .cols{grid-template-columns:1fr;gap:48px}
+.flow .waffle{grid-template-columns:repeat(10,32px);gap:5px}
+.flow .waffle i{width:32px;height:32px}
+.flow .owners{align-items:flex-start;flex-direction:column;gap:20px}
+.flow .bars li{grid-template-columns:1fr 88px;row-gap:12px}
+.flow .bars li>span:first-child{grid-column:1/-1}
+.flow .north{grid-template-columns:1fr;gap:16px}
+.flow .tagline{font-size:48px}
+.flow .tagline .mark{width:56px;height:56px}
 @media (prefers-reduced-motion:reduce){
   body.ready,.ready .road-fill,.ready .road-dot{transition:none}
 }
 </style>
 </head>
 <body class="is-night">
-<p class="rotate">Gira el teléfono para ver las diapositivas más grandes.</p>
 <main class="stage" aria-roledescription="presentación" aria-label="Tándem, Hack the Andes 2026">
 
   <section class="slide night cover" role="group" aria-roledescription="diapositiva" aria-label="1 de 7: Tándem. Tu gente, contigo en ruta">
@@ -245,9 +248,9 @@ a:focus-visible{outline:3px solid var(--action);outline-offset:6px;border-radius
     <h2>Con los meses, rutas que aprenden</h2>
     <div class="learn">
       <ol class="steps">
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg>Cada viaje deja su recorrido y sus tiempos</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>Tándem aprende cuánto tarda cada corredor según la hora</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>Le sugiere a qué hora salir y qué ruta tomar</li>
+        <li>Cada viaje deja su recorrido y sus tiempos</li>
+        <li>Tándem aprende cuánto tarda cada corredor según la hora</li>
+        <li>Le sugiere a qué hora salir y qué ruta tomar</li>
       </ol>
       <div>
         <h3>Lo que mediremos con meses de viajes</h3>
@@ -324,13 +327,22 @@ for (let k = 0; k < 100; k++) {
   waffle.append(cell);
 }
 
-function fit() { stage.style.setProperty('--s', Math.min(innerWidth / 1600, innerHeight / 900)); }
+function fit() {
+  const s = Math.min(innerWidth / 1600, innerHeight / 900);
+  // Under half scale the slide text drops below about 11px, so phones and narrow tablets get the
+  // same slides reflowed into one readable column (640 or 1000 stage pixels wide) that scrolls.
+  const flow = s < .5, w = innerWidth < 700 ? 640 : 1000;
+  document.documentElement.classList.toggle('flow', flow);
+  stage.style.setProperty('--s', flow ? innerWidth / w : s);
+  stage.style.setProperty('--w', w + 'px');
+}
 function show(n) {
   at = Math.max(0, Math.min(slides.length - 1, n));
   slides.forEach((s, k) => { s.hidden = k !== at; });
   document.body.classList.toggle('is-night', slides[at].classList.contains('night'));
   road.style.setProperty('--p', (at + 1) / slides.length);
   count.textContent = `${at + 1} / ${slides.length}`;
+  scrollTo(0, 0);
   // sandboxed previews refuse history writes; the deck still works without the deep link
   try { if (location.hash !== '#' + (at + 1)) history.replaceState(null, '', '#' + (at + 1)); } catch {}
 }
