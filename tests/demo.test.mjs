@@ -84,23 +84,31 @@ test('without demo mode the session route does not exist and real tokens are una
   assert.equal((await f.req('GET', '/v1/me')).status, 200);
 });
 
-test('live demo provider startup requires the consented allowlist and a budget', async () => {
-  const {configuredProvider} = await import('../dist/worker.js');
-  const live = {...qualification, evidence: 'test-only syntheticfixture: live', entries: qualification.entries.map(e => ({...e, evidence: 'test-only syntheticfixture: channel'}))};
-  const env = {ZAVU_LIVE_SEND: 'true', ZAVU_API_KEY: 'syntheticfixture-not-a-key', ZAVU_PROJECT_ID: 'prj_fixture', ZAVU_SENDER_ID: 'snd_fixture', ZAVU_CALLBACK_SECRET: 'syntheticfixture-secret'};
+test('a live demo starts only with demo budgets, a pepper and demo-prefixed alert texts; no static allowlist is needed', async () => {
+  const {configuredProvider, demoDispatch} = await import('../dist/worker.js');
+  const demoText = {...qualification, evidence: 'test-only syntheticfixture: live',
+    entries: qualification.entries.map(e => ({...e, evidence: 'test-only syntheticfixture: channel', text: 'Demo de Tándem: estado sin confirmar.'}))};
+  const env = {ZAVU_LIVE_SEND: 'true', ZAVU_API_KEY: 'syntheticfixture-not-a-key', ZAVU_PROJECT_ID: 'prj_fixture', ZAVU_SENDER_ID: 'snd_fixture', ZAVU_CALLBACK_SECRET: 'syntheticfixture-secret',
+    DEMO_MODE: 'true', DEMO_SMS_DAILY_CAP: '40', DEMO_ALERTS_PER_NUMBER_DAILY: '6', DEMO_PHONE_PEPPER: 'syntheticfixture-pepper-not-a-secret-000'};
   const limits = {perIncident: 6, perSession: 6};
-  const demoLive = (extra, demoEnv = {DEMO_MODE: 'true', DEMO_LIVE_PHONE: '+15555550123'}) => configuredProvider({...env, ...demoEnv, ZAVU_QUALIFICATION_JSON: JSON.stringify({...live, ...extra})});
-  for (const allowed of [undefined, [], ['+15555550199'], ['+15555550123', '+15555550199']]) {
-    assert.throws(() => demoLive({allowedDestinations: allowed, demoLimits: limits}), /DEMO_MODE live sends/, `allowedDestinations ${JSON.stringify(allowed)} is not exactly the consented phone`);
+  const start = (q, extra = {}) => configuredProvider({...env, ...extra, ZAVU_QUALIFICATION_JSON: JSON.stringify(q)});
+  assert.deepEqual(start({...demoText, demoLimits: limits}).qualification.demoLimits, limits);
+  assert.throws(() => start(demoText), /demoLimits/);
+  for (const name of ['DEMO_SMS_DAILY_CAP', 'DEMO_ALERTS_PER_NUMBER_DAILY', 'DEMO_PHONE_PEPPER']) {
+    assert.throws(() => start({...demoText, demoLimits: limits}, {[name]: undefined}), new RegExp(name), name);
   }
-  assert.throws(() => demoLive({allowedDestinations: ['+15555550123'], demoLimits: limits}, {DEMO_MODE: 'true'}), /DEMO_MODE live sends/);
-  assert.throws(() => demoLive({allowedDestinations: ['+15555550123']}), /DEMO_MODE live sends/, 'a live demo needs explicit send budgets');
-  for (const demoLimits of [{perIncident: 0, perSession: 6}, {perIncident: 6}, {perIncident: 6, perSession: 1.5}, 'six']) {
-    assert.throws(() => demoLive({allowedDestinations: ['+15555550123'], demoLimits}), /qualification/);
+  for (const channel of ['sms', 'whatsapp', 'voice']) {
+    const plain = {...demoText, demoLimits: limits, entries: demoText.entries.map(e => e.channel === channel ? {...e, text: 'ANDES: estado sin confirmar.'} : e)};
+    assert.throws(() => start(plain), /Demo de Tándem/, channel);
+    assert.throws(() => start(plain, {ZAVU_LIVE_SEND: 'false'}), /Demo de Tándem/, `${channel}, sends off`);
+    assert.ok(start(plain, {DEMO_MODE: undefined}), 'production keeps its own texts');
   }
-  assert.throws(() => configuredProvider({...env, ZAVU_QUALIFICATION_JSON: JSON.stringify({...live, allowedDestinations: ['999']})}), /qualification/);
-  const accepted = demoLive({allowedDestinations: ['+15555550123'], demoLimits: limits}).qualification;
-  assert.deepEqual({allowed: accepted.allowedDestinations, limits: accepted.demoLimits}, {allowed: ['+15555550123'], limits});
+  assert.ok(start({...demoText, demoLimits: limits, entries: demoText.entries.map(e => ({...e, text: e.text.normalize('NFD')}))}), 'decomposed accents');
+  for (const demoLimits of [{perIncident: 0, perSession: 6}, {perIncident: 6}, {perIncident: 6, perSession: 1.5}, 'six']) assert.throws(() => start({...demoText, demoLimits}), /qualification/);
+  assert.throws(() => start({...demoText, demoLimits: limits, allowedDestinations: ['999']}), /qualification/);
+  assert.deepEqual(demoDispatch(env), {enabled: true, alertsPerNumberDaily: 6});
+  assert.equal(demoDispatch({}), undefined);
+  assert.throws(() => demoDispatch({...env, DEMO_ALERTS_PER_NUMBER_DAILY: undefined}), /DEMO_ALERTS_PER_NUMBER_DAILY/);
 });
 
 test('demo personas can invite only personas from their own world', async t => {

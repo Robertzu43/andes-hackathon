@@ -6,9 +6,9 @@ export interface QualifiedChannel extends ChannelSupport {
 export interface Qualification {
   live: boolean; accountId: string; senderId: string; evidence: string; entries: QualifiedChannel[];
   dailyLimit: number; channelDailyLimit: number; minuteLimit: number; emergencyReserve: number;
-  /** Optional: only these E.164 destinations may be sent to; any other is refused before the provider is called. */
+  /** Optional: only these E.164 destinations may be sent to (replaced by OTP verification in demo mode). */
   allowedDestinations?: string[];
-  /** Optional live-send budget, checked at authorization: attempts per incident and per recipient identity (a demo world's one consented persona). */
+  /** Live-send budget, checked at authorization: attempts per incident and per recipient identity. Required in live demo mode. */
   demoLimits?: { perIncident: number; perSession: number };
   /** Optional: 'oneway' when the account's SMS sender is Zavu's one-way kind. Internal 'sms' then goes out and reads back as 'sms_oneway'. */
   smsMode?: 'oneway';

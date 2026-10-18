@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {fixture} from './helpers/runtime.mjs';
-import {qualification} from './helpers/dispatch.mjs';
+import {provider, qualification, runtime} from './helpers/dispatch.mjs';
 import {waitForBlockedQueries} from './helpers/db-barriers.mjs';
 
 const pepper = 'syntheticfixture-pepper-not-a-secret-000';
@@ -580,4 +580,206 @@ test('expiry is checked after waiting for the global issuance lock', async t => 
   assert.deepEqual(await request, {status: 410, body: {code: 'code_expired'}});
   assert.equal((await w.f.ctx.pool.query('SELECT attempts FROM demo_phone_challenges')).rows[0].attempts, 0);
   assert.equal((await w.f.ctx.pool.query('SELECT count(*)::int n FROM demo_phone_verifications')).rows[0].n, 0);
+});
+
+const demoPolicy = {enabled: true, alertsPerNumberDaily: 6};
+const demoBudget = {perIncident: 6, perSession: 6};
+function alertProvider(overrides = {}) {
+  return provider({qualification: {...qualification, allowedDestinations: [], demoLimits: demoBudget}, ...overrides});
+}
+async function verifiedWorld(w, number) {
+  const world = await w.session();
+  assert.equal((await w.call('start', {phone: number}, world.family.token)).status, 202);
+  assert.equal((await w.call('verify', {phone: number, code}, world.family.token)).status, 200);
+  const truck = await w.f.req('POST', '/v1/trucks', {label: 'SYNTHETIC demo truck'}, world.driver.token);
+  assert.equal(truck.status, 200);
+  const invite = await w.f.req('POST', '/v1/contacts', {contactId: world.family.id, phone: number, map: true, incident: true, role: 'family'}, world.driver.token);
+  assert.equal(invite.status, 200);
+  assert.equal((await w.f.req('POST', `/v1/contacts/${invite.body.id}/accept`, {map: true, incident: true}, world.family.token)).status, 200);
+  const draft = await w.f.req('POST', '/v1/trip-drafts', {text: 'SYNTHETIC demo trip', fields: {truckId: truck.body.id, origin: 'A', destination: 'B', country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo'}}, world.driver.token);
+  assert.equal(draft.status, 200);
+  const confirmed = await w.f.req('POST', `/v1/trip-drafts/${draft.body.id}/confirm`, {confirmed: true, contactGrantIds: [invite.body.id, world.colleague.grantId]}, world.driver.token);
+  assert.equal(confirmed.status, 200);
+  const trip = confirmed.body.id;
+  const incident = (await w.f.req('POST', `/v1/trips/${trip}/sos`, {}, world.driver.token)).body.id;
+  const jobs = (await w.f.ctx.pool.query('SELECT j.id,j.version,j.class,j.channel,cg.role FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 ORDER BY cg.role,j.channel', [incident])).rows;
+  assert.equal(jobs.length, 5);
+  return {world, trip, incident, jobs, grant: invite.body.id};
+}
+async function authorizeAll(w, jobs, p = alertProvider(), policy = demoPolicy) {
+  const d = await runtime();
+  for (const job of jobs) await d.authorizeJob(w.f.ctx, await d.claimJob(w.f.ctx, job, 'demo'), p, policy);
+}
+async function familyJobs(f, incident) {
+  return (await f.ctx.pool.query("SELECT j.channel,j.status,j.unavailable_reason FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 AND cg.role='family' ORDER BY j.channel", [incident])).rows;
+}
+async function reservations(f) {
+  return (await f.ctx.pool.query(`SELECT (SELECT count(*) FROM dispatch_attempts)::int AS attempts,
+    (SELECT count(*) FROM quota_reservations)::int AS quota,(SELECT count(*) FROM provider_requests)::int AS requests`)).rows[0];
+}
+
+test('live demo alerts authorize the OTP-verified family despite an empty static allowlist, never the seeded colleague', async t => {
+  const w = await demoWorld(t); const {incident, jobs} = await verifiedWorld(w, phone);
+  await authorizeAll(w, jobs);
+  assert.deepEqual((await w.f.ctx.pool.query(`SELECT cg.role,j.status,j.unavailable_reason,a.payload->>'to' AS "to",count(*)::int n
+    FROM jobs j JOIN contact_grants cg ON cg.id=j.grant_id LEFT JOIN dispatch_attempts a ON a.job_id=j.id
+    WHERE j.incident_id=$1 GROUP BY 1,2,3,4 ORDER BY 1`, [incident])).rows, [
+    {role: 'colleague', status: 'unavailable', unavailable_reason: 'destination_not_allowed', to: null, n: 2},
+    {role: 'family', status: 'authorized', unavailable_reason: null, to: phone, n: 3},
+  ]);
+  assert.deepEqual(await reservations(w.f), {attempts: 3, quota: 3, requests: 3});
+});
+
+test('an OTP mark for another number never authorizes the grant number even in the static allowlist', async t => {
+  const w = await demoWorld(t); const {incident, jobs, world} = await verifiedWorld(w, phone);
+  await w.f.ctx.pool.query('UPDATE demo_phone_verifications SET phone=$2 WHERE identity_id=$1', [world.family.id, other]);
+  await authorizeAll(w, jobs, alertProvider({qualification: {...qualification, allowedDestinations: [phone], demoLimits: demoBudget}}));
+  assert.ok((await familyJobs(w.f, incident)).every(job => job.status === 'unavailable' && job.unavailable_reason === 'destination_not_allowed'));
+  assert.deepEqual(await reservations(w.f), {attempts: 0, quota: 0, requests: 0});
+});
+
+test('synthetic recipients fail closed without an explicitly enabled demo policy', async t => {
+  const w = await demoWorld(t); const {incident, jobs} = await verifiedWorld(w, phone); const d = await runtime();
+  const p = alertProvider({qualification: {...qualification, allowedDestinations: [phone], demoLimits: demoBudget}});
+  const family = jobs.filter(job => job.role === 'family');
+  for (const [i, policy] of [undefined, {enabled: false, alertsPerNumberDaily: 6}, {alertsPerNumberDaily: 6}].entries()) {
+    assert.equal(await d.authorizeJob(w.f.ctx, await d.claimJob(w.f.ctx, family[i], 'no-policy'), p, policy), null);
+  }
+  assert.ok((await familyJobs(w.f, incident)).every(job => job.status === 'unavailable' && job.unavailable_reason === 'destination_not_allowed'));
+  assert.deepEqual(await reservations(w.f), {attempts: 0, quota: 0, requests: 0});
+});
+
+test('demo dispatch rejects every invalid per-number cap before building a payload or reserving quota', async t => {
+  for (const [label, cap] of [['missing', undefined], ['null', null], ['zero', 0], ['negative', -1], ['fractional', 1.5],
+    ['NaN', NaN], ['Infinity', Infinity], ['-Infinity', -Infinity], ['string', '2'], ['boolean', true], ['object', {}]]) {
+    await t.test(label, async t => {
+      const w = await demoWorld(t); const {incident, jobs} = await verifiedWorld(w, phone); const d = await runtime();
+      const p = alertProvider({qualification: {...qualification, allowedDestinations: [phone], demoLimits: demoBudget}});
+      const build = p.payload; let payloads = 0;
+      p.payload = input => { payloads++; return build(input); };
+      const job = jobs.find(job => job.role === 'family');
+      assert.equal(await d.authorizeJob(w.f.ctx, await d.claimJob(w.f.ctx, job, 'invalid-cap'), p, {enabled: true, alertsPerNumberDaily: cap}), null);
+      assert.deepEqual((await familyJobs(w.f, incident))[0], {channel: 'sms', status: 'unavailable', unavailable_reason: 'demo_budget_exhausted'});
+      assert.equal(payloads, 0);
+      assert.deepEqual(await reservations(w.f), {attempts: 0, quota: 0, requests: 0});
+    });
+  }
+});
+
+test('demo dispatch without qualification demoLimits exhausts the budget', async t => {
+  const w = await demoWorld(t); const {incident, jobs} = await verifiedWorld(w, phone); const d = await runtime();
+  const job = jobs.find(job => job.role === 'family');
+  assert.equal(await d.authorizeJob(w.f.ctx, await d.claimJob(w.f.ctx, job, 'no-limits'), provider(), demoPolicy), null);
+  assert.deepEqual((await familyJobs(w.f, incident))[0], {channel: 'sms', status: 'unavailable', unavailable_reason: 'demo_budget_exhausted'});
+  assert.deepEqual(await reservations(w.f), {attempts: 0, quota: 0, requests: 0});
+});
+
+test('dispatch rejects a directly inserted cross-world grant for an OTP-verified recipient', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); const b = await verifiedWorld(w, other);
+  // Bypass /contacts entirely: all ordinary ownership, acceptance and phone checks still match.
+  const foreign = (await w.f.ctx.pool.query(`INSERT INTO contact_grants(id,driver_id,contact_id,phone,map_requested,incident_requested,map_accepted,incident_accepted,accepted_at,role)
+    SELECT gen_random_uuid(),driver_id,$2,$3,true,true,true,true,accepted_at,'family' FROM contact_grants WHERE id=$1 RETURNING id`,
+  [a.grant, b.world.family.id, other])).rows[0].id;
+  await w.f.ctx.pool.query('INSERT INTO trip_grants(trip_id,grant_id) VALUES($1,$2)', [a.trip, foreign]);
+  await w.f.ctx.pool.query('UPDATE jobs SET grant_id=$2,recipient_id=$3 WHERE grant_id=$1', [a.grant, foreign, b.world.family.id]);
+  await authorizeAll(w, a.jobs.filter(job => job.role === 'family'), alertProvider({qualification: {...qualification, allowedDestinations: [other], demoLimits: demoBudget}}));
+  assert.ok((await familyJobs(w.f, a.incident)).every(job => job.status === 'unavailable' && job.unavailable_reason === 'destination_not_allowed'));
+  assert.deepEqual(await reservations(w.f), {attempts: 0, quota: 0, requests: 0});
+});
+
+test('OTP marks authorize only synthetic personas from the demo issuer on both sides of the grant', async t => {
+  for (const actor of ['family', 'driver']) {
+    for (const changed of ['issuer', 'synthetic']) {
+      await t.test(`${actor} ${changed}`, async t => {
+        const w = await demoWorld(t); const {incident, jobs, world} = await verifiedWorld(w, phone);
+        if (changed === 'issuer') await w.f.ctx.pool.query("UPDATE identities SET issuer='https://synthetic.test' WHERE id=$1", [world[actor].id]);
+        else await w.f.ctx.pool.query('UPDATE identities SET synthetic=false WHERE id=$1', [world[actor].id]);
+        await authorizeAll(w, jobs.filter(job => job.role === 'family'), alertProvider({qualification: {...qualification, allowedDestinations: [phone], demoLimits: demoBudget}}));
+        assert.ok((await familyJobs(w.f, incident)).every(job => job.status === 'unavailable' && job.unavailable_reason === 'destination_not_allowed'));
+        assert.deepEqual(await reservations(w.f), {attempts: 0, quota: 0, requests: 0});
+      });
+    }
+  }
+});
+
+test('the per-number daily cap spans channels within a world', async t => {
+  const w = await demoWorld(t); const {incident, jobs} = await verifiedWorld(w, phone);
+  await authorizeAll(w, jobs.filter(job => job.role === 'family'), alertProvider(), {enabled: true, alertsPerNumberDaily: 2});
+  assert.deepEqual(await familyJobs(w.f, incident), [
+    {channel: 'sms', status: 'authorized', unavailable_reason: null},
+    {channel: 'voice', status: 'authorized', unavailable_reason: null},
+    {channel: 'whatsapp', status: 'unavailable', unavailable_reason: 'demo_budget_exhausted'},
+  ]);
+  assert.deepEqual(await reservations(w.f), {attempts: 2, quota: 2, requests: 2});
+});
+
+test('concurrent worker contexts in different worlds share one per-number cap', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); const b = await verifiedWorld(w, phone);
+  const {createContext} = await import('../dist/db.js'); const d = await runtime();
+  const second = createContext(w.f.ctx.pool.options.connectionString, w.f.ctx.clock); t.after(() => second.close());
+  const contexts = [w.f.ctx, second], worlds = [a, b];
+  const p = alertProvider({qualification: {...qualification, allowedDestinations: [phone], demoLimits: demoBudget}});
+  const claims = await Promise.all(contexts.map((ctx, i) => d.claimJob(ctx, worlds[i].jobs.find(job => job.role === 'family'), `worker-${i}`)));
+  await w.f.ctx.pool.query('INSERT INTO quota_accounts VALUES($1)', [qualification.accountId]);
+  const holder = await w.f.ctx.pool.connect(); const requests = [];
+  try {
+    await holder.query('BEGIN');
+    await holder.query('SELECT project_id FROM quota_accounts WHERE project_id=$1 FOR UPDATE', [qualification.accountId]);
+    for (const [i, ctx] of contexts.entries()) requests.push(d.authorizeJob(ctx, claims[i], p, {enabled: true, alertsPerNumberDaily: 1}));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%quota_accounts%', 2);
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  assert.equal((await Promise.all(requests)).filter(Boolean).length, 1);
+  assert.deepEqual(await reservations(w.f), {attempts: 1, quota: 1, requests: 1});
+  assert.deepEqual((await w.f.ctx.pool.query(`SELECT status,unavailable_reason FROM jobs
+    WHERE id=ANY($1) ORDER BY status`, [claims.map(claim => claim.jobId)])).rows, [
+    {status: 'authorized', unavailable_reason: null}, {status: 'unavailable', unavailable_reason: 'demo_budget_exhausted'},
+  ]);
+});
+
+for (const mutation of ['delete-mark', 'change-mark', 'change-world']) {
+  test(`dispatch rechecks the exact OTP/world binding after the account-lock wait: ${mutation}`, async t => {
+    const w = await demoWorld(t); const {incident, jobs, world} = await verifiedWorld(w, phone); const d = await runtime();
+    // A matching static allowlist must not rescue a demo recipient whose OTP binding changed.
+    const p = alertProvider({qualification: {...qualification, allowedDestinations: [phone], demoLimits: demoBudget}});
+    const build = p.payload; let payloads = 0;
+    p.payload = input => { payloads++; return build(input); };
+    const job = jobs.find(job => job.role === 'family');
+    const claim = await d.claimJob(w.f.ctx, job, 'waiting-demo');
+    await w.f.ctx.pool.query('INSERT INTO quota_accounts VALUES($1)', [qualification.accountId]);
+    const holder = await w.f.ctx.pool.connect(); let pending;
+    try {
+      await holder.query('BEGIN');
+      await holder.query('SELECT project_id FROM quota_accounts WHERE project_id=$1 FOR UPDATE', [qualification.accountId]);
+      pending = d.authorizeJob(w.f.ctx, claim, p, demoPolicy);
+      await waitForBlockedQueries(w.f.ctx.telemetryPool, '%quota_accounts%', 1);
+      assert.equal(payloads, 0, 'no payload before account capacity');
+      if (mutation === 'delete-mark') await w.f.ctx.pool.query('DELETE FROM demo_phone_verifications WHERE identity_id=$1', [world.family.id]);
+      if (mutation === 'change-mark') await w.f.ctx.pool.query('UPDATE demo_phone_verifications SET phone=$2 WHERE identity_id=$1', [world.family.id, other]);
+      if (mutation === 'change-world') await w.f.ctx.pool.query("UPDATE identities SET subject=gen_random_uuid()::text || ':family' WHERE id=$1", [world.family.id]);
+    } finally { await holder.query('ROLLBACK'); holder.release(); if (pending) await pending; }
+    assert.equal(await pending, null);
+    assert.equal(payloads, 0);
+    assert.deepEqual((await familyJobs(w.f, incident))[0], {channel: 'sms', status: 'unavailable', unavailable_reason: 'destination_not_allowed'});
+    assert.deepEqual(await reservations(w.f), {attempts: 0, quota: 0, requests: 0});
+  });
+}
+
+test('delivery consume passes the startup demo policy through runJob to authorization', async t => {
+  const w = await demoWorld(t); const {incident, jobs} = await verifiedWorld(w, phone); const d = await runtime();
+  const {demoDispatch} = await import('../dist/worker.js');
+  const sent = [];
+  const p = alertProvider({async send(payload) { sent.push(payload.to); return {state: 'accepted', messageId: `msg_${sent.length}`, status: 'queued'}; }});
+  const batch = jobs.map((job, i) => ({body: {jobId: job.id, version: job.version, class: job.class}, receipt: `r${i}`}));
+  const abort = new AbortController(); let acked = 0;
+  const transport = {
+    async receive(_kind, signal) { if (batch.length) return batch.splice(0); await new Promise(resolve => {
+      if (signal.aborted) resolve(); else signal.addEventListener('abort', resolve, {once: true});
+    }); return []; },
+    async ack() { if (++acked === jobs.length) abort.abort(); }, async defer() { assert.fail('unexpected defer'); },
+  };
+  await d.consume(w.f.ctx, transport, p, 'emergency', {sms: 2, whatsapp: 2, voice: 2}, abort.signal, demoDispatch({...live, DEMO_MODE: 'true'}));
+  assert.deepEqual(sent, [phone, phone, phone]);
+  assert.equal(acked, 5);
+  assert.ok((await familyJobs(w.f, incident)).every(job => job.status === 'accepted'));
+  assert.deepEqual(await reservations(w.f), {attempts: 3, quota: 3, requests: 3});
 });

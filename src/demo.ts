@@ -7,7 +7,8 @@ import { transaction, type Context } from './db.js';
 import { empty } from './api/schemas.js';
 import { loadQualification } from './notifications/zavu.js';
 export interface DemoIssuer { auth: AuthConfig; tripCountries: string[]; sign(subject: string, expiresAt: number): Promise<string> }
-const issuer = 'https://demo.andes.invalid', audience = 'andes-demo', LIFETIME_SECONDS = 7200;
+export const DEMO_ISSUER = 'https://demo.andes.invalid';
+const issuer = DEMO_ISSUER, audience = 'andes-demo', LIFETIME_SECONDS = 7200;
 // Fictional +1-555-01xx numbers. The family persona has none: its contact verifies their own number by SMS code
 // (POST /v1/demo/phone/verify), the only way a demo persona gets a number dispatch accepts.
 const synthetic = { driver: '+15555550101', family: null, colleague: '+15555550103' } as const;
