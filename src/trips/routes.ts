@@ -8,7 +8,8 @@ const requiredFields = ['truckId', 'origin', 'destination', 'country', 'locale',
 function missingFields(fields: DraftFields) { return requiredFields.filter(key => !fields[key]); }
 function validateRegionalFields(fields: DraftFields) {
   try {
-    if (fields.locale) new Intl.Locale(fields.locale);
+    // Store the canonical form: channel qualification matches locales exactly ('pt-br' would disable every channel).
+    if (fields.locale) fields.locale = Intl.getCanonicalLocales(fields.locale)[0]!;
     if (fields.timeZone) new Intl.DateTimeFormat('en', { timeZone: fields.timeZone });
   } catch { problem(400, 'invalid_locale_or_time_zone'); }
 }

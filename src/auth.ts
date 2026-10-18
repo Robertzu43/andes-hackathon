@@ -17,9 +17,13 @@ export function authenticator(config: AuthConfig) {
     if (!payload.sub || payload.sub.length > 256) problem(401, 'unauthorized');
     const phone = typeof payload.phone_number === 'string' && /^\+[1-9]\d{6,14}$/.test(payload.phone_number) ? payload.phone_number : null;
     const verified = phone !== null && payload.phone_number_verified === true;
+    // Only a verified phone claim updates the stored binding; a token without one (or unverified) never
+    // downgrades it, which would cancel that contact's SOS jobs. Unchanged rows are not rewritten.
     const row = (await pool.query(`INSERT INTO identities(id,issuer,subject,phone,phone_verified) VALUES($1,$2,$3,$4,$5)
-      ON CONFLICT(issuer,subject) DO UPDATE SET phone=excluded.phone,phone_verified=excluded.phone_verified RETURNING id`,
-    [randomUUID(), config.issuer, payload.sub, phone, verified])).rows[0];
+      ON CONFLICT(issuer,subject) DO UPDATE SET phone=excluded.phone,phone_verified=true
+      WHERE excluded.phone_verified AND (identities.phone IS DISTINCT FROM excluded.phone OR NOT identities.phone_verified) RETURNING id`,
+    [randomUUID(), config.issuer, payload.sub, phone, verified])).rows[0]
+      ?? (await pool.query('SELECT id FROM identities WHERE issuer=$1 AND subject=$2', [config.issuer, payload.sub])).rows[0];
     return { id: row.id, phone, phoneVerified: verified };
   };
 }
