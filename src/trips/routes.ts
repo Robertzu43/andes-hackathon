@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
+import type pg from 'pg';
 import { type DraftFields, owner, problem, type Trip } from '../contracts.js';
 import { transaction, withTripTransaction, type Context } from '../db.js';
 import { idempotent } from '../api/mutations.js';
@@ -13,6 +14,11 @@ function validateRegionalFields(fields: DraftFields) {
     if (fields.timeZone) new Intl.DateTimeFormat('en', { timeZone: fields.timeZone });
   } catch { problem(400, 'invalid_locale_or_time_zone'); }
 }
+// Robert: an arrival that is already due is rejected wherever it enters. PostgreSQL compares it, because it is the parser
+// that stores it (leap seconds, offsets, lowercase t/z), against the server clock.
+async function validateArrival(client: pg.PoolClient, fields: DraftFields, now: Date) {
+  if (fields.expectedArrivalAt !== undefined && !(await client.query('SELECT $1::timestamptz > $2 AS future', [fields.expectedArrivalAt, now])).rows[0].future) problem(400, 'invalid_input', 'expected_arrival_not_in_future');
+}
 /** `automaticChecks`: the security-check timings are configured, so the control worker's sweeper may escalate. */
 export function tripRoutes(app: FastifyInstance, ctx: Context, automaticChecks = false) {
   app.post('/v1/trucks', { schema: { body: object({ label: text }) } }, request => transaction(ctx.pool, client => idempotent(ctx, client, request, async () => {
@@ -22,7 +28,7 @@ export function tripRoutes(app: FastifyInstance, ctx: Context, automaticChecks =
     const body = request.body as { text?: string; fields?: DraftFields; audio?: string };
     if (body.audio !== undefined) problem(422, 'unsupported_audio');
     if (!body.text?.trim()) problem(400, 'text_required');
-    const fields = body.fields ?? {}; validateRegionalFields(fields);
+    const fields = body.fields ?? {}; validateRegionalFields(fields); await validateArrival(client, fields, ctx.clock());
     if (fields.truckId && !(await client.query('SELECT id FROM trucks WHERE id=$1 AND driver_id=$2', [fields.truckId, request.actor.id])).rowCount) problem(403, 'truck_not_owned');
     const id = randomUUID(); await client.query('INSERT INTO trip_drafts VALUES($1,$2,$3,$4,$5)', [id, request.actor.id, body.text, fields, ctx.clock()]);
     return { id, rawText: body.text, fields, missingFields: missingFields(fields), status: 'draft' };
@@ -39,6 +45,7 @@ export function tripRoutes(app: FastifyInstance, ctx: Context, automaticChecks =
       if (missingFields(fields).length) problem(409, 'draft_incomplete');
       const already = (await client.query('SELECT id FROM trips WHERE id=$1', [id])).rows[0];
       if (already) problem(409, 'draft_already_confirmed');
+      await validateArrival(client, fields, ctx.clock()); // re-checked: a draft can go stale before confirmation
       if (!(await client.query('SELECT id FROM trucks WHERE id=$1 AND driver_id=$2', [fields.truckId, request.actor.id])).rowCount) problem(403, 'truck_not_owned');
       for (const grant of grantIds) {
         const row = (await client.query('SELECT * FROM contact_grants WHERE id=$1 AND driver_id=$2 FOR NO KEY UPDATE', [grant, request.actor.id])).rows[0];
