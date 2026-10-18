@@ -10,7 +10,7 @@ Date: 2026-10-17. Status: approved by Robert in brainstorming (parts 1 and 2). T
 
 ### Data (`db/migrations/003-security-checks.sql`)
 
-- `trips.expected_arrival_at timestamptz NULL`, filled from a new optional draft field `expectedArrivalAt` (ISO instant) in `DraftFields`/`fieldsSchema`. When null, only silence/sharing checks apply.
+- `trips.expected_arrival_at timestamptz NULL`, filled from a new optional draft field `expectedArrivalAt` (ISO instant, strictly in the future when drafted and when confirmed; Robert, 2026-10-17) in `DraftFields`/`fieldsSchema`. When null, only silence/sharing checks apply.
 - `trips.sharing_stopped_at timestamptz NULL`.
 - `contact_grants.role text NOT NULL DEFAULT 'family' CHECK (role IN ('family','colleague'))`; `POST /v1/contacts` accepts optional `role`.
 - `incidents.trigger text NOT NULL DEFAULT 'sos' CHECK (trigger IN ('sos','missed_check'))` and `incidents.check_reason text NULL CHECK (check_reason IN ('arrival_overdue','silence','sharing_stopped'))`.
