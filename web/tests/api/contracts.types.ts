@@ -31,9 +31,11 @@ void more; void limit;
 api.getBootstrap({ ownerId: 'another-actor' });
 // The source server read time is required on the envelope, never invented per row.
 const readAt: string = loaded.readAt;
+// @ts-expect-error only the whole bootstrap carries the source read-start timestamp
+const nestedReadAt: string = loaded.profile.readAt;
 // @ts-expect-error summaries never include raw draft text
 const rawText: string = loaded.trips.active[0]?.rawText;
-void readAt; void rawText;
+void readAt; void nestedReadAt; void rawText;
 // @ts-expect-error catalogs never carry a phone value
 const profilePhone: string = loaded.profile.phone;
 // @ts-expect-error catalogs never carry a phone value
@@ -49,3 +51,15 @@ void mode;
 // @ts-expect-error the UI gateway cannot expose a credential
 const gatewayToken: string = gateway.getSnapshot().accessToken;
 void gatewayToken;
+
+// Additive PR74 operations keep the demo exception explicit and status source-only.
+api.getTripStatus('11111111-1111-4111-8111-111111111111');
+api.setSharing('11111111-1111-4111-8111-111111111111', { state: 'stopped', reason: 'page_hidden' }, key);
+api.createDemoSession({ demo: true });
+// @ts-expect-error anonymous demo creation requires an explicit demo choice
+api.createDemoSession();
+// @ts-expect-error normal sharing mutations still require the caller's captured key
+api.setSharing('id', { state: 'resumed', reason: 'user' });
+// @ts-expect-error the server exposes no read-time field in this status contract
+const statusReadAt: string = (await api.getTripStatus('id')).readAt;
+void statusReadAt;
