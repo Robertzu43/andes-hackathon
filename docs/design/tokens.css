@@ -1,0 +1,35 @@
+/* Generated from tokens.json by build.mjs. */
+:root {
+  --color-canvas: #F7F5F0;
+  --color-surface: #FFFFFF;
+  --color-ink: #132C3A;
+  --color-muted: #536570;
+  --color-border: #73818A;
+  --color-subtle: #E7ECEC;
+  --color-brand: #087F8C;
+  --color-action: #086F79;
+  --color-actionPressed: #07545D;
+  --color-onAction: #FFFFFF;
+  --color-positive: #16634B;
+  --color-positiveSurface: #E9F4EE;
+  --color-warning: #825400;
+  --color-warningSurface: #FFF2D6;
+  --color-danger: #B42332;
+  --color-dangerPressed: #8E1926;
+  --color-dangerSurface: #FFF0F0;
+  --color-focus: #132C3A;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --font-family: Manrope, system-ui, sans-serif;
+  --radius-control: 0.75rem;
+  --radius-surface: 1rem;
+  --target-minimum: 3rem;
+  --target-driving: 5rem;
+  --motion-feedback: 120ms;
+}
