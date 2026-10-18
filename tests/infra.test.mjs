@@ -79,3 +79,11 @@ test('image contains migration SQL/CA and CI runs real PostgreSQL tests without 
   assert.match(ci,/postgres:18-bookworm/);assert.match(ci,/ZAVU_LIVE_SEND: "false"/);assert.ok(!ci.includes('aws-actions/configure-aws-credentials'));
   assert.match(text('compose.yaml'),/127\.0\.0\.1:5432:5432/);
 });
+
+test('app-integration CI job runs the isolated harness and the receipt oracle tests',()=>{
+  const job=text('.github/workflows/ci.yml').split(/^  (?=\S)/m).find(part=>part.startsWith('app-integration:'));
+  assert.ok(job,'app-integration job');
+  const steps=job.split('\n').map(line=>line.trim());
+  for(const step of ['- run: npm ci','- run: node scripts/app-integration/run.mjs','- run: node --test evidence/app-acceptance/oracle.test.mjs'])assert.ok(steps.includes(step),step);
+  assert.ok(steps.includes('fetch-depth: 0'),'The source gate needs the pinned backend commit');
+});
