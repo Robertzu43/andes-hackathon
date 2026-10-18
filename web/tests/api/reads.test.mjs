@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MemorySession, createApiClient } from '../../src/lib/api/index.ts';
 
-// Wire oracle: PR65/748d30c docs/contracts/client-read.md and src/client-read/routes.ts.
+// Wire oracle: PR65/3ea6e1b docs/contracts/client-read.md and src/client-read/routes.ts.
 const id = n => `${n.toString(16).padStart(8, '0')}-1111-4111-8111-111111111111`;
 const stamp = '2026-10-17T12:00:00.000Z';
-const profile = { id: id(1), phone: '+5511999990000', phoneVerified: true };
+const profileData = { id: id(1), phone: '+5511999990000', phoneVerified: true };
+const profile = { ...profileData, readAt: stamp };
 const truck = { id: id(2), label: 'Caminhão sintético' };
 const contact = { id: id(3), contactId: id(4), phone: '+5511999990001', map: { requested: true, accepted: true },
   incident: { requested: true, accepted: false }, status: 'revoked', acceptedAt: stamp,
@@ -15,10 +16,10 @@ const summary = { id: id(5), truckId: id(2), origin: 'Synthetic origin', destina
   checkinsActive: true, paused: false, version: 1, createdAt: stamp, closedAt: null, contactGrantIds: [id(3)] };
 const recent = { ...summary, id: id(6), status: 'arrived', mapActive: false, checkinsActive: false,
   closedAt: '2026-10-17T13:00:00.000Z' };
-const trips = { active: [summary], recent: [recent], limits: { active: 50, recent: 20 }, hasMore: { active: false, recent: false } };
-const bootstrap = { profile, trucks: [truck], contacts: [contact], trips: { active: [summary], recent: [recent] },
+const trips = { active: [summary], recent: [recent], limits: { active: 50, recent: 20 }, hasMore: { active: false, recent: false }, readAt: stamp };
+const bootstrap = { profile: profileData, trucks: [truck], contacts: [contact], trips: { active: [summary], recent: [recent] },
   limits: { trucks: 100, contacts: 100, activeTrips: 50, recentTrips: 20 },
-  hasMore: { trucks: false, contacts: false, activeTrips: false, recentTrips: false } };
+  hasMore: { trucks: false, contacts: false, activeTrips: false, recentTrips: false }, readAt: stamp };
 
 function fixture(reply) {
   const session = new MemorySession();
@@ -30,8 +31,8 @@ function fixture(reply) {
 test('five additive reads use only their actual GET routes with no owner/body/key', async t => {
   for (const [method, path, result] of [
     ['getProfile', '/v1/profile', profile], ['getBootstrap', '/v1/bootstrap', bootstrap],
-    ['listTrucks', '/v1/trucks', { trucks: [truck], limit: 100, hasMore: false }],
-    ['listContacts', '/v1/contacts', { contacts: [contact], limit: 100, hasMore: false }],
+    ['listTrucks', '/v1/trucks', { trucks: [truck], limit: 100, hasMore: false, readAt: stamp }],
+    ['listContacts', '/v1/contacts', { contacts: [contact], limit: 100, hasMore: false, readAt: stamp }],
     ['listTrips', '/v1/trips', trips],
   ]) {
     await t.test(method, async () => {
@@ -61,15 +62,16 @@ test('bootstrap preserves revoked management facts, regional fields, selected gr
   assert.equal(result.hasMore.contacts, true);
   assert.equal(result.trips.active[0].timeZone, 'America/Sao_Paulo');
   assert.deepEqual(result.trips.active[0].contactGrantIds, [id(3)]);
-  assert.equal('readAt' in result, false); // The published source has no such timestamp.
+  assert.equal(result.readAt, stamp);
+  assert.equal('readAt' in result.profile, false); // Bootstrap has one root timestamp, not a row clock.
 });
 
 test('empty focused lists and unknown phone remain real empty/unverified facts', async () => {
   const { api } = fixture(async url => url.pathname.endsWith('/profile')
-    ? Response.json({ id: id(1), phone: null, phoneVerified: false })
-    : Response.json({ trucks: [], limit: 100, hasMore: false }));
-  assert.deepEqual(await api.getProfile(), { id: id(1), phone: null, phoneVerified: false });
-  assert.deepEqual(await api.listTrucks(), { trucks: [], limit: 100, hasMore: false });
+    ? Response.json({ id: id(1), phone: null, phoneVerified: false, readAt: stamp })
+    : Response.json({ trucks: [], limit: 100, hasMore: false, readAt: stamp }));
+  assert.deepEqual(await api.getProfile(), { id: id(1), phone: null, phoneVerified: false, readAt: stamp });
+  assert.deepEqual(await api.listTrucks(), { trucks: [], limit: 100, hasMore: false, readAt: stamp });
 });
 
 test('list bounds, duplicate identities, wrong limits and contradictory buckets fail closed', async () => {
@@ -82,7 +84,7 @@ test('list bounds, duplicate identities, wrong limits and contradictory buckets 
     ['getBootstrap', { ...bootstrap, hasMore: { trucks: false } }],
   ];
   for (const [method, body] of cases) {
-    const { api } = fixture(async () => Response.json(body));
+    const { api } = fixture(async () => Response.json({ readAt: stamp, ...body }));
     await assert.rejects(api[method](), error => error.kind === 'invalid_response' && error.outcome === 'not_applicable');
   }
 });
@@ -96,7 +98,7 @@ test('unverified and malformed consent/profile responses cannot become accepted 
     ['listContacts', { contacts: [{ ...contact, status: 'pending', revokedAt: null, revokedBy: null }], limit: 100, hasMore: false }],
   ];
   for (const [method, body] of cases) {
-    const { api } = fixture(async () => Response.json(body));
+    const { api } = fixture(async () => Response.json({ readAt: stamp, ...body }));
     await assert.rejects(api[method](), error => error.kind === 'invalid_response');
   }
 });
@@ -108,6 +110,19 @@ test('read failures remain failures rather than fabricated empty catalogues', as
   }
   const { api } = fixture(async () => { throw new Error('synthetic network loss'); });
   await assert.rejects(api.getBootstrap(), error => error.kind === 'network' && error.outcome === 'not_applicable');
+});
+
+test('all five reads require and preserve the source timestamp rather than substituting a client clock', async () => {
+  for (const [method, body] of [['getProfile', profile], ['getBootstrap', bootstrap], ['listTrips', trips],
+    ['listTrucks', { trucks: [], limit: 100, hasMore: false }],
+    ['listContacts', { contacts: [], limit: 100, hasMore: false }]]) {
+    const { api } = fixture(async () => Response.json({ ...body, readAt: stamp }));
+    assert.equal((await api[method]()).readAt, stamp);
+    for (const readAt of [undefined, null, 'not-a-date']) {
+      const bad = fixture(async () => Response.json({ ...body, readAt }));
+      await assert.rejects(bad.api[method](), error => error.kind === 'invalid_response');
+    }
+  }
 });
 
 test('an old bootstrap reply cannot populate a replacement session', async () => {

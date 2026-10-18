@@ -1,14 +1,21 @@
 import type * as T from './types.ts';
+import { isUuid } from './uuid.ts';
 
 export type Decoder<T> = (value: unknown) => T;
 function invalid(): never { throw new Error('Unexpected API response'); }
 const text: Decoder<string> = value => typeof value === 'string' ? value : invalid();
 const bool: Decoder<boolean> = value => typeof value === 'boolean' ? value : invalid();
-const uuid: Decoder<string> = value => typeof value === 'string'
-  && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value) ? value : invalid();
+const uuid: Decoder<string> = value => isUuid(value) ? value : invalid();
 const date: Decoder<string> = value => typeof value === 'string'
   && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])$/.test(value)
   && Number.isFinite(Date.parse(value)) ? value : invalid();
+/** Normalize only explicit zoned instants; never infer a browser or route time zone. */
+export function normalizeDate(value: unknown): string {
+  if (typeof value !== 'string') invalid();
+  const compatible = value.replace('t', 'T').replace(/z$/i, 'Z')
+    .replace(/([+-]\d{2})(\d{2})$/, '$1:$2').replace(/([+-]\d{2})$/, '$1:00');
+  return new Date(date(compatible)).toISOString();
+}
 const number = (min: number, max = Infinity, integer = false): Decoder<number> => value =>
   typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max
   && (!integer || Number.isInteger(value)) ? value : invalid();
@@ -32,7 +39,7 @@ function object<S extends Record<string, Decoder<unknown>>>(fields: S): Decoder<
 }
 const fullFields = { truckId: uuid, origin: text, destination: text, country: text, locale: text, timeZone: text };
 const fields: Decoder<Partial<T.TripFields>> = object({ truckId: optional(uuid), origin: optional(text),
-  destination: optional(text), country: optional(text), locale: optional(text), timeZone: optional(text) });
+  destination: optional(text), country: optional(text), locale: optional(text), timeZone: optional(text), expectedArrivalAt: optional(date) });
 const commands = choice<T.TripCommand>('arrived', 'cancel', 'pause', 'resume', 'checkin_ok', 'rest_report');
 
 export const id: Decoder<T.IdResponse> = object({ id: uuid });
@@ -41,12 +48,14 @@ export const accepted: Decoder<T.AcceptedInvitation> = object({ id: uuid, map: b
 export const revoked: Decoder<T.RevokedInvitation> = object({ id: uuid, revoked: literal(true) });
 export const tripRevoked: Decoder<T.RevokedTripGrant> = object({ id: uuid, tripId: uuid, revoked: literal(true) });
 export const draft: Decoder<T.TripDraft> = object({ id: uuid, status: literal('draft'), rawText: text, fields,
-  missingFields: array(choice<keyof T.TripFields>('truckId', 'origin', 'destination', 'country', 'locale', 'timeZone')) });
-export const confirmed: Decoder<T.ConfirmedTrip> = object({ id: uuid, status: literal('active'), fields: object(fullFields) });
+  missingFields: array(choice<Exclude<keyof T.TripFields, 'expectedArrivalAt'>>('truckId', 'origin', 'destination', 'country', 'locale', 'timeZone')) });
+export const confirmed: Decoder<T.ConfirmedTrip> = object({ id: uuid, status: literal('active'),
+  fields: object({ ...fullFields, expectedArrivalAt: optional(date) }) });
 export const command: Decoder<T.CommandResult> = object({ id: uuid, command: commands, automaticEscalation: literal(false) });
 export const trip: Decoder<T.Trip> = object({ id: uuid, driver_id: uuid, truck_id: uuid, origin: text, destination: text,
   country: text, locale: text, time_zone: text, status: choice('active', 'arrived', 'cancelled'), map_active: bool,
-  checkins_active: bool, paused: bool, version: number(1, Infinity, true), created_at: date, closed_at: nullable(date) });
+  checkins_active: bool, paused: bool, version: number(1, Infinity, true), created_at: date, closed_at: nullable(date),
+  expected_arrival_at: optional(nullable(date)), sharing_stopped_at: optional(nullable(date)) });
 export const uploaded: Decoder<T.IdResponse & { received: number }> = object({ id: uuid, received: number(1, 100, true) });
 export const sos: Decoder<T.SosResult> = object({ id: uuid, tripId: uuid, status: literal('active'), groupCapability: literal('unavailable') });
 export const incident: Decoder<T.IncidentSummary> = object({ id: uuid, tripId: uuid, status: choice('active', 'resolved'),
@@ -64,16 +73,21 @@ export const snapshot: Decoder<T.LocationSnapshot> = value => {
     return { tripId: parsed.tripId, readAt: parsed.readAt, location: null, freshness: 'unavailable', ageMs: null };
   }
   if (parsed.freshness === 'unavailable' || parsed.ageMs === null) invalid();
+  const readMs = Date.parse(parsed.readAt);
+  const age = readMs - Date.parse(parsed.location.capturedAt);
+  if (age < 0 || Date.parse(parsed.location.receivedAt) > readMs || parsed.ageMs !== age
+    || parsed.freshness !== (age <= 120_000 ? 'fresh' : 'stale')) invalid();
   return { tripId: parsed.tripId, readAt: parsed.readAt, location: parsed.location, freshness: parsed.freshness, ageMs: parsed.ageMs };
 };
 
 const phone: Decoder<string> = value => typeof value === 'string' && /^\+[1-9]\d{6,14}$/.test(value) ? value : invalid();
 const profileWire = object({ id: uuid, phone: nullable(phone), phoneVerified: bool });
-export const profile: Decoder<T.Profile> = value => {
+const profileData: Decoder<Omit<T.Profile, 'readAt'>> = value => {
   const parsed = profileWire(value);
   if (parsed.phoneVerified && parsed.phone === null) invalid();
   return parsed;
 };
+export const profile: Decoder<T.Profile> = value => ({ ...profileData(value), readAt: object({ readAt: date })(value).readAt });
 const contactWire = object({ id: uuid, contactId: uuid, phone,
   map: object({ requested: bool, accepted: bool }), incident: object({ requested: bool, accepted: bool }),
   status: choice('pending', 'accepted', 'revoked'), acceptedAt: nullable(date), revokedAt: nullable(date),
@@ -109,11 +123,11 @@ const recentRows: Decoder<T.TripSummary[]> = value => {
   if (result.some(row => row.status === 'active')) invalid();
   return result;
 };
-export const trucks: Decoder<T.TruckList> = object({ trucks: truckRows, limit: literal(100), hasMore: bool });
-export const contacts: Decoder<T.ContactList> = object({ contacts: contactRows, limit: literal(100), hasMore: bool });
+export const trucks: Decoder<T.TruckList> = object({ trucks: truckRows, limit: literal(100), hasMore: bool, readAt: date });
+export const contacts: Decoder<T.ContactList> = object({ contacts: contactRows, limit: literal(100), hasMore: bool, readAt: date });
 export const trips: Decoder<T.TripList> = object({ active: activeRows, recent: recentRows,
-  limits: object({ active: literal(50), recent: literal(20) }), hasMore: object({ active: bool, recent: bool }) });
-export const bootstrap: Decoder<T.Bootstrap> = object({ profile, trucks: truckRows, contacts: contactRows,
+  limits: object({ active: literal(50), recent: literal(20) }), hasMore: object({ active: bool, recent: bool }), readAt: date });
+export const bootstrap: Decoder<T.Bootstrap> = object({ profile: profileData, trucks: truckRows, contacts: contactRows,
   trips: object({ active: activeRows, recent: recentRows }),
   limits: object({ trucks: literal(100), contacts: literal(100), activeTrips: literal(50), recentTrips: literal(20) }),
-  hasMore: object({ trucks: bool, contacts: bool, activeTrips: bool, recentTrips: bool }) });
+  hasMore: object({ trucks: bool, contacts: bool, activeTrips: bool, recentTrips: bool }), readAt: date });

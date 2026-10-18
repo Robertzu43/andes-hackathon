@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ApiError, MemorySession, bindJourneySession, createApiClient, createContactApi } from '../../src/lib/api/index.ts';
+import { ApiError, MemorySession, bindJourneySession, createApiClient, createContactApi, createSessionGateway } from '../../src/lib/api/index.ts';
 
 const actor = '11111111-1111-4111-8111-111111111111';
 const resource = '22222222-2222-4222-8222-222222222222';
@@ -87,6 +87,40 @@ test('401 invalidates every bound protected journey without inventing another id
   assert.equal(contactActor, null); assert.equal(driverActor, null);
   assert.deepEqual(session.snapshot(), { status: 'anonymous' });
   contact.dispose(); driver.dispose();
+});
+
+test('401 teardown cannot invoke a disposed binding later in the same session notification', async () => {
+  let deny = false;
+  const { session, api } = setup(async () => deny
+    ? Response.json({ code: 'unauthorized' }, { status: 401 }) : Response.json({ id: actor }));
+  const gateway = createSessionGateway({ session, api, mode: 'demo', acquire: async () => credentials() });
+  let binding;
+  let status = 'closed';
+  let clears = 0;
+  const unsubscribe = gateway.subscribe(() => {
+    if (gateway.getSnapshot().state !== 'authenticated') {
+      binding?.dispose();
+      status = 'closed';
+    }
+  });
+  try {
+    await gateway.begin();
+    binding = bindJourneySession(session, api, id => {
+      if (id === null) clears += 1;
+      status = id ? 'ready' : 'verifying';
+    });
+    await binding.activate();
+    assert.equal(status, 'ready');
+    const before = clears;
+    deny = true;
+    await assert.rejects(api.getIdentity(), error => error.status === 401);
+    assert.equal(status, 'closed');
+    assert.equal(clears, before + 1); // Disposal clears once; its queued invalidation must retire.
+    assert.equal(gateway.getSnapshot().state, 'signed-out');
+    assert.equal(session.snapshot().status, 'anonymous');
+    session.clear(); binding.dispose();
+    assert.equal(clears, before + 1);
+  } finally { unsubscribe(); binding?.dispose(); gateway.dispose(); }
 });
 
 test('subscribed session expires and clears a view without another request', async () => {

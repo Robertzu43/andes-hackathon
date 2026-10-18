@@ -1,327 +1,202 @@
 # Typed client API and session boundary
 
-Lane45 owns `web/src/lib/api/**`, `web/tests/api/**` and this document. The base is
-Robert's refreshed `origin/codex/aws-durable-backend` at
-`ebc8fb1d36f441ef012ca585201cefabf61383d6`. Sources are
-[runtime.md](../contracts/runtime.md), `src/api/{app,schemas,mutations}.ts`, `src/auth.ts`,
-`src/{trips,contacts,location,incidents}/routes.ts` and `db/migrations/001-core.sql`.
-The library has no runtime dependencies, framework imports, server SDKs or root
-package/config changes. Node24 native TypeScript stripping runs the tests.
+Lane45 owns `web/src/lib/api/**`, `web/tests/api/**` and this document. The library
+has no runtime dependencies, framework imports, provider SDK, storage or root
+package changes. Import its public API and wire types from `web/src/lib/api/index.ts`.
 
-## Consumer boundary
+## Source contracts and dependencies
 
-Import `createApiClient`, `MemorySession`, `createIdempotencyKey`, `ApiError` and wire
-types from `web/src/lib/api/index.ts`. The client accepts an explicit trusted API or
-proxy base URL, a memory session, an optional fetch implementation and an optional
-positive integer timeout. HTTPS is required except on literal loopback development
-hosts. Userinfo, query parameters and fragments in the base URL are rejected. A
-configured path prefix such as `/api/` is preserved. Never derive this URL from a
-recipient link, user-entered trip text or provider payload.
+The original route base is `ebc8fb1d36f441ef012ca585201cefabf61383d6`. Current review
+also checks PR74 at `27e4f94b5962e88735fdb8fc3fea8cc3e842baa4` and PR65 at
+`de9e455b6f7631aa80addfa19b1f38def68bb523`, including their actual route handlers and
+strict schemas. These unmerged routes are explicit dependencies, not capabilities
+assumed to exist on the old base. Backend reconciliation PR83 must land before the
+base PR59 can be retargeted to main; the gatekeeper owns merging. PR81 remains a child.
 
-```ts
-import { createApiClient, MemorySession, createIdempotencyKey } from './api/index.ts';
-
-const session = new MemorySession();
-const api = createApiClient({ baseUrl: trustedRuntimeConfig.apiBaseUrl, session });
-// A separately configured trusted OIDC integration obtains these credentials.
-session.setCredentials(await trustedIdentityIntegration.getSessionCredentials());
-const identity = await api.getIdentity(); // backend UUID, distinct from OIDC subject
-const intent = { idempotencyKey: createIdempotencyKey() }; // once per explicit intent
-const draft = await api.createDraft({ text: driverEnteredText }, intent);
-// Show/edit the returned draft, then obtain a separate explicit user confirmation.
-// Only confirmTrip(..., { confirmed: true, contactGrantIds, fields }, newIntent)
-// activates it. No country, language, truck or time-zone defaults are invented.
-```
-
-The names beginning `trusted...` describe caller-owned integrations; they are not
-implemented login/config services or sample credentials. No login, refresh, logout,
-cookie session or token-exchange endpoint exists at this backend revision. The
-backend independently verifies signed OIDC tokens, issuer/audience and claims. This
-library does not validate a JWT, infer phone verification, or grant ownership from a
-body field. `setCredentials` is an injection boundary for an identity integration,
-not a production sign-in flow. Real browser authentication remains a dependency.
-
-Credentials live only in memory. `snapshot()` exposes identity/status/expiry but no
-token. Clear on local sign-out/unmount; invoke the configured identity provider's
-own logout separately if needed. Do not persist `capture()` leases or credentials
-in browser storage, URLs, telemetry or error reports. Token replacement, account
-change and clear abort older requests. The client rejects stale responses even if
-an injected transport ignores abort. A late401 from an old session cannot clear a
-new session. Expiration blocks new requests and bounds in-flight requests; there is
-no silent refresh or cross-account replay. Session state is checked again before a
-response can reach a caller. Consumers must also clear their own per-account views.
-
-Fetch uses `credentials: omit`, `cache: no-store`, `redirect: error` and
-`referrerPolicy: no-referrer`. Backend responses declare no-store. There is no client
-response cache, cookie/CSRF transport or refresh-token persistence. The backend has
-no CORS policy at this revision; the browser app needs a trusted same-origin proxy
-or separately implemented/reviewed server CORS. A native fetch test does not prove
-browser CORS or a real provider login. No security token belongs in frontend build
-configuration. A browser base URL is public configuration, not a credential.
-
-## Operations from the actual routes
-
-| Client operation | HTTP contract |
-|---|---|
-| `getIdentity` | GET `/v1/me` → server identity UUID |
-| `getProfile`, `getBootstrap` | GET `/v1/profile`, `/v1/bootstrap`; additive owner read contract PR65/748d30c |
-| `listTrucks`, `listContacts`, `listTrips` | GET `/v1/trucks`, `/v1/contacts`, `/v1/trips`; bounded first-page reads, not discovery for another identity |
-| `createTruck` | POST `/v1/trucks` with `{label}` |
-| `inviteContact` | POST `/v1/contacts` with existing `contactId`, international `phone`, explicit map/incident scopes |
+| Operation | Actual HTTP contract |
+| --- | --- |
+| `getIdentity` | GET `/v1/me`; verified backend UUID, not an OIDC subject |
+| `getProfile`, `getBootstrap` | GET `/v1/profile`, `/v1/bootstrap`; PR65 owner-scoped reads |
+| `listTrucks`, `listContacts`, `listTrips` | GET the corresponding `/v1` collection; bounded first-page PR65 reads |
+| `createTruck` | POST `/v1/trucks` with label |
+| `inviteContact` | POST `/v1/contacts` with existing contactId, international phone, map/incident scopes and optional PR74 family/colleague role |
 | `acceptContact`, `revokeContact` | POST `/v1/contacts/:id/accept` or `/revoke`; acceptance cannot broaden requested scope |
-| `createDraft` | POST `/v1/trip-drafts` with text and optional corrected fields; returned draft/missing fields stay explicit |
-| `confirmTrip` | POST `/v1/trip-drafts/:id/confirm`; literal `confirmed:true`, selected grant IDs and optional corrections |
-| `getTrip` | GET `/v1/trips/:id`; SQL wire names, including `time_zone`, are preserved |
-| `commandTrip` | POST `/v1/trips/:id/commands`; arrived/cancel/pause/resume/checkin_ok/rest_report only |
-| `uploadLocations` | POST `/v1/trips/:id/locations`; caller supplies capturedAt and qualified observations, no fabricated samples |
-| `getSnapshot` | GET `/v1/trips/:id/snapshot`; captured/received/read times, age and unavailable/stale/fresh remain distinct |
-| `revokeTripContact` | POST `/v1/trips/:id/contacts/:grantId/revoke`; independent from standing revoke |
-| `reportSos` | POST `/v1/trips/:id/sos`; an attributed request with active episode ID, group unavailable |
-| `getIncident` | GET `/v1/incidents/:id`; minimal current-consent incident read, independent of trip/map closure |
-| `acknowledgeIncident`, `reportAction` | POST `/v1/incidents/:id/acknowledgements` or `/actions`; attributed acknowledgement/action stay distinct |
-| `resolveIncident` | POST `/v1/incidents/:id/resolve`; driver/owner resolution is explicit and independent of trip closure |
+| `createDraft` | POST `/v1/trip-drafts`; text and optional corrected fields, including explicit expectedArrivalAt |
+| `confirmTrip` | POST `/v1/trip-drafts/:id/confirm`; literal confirmed:true, selected grant IDs and optional corrections |
+| `getTrip` | GET `/v1/trips/:id`; preserve SQL wire names and optional PR74 arrival/sharing timestamps |
+| `commandTrip` | POST `/v1/trips/:id/commands`; arrived/cancel/pause/resume/checkin_ok/rest_report |
+| `uploadLocations` | POST `/v1/trips/:id/locations`; caller supplies captured observations |
+| `getSnapshot` | GET `/v1/trips/:id/snapshot`; preserve capture/receive/read time, age and freshness |
+| `revokeTripContact` | POST `/v1/trips/:tripId/contacts/:grantId/revoke`; independent from standing consent |
+| `reportSos` | POST `/v1/trips/:id/sos`; attributed request and active episode ID, group unavailable |
+| `getIncident` | GET `/v1/incidents/:id`; current-consent read independent of trip/map closure |
+| `acknowledgeIncident`, `reportAction` | POST incident `/acknowledgements` or `/actions`; attributed response, not provider delivery |
+| `resolveIncident` | POST incident `/resolve`; explicit owner resolution, independent of arrival |
 
-Responses are checked at runtime and projected to documented fields. Missing/invalid
-required fields, unexpected content types, malformed JSON and impossible null-location
-freshness combinations fail as `invalid_response`. No response means unknown, not
-successful delivery, wellbeing or resolved SOS. Fresh/stale engineering bounds are
-server facts, not validated safety cadence. Snapshot age/freshness is preserved rather
-than recomputed from the browser clock. Raw text is untrusted content for the future
-UI to escape; it is never rendered by this library.
+Status, sharing and anonymous demo acquisition are already implemented in the
+separate PR81 child. Its pending shared-world/persona repairs must be completed on
+the corrected base before adoption. No duplicate or invented route is added here.
+`readStatus` is accepted by the driver descriptor type, but this base returns
+`not_sent/unsupported_operation` until PR81 supplies its actual HTTP binding.
 
-The original backend base lacked lists; Q41's published additive reads are now
-implemented below. Recipient invitation/draft discovery and incident action history
-are still absent from that contract. The client cannot invent a contact UUID from a phone number. Audio
-transcription is unsupported and has no client operation. Q49 owns the app foundation;
-framework-independent exports are available for its adapter without changing its files.
+## Trusted session and transport
 
-## Writes, cancellation and errors
+`createApiClient({baseUrl,session,fetch?,timeoutMs?})` requires a trusted explicit
+HTTPS API/proxy URL, except literal HTTP loopback. Userinfo, query and fragment are
+rejected; a configured path prefix is preserved. The browser still needs a trusted
+same-origin proxy or independently implemented CORS. A native fetch test does not
+prove browser CORS or provider login.
 
-Every write requires explicit `WriteOptions.idempotencyKey` (1–128 visible ASCII
-characters) and accepts `signal`. Generate one key for one explicit intent and keep
-its exact payload/key until the result is reconciled. The payload is serialized before
-asynchronous work. The server scopes keys by actor, method, route and parameters;
-changed payload with a reused key conflicts. UUID path parameters are canonicalised
-to lowercase so case aliases preserve the same backend idempotency scope.
-The library makes exactly one HTTP
-attempt and never retries, refreshes, queues offline work or generates a replacement
-key. Explicit same-key reconciliation remains a caller decision against current
-server state; automatic retry on a timeout/network error is prohibited. Losing a
-response does not authorise a new SOS episode or new mutation key.
+`MemorySession.setCredentials` accepts credentials only from a trusted identity
+integration. It neither verifies JWTs nor grants ownership from body IDs. Credentials
+and transport leases are memory-only: never persist or log them, put them in URLs,
+or render them. `snapshot()` is token-free. No synthetic login, silent refresh or
+provider fallback exists in this base.
 
-`ApiError` has a fixed public message, `kind`, numeric `status` when available, an
-allowlisted backend `code`, operation name and `outcome`. It carries no raw response,
-token, URL, freeform backend error or transport cause. The UI can localise the fixed
-kind/code into Spanish and Brazilian Portuguese. Backend401/403/404/409/422 remain
-distinct; 400 is invalid input and 5xx is a server failure.401 invalidates only the
-session that issued that request. New credentials require the trusted integration.
+A trusted refresh with the same issuer and subject updates only credentials. It
+preserves the bound actor, pending requests and accepted SOS receipts. Account
+changes, sign-out and expiry invalidate old-account work and protected contexts.
+A credential revision separately prevents an older token's401 from invalidating a
+refreshed token for the same account. Old successes require the same live account.
+A refresh can extend credential life, never a request's fixed timeout.
 
-For writes, `outcome: not_sent` means local validation/cancellation prevented fetch;
-`rejected` describes this request's4xx response, not an earlier idempotent attempt;
-`unknown` means fetch started and the result cannot be confirmed (network, timeout,
-in-flight cancellation, session change,5xx or bad success response). Reads use
-`not_applicable` for transport outcomes. No blind replay follows any of them.
-Cancellation is local and cannot undo a committed transaction. The default10s timeout
-is an engineering resource bound, not an incident deadline or server cancellation.
+Requests use credentials:omit, cache:no-store, redirect:error and
+referrerPolicy:no-referrer. Tokens appear only in Authorization. An owned
+AbortController fan-in supports platforms without AbortSignal.any; completion
+retires its timer and every attached listener. The default10s timeout bounds local
+resources, not a server transaction or incident deadline.
 
-## Verification and open dependencies
+## Intent and receipt semantics
 
-```sh
-node --test web/tests/api/*.test.mjs
-node node_modules/typescript/bin/tsc -p web/tests/api/tsconfig.json
-```
+All authenticated writes require a caller-owned visible-ASCII idempotency key,
+1–128 characters. Create one key per explicit intent and preserve its body/key while
+reconciling ambiguity. UUID paths canonicalize to lowercase. The serialized body is
+captured before asynchronous work. There is exactly one HTTP attempt: no automatic
+retry, offline replay, replacement key or token refresh.
 
-The test suite uses only Node built-ins and synthetic inputs. It checks each sourced
-route/command and wire body, bearer/cookie/cache policy, explicit draft confirmation,
-idempotency/no replay, malformed responses, redacted error distinctions, session expiry
-and account races, cancellation, timeout and an actual native-fetch loopback server
-including redirect refusal. The loopback server is a synthetic contract fixture; it
-does not prove real backend/OIDC/PostgreSQL/provider or browser integration. Compile-only
-tests also reject missing idempotency keys, false confirmation, audio and invented
-commands. `contracts.types.ts` is never executed.
+| Result | Meaning |
+| --- | --- |
+| not_sent | Local validation, missing session or cancellation prevented dispatch |
+| rejected | This request received a definite HTTP4xx, including429; this alone does not disprove an earlier ambiguous attempt |
+| unknown | Dispatch began but a successful result cannot be confirmed: transport loss, post-dispatch abort/expiry,5xx or malformed success |
+| not_applicable | Read outcome, including local read validation/session failures |
 
-Development used Node24.17.0 and the already installed TypeScript5.9.3 compiler in the
-same repository's Q46 worktree; no dependency was installed or added to this lane.
-The compiler's absolute path is environment-specific; the normal command above uses
-the backend's existing pinned dev dependency when available. The root backend suite
-requires its own disposable PostgreSQL/credentials and is not a client-only test.
+A definite4xx remains a rejection when cancellation races its error body. A current
+credential401 is invalidated before parsing that body; an old token cannot erase a
+new account or refresh. Resource validation rejects asynchronously through the
+returned promise. Error messages/codes are fixed or allowlisted; raw provider,
+transport and server payloads never become public errors or causes.
 
-Q47 independently reviews the frozen client candidate. Further Q41 status/time APIs, Q49 UI wiring,
-a real configured identity flow, trusted browser proxy/CORS, backend integration and
-physical/human/provider evidence remain separate dependencies. Existing product gates
-remain open; synthetic passing tests do not establish field safety or channel support.
+Explicit zoned arrival instants normalize before draft and confirmation dispatch.
+The supported offset spellings +0000 and +05, and lowercase t/z, become canonical
+UTC before a server can commit and echo them. An unzoned local datetime is rejected
+as invalid_input/not_sent; the feature must obtain the intended zone. The caller's
+object is not mutated. No arrival, locale, country, truck, role or time-zone default
+is invented by the client.
 
-## Published controller integration
+## Source facts and bounded reads
 
-`createContactApi(api)` supplies the structural `ContactApi` from PR62 at
-`b95bdbaa3f106f33d30b3aa8b0127ca3b691ee0e`. It maps `getTripSnapshot` to `getSnapshot`
-and `reportIncidentAction(id,{action},options)` to `reportAction(id,action,options)`.
-Other contact operations forward their exact arguments. The facade introduces no
-routes, keys, retries, error rewriting, role authority or local data cache.
+Decoders project fixed known fields. Malformed JSON/content types, missing required
+facts and contradictory location states fail closed. A snapshot's age must equal
+readAt minus capturedAt; capture and receive times cannot be after readAt. Freshness
+must match the backend's120000ms engineering boundary. Validation uses source times,
+never the current browser clock, and does not qualify that bound for field safety.
 
-`bindJourneySession(session, api, setActor)` connects a caller-owned controller to
-the shared session and `/v1/me`. It first clears its controller, then `activate()`
-reads the backend identity and sets that UUID only if the session and activation
-are still current. `setActor(null)` must synchronously clear protected state. The
-binding does not interpret OIDC subjects or change tokens to match a local role.
+All five PR65 read envelopes require their actual server readAt. Bootstrap has one
+root time, not invented timestamps on its profile/list entries. At de9e455 the server
+samples its handler clock before a repeatable-read read-only transaction. Preserve
+that value without assigning a different instant to the database snapshot. The
+older3ea6e1b implementation used read committed; its earlier evidence is not proof
+of de9e455 isolation. This client has not independently established SQL isolation.
 
-For the published contact controller, the host supplies a fixed-view callback:
+Lists preserve bounds and truncation:100 trucks,100 standing contacts,50 active and
+20 recent trips. Revoked grants retain historical accepted scopes without granting
+current access. Errors stay errors. Collection404 is unsupported/endpoint_unavailable,
+not an empty list or missing individual resource. Recipient invitation/trip discovery
+remains a separate PR86 dependency.
 
-```ts
-const journey = createContactJourney(createContactApi(api));
-const binding = bindJourneySession(session, api, actorId => {
-  journey.setSession(actorId ? { actorId, view: 'contact' } : null);
-});
-await binding.activate();
-// On unmount: binding.dispose(). Local sign-out: session.clear().
-```
+PR65 phone privacy is a separate pending repair. The currently inspected source
+still returns profile/contact phone fields; this pin is not permission to expose
+live phone numbers in the demo. Consume the corrected backend contract before final
+composition. Trip summaries exclude raw draft text and coordinates.
 
-`createContactJourney` belongs to the feature lane and is not re-exported or copied
-into this library. Driver controllers can bind with `id => driver.setSession(id)`;
-`createDriverTransport(api)` now supplies the driver descriptor/result adapter
-delegated by Q50. It maps all eight published operations, preserves original keys
-and bodies, and returns `ok`/`rejected`/`unknown` without replay. Errors lacking a
-confirmed terminal HTTP rejection remain unknown. All controllers
-using the same session must register their own binding. Local view changes require
-disposing/rebinding the old context; they never grant server permission.
+## Journey and foundation integration
 
-`MemorySession.subscribe(listener)` emits a token-free invalidation signal on
-credential replacement, clear,401 and expiry. While observed, a bounded timer checks
-expiry even without another HTTP request; unsubscribing retires it when no listeners
-remain. A throwing view listener cannot prevent other views from clearing. Timer
-execution still depends on browser scheduling; suspended/killed contexts have no
-guaranteed cleanup deadline. New requests and responses independently recheck expiry.
+`createContactApi(api)` maps the published feature's getTripSnapshot/reportIncidentAction
+aliases and preserves original keys, signals and ApiError objects. Other wrappers
+remain to satisfy the actual typed feature port. No local permission or retry is added.
 
-The separate integration command requires the two published source objects to have
-been fetched. It reads only their explicitly pinned feature files into a temporary
-directory and removes that directory afterwards; it never edits those lanes or adds
-their source to this branch. No missing dependency is silently skipped.
+`bindJourneySession(session,api,setActor)` clears synchronously, activates only from
+typed /v1/me and retires old activations. The callback must clear protected state
+when given null. Disposal clears once and suppresses queued session notifications,
+including disposal by an earlier listener during the same dispatch. The independently
+reviewed75bdffa fix is preserved in this base. Same-account refresh does not call the
+reset callback; account replacement, clear, current401 and expiry do.
 
-```sh
-git fetch origin sebasbimbi/feat/andes-trusted-contact-flow sebasbimbi/feat/andes-driver-trip-flow
-ANDES_TYPESCRIPT_TSC=/absolute/path/to/existing/typescript/bin/tsc \
-  node --test web/tests/api/contacts.integration.mjs
-```
+`createDriverTransport(api)` preserves ok/not_sent/rejected/unknown and original
+intent ownership. Its current feature compatibility pin is
+`127c82ad109702a329e5bec008708b0fbc67487b`. An explicit SOS is not swallowed by a cached
+incident; cross-trip edits and old incident reuse remain prohibited by the feature.
+The SOS regression also retains the original driver80e9d45 source to isolate the
+shared binding's original refresh failure.
 
-This probes the actual PR62 contact implementation plus PR63 driver controller at
-`80e9d45f9a234de54b1017e856e8349c097b8760`, the real typed-client exports and a strict
-structural `ContactApi` compile check. HTTP replies and tokens are synthetic fixtures;
-these tests do not replace Q44/Q46's signed-JWT/PostgreSQL/native-HTTP integration or
-actual browser rendering. The standard client suite remains runnable without Git
-feature objects or a compiler.
+Features can inject `decodeDriverResponse(request,data)`, `decodeLocationSnapshot`
+and `decodeIncidentSummary` through the public entry. These reuse the same wire
+decoders as the HTTP client; actor/trip correlation and receipt semantics stay with
+the feature. The standalone feature need not import the SDK at runtime.
 
-**Resolved external finding originally at PR62/a8466d5:** network loss left a revoke uncertain, but
-a same-key retry's409 changes the controller operation to rejected, dropping the
-original ambiguity. A direct frozen-source reproduction was sent to Q51 and Brain.
-The facade preserves both original ApiErrors and does not hide the HTTP status to
-work around feature state. Q51 repaired the controller at `b95bdbaa3f106f33d30b3aa8b0127ca3b691ee0e`.
-Integration tests now confirm that retry400/403/404/409/422 retain the uncertain
-revoke and block protected reads, first-attempt409 remains rejected, and retry401
-clears the shared session and invalidates the old context without replay. With a
-shared-session binding, that cleared context returns `superseded`, which does not
-mean its server write was cancelled. Q43's wider privacy review remains separate.
+`createSessionGateway({session,api,mode,acquire?,release?})` implements the real public
+foundation seam with immutable stable token-free state/mode snapshots. Initial
+injected credentials enter connecting and require actual /v1/me. Without credentials
+or acquisition it is unconfigured. Explicit acquisition also awaits verification;
+provider success alone cannot authenticate. A verifier401 publishes error; a later
+request401 signs out. Reads and late subscriptions check expiry when browser timers
+were suspended. End/dispose retire old work; only explicit end invokes the optional
+trusted release callback. The gateway has no built-in provider or demo identity.
 
-The actual published driver controller is also exercised through the typed adapter:
-create truck, draft, explicit confirmation, trip/snapshot/incident reads, command,
-lost SOS response and rejected same-key retry. Synthetic selection evidence is
-clearly test-only; catalog evidence normalisation and real backend/browser proof remain open.
+## Reproduction and current evidence
 
-**Driver finding and candidate repair:** PR63/c256e75 allowed new draft work while
-bound to active trip A, with stale incident/location state crossing into another
-trip. The owner published a narrow repair at
-`80e9d45f9a234de54b1017e856e8349c097b8760`; this integration now pins that candidate.
-Two new actual-controller/typed-transport regressions fail against the old c256e75
-source and pass against the repair. They check that a bound context blocks form,
-draft, confirmation and other-trip intents without HTTP, cached help stays on A,
-and a fresh session-bound controller clears old incident/location before sending
-help for B. Pending, unknown and reconciled drafts also block other-trip opening;
-explicit unknown reconciliation keeps its exact key/body. HTTP remains synthetic.
-These are scoped adapter regressions, not independent acceptance of the driver
-repair or UI. Q47's exact-revision driver re-review remains a separate requirement.
-
-## Published owner reads
-
-Read API source: PR65 at `748d30c6e6c595fd1a2c2c648a045750de3dd9c8`, including
-[the frozen wire contract](https://github.com/Bimbi-Dev/andes-hackathon/blob/748d30c6e6c595fd1a2c2c648a045750de3dd9c8/docs/contracts/client-read.md)
-and `src/client-read/routes.ts`. The client adds those five actual GET operations
-without importing or changing the backend implementation. Use types `Profile`,
-`TruckList`, `ContactList`, `TripList`, `Bootstrap` and their entry types.
-
-Every read uses the current bearer; there is no owner/body/query selector. Profile
-retains nullable phone and its verified-claim flag. Contact rows preserve requested
-versus historical accepted scopes, pending/accepted/revoked status, acceptance and
-revocation timestamps and nullable revoker attribution. A revoked row may still
-contain historically accepted scopes; it grants no current read/dispatch authority.
-Trip summaries preserve regional fields, state, map/check-in flags, source timestamps
-and selected grant IDs, while excluding raw draft text and coordinates. The runtime
-decoder rejects malformed or contradictory required facts and projects only known fields.
-
-Lists are bounded first pages: 100 trucks, 100 standing contacts, 50 active trips and
-20 recent trips. Exact limits and every `hasMore` flag remain visible. There is no
-cursor, silent auto-pagination or claim of complete catalog coverage when truncated.
-Read failures remain errors, never fabricated empty lists. `/v1/contacts` is the
-driver's management list; it does not discover a contact's incoming invitations or
-authorised trips. Recipient discovery, `/status`, response/action history and other
-unpublished routes remain unavailable.
-
-These responses contain **no server readAt**. The client adds no browser timestamp
-and cannot yet manufacture the driver's `SelectionEvidence.readAt` from this wire
-contract. The missing source-time/normalisation seam was reported to Q41 and Brain.
-The backend must publish that meaning before a catalog adapter can claim server
-read-time provenance. The client also makes no stronger transaction-snapshot guarantee
-than the reviewed backend contract/implementation. Q44/Q46 must test these additions
-against their actual signed-JWT/PostgreSQL integration revision; mock read fixtures
-do not establish backend isolation or browser reload behaviour.
-
-## Foundation session gateway
-
-`createSessionGateway({session,api,mode,acquire?,release?})` implements Q49's published
-headless UI seam at `3283fe675ebeee04bb2be8a62f42ab5c475b4b0e` (PR56):
-`getSnapshot`, `subscribe`, optional `begin` and `end`. Its stable,
-immutable snapshots contain only `state` and explicit `mode: external|demo`. The
-states are unconfigured/signed-out/connecting/authenticated/expired/error. No
-credential, backend UUID, provider exception or raw error is exposed in a snapshot.
-The adapter imports no React, foundation, provider SDK or browser storage.
-
-Without an explicit trusted acquisition callback the gateway is unconfigured and
-has no begin/end actions. It supplies no demo identity or production-login fallback.
-`acquire({signal})` must come from the separately configured trusted identity
-integration or an explicitly labelled synthetic test harness. Mode is a label and
-does not mint or validate tokens. Acquired credentials are stored only in the shared
-MemorySession; the gateway must also await the typed `/v1/me` response before it
-publishes authenticated. A provider success alone cannot do so.
-
-Concurrent begin calls share one pending verification, including calls made from
-subscribers. Clear/end, account changes and disposal retire old acquisition and
-verification replies. A cancelled flow cannot later install credentials. Provider
-exceptions become only a fixed error state, with explicit retry possible; no silent
-refresh/retry occurs. Expiry changes the observed gateway to expired without another
-acquisition. `end()` immediately clears locally and optionally invokes the caller's
-trusted logout callback. Local clearing alone does not claim provider-token revocation.
-`dispose()` is for application teardown and never invokes external logout.
-
-The gateway verifies session state, not feature loading. Once authenticated, the host
-still awaits each `bindJourneySession(...).activate()` before invoking its controller.
-Catalogs, protected views, permissions and feature state remain caller-owned. The
-separate compile-only integration reads the exact frozen foundation sources from
-Git and imports its real public `FoundationRoot`, `FoundationOptions`, `SessionGateway`
-and `SessionSnapshot` exports. It checks configured and unconfigured API gateways
-in both NodeNext and the foundation's ESNext/Bundler mode, without executing the
-generated binding, changing foundation files or installing dependencies:
+Use Node24.17.0 or another runtime allowed by the root manifest. Do not execute
+contracts.types.ts: its negative assertions are compile-only. No implicit install.
 
 ```sh
-git fetch origin sebasbimbi/feat/andes-web-foundation
+node --test web/tests/api/*.test.mjs web/tests/api/contact-view.integration.mjs
+node /absolute/path/to/existing/typescript/bin/tsc -p web/tests/api/tsconfig.json
+node /absolute/path/to/existing/typescript/bin/tsc -p web/tests/api/tsconfig.json --module ESNext --moduleResolution Bundler
 ANDES_TYPESCRIPT_TSC=/absolute/path/to/existing/typescript/bin/tsc \
 ANDES_FOUNDATION_NODE_MODULES=/absolute/path/to/existing/foundation/web/node_modules \
-  node --test web/tests/api/foundation.integration.mjs
+  node --test web/tests/api/contacts.integration.mjs web/tests/api/foundation.integration.mjs
 ```
 
-The explicit existing dependency directory is used only for type resolution via
-a temporary symlink; the compiler emits nothing and temporary files are removed.
-This establishes structural compatibility with the actual foundation entry. It
-does not mount React or prove its subscription, login or rendered browser behavior.
-PR56's development-only `window.__ANDES_TEST_MOUNT__({session:gateway})` hook is the
-published runtime seam for the browser integration owner; production entries have
-no test hook. Actual browser rendering and server authorization remain to be tested.
-Current tests exercise the real gateway/client code with synthetic provider/HTTP
-fixtures; no production sign-in or configured external provider has been validated.
+The declared immutable Git objects must be fetched. Tests use Node built-ins,
+synthetic HTTP and actual extracted feature sources; missing dependencies fail
+rather than silently skip. Temporary sources are removed afterward. Current local
+results are115 native/view checks and19 controller/foundation checks, plus both
+strict TypeScript modes. They do not establish browser, backend isolation, physical
+iOS, provider delivery or complete-app acceptance.
+
+The frozen contact view store at e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6 confirms both
+contact and driver views remain closed after401, protected data clears, and explicit
+begin recovers. The original queued-callback failure is preserved as RED before
+this guard. Current feature integration uses contact b95bdba and driver127c82a;
+foundation compile compatibility remains pinned3283fe6. No old receipt moves to a
+new source revision without rerunning its relevant checks.
+
+## Gatekeeper coverage and remaining dependencies
+
+PR59 review5560836622: the six required items have reproducing regressions for SOS
+refresh retention, zero-dispatch results, AbortSignal.any absence, missing catalog
+capability, anchored snapshot freshness and PR74 arrival/contact-role types. The
+should-fix lifecycle issues have RED/GREEN cases for verifier401, installed sessions,
+late expiry, asynchronous read validation, definite refusals and dropped readAt.
+UUID validation is shared and demo_rate_limited is allowlisted.
+
+PR81 review5560922593's arrival-echo failure is repaired in the shared base. Its
+remaining world reuse, role switching, status freshness and demo-off401 controls
+belong to the child after this base. Backend reconciliation83 and current independent
+reviews/CI remain merge gates. No acceptance is inherited from old7e241c3 or81/75bdffa.
+
+Expected command revision and incident read time cannot be invented against
+PR74/27e4f94: its strict command body accepts only type, and incident GET has
+createdAt/resolvedAt but no readAt. Both contract gaps were sent to the backend
+coordinator. New requirements need an actual published backend schema before binding.
