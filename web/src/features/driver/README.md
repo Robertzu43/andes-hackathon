@@ -94,7 +94,7 @@ The same6 persisted assertions against80e9d45 produce2 passes/4 failures;
 the independent11-case controls produce3 passes/8 failures at that old head.
 These are author reruns, not independent confirmation of the new source.
 
-See [gatekeeper disposition](gatekeeper-5560841617.md), original review snapshot
+See [gatekeeper disposition](../../../../docs/review/driver-gatekeeper-5560841617.md), original review snapshot
 and preserved red/green raw results in `web/tests/driver/evidence/`.
 Original published branches/reviews and all14 unfinished UI files remain
 preserved. No merge, provider send, production login, physical phone qualification

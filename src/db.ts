@@ -48,6 +48,8 @@ export async function withTripTransaction<T>(ctx: Context, tripId: string, callb
     return callback(client, trip);
   });
 }
+// schema_migrations.version is the filename stem. These files are not idempotent, so a rename keeps the old stem.
+const previousMigrationNames = new Map([['010-insights-provenance', '006-insights-provenance']]);
 export async function migrate(pool: pg.Pool): Promise<void> {
   const directory = new URL('../db/migrations/', import.meta.url);
   const files = (await readdir(directory)).filter(name => /^\d{3}-[a-z-]+\.sql$/.test(name)).sort();
@@ -58,8 +60,15 @@ export async function migrate(pool: pg.Pool): Promise<void> {
       const version = file.slice(0, -4);
       const sql = await readFile(new URL(file, directory), 'utf8');
       const hash = createHash('sha256').update(sql).digest('hex');
-      const existing = (await client.query('SELECT hash FROM schema_migrations WHERE version=$1', [version])).rows[0];
-      if (existing) { if (existing.hash !== hash) throw new Error('Applied migration changed'); continue; }
+      const previous = previousMigrationNames.get(version);
+      const found = (await client.query('SELECT version, hash FROM schema_migrations WHERE version = ANY($1::text[])', [[version, previous].filter(Boolean)])).rows;
+      if (found.length > 1) throw new Error('Applied migration changed');
+      const existing = found[0];
+      if (existing) {
+        if (existing.hash !== hash) throw new Error('Applied migration changed');
+        if (existing.version !== version) await client.query('UPDATE schema_migrations SET version=$1 WHERE version=$2', [version, existing.version]);
+        continue;
+      }
       await client.query(sql);
       await client.query('INSERT INTO schema_migrations VALUES($1,$2)', [version, hash]);
     }
