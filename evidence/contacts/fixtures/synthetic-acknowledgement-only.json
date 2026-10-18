@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "evidence_kind": "synthetic",
+  "trip": {
+    "id": "TRIP-SYNTH1",
+    "country": "CO",
+    "sharing_state": "granted",
+    "shared_fields": [
+      "status_uncertainty",
+      "observation_age",
+      "truck_reference"
+    ]
+  },
+  "driver": {
+    "id": "DRIVER-SYNTH1",
+    "country": "CO",
+    "preferred_language": "es"
+  },
+  "contacts": [
+    {
+      "id": "CONTACT-SYNTH1",
+      "state": "accepted",
+      "preferred_language": "pt-BR",
+      "phone_number_country": "BR",
+      "channels": {
+        "current": true,
+        "preferred": [
+          "whatsapp",
+          "sms"
+        ],
+        "verified_reachable": [
+          "sms"
+        ]
+      },
+      "trip_consent": {
+        "trip_id": "TRIP-SYNTH1",
+        "driver_state": "granted",
+        "contact_state": "granted",
+        "fields": [
+          "status_uncertainty",
+          "observation_age"
+        ]
+      },
+      "observations": {
+        "acknowledged": true,
+        "response": "acknowledged",
+        "willingness": "unknown",
+        "availability": "unknown",
+        "role_understood": "unknown",
+        "handoff_understood": "unknown",
+        "mutual_understanding": "unknown",
+        "action_status": "none",
+        "action_note": null
+      }
+    }
+  ],
+  "escalation_order": [
+    "CONTACT-SYNTH1"
+  ],
+  "links": [
+    {
+      "id": "LINK-SYNTH1",
+      "driver_id": "DRIVER-SYNTH1",
+      "trip_id": "TRIP-SYNTH1",
+      "contact_id": "CONTACT-SYNTH1",
+      "scope": [
+        "status_uncertainty"
+      ],
+      "issued_at": "2026-10-17T12:00:00Z",
+      "expires_at": "2026-10-17T13:00:00Z",
+      "revoked": false
+    }
+  ]
+}

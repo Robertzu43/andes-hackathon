@@ -1,0 +1,7 @@
+# ANDES task-copy contract
+
+No invented customers, safety results, prices or testimonials. No public marketing page in this wave. All rendered facts come from authenticated actual API responses or explicitly labelled local synthetic fixtures. The source hierarchy is backend runtime, validated client mapping, then actual UI state. Label a demo session persistently as Demostración / Demonstração; never silently choose an emergency contact, route, country, locale or time zone.
+
+Use Camiones / Caminhões; Contactos / Contatos; Preparar viaje / Preparar viagem; Confirmar viaje / Confirmar viagem; Necesito ayuda / Preciso de ajuda; Voy a descansar / Vou descansar; Reanudar / Retomar; Ubicación no disponible / Localização indisponível; Última ubicación / Última localização. State unknowns plainly; a server-accepted request is still not delivered. Error text says what failed and a valid recovery. No API/JWT/provider/queue/Idempotency jargon in normal product controls. Developer diagnostics and explicit local setup stay outside driver/contact flows.
+
+es and pt-BR strings share semantic keys under49 localisation ownership, with feature-local dictionaries submitted by50/51. Component props accept translated strings; no ad hoc literal English in error paths. No text collection or analytics service is activated. Task microcopy uses the six-question/plain-language checks; page-scale marketing harvest is out of scope.

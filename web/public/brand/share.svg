@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#F2F6F6"/>
+  <g transform="translate(80 80) scale(1.5)" fill="none" stroke="#166675" stroke-width="8" stroke-linejoin="round">
+    <path d="M25 12H12v40h13M39 12h13v40H39"/>
+  </g>
+  <g font-family="system-ui, -apple-system, BlinkMacSystemFont, sans-serif" fill="#173139">
+    <text x="208" y="158" font-size="64" font-weight="700" letter-spacing="2">ANDES</text>
+    <text x="88" y="350" font-size="48" font-weight="600">Viajes y contactos.</text>
+    <text x="88" y="414" font-size="40" fill="#4D6268">Viagens e contatos.</text>
+    <text x="88" y="550" font-size="24" font-weight="500">GOAT</text>
+  </g>
+</svg>
