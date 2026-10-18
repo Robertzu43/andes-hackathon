@@ -7,9 +7,7 @@ import {createServer} from 'node:net';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import pg from 'pg';
-import {testEnvironment} from '../../scripts/app-integration/runtime.mjs';
-
-const owned = name => /^andes_q46_[a-f0-9]{16}$/.test(name);
+import {disposableDatabase, testEnvironment} from '../../scripts/app-integration/runtime.mjs';
 
 // Start a nested run in its own process group, wait until its database exists, then interrupt it.
 // The nested run only typechecks before the signal, so it never rewrites this checkout's dist/.
@@ -36,7 +34,7 @@ async function freePort() {
   return port;
 }
 
-test('Ctrl-C on an owned-cluster run stops its PostgreSQL and removes its directory', {timeout: 90000}, async t => {
+for (const signal of ['SIGINT', 'SIGTERM']) test(`${signal} on an owned-cluster run stops its PostgreSQL and removes its directory`, {timeout: 90000}, async t => {
   const discovery = process.env.APP_INTEGRATION_PG_BIN ? null : spawnSync('pg_config', ['--bindir'], {encoding: 'utf8'});
   const bin = process.env.APP_INTEGRATION_PG_BIN ?? (discovery.status === 0 ? discovery.stdout.trim() : '');
   if (!existsSync(join(bin, 'initdb'))) return t.skip('No PostgreSQL server binaries for an owned cluster');
@@ -51,31 +49,43 @@ test('Ctrl-C on an owned-cluster run stops its PostgreSQL and removes its direct
     rmSync(temp, {recursive: true, force: true});
   });
   // Terminal Ctrl-C signals the whole foreground process group.
-  const run = await interruptRun({temp, group: true, signal: 'SIGINT', env: {APP_INTEGRATION_PG_BIN: bin, APP_INTEGRATION_PG_PORT: String(port)}});
-  assert.equal(run.code, 130, `Exit after cleanup, not killed by ${run.signal}`);
+  const run = await interruptRun({temp, group: true, signal, env: {APP_INTEGRATION_PG_BIN: bin, APP_INTEGRATION_PG_PORT: String(port)}});
+  assert.equal(run.code, signal === 'SIGINT' ? 130 : 143, `Exit after cleanup, not killed by ${run.signal}`);
   assert.deepEqual(readdirSync(temp), [], 'The run directory and cluster data must be removed');
   const probe = createServer();
   await new Promise((resolve, reject) => { probe.once('error', reject); probe.listen(port, '127.0.0.1', resolve); });
   await new Promise(resolve => probe.close(resolve));
 });
 
-test('SIGTERM on a shared-server run drops only its own database', {timeout: 90000}, async t => {
-  // This run's own database URL is a loopback administrative URL on its server.
-  const admin = process.env.APP_INTEGRATION_DATABASE_URL;
-  assert.ok(admin, 'Run scripts/app-integration/run.mjs');
-  const pool = new pg.Pool({connectionString: admin, max: 1});
+for (const signal of ['SIGINT', 'SIGTERM']) test(`${signal} on a shared-server run drops only its own database`, {timeout: 90000}, async t => {
+  // Own the entire control server: other test files create/drop databases concurrently.
+  // Never infer ownership from a prefix or sweep databases belonging to sibling tests.
+  const discovery = process.env.APP_INTEGRATION_PG_BIN ? null : spawnSync('pg_config', ['--bindir'], {encoding: 'utf8'});
+  const bin = process.env.APP_INTEGRATION_PG_BIN ?? (discovery.status === 0 ? discovery.stdout.trim() : '');
+  if (!existsSync(join(bin, 'initdb'))) return t.skip('No PostgreSQL server binaries for an isolated shared-server control');
+  const previousPort = process.env.APP_INTEGRATION_PG_PORT;
+  process.env.APP_INTEGRATION_PG_PORT = String(await freePort());
+  let server;
+  try { server = await disposableDatabase(); }
+  finally {
+    if (previousPort === undefined) delete process.env.APP_INTEGRATION_PG_PORT;
+    else process.env.APP_INTEGRATION_PG_PORT = previousPort;
+  }
+  const pool = new pg.Pool({connectionString: server.url, max: 1});
+  t.after(async () => {try { await pool.end(); } finally { await server.cleanup(); }});
+  await pool.query('CREATE TABLE interruption_control (value text NOT NULL)');
+  await pool.query("INSERT INTO interruption_control VALUES ('synthetic-do-not-reset')");
   const databases = async () => (await pool.query('SELECT datname FROM pg_database ORDER BY datname')).rows.map(row => row.datname);
   const temp = mkdtempSync(join(tmpdir(), 'q46-'));
   const before = await databases();
   t.after(async () => {
-    // Only for a failing run: remove a database the nested run leaked.
-    for (const name of (await databases()).filter(name => owned(name) && !before.includes(name))) await pool.query(`DROP DATABASE ${name} WITH (FORCE)`);
-    await pool.end();
     rmSync(temp, {recursive: true, force: true});
   });
-  // CI cancellation or kill: SIGTERM to the runner only.
-  const run = await interruptRun({temp, group: false, signal: 'SIGTERM', env: {APP_INTEGRATION_ADMIN_URL: admin}});
-  assert.equal(run.code, 143, `Exit after cleanup, not killed by ${run.signal}`);
+  // Signal just the runner, as when a supervisor cancels a shared-server run.
+  const run = await interruptRun({temp, group: false, signal, env: {APP_INTEGRATION_ADMIN_URL: server.url}});
+  assert.equal(run.code, signal === 'SIGINT' ? 130 : 143, `Exit after cleanup, not killed by ${run.signal}`);
   assert.deepEqual(await databases(), before, 'The nested database must be dropped and nothing else touched');
+  assert.deepEqual((await pool.query('SELECT value FROM interruption_control')).rows,
+    [{value: 'synthetic-do-not-reset'}], 'The shared input database must retain its sentinel');
   assert.deepEqual(readdirSync(temp), []);
 });

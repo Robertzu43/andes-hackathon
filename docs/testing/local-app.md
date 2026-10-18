@@ -50,8 +50,10 @@ directory. On SIGINT or SIGTERM (Ctrl-C, a CI cancellation, `kill`) the runner
 stops its current command, starts no new one, cleans up and exits 130 or 143.
 The owned PostgreSQL runs in its own process group, so a terminal Ctrl-C reaches
 only the runner, which drops the database before stopping it. A second signal
-forces exit. `tests/app-integration/interrupt.test.mjs` interrupts nested runs
-after their database exists and checks that nothing is left.
+forces exit. `tests/app-integration/interrupt.test.mjs` sends each signal to
+nested owned-cluster and shared-server runs after their database exists. The
+shared-server control owns a separate server and verifies its complete database
+inventory and input sentinel remain unchanged, without sweeping sibling tests.
 
 SIGKILL or machine loss cannot run cleanup. Then find the specific
 `postgres -D .../andes-q46-*/data` process by its run directory and confirm its
