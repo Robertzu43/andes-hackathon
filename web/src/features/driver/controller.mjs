@@ -323,8 +323,21 @@ export function createDriverJourney({
 
   function requestHelp() {
     const problem = writeGate({ emergency: true }); if (problem) return Promise.resolve(problem);
+    if (!tripId && draft && unresolved('confirm')) return reconcileThenHelp();
     if (!tripId) return Promise.resolve(blocked('trip-required'));
     return submit('sos', { operation: 'sos', params: { id: tripId }, body: {} }, { newIntent: true });
+  }
+
+  // R8: a confirmation in flight or with a lost response may have committed, and
+  // the trip ID is the draft ID. Settle it, read that trip, then send the SOS.
+  async function reconcileThenHelp() {
+    await writes.get('confirm').promise;
+    if (!tripId && draft && writes.get('confirm')?.state === 'unknown') {
+      const read = await openTrip(draft.id);
+      // Only a read that proves there is no trip of ours ends in trip-required.
+      if (!tripId) return read.kind === 'rejected' && [403, 404].includes(read.status) ? blocked('trip-required') : read;
+    }
+    return requestHelp();
   }
 
   function retryUnknown(slot, { confirmed = false } = {}) {

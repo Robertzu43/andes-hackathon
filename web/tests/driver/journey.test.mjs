@@ -574,3 +574,37 @@ test('gatekeeper: equivalent expected-arrival offsets use the SDK canonical inst
   assert.equal(b.calls.at(-1).request.body.fields.expectedArrivalAt, '2026-10-18T15:30:00.000Z');
   assert.equal(b.journey.snapshot().form.fields.expectedArrivalAt, raw);
 });
+
+// Fix pass (R8): nobody in the cab calls openTrip before pressing SOS.
+const committedTrip = () => ({ id: ids.draft, driver_id: ids.actor, truck_id: ids.truck, status: 'active',
+  paused: false, map_active: true, checkins_active: true, version: 1 });
+test('R8: SOS right after a lost confirmation response reconciles on its own and sends', async () => {
+  const b = fixture(); await b.draft();
+  b.handlers.confirmDraft = () => { b.server.trip = committedTrip(); return { kind: 'unknown' }; };
+  await b.journey.confirmTrip({ confirmed: true }); b.journey.setInteractionMode('moving');
+  const help = await b.journey.requestHelp();
+  assert.equal(help.kind, 'ok'); assert.equal(help.data.tripId, ids.draft);
+  assert.deepEqual(b.calls.slice(-2).map(c => c.request.operation), ['readTrip', 'sos']);
+  assert.equal(b.journey.snapshot().tripId, ids.draft);
+});
+test('R8: trip-required only when the reconciling read proves there is no trip', async () => {
+  const b = fixture(); await b.draft(); b.handlers.confirmDraft = () => ({ kind: 'unknown' });
+  await b.journey.confirmTrip({ confirmed: true });
+  assert.deepEqual(await b.journey.requestHelp(), { kind: 'blocked', code: 'trip-required' });
+  const c = fixture(); await c.draft(); c.handlers.confirmDraft = () => ({ kind: 'unknown' });
+  c.handlers.readTrip = () => { throw Error('SYNTHETIC network failure'); };
+  await c.journey.confirmTrip({ confirmed: true });
+  const help = await c.journey.requestHelp();
+  assert.notEqual(help.code, 'trip-required'); assert.equal(help.kind, 'unknown');
+  for (const f of [b, c]) assert.equal(f.calls.filter(x => x.request.operation === 'sos').length, 0);
+});
+test('R8: SOS pressed while the confirmation is in flight waits for it, then sends', async () => {
+  const b = fixture(); await b.draft(); const answer = deferred(); b.handlers.confirmDraft = () => answer.promise;
+  b.journey.confirmTrip({ confirmed: true }); await settle();
+  const help = b.journey.requestHelp(); await settle();
+  assert.equal(b.calls.filter(c => c.request.operation === 'sos').length, 0);
+  answer.resolve(ok({ id: ids.draft, status: 'active', fields: b.calls.at(-1).request.body.fields }));
+  assert.equal((await help).kind, 'ok');
+  assert.equal(b.calls.filter(c => c.request.operation === 'sos').length, 1);
+});
+

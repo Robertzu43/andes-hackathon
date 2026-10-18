@@ -223,3 +223,17 @@ test('unknown uncommitted confirmation rejects after idempotency lookup and perm
   assert.equal((await journey.confirmTrip({ confirmed: true })).kind, 'ok');
   assert.equal((await f.ctx.pool.query('SELECT count(*) FROM trips')).rows[0].count, '1');
 });
+
+test('R8: SOS right after a lost committed confirmation reaches the persisted trip without openTrip', async t => {
+  const f = await fixture(t, { channelSupport: [] }); const raw = apiPort(f); let lose = true;
+  const { journey, tripId } = await readyDraft(t, f, async (request, options) => {
+    const reply = await raw(request, options);
+    if (request.operation === 'confirmDraft' && lose) { lose = false; throw Error('SYNTHETIC lost committed receipt'); }
+    return reply;
+  });
+  assert.equal((await journey.confirmTrip({ confirmed: true })).kind, 'unknown');
+  journey.setInteractionMode('moving');
+  const help = await journey.requestHelp();
+  assert.equal(help.kind, 'ok'); assert.equal(help.data.tripId, tripId);
+  assert.equal((await f.ctx.pool.query('SELECT count(*) FROM incidents WHERE trip_id=$1', [tripId])).rows[0].count, '1');
+});

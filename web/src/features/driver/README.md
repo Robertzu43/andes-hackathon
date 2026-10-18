@@ -36,7 +36,10 @@ A failed initial `openTrip` never binds a mistyped/foreign trip. A confirmed tri
 cannot be replaced by another journey. An unknown confirmation can be reconciled
 with `openTrip` of that exact draft ID; the owner read can bind the persisted trip
 and enable SOS while retaining the original uncertain confirmation receipt.
-New draft IDs remain blocked. A request actually retired by the timeout stays
+`requestHelp()` does this itself: with a confirmation pending or unknown it waits
+for it, reads the draft's trip (trip ID equals draft ID) and then sends the SOS.
+It returns `trip-required` only when that read proves there is no trip (403/404);
+an inconclusive read is returned as is. New draft IDs remain blocked. A request actually retired by the timeout stays
 unknown and ignores late callbacks. Wall-clock changes do not invalidate an
 acknowledgement received before that timeout executes. Client receipt time is
 separate from source time and may remain unknown.
