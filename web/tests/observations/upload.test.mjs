@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { openObservationQueue } from '../../src/lib/observations/queue.mjs';
+import { openObservationQueue, QUEUE_LIMITS } from '../../src/lib/observations/queue.mjs';
 import { createLocationUploader } from '../../src/lib/observations/upload.mjs';
-import { createMemoryStores } from './memory-store.mjs';
+import { createMemoryStores, tokenFor } from './memory-store.mjs';
 
 const NOW = Date.parse('2026-10-17T12:00:00.000Z');
 const clock = { nowMs: () => NOW };
@@ -51,7 +51,7 @@ async function setup({ fetchHandlers = [{ status: 200, body: { id: 'trip-1', rec
   const uploader = createLocationUploader({
     queue,
     baseUrl: 'https://api.example.com',
-    getAccessToken: async () => 'test-token',
+    getAccessToken: async () => tokenFor('user-1'),
     fetchImpl: fetch,
     timers,
     ...uploaderOptions,
@@ -67,7 +67,7 @@ test('uploads a batch with the exact contract shape and headers', async () => {
   const call = calls[0];
   assert.equal(call.url, 'https://api.example.com/v1/trips/trip-1/locations');
   assert.equal(call.init.method, 'POST');
-  assert.equal(call.init.headers.Authorization, 'Bearer test-token');
+  assert.equal(call.init.headers.Authorization, `Bearer ${tokenFor('user-1')}`);
   assert.equal(call.init.headers['Content-Type'], 'application/json');
   const key = call.init.headers['Idempotency-Key'];
   assert.match(key, /^loc1-[0-9a-f]{64}$/);
@@ -123,7 +123,7 @@ test('an ambiguous batch retries with identical content even after more samples 
   await queue.enqueue({ sample: sampleAt(NOW - 2000), scope });
   const { fetch, calls } = fakeFetch([new TypeError('lost response'), { status: 200, body: { id: 'trip-1', received: 1 } }, { status: 200, body: { id: 'trip-1', received: 1 } }]);
   const uploader = createLocationUploader({
-    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: fetch, timers,
+    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => tokenFor('user-1'), fetchImpl: fetch, timers,
   });
   await uploader.flush({ userId: 'user-1' });
   assert.equal(calls[0].body.observations.length, 1);
@@ -138,21 +138,23 @@ test('an ambiguous batch retries with identical content even after more samples 
   assert.equal((await queue.counts()).uploaded, 2);
 });
 
-test('network errors consume attempts and exhausted records are retained as failed', async () => {
-  const { uploader, queue } = await setup({
-    fetchHandlers: [new TypeError('down')],
-    uploaderOptions: { maxAttempts: 2 },
-  });
-  await uploader.flush({ userId: 'user-1' });
+test('offline: network errors never exhaust the retry budget and the batch resends after reconnect', async () => {
+  // Gatekeeper item 5: 183 s offline used to burn the 8-attempt budget and
+  // leave the sample permanently failed.
+  const online = new EventTarget();
+  const handlers = Array.from({ length: 20 }, () => new TypeError('offline'));
+  handlers.push({ status: 200, body: { id: 'trip-1', received: 1 } });
+  const { uploader, queue, calls } = await setup({ fetchHandlers: handlers, uploaderOptions: { onlineTarget: online } });
+  for (let i = 0; i < 20; i += 1) await uploader.flush({ userId: 'user-1' });
   let counts = await queue.counts();
-  assert.equal(counts.uploading, 0, 'no request in flight once the failure settled');
-  assert.equal(counts.pending, 1, 'unacknowledged batch retained as pending');
-  await uploader.flush({ userId: 'user-1' });
+  assert.equal(counts.failed, 0, 'network errors are not counted against maxAttempts');
+  assert.equal(counts.pending, 1);
+  online.dispatchEvent(new Event('online'));
+  await uploader.flush({ userId: 'user-1' }); // joins the reconnect flush
   counts = await queue.counts();
-  assert.equal(counts.uploading, 0);
-  assert.equal(counts.pending, 0);
-  assert.equal(counts.failed, 1);
-  assert.equal(counts.failedRetained, 1);
+  assert.equal(counts.uploaded, 1, 'the sample is resent once back online');
+  assert.equal(calls.length, 21);
+  assert.equal(new Set(calls.map((c) => c.init.headers['Idempotency-Key'])).size, 1, 'same ambiguous batch, same key');
 });
 
 test('500 responses consume attempts and retain exhausted records as failed', async () => {
@@ -183,13 +185,14 @@ test('401 blocks the pump without burning retry budget', async () => {
   assert.equal(calls.length, 1);
 });
 
-test('400 validation, 404 missing and 400 bounds are permanent, counted rejections', async () => {
-  for (const [status, code, countKey] of [
-    [400, 'validation', 'rejectedValidation'],
-    [404, 'not_found', 'rejectedMissing'],
-    [400, 'capture_time_out_of_bounds', 'rejectedBounds'],
+test('single-sample 400 invalid_request, 404 trip_not_found and old 400 bounds are permanent, counted rejections', async () => {
+  const old = [sampleAt(NOW - 20 * 3_600_000)]; // a server with a faster clock sees it as >24 h old
+  for (const [status, code, countKey, samples] of [
+    [400, 'invalid_request', 'rejectedValidation', undefined],
+    [404, 'trip_not_found', 'rejectedMissing', undefined],
+    [400, 'capture_time_out_of_bounds', 'rejectedBounds', old],
   ]) {
-    const { uploader, queue } = await setup({ fetchHandlers: [{ status, body: { code } }] });
+    const { uploader, queue } = await setup({ fetchHandlers: [{ status, body: { code } }], samples });
     await uploader.flush({ userId: 'user-1' });
     const counts = await queue.counts();
     assert.equal(counts[countKey], 1, `${code} counted as ${countKey}`);
@@ -208,16 +211,18 @@ test('409 idempotency_conflict is a permanent defect signal, never retried', asy
   assert.equal(calls.length, 1, 'no retry after a conflict');
 });
 
-test('409 location_stopped keeps records pending for a reactivated map, without attempts', async () => {
-  const { uploader, queue } = await setup({
+test('409 location_stopped (trip closed) wipes the scope instead of retrying forever', async () => {
+  // Gatekeeper item 6: five flushes used to send five POSTs.
+  const { uploader, queue, calls } = await setup({
     fetchHandlers: [{ status: 409, body: { code: 'location_stopped' } }],
   });
-  await uploader.flush({ userId: 'user-1' });
+  for (let i = 0; i < 5; i += 1) await uploader.flush({ userId: 'user-1' });
+  assert.equal(calls.length, 1, 'a closed trip is never retried');
   const counts = await queue.counts();
-  assert.equal(counts.pending, 1);
+  assert.equal(counts.retained, 0, 'no coordinates kept for a trip that can no longer receive them');
   assert.equal(counts.tripStoppedRejections, 1);
-  const state = await uploader.state();
-  assert.equal(state.pumpState, 'idle');
+  assert.equal(queue.isScopeRevoked(scope), true, 'late samples for the closed trip cannot re-enter');
+  assert.equal((await uploader.state()).pumpState, 'idle');
 });
 
 test('flush scopes the drain to the signed-in owner only', async () => {
@@ -227,7 +232,7 @@ test('flush scopes the drain to the signed-in owner only', async () => {
   await queue.enqueue({ sample: sampleAt(NOW - 1000), scope: { tripId: 'trip-9', userId: 'user-2' } });
   const { fetch, calls } = fakeFetch([{ status: 200, body: { id: 'trip-1', received: 1 } }]);
   const uploader = createLocationUploader({
-    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: fetch, timers: silentTimers(),
+    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => tokenFor('user-1'), fetchImpl: fetch, timers: silentTimers(),
   });
   await uploader.flush({ userId: 'user-1' });
   assert.equal(calls.length, 1);
@@ -283,7 +288,7 @@ test('a request never starts after stop(), even if the token resolves late', asy
   const flushing = uploader.flush({ userId: 'user-1' });
   await requested; // the flush is parked inside getAccessToken
   uploader.stop();
-  releaseToken('late-token');
+  releaseToken(tokenFor('user-1'));
   await flushing;
   assert.equal(calls.length, 0, 'no POST after retirement');
   const counts = await queue.counts();
@@ -307,7 +312,7 @@ test('a request never starts after the scope was revoked while the token was pen
   const flushing = uploader.flush({ userId: 'user-1' });
   await requested; // the flush is parked inside getAccessToken
   await queue.wipeScope(scope);
-  releaseToken('late-token');
+  releaseToken(tokenFor('user-1'));
   await flushing;
   assert.equal(calls.length, 0, 'no POST for a wiped scope');
   assert.equal((await queue.counts()).retained, 0);
@@ -366,7 +371,7 @@ test('the sticky intent survives a full queue + uploader restart, content and ke
   await queue1.enqueue({ sample: sampleAt(NOW - 2000), scope });
   const first = fakeFetch([new TypeError('lost response')]);
   const uploader1 = createLocationUploader({
-    queue: queue1, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: first.fetch, timers,
+    queue: queue1, baseUrl: 'https://api.example.com', getAccessToken: async () => tokenFor('user-1'), fetchImpl: first.fetch, timers,
   });
   await uploader1.flush({ userId: 'user-1' });
   assert.equal(first.calls.length, 1);
@@ -377,7 +382,7 @@ test('the sticky intent survives a full queue + uploader restart, content and ke
   await queue2.enqueue({ sample: sampleAt(NOW - 1000), scope });
   const second = fakeFetch([{ status: 200, body: { id: 'trip-1', received: 1 } }]);
   const uploader2 = createLocationUploader({
-    queue: queue2, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: second.fetch, timers,
+    queue: queue2, baseUrl: 'https://api.example.com', getAccessToken: async () => tokenFor('user-1'), fetchImpl: second.fetch, timers,
   });
   await uploader2.flush({ userId: 'user-1' });
   assert.equal(second.calls.length, 2);
@@ -400,7 +405,7 @@ test('the ambiguous intent persists as its own meta record with the exact replay
   });
   const { fetch, calls } = fakeFetch([new TypeError('lost response')]);
   const uploader = createLocationUploader({
-    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: fetch, timers,
+    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => tokenFor('user-1'), fetchImpl: fetch, timers,
   });
   await uploader.flush({ userId: 'user-1' });
   assert.equal(calls.length, 1);
@@ -440,7 +445,7 @@ test('revocation landing during the pre-flight store re-read still blocks the PO
   await queue.enqueue({ sample: sampleAt(NOW - 1000), scope });
   const { fetch, calls } = fakeFetch([{ status: 200, body: { id: 'trip-1', received: 1 } }]);
   const uploader = createLocationUploader({
-    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: fetch, timers,
+    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => tokenFor('user-1'), fetchImpl: fetch, timers,
   });
   const flushing = uploader.flush({ userId: 'user-1' });
   await parked; // the flush is parked inside the getRecords re-read
@@ -464,7 +469,7 @@ test('a valid receipt landing after stop() produces no local side effects', asyn
     return new Promise((resolve) => { resolveResponse = resolve; });
   };
   const uploader = createLocationUploader({
-    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: fetch, timers,
+    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => tokenFor('user-1'), fetchImpl: fetch, timers,
   });
   const flushing = uploader.flush({ userId: 'user-1' });
   await called;
@@ -480,6 +485,206 @@ test('a valid receipt landing after stop() produces no local side effects', asyn
 
 test('constructor guards', async () => {
   const queue = await openObservationQueue({ ...createMemoryStores(), clock });
-  assert.throws(() => createLocationUploader({ queue, baseUrl: 'http://insecure.example.com', getAccessToken: async () => 't', fetchImpl: async () => {} }), TypeError);
-  assert.throws(() => createLocationUploader({ queue, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: async () => {}, batchSize: 101 }), RangeError);
+  assert.throws(() => createLocationUploader({ queue, baseUrl: 'http://insecure.example.com', getAccessToken: async () => tokenFor('user-1'), fetchImpl: async () => {} }), TypeError);
+  assert.throws(() => createLocationUploader({ queue, baseUrl: 'https://api.example.com', getAccessToken: async () => tokenFor('user-1'), fetchImpl: async () => {}, batchSize: 101 }), RangeError);
+});
+
+// ---- Gatekeeper review of 170e83a: regression tests -------------------------
+
+const receipt = (n = 1, tripId = 'trip-1') => ({ status: 200, json: async () => ({ id: tripId, received: n }) });
+const tick = () => new Promise((resolve) => setImmediate(resolve));
+
+test('item 1: an unscoped flush (online event before any scoped flush) uploads nothing', async () => {
+  const online = new EventTarget();
+  const { uploader, calls, queue } = await setup({ uploaderOptions: { onlineTarget: online } });
+  assert.equal((await uploader.flush()).ok, false, 'a flush without an owner is refused');
+  online.dispatchEvent(new Event('online'));
+  for (let i = 0; i < 5; i += 1) await tick();
+  assert.equal(calls.length, 0, 'no POST without an owner scope');
+  assert.equal((await queue.counts()).pending, 1);
+});
+
+test("item 1: one owner's samples are never sent with another identity's token", async () => {
+  // user-1 left samples on the device; the session now belongs to user-2.
+  const online = new EventTarget();
+  const { uploader, calls, queue } = await setup({
+    fetchHandlers: [{ status: 404, body: { code: 'trip_not_found' } }],
+    uploaderOptions: { onlineTarget: online, getAccessToken: async () => tokenFor('user-2') },
+  });
+  await uploader.flush({ userId: 'user-1' });
+  online.dispatchEvent(new Event('online'));
+  for (let i = 0; i < 5; i += 1) await tick();
+  assert.equal(calls.length, 0, "user-1's coordinates never travel with user-2's bearer token");
+  assert.equal((await uploader.state()).lastError, 'token-owner-mismatch');
+  const counts = await queue.counts();
+  assert.equal(counts.pending, 1, "user-1's records are neither sent nor deleted");
+  assert.equal(counts.rejectedMissing, 0);
+});
+
+test('item 1: an opaque (non-JWT) token is refused rather than trusted', async () => {
+  const { uploader, calls } = await setup({ uploaderOptions: { getAccessToken: async () => 'opaque-token' } });
+  await uploader.flush({ userId: 'user-1' });
+  assert.equal(calls.length, 0);
+});
+
+test('item 7: one out-of-bounds sample does not delete the valid samples batched with it', async () => {
+  const samples = Array.from({ length: 10 }, (_, i) => sampleAt(NOW - 20 * 3_600_000 + i * 1000));
+  const bad = samples[4].capturedAt; // the server (faster clock) sees this one as >24 h old
+  const calls = [];
+  const fetch = async (url, init) => {
+    const body = JSON.parse(init.body);
+    calls.push(body);
+    if (body.observations.some((o) => o.capturedAt === bad)) {
+      return { status: 400, json: async () => ({ code: 'capture_time_out_of_bounds' }) };
+    }
+    return receipt(body.observations.length);
+  };
+  const { uploader, queue } = await setup({ samples, uploaderOptions: { fetchImpl: fetch } });
+  for (let i = 0; i < 3; i += 1) await uploader.flush({ userId: 'user-1' });
+  const counts = await queue.counts();
+  assert.equal(counts.uploaded, 9, 'all nine valid samples are delivered');
+  assert.equal(counts.rejectedBounds, 1, 'only the rejected sample is dropped');
+  assert.equal(counts.retained, 0);
+});
+
+test('item 7: a device clock 31 s fast never deletes the batch', async () => {
+  let serverCaughtUp = false;
+  const fetch = async (url, init) => {
+    const body = JSON.parse(init.body);
+    return serverCaughtUp ? receipt(body.observations.length) : { status: 400, json: async () => ({ code: 'capture_time_out_of_bounds' }) };
+  };
+  const samples = Array.from({ length: 100 }, (_, i) => sampleAt(NOW - 99_000 + i * 1000));
+  const { uploader, queue } = await setup({ samples, uploaderOptions: { fetchImpl: fetch } });
+  await uploader.flush({ userId: 'user-1' });
+  let counts = await queue.counts();
+  assert.equal(counts.retained, 100, 'nothing is deleted while the server sees the captures as future-dated');
+  assert.equal(counts.rejectedBounds, 0);
+  serverCaughtUp = true;
+  await uploader.flush({ userId: 'user-1' });
+  counts = await queue.counts();
+  assert.equal(counts.uploaded, 100);
+});
+
+test('item 7: samples inside the safety margin of the 24 h window are dropped before sending', async () => {
+  const nearlyExpired = sampleAt(NOW - QUEUE_LIMITS.captureWindowMs + 30_000);
+  const { uploader, queue, calls } = await setup({ samples: [nearlyExpired, sampleAt(NOW - 1000)] });
+  await uploader.flush({ userId: 'user-1' });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].body.observations.length, 1, 'only the sample the server will accept is sent');
+  assert.equal((await queue.counts()).droppedOutOfBounds, 1);
+});
+
+test('item 7: a sticky replay is re-checked against the window and never sent with an aged-out sample', async () => {
+  let now = NOW;
+  const mutableClock = { nowMs: () => now };
+  const stores = createMemoryStores();
+  const queue = await openObservationQueue({ records: stores.records, meta: stores.meta, clock: mutableClock });
+  await queue.enqueue({ sample: sampleAt(NOW - QUEUE_LIMITS.captureWindowMs + 120_000), scope });
+  await queue.enqueue({ sample: sampleAt(NOW - 1000), scope });
+  const { fetch, calls } = fakeFetch([new TypeError('lost'), { status: 200, body: { id: 'trip-1', received: 1 } }]);
+  const uploader = createLocationUploader({
+    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => tokenFor('user-1'), fetchImpl: fetch, timers: silentTimers(),
+  });
+  await uploader.flush({ userId: 'user-1' });
+  assert.equal(calls[0].body.observations.length, 2);
+  now = NOW + 90_000; // the older sample is now inside the margin
+  await uploader.flush({ userId: 'user-1' });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].body.observations.length, 1, 'the aged-out sample is not replayed');
+  assert.notEqual(calls[1].init.headers['Idempotency-Key'], calls[0].init.headers['Idempotency-Key'], 'changed content gets a new key');
+  assert.equal((await queue.counts()).uploaded, 1);
+});
+
+test('item 8: 429 and 408 are retryable and never delete the batch', async () => {
+  for (const status of [429, 408]) {
+    const { uploader, queue, timers } = await setup({
+      fetchHandlers: [{ status, body: { code: 'rate_limited' } }, { status: 200, body: { id: 'trip-1', received: 1 } }],
+    });
+    await uploader.flush({ userId: 'user-1' });
+    let counts = await queue.counts();
+    assert.equal(counts.pending, 1, `${status} keeps the batch`);
+    assert.equal(counts.rejectedValidation, 0);
+    assert.equal(timers.scheduled.length, 1, `${status} schedules a backoff retry`);
+    await uploader.flush({ userId: 'user-1' });
+    counts = await queue.counts();
+    assert.equal(counts.uploaded, 1);
+  }
+});
+
+test('item 8: only 404 trip_not_found is permanent; a route-not-found 404 keeps the queue', async () => {
+  const { uploader, queue } = await setup({
+    samples: [sampleAt(NOW - 2000), sampleAt(NOW - 1000)],
+    fetchHandlers: [{ status: 404, body: { message: 'Route POST://v1/trips/trip-1/locations not found' } }],
+  });
+  await uploader.flush({ userId: 'user-1' });
+  const counts = await queue.counts();
+  assert.equal(counts.retained, 2, 'a misrouted request deletes nothing');
+  assert.equal(counts.rejectedMissing, 0);
+});
+
+test('item 8: a trailing-slash baseUrl still hits the contract route', async () => {
+  const { uploader, calls } = await setup({ uploaderOptions: { baseUrl: 'https://api.example.com/' } });
+  await uploader.flush({ userId: 'user-1' });
+  assert.equal(calls[0].url, 'https://api.example.com/v1/trips/trip-1/locations');
+});
+
+test('item 9: a 403 on one trip does not block uploads for other trips', async () => {
+  const stores = createMemoryStores();
+  const queue = await openObservationQueue({ records: stores.records, meta: stores.meta, clock });
+  await queue.enqueue({ sample: sampleAt(NOW - 2000), scope: { tripId: 'trip-forbidden', userId: 'user-1' } });
+  await queue.enqueue({ sample: sampleAt(NOW - 1000), scope: { tripId: 'trip-ok', userId: 'user-1' } });
+  const urls = [];
+  const fetch = async (url) => {
+    urls.push(url);
+    return url.includes('trip-forbidden') ? { status: 403, json: async () => ({ code: 'forbidden' }) } : receipt(1, 'trip-ok');
+  };
+  const uploader = createLocationUploader({
+    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => tokenFor('user-1'), fetchImpl: fetch, timers: silentTimers(),
+  });
+  for (let i = 0; i < 3; i += 1) await uploader.flush({ userId: 'user-1' });
+  assert.ok(urls.some((u) => u.includes('trip-ok')), 'trip-ok is sent despite the forbidden trip');
+  const counts = await queue.counts();
+  assert.equal(counts.uploaded, 1);
+  assert.notEqual((await uploader.state()).pumpState, 'auth-blocked', 'a 403 is scoped to its trip');
+});
+
+test('item 11: a missing crypto.subtle digest never leaves the batch stuck uploading', async () => {
+  const { uploader, queue, calls } = await setup({
+    uploaderOptions: { digest: async () => { throw new TypeError('crypto.subtle is unavailable'); } },
+  });
+  await uploader.flush({ userId: 'user-1' }).catch(() => {});
+  const counts = await queue.counts();
+  assert.equal(counts.uploading, 0, 'nothing stays in uploading');
+  assert.equal(counts.pending, 1);
+  assert.equal(calls.length, 0);
+});
+
+test('item 11: a stalled response body times out instead of hanging the shared flush', async () => {
+  const timers = silentTimers();
+  const fetch = async () => ({ status: 200, json: () => new Promise(() => {}) });
+  const { uploader, queue } = await setup({ timers, uploaderOptions: { fetchImpl: fetch, requestTimeoutMs: 5_000 } });
+  const flushing = uploader.flush({ userId: 'user-1' });
+  for (let i = 0; i < 20 && !timers.scheduled.some((t) => t.ms === 5_000); i += 1) await tick();
+  for (let i = 0; i < 20; i += 1) {
+    timers.scheduled.find((t) => t.ms === 5_000)?.fn();
+    await tick();
+  }
+  const outcome = await Promise.race([flushing.then(() => 'settled'), new Promise((resolve) => setTimeout(() => resolve('hung'), 500))]);
+  assert.equal(outcome, 'settled', 'the request timeout covers the body read');
+  const counts = await queue.counts();
+  assert.equal(counts.uploading, 0);
+  assert.equal(counts.pending, 1, 'an unreadable receipt confirms nothing');
+});
+
+test('should-fix: a captive-portal 200 counts attempts and backs off instead of pinning the batch forever', async () => {
+  const { uploader, queue, timers } = await setup({
+    fetchHandlers: [{ status: 200, body: null }],
+    uploaderOptions: { maxAttempts: 2 },
+  });
+  await uploader.flush({ userId: 'user-1' });
+  assert.equal(timers.scheduled.length, 1, 'a retry is scheduled');
+  await uploader.flush({ userId: 'user-1' });
+  const counts = await queue.counts();
+  assert.equal(counts.failed, 1, 'the attempt budget applies to unverifiable receipts');
+  assert.equal((await uploader.state()).unacknowledgedBatches, 0);
 });

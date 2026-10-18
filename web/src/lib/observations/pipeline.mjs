@@ -99,7 +99,8 @@ export function createObservationPipeline({ queue, uploader, ownerSubject, onErr
     }
     const data = event.data ?? {};
     const sourceTime = event.sourceTime;
-    if (sourceTime?.basis !== 'unix-epoch-ms' || !Number.isFinite(sourceTime.value)) {
+    // Outside the ±8.64e15 ms Date range toISOString() would throw.
+    if (sourceTime?.basis !== 'unix-epoch-ms' || !Number.isFinite(sourceTime.value) || Math.abs(sourceTime.value) > 8.64e15) {
       counters.droppedBadSourceTime += 1;
       return;
     }
@@ -148,16 +149,19 @@ export function createObservationPipeline({ queue, uploader, ownerSubject, onErr
   }
 
   // Consent withdrawn for a trip: wipe its queued records and block re-entry.
+  // The queue marks the scope revoked synchronously, so a sample that reaches
+  // the sink meanwhile is refused at drain instead of surviving the wipe.
   // The host must also call the adapter's own revokeConsent to stop capture.
   async function revokeTrip(tripId) {
-    await drain();
     return queue.wipeScope({ tripId, userId: ownerSubject });
   }
 
+  // The uploader is stopped (and its in-flight request aborted) before any
+  // await, so no POST can start once stop()/signOut() was called.
   async function stop() {
     stopped = true;
-    await drain().catch(() => {});
     uploader.stop();
+    await drain().catch(() => {});
   }
 
   // Owner sign-out: stop the pump, then delete every queued record for the
@@ -165,8 +169,8 @@ export function createObservationPipeline({ queue, uploader, ownerSubject, onErr
   // lifecycle residue survives the session. Returns the wiped record count.
   async function signOut() {
     stopped = true;
-    await drain().catch(() => {});
     uploader.stop();
+    await drain().catch(() => {});
     lifecycle.clear();
     return queue.wipeUser(ownerSubject);
   }

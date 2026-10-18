@@ -227,3 +227,61 @@ test('scopeCounts exposes unsent occupancy and revocation per trip', async () =>
   assert.equal(after.unsent, 0);
   assert.equal(after.revoked, true);
 });
+
+// ---- Gatekeeper review of 170e83a: regression tests -------------------------
+
+test('item 4: two tabs enqueueing at once never overwrite each other', async () => {
+  const stores = createMemoryStores({ delayMs: 1 });
+  const tabA = await open(stores);
+  const tabB = await open(stores);
+  const results = await Promise.all([
+    tabA.enqueue({ sample: sampleAt(NOW - 2000), scope }),
+    tabB.enqueue({ sample: sampleAt(NOW - 1000), scope }),
+  ]);
+  assert.ok(results.every((r) => r.ok));
+  assert.equal(new Set(results.map((r) => r.queueId)).size, 2, 'distinct queue ids across tabs');
+  assert.equal((await stores.records.getAll()).length, 2, 'both samples survive');
+  assert.equal((await tabA.counts()).enqueued, 2, 'no counter update is lost');
+});
+
+test("item 4: a stale tab never erases another tab's revocation tombstone", async () => {
+  const stores = createMemoryStores();
+  const revokedTrip = { tripId: 'trip-3', userId: 'user-1' };
+  const tabA = await open(stores);
+  const tabB = await open(stores); // opened before the revocation
+  await tabA.wipeScope(revokedTrip);
+  assert.equal((await tabB.enqueue({ sample: sampleAt(NOW - 2000), scope: revokedTrip })).reason, 'scope-revoked',
+    'the other tab sees the revocation');
+  await tabB.enqueue({ sample: sampleAt(NOW - 1000), scope }); // stale tab writes meta
+  const restarted = await open(stores);
+  assert.equal(restarted.isScopeRevoked(revokedTrip), true, 'tombstone survives the stale tab and a restart');
+  assert.equal((await restarted.enqueue({ sample: sampleAt(NOW - 500), scope: revokedTrip })).reason, 'scope-revoked');
+});
+
+test('item 10: failed records expire with the capture window and never block new capture', async () => {
+  let now = NOW;
+  const stores = createMemoryStores();
+  const queue = await openObservationQueue({ records: stores.records, meta: stores.meta, clock: { nowMs: () => now }, capacity: 2 });
+  await queue.enqueue({ sample: sampleAt(NOW - 2000), scope });
+  await queue.enqueue({ sample: sampleAt(NOW - 1000), scope });
+  await queue.markFailed(await queue.takeBatch({ ...scope, limit: 10 }), 'http-500');
+  now = NOW + 3 * QUEUE_LIMITS.captureWindowMs;
+  const fresh = await queue.enqueue({ sample: sampleAt(now - 1000), scope });
+  assert.equal(fresh.ok, true, 'capture is accepted three days later');
+  const stored = await stores.records.getAll();
+  assert.equal(stored.length, 1, 'expired failed records (and their coordinates) are gone');
+  assert.equal((await queue.counts()).failed, 0);
+});
+
+test('item 10: a capacity full of failed records evicts the oldest failed one instead of refusing capture', async () => {
+  const queue = await open(createMemoryStores(), { capacity: 2 });
+  await queue.enqueue({ sample: sampleAt(NOW - 3000), scope });
+  await queue.enqueue({ sample: sampleAt(NOW - 2000), scope });
+  await queue.markFailed(await queue.takeBatch({ ...scope, limit: 10 }), 'http-500');
+  const next = await queue.enqueue({ sample: sampleAt(NOW - 1000), scope });
+  assert.equal(next.ok, true);
+  const counts = await queue.counts();
+  assert.equal(counts.droppedOverflow, 1);
+  assert.equal(counts.failed, 1);
+  assert.equal(counts.pending, 1);
+});

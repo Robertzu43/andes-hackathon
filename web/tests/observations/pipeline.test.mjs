@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { openObservationQueue } from '../../src/lib/observations/queue.mjs';
 import { createLocationUploader } from '../../src/lib/observations/upload.mjs';
 import { createObservationPipeline } from '../../src/lib/observations/pipeline.mjs';
-import { createMemoryStores } from './memory-store.mjs';
+import { createMemoryStores, tokenFor } from './memory-store.mjs';
 
 const NOW = Date.parse('2026-10-17T12:00:00.000Z');
 const clock = { nowMs: () => NOW };
@@ -30,8 +30,7 @@ const geoEvent = (overrides = {}) => ({
   ...overrides,
 });
 
-async function setup({ fetchImpl = null } = {}) {
-  const stores = createMemoryStores();
+async function setup({ fetchImpl = null, stores = createMemoryStores() } = {}) {
   const queue = await openObservationQueue({ records: stores.records, meta: stores.meta, clock });
   const calls = [];
   const fetch = fetchImpl ?? (async (url, init) => {
@@ -41,7 +40,7 @@ async function setup({ fetchImpl = null } = {}) {
   const uploader = createLocationUploader({
     queue,
     baseUrl: 'https://api.example.com',
-    getAccessToken: async () => 'test-token',
+    getAccessToken: async () => tokenFor('user-1'),
     fetchImpl: fetch,
     timers: { setTimeout: () => 0, clearTimeout: () => {} },
   });
@@ -284,4 +283,82 @@ test('revokeTrip then signOut leaves no owner/trip plaintext tombstone in durabl
   const reopened = await openObservationQueue({ records: stores.records, meta: stores.meta, clock });
   assert.equal(reopened.isScopeRevoked({ tripId: 'trip-1', userId: 'user-1' }), true,
     'consent revocation still survives restart — only the plaintext is gone');
+});
+
+// ---- Gatekeeper review of 170e83a: regression tests -------------------------
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const laterEvent = (offsetMs) => geoEvent({
+  eventId: `session-1:1:${10 + offsetMs}`,
+  sourceTime: { value: SOURCE_MS + offsetMs, basis: 'unix-epoch-ms', provenance: 'position.timestamp' },
+});
+const storedText = async (stores) => JSON.stringify([await stores.records.getAll(), await stores.meta.getAll()]);
+
+test('item 2: signOut racing an in-flight 503 flush leaves no coordinates, no intent and sends nothing afterwards', async () => {
+  for (let delay = 0; delay <= 30; delay += 2) {
+    const stores = createMemoryStores({ delayMs: 2 });
+    let signOutCalled = false;
+    let postsAfterSignOut = 0;
+    const fetch = async () => {
+      if (signOutCalled) postsAfterSignOut += 1;
+      await sleep(3);
+      return { status: 503, json: async () => ({ code: 'internal_error' }) };
+    };
+    const { pipeline } = await setup({ fetchImpl: fetch, stores });
+    pipeline.sink(geoEvent());
+    pipeline.sink(laterEvent(1000));
+    await pipeline.drain();
+    const flushing = pipeline.flush().catch(() => {});
+    await sleep(delay);
+    signOutCalled = true;
+    await pipeline.signOut();
+    await flushing;
+    await sleep(20); // let any straggling write land
+    assert.equal(postsAfterSignOut, 0, `no POST starts after signOut() (delay ${delay})`);
+    assert.equal((await stores.records.getAll()).length, 0, `no record survives signOut (delay ${delay})`);
+    const text = await storedText(stores);
+    assert.equal(text.includes('-33.4489'), false, `no coordinates in storage after signOut (delay ${delay})`);
+    assert.equal(text.includes('user-1'), false, `no owner plaintext after signOut (delay ${delay})`);
+  }
+});
+
+test('item 3: a sample reaching the sink while revokeTrip runs is not kept', async () => {
+  const stores = createMemoryStores({ delayMs: 2 });
+  const { pipeline } = await setup({ stores });
+  pipeline.sink(geoEvent());
+  await pipeline.drain();
+  const revoking = pipeline.revokeTrip('trip-1');
+  pipeline.sink(laterEvent(1000));
+  await revoking;
+  await pipeline.drain();
+  const status = await pipeline.tripStatus('trip-1');
+  assert.deepEqual(status.queue, { pending: 0, uploading: 0, failed: 0, unsent: 0, revoked: true });
+  assert.equal((await stores.records.getAll()).length, 0, 'no coordinates stored for a revoked trip');
+});
+
+test('item 3: revoking during a flush leaves no pending coordinates', async () => {
+  for (let delay = 0; delay <= 40; delay += 2) {
+    const stores = createMemoryStores({ delayMs: 2 });
+    const fetch = async () => {
+      await sleep(3);
+      return { status: 503, json: async () => ({ code: 'internal_error' }) };
+    };
+    const { pipeline } = await setup({ fetchImpl: fetch, stores });
+    for (const offset of [0, 1000, 2000]) pipeline.sink(laterEvent(offset));
+    await pipeline.drain();
+    const flushing = pipeline.flush();
+    await sleep(delay);
+    await pipeline.revokeTrip('trip-1');
+    await flushing;
+    await sleep(20);
+    assert.equal((await stores.records.getAll()).length, 0, `records are not re-created after the wipe (delay ${delay})`);
+    assert.equal((await storedText(stores)).includes('-33.4489'), false, `no coordinates kept (delay ${delay})`);
+  }
+});
+
+test('item 12: a far-future sourceTime is dropped at the boundary and never throws from the sink', async () => {
+  const { pipeline } = await setup();
+  const farFuture = geoEvent({ sourceTime: { value: 9e15, basis: 'unix-epoch-ms', provenance: 'position.timestamp' } });
+  assert.doesNotThrow(() => pipeline.sink(farFuture));
+  assert.equal((await pipeline.counts()).boundary.droppedBadSourceTime, 1);
 });
