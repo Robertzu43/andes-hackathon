@@ -59,6 +59,31 @@ test('session binding activates only from the server UUID and clears immediately
   binding.dispose(); binding.dispose();
 });
 
+test('same-identity re-activation verifies first and keeps a same-actor controller state', async () => {
+  let me = actor;
+  const { session, api } = setup(async () => Response.json({ id: me }));
+  const calls = [];
+  // Like the #63 controller: same actor keeps state; null or another actor clears it.
+  let state = { actor: null, sos: null };
+  const binding = bindJourneySession(session, api, id => {
+    calls.push(id);
+    if (id === null || id !== state.actor) state = { actor: id, sos: null };
+  });
+  await binding.activate();
+  state.sos = 'accepted';
+  session.setCredentials({ ...credentials(), accessToken: 'synthetic.refreshed' });
+  assert.deepEqual(await binding.activate(), { id: actor });
+  assert.deepEqual(calls, [null, actor]); // No null and no repeat: the accepted SOS survives.
+  assert.deepEqual(state, { actor, sos: 'accepted' });
+  me = '33333333-3333-4333-8333-333333333333'; // Same token subject, but the server actor changed.
+  await binding.activate();
+  assert.deepEqual(calls, [null, actor, null, me]);
+  assert.equal(state.sos, null);
+  session.setCredentials(credentials('synthetic-B'));
+  assert.deepEqual(calls.at(-1), null);
+  binding.dispose();
+});
+
 test('session binding cannot activate an old response after account change or disposal', async () => {
   for (const change of ['account', 'dispose']) {
     let finish;
