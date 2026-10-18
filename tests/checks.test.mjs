@@ -185,16 +185,17 @@ test('alert wording names the truck, keeps the incident ID and never invents loc
     location: {latitude: -12.1, longitude: -77.03, accuracy: 18.4, captured_at: new Date('2026-10-17T12:02:00Z')}};
   const env = {EMERGENCY_NUMBERS: '{"PE":"105"}', CONTACT_APP_URL: 'https://andes.example'};
   assert.equal(alertSummary({...base, incident: {id: 'i-1', trigger: 'sos', check_reason: null}}, env),
-    'ALERTA: el conductor del camión ABC-123 pidió ayuda (posible robo). Incidente i-1. Última ubicación a las 07:02 (hace 3 min, ±18 m): https://maps.google.com/?q=-12.1,-77.03. Llámalo. Si no responde, llama al 105. Ver: https://andes.example/incidents/i-1');
+    'SOS: el conductor del camión ABC-123 activó el botón SOS y pidió ayuda (posible robo). Incidente i-1. Última ubicación a las 07:02 (hace 3 min, ±18 m): -12.10000,-77.03000 (pégalo en Google Maps). Llámalo. Si no responde, llama al 105. Ver: https://andes.example/incidents/i-1');
   assert.equal(alertSummary({...base, location: null, signalAt: new Date('2026-10-17T11:58:00Z'), incident: {id: 'i-2', trigger: 'missed_check', check_reason: 'silence'}}, {}),
     'el conductor del camión ABC-123 no confirmó su estado (sin señal desde 06:58). Incidente i-2. Última ubicación no disponible. No sabemos qué pasó. Llámalo.');
   assert.match(alertSummary({...base, incident: {id: 'i-3', trigger: 'missed_check', check_reason: 'arrival_overdue'}}, env), /no llegó a la hora prevista\). Incidente i-3\..*Llámalo; si no responde, llama al 105\./);
   assert.match(alertSummary({...base, incident: {id: 'i-4', trigger: 'missed_check', check_reason: 'sharing_stopped'}}, {}), /dejó de compartir su ubicación/);
   assert.match(alertSummary({...base, location: {...base.location, captured_at: new Date('2026-10-17T10:00:00Z')}, incident: {id: 'i-5', trigger: 'sos', check_reason: null}}, {}), /hace 2 h 5 min/);
-  assert.match(alertSummary({...base, truck: 'ABC\n123\t'.padEnd(80, 'x'), incident: {id: 'i-6', trigger: 'sos', check_reason: null}}, {}), /camión ABC 123 x{32} pidió/);
+  assert.match(alertSummary({...base, truck: 'ABC\n123\t'.padEnd(80, 'x'), incident: {id: 'i-6', trigger: 'sos', check_reason: null}}, {}), /camión ABC 123 x{32} activó el botón SOS/);
   const spoken = alertSummary({...base, voice: true, incident: {id: 'i-7', trigger: 'sos', check_reason: null}}, env);
   assert.doesNotMatch(spoken, /https?:/);
-  assert.match(spoken, /Incidente i-7\. Última ubicación a las 07:02, hace 3 min, precisión de 18 metros\. Llámalo\./);
+  assert.doesNotMatch(spoken, /Incidente|i-7/);
+  assert.match(spoken, /^SOS: .*activó el botón SOS y pidió ayuda \(posible robo\)\. Última ubicación a las 07:02, hace 3 min, precisión de 18 metros\. Te enviamos las coordenadas por mensaje de texto\. Llámalo\./);
 });
 
 test('the control worker runs the sweeper only when check timings are configured', async t => {
@@ -285,7 +286,7 @@ test('SOS after the missed-check alerts expired sends a new SOS-worded alert on 
   const {authorizeJob, claimJob} = await import('../dist/notifications/dispatch.js');
   const {provider} = await import('./helpers/dispatch.mjs');
   const [sms] = await sendable(f, incident);
-  assert.match((await authorizeJob(f.ctx, await claimJob(f.ctx, sms, 'sos-upgrade'), provider())).payload.text, /ALERTA: el conductor del camión SYNTHETIC truck pidió ayuda/);
+  assert.match((await authorizeJob(f.ctx, await claimJob(f.ctx, sms, 'sos-upgrade'), provider())).payload.text, /SOS: el conductor del camión SYNTHETIC truck activó el botón SOS/);
   const status = (await f.req('GET', `/v1/trips/${trip}/status`)).body;
   assert.deepEqual(status.incident.checkReason, null);
   assert.deepEqual(status.deliveries.map(d => `${d.role}:${d.channel}:${d.status}`), ['family:sms:authorized', 'family:voice:pending', 'family:whatsapp:pending', 'group:group:unavailable']);

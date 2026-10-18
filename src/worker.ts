@@ -5,6 +5,7 @@ import type { Channel } from './contracts.js';
 import { consume, recoverWork, reconcileOnce, relayOnce, type Transport, type WorkClass } from './notifications/dispatch.js';
 import { createSqsTransport } from './notifications/sqs.js';
 import { createZavuProvider, loadQualification, type Provider } from './notifications/zavu.js';
+import { withTwilioVoice } from './notifications/twilio.js';
 import { loadCallbackConfig } from './notifications/callback.js';
 import { checkConfig, checkOnce, type CheckConfig } from './checks/sweep.js';
 export function configuredProvider(env: NodeJS.ProcessEnv, http: typeof fetch = fetch): Provider | null {
@@ -16,7 +17,7 @@ export function configuredProvider(env: NodeJS.ProcessEnv, http: typeof fetch = 
   if (env.DEMO_MODE === 'true' && qualification.live && (JSON.stringify(qualification.allowedDestinations) !== JSON.stringify([env.DEMO_LIVE_PHONE]) || !qualification.demoLimits)) {
     throw new Error('DEMO_MODE live sends require allowedDestinations exactly [DEMO_LIVE_PHONE] and demoLimits');
   }
-  return createZavuProvider(qualification, env.ZAVU_API_KEY, http);
+  return withTwilioVoice(createZavuProvider(qualification, env.ZAVU_API_KEY, http), env, http);
 }
 async function loop(operation: () => Promise<unknown>, interval: number, signal: AbortSignal) {
   while (!signal.aborted) {
@@ -53,5 +54,5 @@ export async function startWorker(role: string, env = process.env): Promise<void
   }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  startWorker(process.argv[2] ?? '').catch(() => { process.stderr.write('Worker stopped with error\n'); process.exitCode = 1; });
+  startWorker(process.argv[2] ?? '').catch(error => { process.stderr.write(`Worker stopped with error: ${error instanceof Error ? error.message.slice(0, 200) : 'unknown'}\n`); process.exitCode = 1; });
 }
