@@ -7,7 +7,8 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 - **IDs** use capital letters, digits and hyphens, with at least one letter: `P03-D`, `C03-W`, `C03-W-S2`, `C03-W-E07`. They are codes. Never use a name, phone number or plate as an ID. The key linking codes to people stays offline with the consent forms.
 - **Lists** separate values with `;`.
 - **Times** are ISO 8601 with the UTC offset in force at that moment: `2026-09-14T21:40-03:00`. Format time columns as plain text so the spreadsheet does not rewrite them. A WhatsApp export shows local phone time without an offset; convert it with the phone's time zone and record that zone in `source_time_zone`.
-- **`unknown`** is a recorded answer. Leave a cell blank only where this page says it may be blank.
+- **`unknown`** is a recorded answer only where the field allows it. Sensitive/rest event labels never use `occurrence=unknown`; missing incident evidence stays a generic unknown-contact row. Leave a cell blank only where this page says it may be blank.
+- **Review flags** below are manual review decisions. This materials-only slice supplies no automated warnings or validator.
 - **Exported** says whether the column leaves the private folder in the redacted export. `private` columns never do, and neither does any column added to a sheet. "Scanned" columns need identifier checks before sharing (see the export section).
 
 ## participants.csv
@@ -20,8 +21,8 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 | `country_of_residence` | two-letter code such as `BR`, `CO`, `MX` | yes | |
 | `preferred_language` | language tag such as `es`, `pt-BR` or `es-419` | yes | Language of the guides used with this person. |
 | `phone_platform` | `iphone`, `android`, `other`, `unknown` | yes | Phone used on the reconstructed trips. Feeds the #9 device coverage. |
-| `work_arrangement` | `owner_operator`, `independent_driver`, `fleet_employed`, `other`, `unknown`; contacts use `not_applicable` | yes | How the driver works. `fleet_employed` is outside the target segment and raises a warning. |
-| `trucks_operated` | `1`, `2`, `3_or_more`, `unknown`; contacts use `not_applicable` | yes | Trucks the driver owns or operates. `3_or_more` raises a warning. |
+| `work_arrangement` | `owner_operator`, `independent_driver`, `fleet_employed`, `other`, `unknown`; contacts use `not_applicable` | yes | How the driver works. Flag `fleet_employed` for manual review as outside the target segment. |
+| `trucks_operated` | `1`, `2`, `3_or_more`, `unknown`; contacts use `not_applicable` | yes | Trucks the driver owns or operates. Flag `3_or_more` for manual review. |
 | `relationship_to_driver` | `family`, `fellow_driver`, `freight_company`, `friend`, `other`, `unknown`; drivers use `not_applicable` | yes | Who the trusted contact is. `freight_company` covers a carrier, shipper, broker or dispatcher. |
 | `consent_ref` | free text | private | Required reference to the consent record held offline. The reference must exist; legal validity needs the approved consent process. |
 | `consent_recording` | `yes`, `no`, `pending` | no | Consent to record the interview. |
@@ -33,7 +34,7 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 |---|---|---|---|
 | `case_id` | ID | yes | One reconstructed freight trip. |
 | `pair_id` | ID | yes | |
-| `trip_kind` | `worrying`, `ordinary` | yes | Each pair gives one of each. A missing one raises a warning. |
+| `trip_kind` | `worrying`, `ordinary` | yes | Each pair gives one of each. Record a missing one as a manual coverage gap. |
 | `synthetic` | `yes`, `no` | yes | `yes` only for invented test data. |
 | `concerns` | list of `security`, `fatigue`, `lost_contact`, `breakdown`, `crash`, `health`, `other`; or `none` alone | yes | What made the trip worrying, as the participants describe it. `security` covers robbery, attempted robbery, being followed and threats. `fatigue` covers tiredness, sleepiness and problems finding rest. |
 | `trip_countries` | list of two-letter codes | yes | Countries the trip passed through. |
@@ -98,7 +99,7 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 - Security: `security_concern` (followed, a suspicious stop, a threat), `robbery_attempt`, `robbery`.
 - Response: `help_request`, `contact_concerned`, `decision`, `third_party_contacted` (fellow drivers, the freight company, police or others), `assistance_arranged`, `missed_opportunity`, `resolution` (when someone learned how it ended), `other`.
 
-The fatigue, security and rest types are reported states: they can never be `recorded` from phone, location or contact metadata alone. A GPS or tracker stop can be recorded as a stop with `other`; it is not `rest_start` unless a participant account says the driver rested.
+The fatigue, security and rest types are reported states: `tiredness_report`, `dozed_off_report`, `security_concern`, `robbery_attempt`, `robbery`, `rest_start`, `rest_end` and `rest_difficulty` never use `recorded` or `unknown` occurrence. They require an attributed or independently corroborated basis under the rules below. Missing evidence stays a generic `contact_unconfirmed` row, without a sensitive/rest label. A GPS or tracker stop can be recorded as a stop with `other`; it is not `rest_start` unless a participant account says the driver rested.
 
 ### Occurrence
 
@@ -106,7 +107,7 @@ The fatigue, security and rest types are reported states: they can never be `rec
 |---|---|
 | `recorded` | A timestamped record shows the act happened: a message was sent, a call was made, a truck stopped. Needs a cited timestamped record. A record can show that someone wrote that they were tired or robbed, or that a truck stopped. It cannot show tiredness, robbery or rest, so sensitive and rest types never use this value. |
 | `self_reported` | The person who did or experienced it says so, in an interview or in their own message. Requires that participant in `reported_by`, a role matching the actor, and a cited source with `evidence_basis=attributed_account`. A message export supplied by the other participant can be that cited account; the reviewer checks the declaration against the original message. |
-| `reported_second_hand` | Someone else says it happened. Requires the participant repeating the account in `reported_by` and a cited source with `evidence_basis=attributed_account`; that participant's role must differ from the actor. |
+| `reported_second_hand` | Someone else says it happened. Requires the participant repeating the account in `reported_by` and a cited source containing that participant's actual account, with `evidence_basis=attributed_account`; that participant's role must differ from the actor. A co-cited unrelated interview is not support. Who supplied a message export does not establish who spoke: trace the declaration to its actual speaker in the original. |
 | `suspected` | A participant explicitly expressed a fear or suspicion, with their own cited account and stated basis in `basis_source_id` and `basis_note`. Requires that person in `reported_by`. An unanswered message alone does not create this classification. The suspicion is attributed, and the incident remains unverified. |
 | `corroborated` | Independent observations support this specific claim. Requires `basis_source_id` pointing to a cited `independent_record` with `evidence_basis=independent_observation`, and `basis_note` explaining the observations. A police complaint repeating the driver's allegation remains `self_reported` with attribution to the driver; a second-hand account remains `reported_second_hand`. |
 | `unknown` | Missing evidence leaves occurrence unverified. For no reply alone, use `contact_unconfirmed` with this value, without adding a fatigue, sleep or robbery label. A bounded follow-up under an agreed policy does not change that evidence status. |
@@ -125,7 +126,7 @@ Keep contact status and incident verification in separate rows. An unanswered ca
 
 The following is the proposed handoff contract for later tooling, not an export command available in this materials-only slice. A handoff requires both participants' sharing consent, reviewed redaction and an independent trace review; prepare no handoff until those conditions are met.
 
-- **Cases included:** `redaction_status` is `reviewed` and both people in the pair have `consent_share_redacted` set to `yes`. Other cases appear in `excluded_cases` with their reasons and no content.
+- **Cases included:** `redaction_status` is `reviewed` and both people in the pair have `consent_share_redacted` set to `yes`. Exclusions are generic counts by reason only, with no excluded case/person identifiers, timestamps, row content or individual consent decisions.
 - **Removed:** calendar dates, `consent_ref`, `consent_recording`, `consent_share_redacted`, `redaction_status`, `storage_ref`, both private notes and any added column.
 - **Times:** minutes from the earliest time in the case, in `observed_offset_min` and `recalled_offset_min` (`earliest`, `latest`). `anchor_local_hour` keeps the local hour of that earliest time.
 - **`recall_gap_min`:** for `both` rows, the minutes by which the record falls outside the remembered range. Negative when the record is earlier than remembered, 0 inside the range.
