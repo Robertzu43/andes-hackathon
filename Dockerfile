@@ -14,6 +14,8 @@ RUN npm ci
 COPY web ./
 # The spec's GPS adapter lives in the backend tree; keep its relative path for the web's Vite alias.
 COPY src/phone-observations /app/src/phone-observations
+# The pitch deck rides along at /deck.html, so the demo and the deck share one public link.
+COPY docs/submission/deck/index.html ./public/deck.html
 RUN npm run build
 
 FROM node:24-bookworm-slim

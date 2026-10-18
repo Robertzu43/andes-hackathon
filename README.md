@@ -26,9 +26,9 @@ ANDES es el nombre del repositorio y del proyecto; Tándem es la app; GOAT es el
 ## Para el jurado: cómo entrar
 
 > [!IMPORTANT]
-> **La demo guiada está EN CONSTRUCCIÓN y todavía no hay URL.** El recorrido de abajo es el diseño aprobado, no algo que ya se pueda abrir. Lo define la [spec de la demo funcional](https://github.com/Bimbi-Dev/andes-hackathon/blob/docs/functional-phone-demo-spec/docs/superpowers/specs/2026-10-18-functional-phone-demo-design.md), en la rama `docs/functional-phone-demo-spec`, que aún no está en `main`.
+> **La demo está desplegada en AWS (ECS Fargate + RDS).** Los avisos reales del SOS, SMS por Zavu y llamada con voz neural por Twilio, solo llegan al número autorizado para la prueba; cualquier otro destino se rechaza antes de llamar al proveedor. El recorrido de abajo sigue la [spec de la demo funcional](docs/superpowers/specs/2026-10-18-functional-phone-demo-design.md).
 
-**Demo:** [[PENDIENTE: URL de la demo]]
+**Demo:** https://an-1dc2ae9cdfee46e6bfe399ec607092d5.ecs.us-east-1.on.aws · **Deck:** https://an-1dc2ae9cdfee46e6bfe399ec607092d5.ecs.us-east-1.on.aws/deck.html
 
 Se abrirá en una ventana privada, sin cuenta, sin pedir acceso y sin archivos locales. El botón **Empezar** crea una sesión de demostración aislada con el modo demo que ya existe en el backend ([`POST /v1/demo/session`](docs/contracts/runtime.md#demo-mode)). El único permiso que pedirá el navegador será la ubicación, y solo al tocar «Compartir ubicación».
 
@@ -58,7 +58,7 @@ Lo que ya se puede verificar sin la URL: el [CI de `main`](https://github.com/Bi
 | [Tracción](#tracción) · [Limitaciones](#limitaciones) | Lo que falta probar con personas reales |
 | [Diseño](#diseño) · [Pitch deck](docs/submission/deck/index.html) · [Descripción de la entrega](docs/submission/descripcion.md) | Sistema de diseño y material de la entrega |
 
-El deck es una página HTML: ábrelo en un navegador (GitHub muestra su código fuente). Su URL publicada está pendiente.
+El deck es una página HTML, publicada junto a la demo en https://an-1dc2ae9cdfee46e6bfe399ec607092d5.ecs.us-east-1.on.aws/deck.html (GitHub muestra su código fuente).
 
 ## El problema
 

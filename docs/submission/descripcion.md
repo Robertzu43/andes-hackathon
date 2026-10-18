@@ -4,9 +4,9 @@
 
 Equipo GOAT · Hack the Andes 2026 · Track Seguridad. ANDES es el nombre del repositorio; Tándem es la app.
 
-- Demo: [[PENDIENTE: URL de despliegue]]
-- Presentación: [[PENDIENTE: URL de la presentación]]
-- Código: https://github.com/Bimbi-Dev/andes-hackathon [[PENDIENTE: el repositorio debe ser público]]
+- Demo: https://an-1dc2ae9cdfee46e6bfe399ec607092d5.ecs.us-east-1.on.aws
+- Presentación: https://an-1dc2ae9cdfee46e6bfe399ec607092d5.ecs.us-east-1.on.aws/deck.html
+- Código: https://github.com/Robertzu43/andes-hackathon [[PENDIENTE: el repositorio debe ser público]]
 
 ## Problema
 
