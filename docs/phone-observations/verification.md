@@ -1,9 +1,10 @@
 # #19 author verification and handoff
 
-Current software source is `a5a383f`, preserving the author's `4417cf6` repairs
+Historical software source `a5a383f` preserved the author's `4417cf6` repairs
 and adding the post-throttle motion work cap and GPS-only queue composition.
 Node24.17.0: **102/102 author/recorder checks and 12/12 complementary reviewer
-controls pass**. Historical results below remain historical. Full current
+controls passed**. The later review5560757444 requires the narrow corrections in
+[the gatekeeper report](robert-5560757444-fixes.md); all results below remain historical. Full prior
 disposition, portable commands, unchanged reviewer differences and pending
 integration/confirmation gates are in [the current report](robert-current-disposition.md).
 
