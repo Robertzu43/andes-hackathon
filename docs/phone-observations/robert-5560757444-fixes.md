@@ -37,6 +37,11 @@ remain. Q52's exact original reviewer artifacts and expected historical red
 outputs are unchanged; the v3 contract, five independent denial/deadline/privacy
 controls and versioned lifecycle controls are rerun against the correction.
 
+Actual correction runs: **113 author/recorder +12 Q57 follow-up +22 unchanged
+contract-v3 +5 unchanged independent controls +16 unchanged lifecycle-v2 =168
+passes**. These are correction-owner reruns; fresh Q52 independent confirmation
+of the new head is still required. The prior157-check acceptance covered9f87 only.
+
 ```sh
 node --test tests/phone-observations/adapter.test.mjs tests/phone-capability/recorder.test.mjs
 node --test --test-name-pattern='^GATE ' tests/phone-observations/adapter.test.mjs
