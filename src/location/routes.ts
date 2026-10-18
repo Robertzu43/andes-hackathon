@@ -1,9 +1,17 @@
 import type { FastifyInstance } from 'fastify';
+import type pg from 'pg';
 import { owner, problem } from '../contracts.js';
 import { withTripTransaction, type Context } from '../db.js';
 import { idempotent } from '../api/mutations.js';
 import { idParams, object } from '../api/schemas.js';
 interface Observation { capturedAt: string; latitude: number; longitude: number; accuracy: number }
+export async function latestLocation(client: pg.PoolClient, tripId: string, now: Date) {
+  const row = (await client.query('SELECT * FROM latest_locations WHERE trip_id=$1', [tripId])).rows[0];
+  if (!row) return { location: null, freshness: 'unavailable' as const, ageMs: null };
+  const ageMs = Math.max(0, now.getTime() - row.captured_at.getTime());
+  return { location: { capturedAt: row.captured_at.toISOString(), receivedAt: row.received_at.toISOString(), latitude: row.latitude, longitude: row.longitude, accuracy: row.accuracy },
+    freshness: ageMs <= 120000 ? 'fresh' as const : 'stale' as const, ageMs };
+}
 export function locationRoutes(app: FastifyInstance, ctx: Context) {
   app.post('/v1/trips/:id/locations', { schema: { params: idParams, body: object({ observations: { type: 'array', minItems: 1, maxItems: 100, items: object({
     capturedAt: { type: 'string', format: 'date-time' }, latitude: { type: 'number', minimum: -90, maximum: 90 }, longitude: { type: 'number', minimum: -180, maximum: 180 }, accuracy: { type: 'number', minimum: 0, maximum: 100000 }
@@ -28,10 +36,8 @@ export function locationRoutes(app: FastifyInstance, ctx: Context) {
     return withTripTransaction(ctx, (request.params as { id: string }).id, async (client, trip) => {
       if (!trip.map_active) problem(403, 'map_inactive');
       if (trip.driver_id !== request.actor.id && !(await client.query(`SELECT 1 FROM trip_grants tg JOIN contact_grants cg ON cg.id=tg.grant_id WHERE tg.trip_id=$1 AND tg.revoked_at IS NULL AND cg.contact_id=$2 AND cg.accepted_at IS NOT NULL AND cg.revoked_at IS NULL AND cg.map_accepted`, [trip.id, request.actor.id])).rowCount) problem(403, 'forbidden');
-      const location = (await client.query('SELECT * FROM latest_locations WHERE trip_id=$1', [trip.id])).rows[0]; const now = ctx.clock();
-      if (!location) return { tripId: trip.id, location: null, freshness: 'unavailable', readAt: now.toISOString(), ageMs: null };
-      const ageMs = Math.max(0, now.getTime() - location.captured_at.getTime());
-      return { tripId: trip.id, location: { capturedAt: location.captured_at.toISOString(), receivedAt: location.received_at.toISOString(), latitude: location.latitude, longitude: location.longitude, accuracy: location.accuracy }, freshness: ageMs <= 120000 ? 'fresh' : 'stale', ageMs, readAt: now.toISOString() };
+      const now = ctx.clock(); const { location, freshness, ageMs } = await latestLocation(client, trip.id, now);
+      return { tripId: trip.id, location, freshness, ageMs, readAt: now.toISOString() };
     }, ctx.telemetryPool);
   });
 }

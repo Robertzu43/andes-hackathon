@@ -4,4 +4,4 @@ export const object = (properties: Record<string, unknown>, required = Object.ke
 export const idParams = object({ id: uuid });
 export const empty = object({});
 export const scopeChoices = { map: { type: 'boolean' }, incident: { type: 'boolean' } };
-export const fieldsSchema = object({ truckId: uuid, origin: text, destination: text, country: { type: 'string', pattern: '^[A-Z]{2}$' }, locale: { type: 'string', minLength: 2, maxLength: 40 }, timeZone: { type: 'string', minLength: 1, maxLength: 80 } }, []);
+export const fieldsSchema = object({ truckId: uuid, origin: text, destination: text, country: { type: 'string', pattern: '^[A-Z]{2}$' }, locale: { type: 'string', minLength: 2, maxLength: 40 }, timeZone: { type: 'string', minLength: 1, maxLength: 80 }, expectedArrivalAt: { type: 'string', format: 'date-time' } }, []);

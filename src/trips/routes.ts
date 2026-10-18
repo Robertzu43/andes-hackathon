@@ -43,8 +43,8 @@ export function tripRoutes(app: FastifyInstance, ctx: Context) {
         if (!row?.accepted_at || row.revoked_at || (!row.map_accepted && !row.incident_accepted)) problem(409, 'contact_not_accepted');
       }
       await client.query('UPDATE trip_drafts SET fields=$2 WHERE id=$1', [id, fields]);
-      await client.query(`INSERT INTO trips(id,driver_id,truck_id,origin,destination,country,locale,time_zone,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [id, request.actor.id, fields.truckId, fields.origin, fields.destination, fields.country, fields.locale, fields.timeZone, ctx.clock()]);
+      await client.query(`INSERT INTO trips(id,driver_id,truck_id,origin,destination,country,locale,time_zone,created_at,expected_arrival_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        [id, request.actor.id, fields.truckId, fields.origin, fields.destination, fields.country, fields.locale, fields.timeZone, ctx.clock(), fields.expectedArrivalAt ?? null]);
       for (const grant of grantIds) await client.query('INSERT INTO trip_grants(trip_id,grant_id) VALUES($1,$2)', [id, grant]);
       return { id, status: 'active', fields };
     });
@@ -62,6 +62,8 @@ export function tripRoutes(app: FastifyInstance, ctx: Context) {
         await client.query('UPDATE trips SET paused=$2,checkins_active=$3,version=version+1 WHERE id=$1', [trip.id, type === 'pause', type === 'resume']);
         if (type === 'pause') await client.query(`UPDATE jobs SET status='cancelled',cancelled_at=$2,version=version+1 WHERE trip_id=$1 AND class='ordinary' AND status IN ('pending','claimed')`, [trip.id, ctx.clock()]);
       }
+      const closing = type === 'checkin_ok' ? 'ok' : ['arrived', 'cancel', 'pause'].includes(type) ? 'cancelled' : null;
+      if (closing) await client.query("UPDATE security_checks SET status=$2,closed_at=$3 WHERE trip_id=$1 AND status='asking'", [trip.id, closing, ctx.clock()]);
       await client.query('INSERT INTO trip_events VALUES($1,$2,$3,$4,$5)', [randomUUID(), trip.id, request.actor.id, type, ctx.clock()]);
       return { id: trip.id, command: type, automaticEscalation: false };
     });

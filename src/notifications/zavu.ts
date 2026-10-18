@@ -6,6 +6,10 @@ export interface QualifiedChannel extends ChannelSupport {
 export interface Qualification {
   live: boolean; accountId: string; senderId: string; evidence: string; entries: QualifiedChannel[];
   dailyLimit: number; channelDailyLimit: number; minuteLimit: number; emergencyReserve: number;
+  /** Optional: only these E.164 destinations may be sent to; any other is refused before the provider is called. */
+  allowedDestinations?: string[];
+  /** Optional live-send budget, checked at authorization: attempts per incident and per recipient identity (a demo world's one consented persona). */
+  demoLimits?: { perIncident: number; perSession: number };
 }
 export interface SendInput { attemptId: string; to: string; channel: Channel; country: string; locale: string; summary: string }
 export interface Payload { to: string; channel: Channel; messageType: 'text' | 'template'; text?: string;
@@ -31,6 +35,8 @@ export function loadQualification(env: NodeJS.ProcessEnv): Qualification | null 
       if (!Number.isSafeInteger(q[key]) || q[key] < (key === 'emergencyReserve' ? 0 : 1)) throw Error();
     }
     if (q.emergencyReserve >= Math.min(q.dailyLimit, q.channelDailyLimit, q.minuteLimit)) throw Error();
+    if (q.allowedDestinations !== undefined && (!Array.isArray(q.allowedDestinations) || q.allowedDestinations.length > 10 || q.allowedDestinations.some(to => typeof to !== 'string' || !/^\+[1-9]\d{6,14}$/.test(to)))) throw Error();
+    if (q.demoLimits !== undefined && (typeof q.demoLimits !== 'object' || !q.demoLimits || [q.demoLimits.perIncident, q.demoLimits.perSession].some(n => !Number.isSafeInteger(n) || n < 1))) throw Error();
     const seen = new Set<string>();
     for (const entry of q.entries) {
       const key = `${entry.country}:${entry.locale}:${entry.channel}`;

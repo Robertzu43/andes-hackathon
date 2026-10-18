@@ -1,6 +1,6 @@
 # Executable backend contract — Task 1
 
-Engineering implementation, not a device/provider/AWS qualification. No live delivery, audio transcription or automatic nonresponse escalation is enabled. All test identities, phones and trips are synthetic.
+Engineering implementation, not a device/provider/AWS qualification. No live delivery or audio transcription is enabled. Automatic missed-check escalation runs only when all four check timings are configured (see [Security checks](#security-checks-part-1)). All test identities, phones and trips are synthetic.
 
 ## Run and identity
 
@@ -68,7 +68,7 @@ The API reserves at most **10 connections per replica**: commands 6, telemetry 2
 
 The SQL lease is 30 seconds. Relay updates use unique ownership tokens; an old publisher cannot acknowledge a newer lease. Lost publish acknowledgements republish only transport, with persisted exponential backoff up to five minutes. Scanner runs every second and restores pending jobs/outbox after lost/expired transport no sooner than 60 seconds after a confirmed publication. Claimed work without an external attempt can be reclaimed after expiry; stale tokens cannot authorize. A unique `dispatch_attempts.job_id` permits one external attempt per job. SQL authorization rechecks current standing/trip consent, incident scope, matching verified destination, incident owner/state, class, version, due time, expiry and qualification while holding the existing trip-row lock. Standing grants are read without upgrading the `NO KEY UPDATE` lock graph. A crash after authorization yields unknown, never pending. Queue replay and scanner cannot create another external attempt, even after HTTP 404 reconciliation or a rejection. This first version makes **no automatic provider resend at all**; a rejection needs operator review, and a genuinely new driver-declared episode requires explicit resolution/new SOS. It must not be used as a workaround to resend an ambiguous prior episode.
 
-Every authorized attempt freezes the provider payload, its SHA-256 hash, destination hash, owner/token and stable provider key before network. The alert summary attributes the driver/trip, exact incident UUID (`Incidente <id>;`) and incident creation ISO timestamp/time zone. SMS, WhatsApp and voice all carry that UUID in the frozen summary so the authenticated recipient can read, acknowledge and report actions for the same episode; the ID grants no access by itself and is not a bearer link. It includes last latitude/longitude, capture timestamp, accuracy and a recent/old label only when map access and standing/trip map consent remain valid at authorization. The existing 120-second freshness bound is synthetic. Otherwise it truthfully says `ubicación no disponible`. Arrival keeps SOS active while preventing newly authorized payloads from gaining coordinates. Payloads already authorized may finish after revoke/closure. Untrusted raw trip text is never copied. WhatsApp places the entire summary in one explicitly configured approved-template variable; text and voice append it to qualified configured text. Incident acknowledgements/actions remain separate from provider acceptance/delivery.
+Every authorized attempt freezes the provider payload, its SHA-256 hash, destination hash, owner/token and stable provider key before network. The alert summary (`src/notifications/wording.ts`, Spanish only for the demo) names the truck label, says what triggered it (SOS, or the missed-check reason) and carries the exact incident UUID (`Incidente <id>.`). SMS, WhatsApp and voice all carry that UUID in the frozen summary so the authenticated recipient can read, acknowledge and report actions for the same episode; the ID grants no access by itself and is not a bearer link. It includes the persisted capture time (HH:MM in the trip time zone), the location age, rounded accuracy and a Google Maps link to the last latitude/longitude only when map access and standing/trip map consent remain valid at authorization. The existing 120-second freshness bound is synthetic. Otherwise it truthfully says `Última ubicación no disponible`. Arrival keeps SOS active while preventing newly authorized payloads from gaining coordinates. Payloads already authorized may finish after revoke/closure. Untrusted raw trip text is never copied. The driver's truck label is, collapsed to one line and at most 40 characters. Voice summaries omit URLs and read capture time, age and accuracy instead. WhatsApp places the entire summary in one explicitly configured approved-template variable; text and voice append it to qualified configured text. Incident acknowledgements/actions remain separate from provider acceptance/delivery.
 
 ### Provider configuration and evidence
 
@@ -89,3 +89,57 @@ Callbacks arriving before HTTP response remain unmatched by exact message ID. On
 API, workers and one-off scripts share `databaseConfig(env)` from `src/db.ts`. Existing local `DATABASE_URL` is preserved. With it unset, complete raw `PGHOST`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` and optional `PGPORT` form an in-memory URL with encoded credential components. AWS uses fixed database `andes`. `PGSSLROOTCERT` reads the committed official RDS CA bundle and explicitly enables `rejectUnauthorized:true`; URL `ssl*` parameters and `PGSSLMODE` cannot replace that verified configuration. Tests exercise the pinned driver and real local PostgreSQL; real RDS TLS remains unqualified.
 
 `createContext` accepts the prior URL string or a `pg.PoolConfig`, preserving existing pool ceilings. `npm run bootstrap` is the admin-only one-off command (two connections): provision/update the generated application login, run the existing numbered migrations, grant application DML/schema USAGE/sequence rights, and deny migration-bookkeeping writes and schema CREATE. Runtime tasks receive only the app credential. Migration does not run on service startup. `/health` still checks SELECT 1; operators must confirm the bootstrap container exit code 0 before enabling any service. See [AWS runbook](../../infra/README.md) for exact task commands, zero-task defaults, credential rotation, fixed two-replica/rolling connection budget, disabled-delivery services, IAM boundaries and evidence limits.
+
+## Security checks (Part 1)
+
+Spec: [security checks and incident data design](../superpowers/specs/2026-10-17-security-checks-incident-data-design.md). The control worker runs `checkOnce` (`src/checks/sweep.ts`) every `CHECK_SWEEP_MS` only when `SILENCE_MS`, `ASK_GRACE_MS`, `ARRIVAL_GRACE_MS` and `CHECK_SWEEP_MS` are all set. Setting only some of them fails startup. Demo values are 120000/60000/120000/5000 so a check fires on stage. They are not evidence-backed safety thresholds (#11 limits stay unset), and the production `infra/template.json` deliberately leaves them unset.
+
+A sign of life is the latest of: location receipt (`latest_locations.received_at`, which only moves when a newer capture time arrives, so a heartbeat must carry a new `capturedAt`), a driver `checkin_ok` or `resume` command, an incident resolution, or trip creation. An active, unpaused trip with check-ins on, no active incident and no open check opens one `security_checks` row (`asking`, `ask_until = now + ASK_GRACE_MS`) for the first matching reason:
+
+1. `sharing_stopped`: `sharing_stopped_at` is later than the last sign of life.
+2. `silence`: no sign of life for `SILENCE_MS`.
+3. `arrival_overdue`: the later of `expected_arrival_at` and the driver's last action (trip start, OK, resume or incident resolution) passed more than `ARRIVAL_GRACE_MS` ago.
+
+Closing an open check:
+- `checkin_ok` → `ok`.
+- `arrived`, `cancel` or `pause` → `cancelled`.
+- SOS → `escalated`, linked to the SOS incident.
+- At `ask_until`, the sweeper escalates. It attaches to an already active incident, or creates one with `trigger='missed_check'` and `check_reason`, plus the same fan-out as SOS.
+- A sharing resume cancels an open `sharing_stopped` check.
+
+Each trip is handled in its own short SQL-only trip transaction, so one failing trip does not block others and a restart neither loses nor duplicates an escalation.
+
+An explicit SOS always reaches the recipients with SOS wording. An SOS during an active missed-check incident keeps the same incident, sets `trigger='sos'`, clears `check_reason`, cancels its unsent (`pending`/`claimed`) missed-check jobs as `superseded_by_sos`, and fans out a new SOS wave. Jobs carry their `trigger`, and the unique key is (incident, recipient, channel, trigger), so repeated or concurrent SOS taps add nothing more. Attempted missed-check work keeps its facts and is never resent. Status `deliveries` lists the current wave only.
+
+A late `checkin_ok` after escalation is recorded but changes nothing else: the incident stays active and its alerts stay pending. Only an explicit `POST /v1/incidents/:id/resolve` cancels them, and an OK never cancels SOS work. Once escalated, contacts may already be alerted, and an OK given under duress must not silence the rest.
+
+Fan-out (`createIncident`, shared by SOS and escalation): accepted incident-scope `family` contacts get SMS, WhatsApp and voice jobs; `colleague` contacts get SMS and WhatsApp; the group job stays `unavailable` / `group_support_unverified`. `POST /v1/contacts` accepts an optional `role` (`family` default, or `colleague`). Drafts accept an optional `expectedArrivalAt`: any RFC 3339 date-time (case-insensitive `T`/`Z`, offsets, a leap second rolls over), with no range limit. Draft `fields` echo it as sent; confirmation stores the instant, and status returns it normalized to ISO UTC. A past instant means "already due": overdue still waits `ARRIVAL_GRACE_MS` from the trip start.
+
+| Route | Body / behavior |
+|---|---|
+| `POST /v1/trips/:id/sharing` | Owner only, idempotent. `{state:'stopped'\|'resumed', reason:'user'\|'page_hidden'\|'permission_denied'\|'error'}`. `stopped` records its own time in `sharing_stopped_at`, so a stop after an OK opens a new check; `resumed` clears it and cancels an open `sharing_stopped` check (other open checks stay). Each call appends a `trip_events` row (`sharing_stopped:<reason>` or `sharing_resumed`). Closed trip → 409. Returns `{id,sharing}`. |
+| `GET /v1/trips/:id/status` | Driver or a contact with an accepted, unrevoked grant on the trip. Returns `{trip:{status,paused,expectedArrivalAt}, check:{status:'asking',reason,askUntil}\|null, incident:{id,trigger,checkReason,status,createdAt}\|null, deliveries:[{role,channel,status,unavailableReason}], location?:{freshness,ageMs,capturedAt,accuracy}}`. `incident` is the latest incident (active or resolved); it, `check` and `deliveries` are shown only to the driver or incident-scope contacts (map-only contacts get `check:null`). `location` appears only for the driver or map-scope contacts while the map is active. No phone numbers or recipient IDs. It is one read-only repeatable-read snapshot on command capacity with no trip lock, so polls never wait behind writers or use telemetry capacity. |
+
+Alert-text settings for the delivery workers: `EMERGENCY_NUMBERS` (JSON by trip country, e.g. `{"PE":"105","BR":"190"}`; missing → the sentence is omitted) and `CONTACT_APP_URL` (adds `Ver: <url>/incidents/<id>`). Zavu prefixes SMS/voice with the qualification `text`, so set it to `ANDES:`.
+
+## Demo mode
+
+For the judges' demo only. `DEMO_MODE=true` replaces OIDC with an in-process RS256 demo issuer (`src/demo.ts`). Real identity tokens are rejected, and every other route keeps the same JWT, ownership and consent checks. Live sends are refused by default. They are possible only through three gates, each failing closed:
+1. `DEMO_LIVE_PHONE` names the one consented E.164 number (the demo issuer refuses to start otherwise). Only the family persona uses it; the driver and colleague keep fictional numbers.
+2. The Zavu qualification sets `allowedDestinations` to exactly `[DEMO_LIVE_PHONE]` and a `demoLimits` budget `{perIncident, perSession}` (positive integers; the API and workers refuse to start otherwise).
+3. `authorizeJob`, before quota or any provider call, marks any other destination `unavailable` / `destination_not_allowed`, and any job past the budget `unavailable` / `demo_budget_exhausted`. `perIncident` counts attempts on the incident; `perSession` counts attempts to the recipient identity, which is the world's one consented persona. Both are counted under the account lock. The global budget is the qualification's existing `dailyLimit` / `channelDailyLimit` / `minuteLimit`.
+
+So the fictional numbers and other people can never be contacted. Personas can invite only personas of their own world (403 `demo_world_boundary`), so worlds cannot pool the consented phone onto one trip. The budget is operator policy, not a code default; a single family persona needs 3 attempts per alert wave (6 if a missed-check alert is followed by an SOS). Never enable demo mode on a deployment with real users.
+
+`POST /v1/demo/session` with `{}` is unauthenticated and needs no Idempotency-Key (a deliberate exception: there is no actor yet). Each call creates an isolated synthetic world:
+- a driver, a `family` contact and a `colleague` contact, with fictional `+1555555010x` numbers;
+- a truck labelled `ABC-123 (demo)`;
+- accepted map+incident grants.
+
+It returns `{synthetic:true, expiresInSeconds:7200, driver:{id,token,truckId}, family:{id,token,grantId}, colleague:{id,token,grantId}}`. Keep the tokens in memory and switch personas client-side.
+
+Limits:
+- At most 30 worlds per minute per instance (429 `demo_rate_limited`).
+- The signing key lives in memory, so tokens end on restart and the demo must run a single instance.
+- Demo rows stay in the database until it is dropped after the event.
+- Abandoned worlds alert nobody. With `DEMO_MODE=true`, the control worker opens a check only if the trip's driver or a current contact made an authenticated request (a `/status` poll counts) within the last `ASK_GRACE_MS`, and escalates it only if one did after it opened; otherwise the open check is cancelled at its deadline. A closed tab, or tokens that died with a restart, therefore stop all automatic checks. Keep `/status` polling while a demo screen is open. An explicit SOS is never affected.
