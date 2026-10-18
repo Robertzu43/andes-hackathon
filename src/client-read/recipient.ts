@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
-import { readTransaction, type Context } from '../db.js';
+import type { Context } from '../db.js';
+import { readSnapshot } from './routes.js';
 
 const INVITATION_LIMIT = 100;
 const SHARED_TRIP_LIMIT = 100;
@@ -8,10 +9,11 @@ const SHARED_TRIP_LIMIT = 100;
 type Row = pg.QueryResultRow;
 
 const iso = (value: Date | null | undefined) => value ? value.toISOString() : null;
+// Same as the owner catalogs: telemetry pool (never the SOS command pool), snapshot pinned before readAt.
+const options = { config: { clientRead: true } };
 
 export function recipientReadRoutes(app: FastifyInstance, ctx: Context) {
-  app.get('/v1/contact/invitations', request => readTransaction(ctx.pool, async client => {
-    const readAt = iso(ctx.clock());
+  app.get('/v1/contact/invitations', options, request => readSnapshot(ctx, async client => {
     const rows = (await client.query(
       `SELECT id,driver_id,map_requested,incident_requested,map_accepted,incident_accepted,accepted_at,revoked_at
        FROM contact_grants WHERE contact_id=$1 ORDER BY id ASC LIMIT $2`,
@@ -26,14 +28,12 @@ export function recipientReadRoutes(app: FastifyInstance, ctx: Context) {
         acceptedAt: iso(row.accepted_at),
         revokedAt: iso(row.revoked_at)
       })),
-      readAt,
       limit: INVITATION_LIMIT,
       hasMore: rows.length > INVITATION_LIMIT
     };
   }));
 
-  app.get('/v1/contact/trips', request => readTransaction(ctx.pool, async client => {
-    const readAt = iso(ctx.clock());
+  app.get('/v1/contact/trips', options, request => readSnapshot(ctx, async client => {
     const rows = (await client.query(
       `SELECT t.id AS trip_id, tg.grant_id, t.driver_id, t.status, t.map_active,
               g.map_accepted, g.incident_accepted, i.id AS active_incident_id
@@ -60,7 +60,6 @@ export function recipientReadRoutes(app: FastifyInstance, ctx: Context) {
         },
         activeIncidentId: row.incident_accepted ? (row.active_incident_id ?? null) : null
       })),
-      readAt,
       limit: SHARED_TRIP_LIMIT,
       hasMore: rows.length > SHARED_TRIP_LIMIT
     };

@@ -5,7 +5,7 @@ import { fixture } from './helpers/runtime.mjs';
 
 test('recipient discovery lists own invitations by scope', async t => {
   const f = await fixture(t);
-    const pending = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+5511999990000', map: true, incident: false });
+    const pending = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+15555550100', map: true, incident: false });
     assert.equal(pending.status, 200);
     const empty = await f.req('GET', '/v1/contact/trips', undefined, f.contact);
     assert.equal(empty.status, 200); assert.deepEqual(empty.body.trips, []); assert.equal(empty.body.hasMore, false); assert.equal(empty.body.limit, 100); assert.equal(typeof empty.body.readAt, 'string');
@@ -89,7 +89,7 @@ test('recipient lists are actor-bound, hide other identities, and stay read-only
   const f = await fixture(t);
 
     await f.grant();
-    const strangerInvite = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+5511999990000', map: true, incident: true }, f.stranger);
+    const strangerInvite = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+15555550100', map: true, incident: true }, f.stranger);
     assert.equal(strangerInvite.status, 200);
 
     const inbox = await f.req('GET', '/v1/contact/invitations', undefined, f.contact);
@@ -110,14 +110,56 @@ test('recipient lists are bounded at 100 with truthful hasMore', async t => {
   const f = await fixture(t);
 
     for (let i = 0; i < 101; i++) {
-      await f.ctx.pool.query('INSERT INTO identities(id,issuer,subject,phone,phone_verified) VALUES($1,$2,$3,$4,true)', [randomUUID(), 'synthetic', `bound-${i}`, `+55110000${String(i).padStart(4, '0')}`]);
+      await f.ctx.pool.query('INSERT INTO identities(id,issuer,subject,phone,phone_verified) VALUES($1,$2,$3,$4,true)', [randomUUID(), 'synthetic', `bound-${i}`, '+15555550100']);
     }
     const drivers = (await f.ctx.pool.query("SELECT id FROM identities WHERE issuer='synthetic' AND subject LIKE 'bound-%'")).rows.map(row => row.id);
     for (const driverId of drivers) {
-      await f.ctx.pool.query('INSERT INTO contact_grants(id,driver_id,contact_id,phone,map_requested,incident_requested) VALUES($1,$2,$3,$4,true,false)', [randomUUID(), driverId, f.contactIdentity.id, '+5511999990000']);
+      await f.ctx.pool.query('INSERT INTO contact_grants(id,driver_id,contact_id,phone,map_requested,incident_requested) VALUES($1,$2,$3,$4,true,false)', [randomUUID(), driverId, f.contactIdentity.id, '+15555550100']);
     }
     const inbox = await f.req('GET', '/v1/contact/invitations', undefined, f.contact);
     assert.equal(inbox.status, 200); assert.equal(inbox.body.invitations.length, 100); assert.equal(inbox.body.hasMore, true); assert.equal(inbox.body.limit, 100);
     const ids = inbox.body.invitations.map(row => row.id);
     assert.deepEqual(ids, [...ids].sort());
+});
+
+// Same findings the gatekeeper raised on the parent #65 catalogs, applied to the recipient lists.
+const RECIPIENT_READS = ['/v1/contact/invitations', '/v1/contact/trips'];
+
+test('recipient reads never borrow SOS command connections', async t => {
+  const f = await fixture(t);
+  await f.trip([await f.grant()]);
+  const connect = f.ctx.pool.connect;
+  f.ctx.pool.connect = () => { throw new Error('command pool is reserved for mutations'); };
+  try {
+    for (const path of RECIPIENT_READS) assert.equal((await f.req('GET', path, undefined, f.contact)).status, 200, path);
+  } finally { f.ctx.pool.connect = connect; }
+});
+
+test('recipient readAt is sampled after the read acquires its connection', async t => {
+  const f = await fixture(t);
+  for (const pool of [f.ctx.pool, f.ctx.telemetryPool]) {
+    const connect = pool.connect.bind(pool);
+    pool.connect = function (callback) {
+      if (callback) return connect(callback);
+      return (async () => { f.advance(1000); return connect(); })();
+    };
+  }
+  for (const path of RECIPIENT_READS) {
+    const response = await f.req('GET', path, undefined, f.contact);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.readAt, f.ctx.clock().toISOString(), path);
+  }
+});
+
+test('recipient reads never return a phone number', async t => {
+  const f = await fixture(t);
+  const trip = await f.trip([await f.grant()]);
+  assert.equal((await f.req('POST', `/v1/trips/${trip}/sos`, {})).status, 200);
+  for (const jwt of [f.contact, f.stranger, f.driver]) {
+    for (const path of RECIPIENT_READS) {
+      const text = JSON.stringify((await f.req('GET', path, undefined, jwt)).body);
+      assert.doesNotMatch(text, /"phone(_?number)?":/i, path);
+      assert.doesNotMatch(text, /\+[1-9]\d{6,14}/, path);
+    }
+  }
 });

@@ -19,8 +19,10 @@ no driver/contact/phone selector or directory lookup. Responses use the existing
 no-store and redacted error conventions. A missing/expired session is 401; a valid
 account with no own rows gets an empty list. Same phone number is not same identity.
 
-Both use a read-only REPEATABLE READ transaction and one real server `readAt`
-sample inside the acquired transaction. It describes this projection's assembly
+Both use the owner catalogs' `readSnapshot` (`docs/contracts/client-read.md`):
+authentication and queries run on `telemetryPool`, never the SOS command pool,
+in a read-only REPEATABLE READ transaction whose snapshot is pinned before the
+one real server `readAt` sample. Responses contain no phone value. `readAt` describes this projection's assembly
 time, not invitation creation, location capture, a future authorization guarantee
 or the source time of a later status request. The existing PR65 consistency finding
 must be repaired with coherent reads, not by weakening its contract or merely

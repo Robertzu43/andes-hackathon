@@ -2,7 +2,6 @@ import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
 import type { Actor } from '../contracts.js';
 import { readTransaction, type Context } from '../db.js';
-import { recipientReadRoutes } from './recipient.js';
 import type { ClientBootstrap, ClientContacts, ClientProfile, ClientRead, ClientTrips, ClientTripSummary, ClientTrucks } from './contracts.js';
 
 declare module 'fastify' { interface FastifyContextConfig { clientRead?: boolean } }
@@ -107,10 +106,9 @@ export function clientReadRoutes(app: FastifyInstance, ctx: Context) {
         hasMore: { trucks: trucks.hasMore, contacts: contacts.hasMore, activeTrips: trips.hasMore.active, recentTrips: trips.hasMore.recent }
       };
     }));
-  recipientReadRoutes(app, ctx);
 }
 
-async function readSnapshot<T>(ctx: Context, read: (client: Client) => Promise<T>): Promise<ClientRead<T>> {
+export async function readSnapshot<T>(ctx: Context, read: (client: Client) => Promise<T>): Promise<ClientRead<T>> {
   return readTransaction(ctx.telemetryPool, async client => {
     // BEGIN alone does not pin the PostgreSQL snapshot; establish it before sampling readAt.
     await client.query('SELECT pg_current_snapshot()');
