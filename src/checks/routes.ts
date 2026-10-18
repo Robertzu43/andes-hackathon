@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import { owner, problem } from '../contracts.js';
-import { withTripTransaction, type Context } from '../db.js';
+import { owner, problem, type Trip } from '../contracts.js';
+import { transaction, withTripTransaction, type Context } from '../db.js';
 import { idempotent } from '../api/mutations.js';
 import { idParams, object } from '../api/schemas.js';
 import { latestLocation } from '../location/routes.js';
@@ -18,7 +18,11 @@ export function checkRoutes(app: FastifyInstance, ctx: Context) {
       return { id: trip.id, sharing: state };
     });
   }));
-  app.get('/v1/trips/:id/status', { schema: { params: idParams } }, request => withTripTransaction(ctx, (request.params as { id: string }).id, async (client, trip) => {
+  // A polled read: one consistent snapshot on command capacity, no trip lock, so polls never queue behind writers or starve telemetry.
+  app.get('/v1/trips/:id/status', { schema: { params: idParams } }, request => transaction(ctx.pool, async client => {
+    await client.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+    const trip = (await client.query<Trip>('SELECT * FROM trips WHERE id=$1', [(request.params as { id: string }).id])).rows[0];
+    if (!trip) problem(404, 'trip_not_found');
     const driver = trip.driver_id === request.actor.id;
     const grant = driver ? null : (await client.query(`SELECT cg.map_accepted,cg.incident_accepted FROM trip_grants tg JOIN contact_grants cg ON cg.id=tg.grant_id
       WHERE tg.trip_id=$1 AND tg.revoked_at IS NULL AND cg.contact_id=$2 AND cg.accepted_at IS NOT NULL AND cg.revoked_at IS NULL`, [trip.id, request.actor.id])).rows[0];
@@ -43,5 +47,5 @@ export function checkRoutes(app: FastifyInstance, ctx: Context) {
       deliveries: deliveries.map(d => ({ role: d.role, channel: d.channel, status: d.status, unavailableReason: d.unavailable_reason })),
       location
     };
-  }, ctx.telemetryPool));
+  }));
 }

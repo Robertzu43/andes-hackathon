@@ -334,3 +334,18 @@ test('status shows the open check only to the driver and incident-scope contacts
   assert.deepEqual({check: incident.check?.reason, location: incident.location}, {check: 'silence', location: undefined});
   assert.equal((await f.req('GET', path)).body.check.reason, 'silence');
 });
+
+test('status reads never wait on the trip lock or use telemetry capacity', async t => {
+  const f = await fixture(t); const busy = await f.trip(); const other = await f.trip();
+  const blocker = await f.ctx.pool.connect(); await blocker.query('BEGIN');
+  await blocker.query('SELECT 1 FROM trips WHERE id=$1 FOR UPDATE', [busy]);
+  try {
+    const polls = [f.req('GET', `/v1/trips/${busy}/status`), f.req('GET', `/v1/trips/${busy}/status`)];
+    await new Promise(resolve => setTimeout(resolve, 200));
+    const started = Date.now();
+    const upload = await f.req('POST', `/v1/trips/${other}/locations`, {observations: [{capturedAt: f.ctx.clock().toISOString(), latitude: -12, longitude: -77, accuracy: 9}]});
+    assert.equal(upload.status, 200, 'an unrelated trip upload must not starve behind status polls');
+    assert.ok(Date.now() - started < 2000);
+    assert.deepEqual((await Promise.all(polls)).map(p => p.status), [200, 200], 'status answers while the trip lock is held');
+  } finally { await blocker.query('COMMIT'); blocker.release(); }
+});
