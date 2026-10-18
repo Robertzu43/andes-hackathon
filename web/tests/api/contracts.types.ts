@@ -34,6 +34,13 @@ const readAt: string = loaded.readAt;
 // @ts-expect-error summaries never include raw draft text
 const rawText: string = loaded.trips.active[0]?.rawText;
 void readAt; void rawText;
+// @ts-expect-error catalogs never carry a phone value
+const profilePhone: string = loaded.profile.phone;
+// @ts-expect-error catalogs never carry a phone value
+const contactPhone: string = loaded.contacts[0]?.phone;
+const role: 'family' | 'colleague' | undefined = loaded.contacts[0]?.role;
+const sharingStoppedAt: string | null | undefined = loaded.trips.active[0]?.sharingStoppedAt;
+void profilePhone; void contactPhone; void role; void sharingStoppedAt;
 
 import { createSessionGateway } from '../../src/lib/api/index.ts';
 const gateway = createSessionGateway({ session: new MemorySession(), api, mode: 'external' });

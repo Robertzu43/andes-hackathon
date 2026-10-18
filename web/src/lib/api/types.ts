@@ -48,10 +48,11 @@ export interface WriteOptions extends RequestOptions { idempotencyKey: string }
 
 /** PR65/de9e455 supplies its server read-start timestamp; never substitute a local clock. */
 export interface ServerRead { readAt: string }
-export interface Profile extends IdResponse, ServerRead { phone: string | null; phoneVerified: boolean }
+/** Catalogs never carry a phone value. */
+export interface Profile extends IdResponse, ServerRead { phoneVerified: boolean }
 export interface TruckSummary extends IdResponse { label: string }
 export interface ContactSummary extends IdResponse {
-  contactId: UUID; phone: string;
+  contactId: UUID; role: ContactRole;
   map: { requested: boolean; accepted: boolean };
   incident: { requested: boolean; accepted: boolean };
   status: 'pending' | 'accepted' | 'revoked';
@@ -59,7 +60,8 @@ export interface ContactSummary extends IdResponse {
 }
 export interface TripSummary extends IdResponse, Omit<TripFields, 'expectedArrivalAt'> {
   status: 'active' | 'arrived' | 'cancelled'; mapActive: boolean; checkinsActive: boolean;
-  paused: boolean; version: number; createdAt: string; closedAt: string | null; contactGrantIds: UUID[];
+  paused: boolean; version: number; createdAt: string; closedAt: string | null;
+  expectedArrivalAt: string | null; sharingStoppedAt: string | null; contactGrantIds: UUID[];
 }
 export interface TruckList extends ServerRead { trucks: TruckSummary[]; limit: 100; hasMore: boolean }
 export interface ContactList extends ServerRead { contacts: ContactSummary[]; limit: 100; hasMore: boolean }
