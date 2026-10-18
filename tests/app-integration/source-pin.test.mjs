@@ -22,7 +22,12 @@ function privateClone(directory) {
     cpSync(resolve(repo, path), join(clone, path), {recursive: true});
   }
   // Test the guard, not whether HEAD's backend still matches the pin: use the pinned backend source.
-  assert.equal(git('checkout', BACKEND_SHA, '--', 'src', 'db', 'package.json', 'package-lock.json', 'tsconfig.json').status, 0);
+  // A backend file added after the pin must not survive; this probe stands in for one.
+  const probe = 'src/added-after-pin-probe.ts';
+  writeFileSync(join(clone, probe), 'export {};\n');
+  assert.equal(git('add', probe).status, 0);
+  assert.equal(git('checkout', '--no-overlay', BACKEND_SHA, '--', 'src', 'db', 'package.json', 'package-lock.json', 'tsconfig.json').status, 0);
+  assert.equal(existsSync(join(clone, probe)), false, 'A backend file added after the pin must be absent from the clone');
   symlinkSync(resolve(repo, 'node_modules'), join(clone, 'node_modules'), 'dir');
   return {clone, git};
 }
