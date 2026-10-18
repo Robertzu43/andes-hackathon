@@ -34,6 +34,8 @@ const api = createApiClient({ baseUrl: 'https://synthetic.invalid', session, fet
   if (fixture.mode === 'unauthorized') return json({ code: 'unauthorized' }, 401);
   if (fixture.mode === 'forbidden' || fixture.revoked && path.endsWith('/snapshot')) return json({ code: 'forbidden' }, 403);
   if (fixture.mode === 'server-error') return json({ code: 'internal' }, 500);
+  if (fixture.mode === 'map-denied' && path.endsWith('/snapshot')) return json({ code: 'map_inactive' }, 403);
+  if (fixture.mode === 'incident-denied' && method === 'GET' && path.startsWith('/v1/incidents/')) return json({ code: 'denied' }, 403);
   if (method === 'GET' && path === '/v1/contacts') return json({ contacts: fixture.mode === 'empty' ? [] : [row()], limit: 100, hasMore: fixture.mode === 'truncated' });
   if (path.endsWith('/snapshot')) return json({ tripId: id.trip, readAt: '2026-10-17T12:03:00.000Z',
     location: fixture.mode === 'no-location' ? null : { latitude: -23.55, longitude: -46.63, accuracy: 25,

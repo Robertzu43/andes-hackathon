@@ -31,5 +31,11 @@
     "browserSource": "80c40cd routes.tsx with identical repaired controller and unknown-invite fixture",
     "browserRaw": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\nfalse !== true\n\n    at file:///Users/sebasbimbi/.codus/workspaces/andes-contact-review/web/tests/contacts/revoke-gating.browser.mjs:45:12 {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.17.0\n",
     "scope": "Repeated uncertain revoke/resolve, duplicate pending revoke, and catalog Revoke disabled while invite is uncertain."
+  },
+  "incidentObservationBaseline": {
+    "source": "c1713dee273d9c811059bdec3613b5c0e57463e8",
+    "redExitCode": 1,
+    "raw": "\u2716 gatekeeper incident time: a separate device receipt never masquerades as server read or creation time (2.508792ms)\n\u2139 tests 1\n\u2139 suites 0\n\u2139 pass 0\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 80.401708\n\n\u2716 failing tests:\n\ntest at web/tests/contacts/journey.test.mjs:397:1\n\u2716 gatekeeper incident time: a separate device receipt never masquerades as server read or creation time (2.508792ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n  + actual - expected\n  \n  + undefined\n  - {\n  -   current: false,\n  -   receivedAt: '2026-10-17T12:40:00.000Z',\n  -   source: 'this-device'\n  - }\n  \n      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-contact-review/web/tests/contacts/journey.test.mjs:403:10)\n      at async Test.run (node:internal/test_runner/test:1313:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    expected: { receivedAt: '2026-10-17T12:40:00.000Z', source: 'this-device', current: false },\n    operator: 'deepStrictEqual',\n    diff: 'simple'\n  }\n",
+    "scope": "Device response receipt is explicitly separate from server incident creation and any unavailable server read timestamp."
   }
 }

@@ -154,13 +154,13 @@ function ResponseForm({ store, snapshot }: { store: ContactView; snapshot: Snaps
     <ActionGroup><PrimaryAction data-action="response-open" disabled={!active || locked} onClick={() => {
       const input = document.querySelector<HTMLInputElement>('.andes-contact-report input'); input?.focus(); input?.scrollIntoView({ block: 'center' });
     }}>{t('writeResponse')}</PrimaryAction>
-      <PrimaryAction tone="secondary" data-action="acknowledge" disabled={!active || locked} onClick={() => void store.acknowledge()}>{t('acknowledge')}</PrimaryAction></ActionGroup>
+      <PrimaryAction tone="secondary" data-action="acknowledge" data-tour={active ? 'incident-ack' : undefined} disabled={!active || locked} onClick={() => void store.acknowledge()}>{t('acknowledge')}</PrimaryAction></ActionGroup>
     <p className="andes-hint andes-contact-resolution">{t('ownerResolution')}</p>
     <form className="andes-contact-report" noValidate onSubmit={event => { event.preventDefault(); if (!active || locked) return;
       const valid = !!action.trim() && [...action].length <= 300; setInvalid(!valid); if (valid) void store.reportAction(action); }}>
       <Field label={t('actionLabel')} hint={t('actionHint')} value={action} disabled={!active || locked} maxLength={600}
         onChange={e => setAction(e.target.value)} error={invalid ? t('actionInvalid') : undefined} />
-      <PrimaryAction type="submit" data-action="report" disabled={!active || snapshot.journey.operation.status === 'uncertain'} busy={snapshot.journey.operation.status === 'pending'}>{t('report')}</PrimaryAction>
+      <PrimaryAction type="submit" data-action="report" data-tour={active ? 'incident-action' : undefined} disabled={!active || snapshot.journey.operation.status === 'uncertain'} busy={snapshot.journey.operation.status === 'pending'}>{t('report')}</PrimaryAction>
     </form>
     {snapshot.journey.receipts.length > 0 && <div className="andes-contact-receipts"><p className="andes-hint">{t('ownReceipts')}</p>
       {snapshot.journey.receipts.map((receipt, index) => <AttributedUpdate key={index} source={t('yourReport')}>
@@ -174,10 +174,13 @@ function TripPage({ host, tripId }: { host: ContactHost; tripId: string }) {
   const knownIncident = !!host.incidentReference?.(tripId); const knownGrant = !!host.grantReference?.(tripId);
   return <><h1>{t('tripTitle')}</h1><Gate store={store} snapshot={snapshot}>
     <OperationFeedback store={store} snapshot={snapshot} />
-    <div className="andes-contact-layout"><div><section className="andes-section" aria-labelledby="incident-title">
+    <div className="andes-contact-layout" data-tour="contact-trip"><div><section className="andes-section" aria-labelledby="incident-title" data-tour={incident.data ? 'incident-status' : undefined}>
       <h2 id="incident-title">{t('incidentTitle')}</h2>
       {incident.status === 'loading' ? <AsyncState state="loading" /> : incident.data ? <>
         <TripIdentity label={t(incident.data.status === 'active' ? 'active' : 'resolved')} />
+        {incident.observation && <dl className="andes-fact-list" data-contact-observation="incident">
+          <FactRow label={t('incidentRead')} timestamp={incident.observation.receivedAt} source={t('sourceDevice')}>{t('incidentObservation')}</FactRow>
+        </dl>}<p className="andes-hint">{t('incidentLimit')}</p>
       </> : <EmptyState title={t(incident.status === 'denied' ? 'incidentDenied' : 'incidentUnknown')}><p>{t('incidentUnknownBody')}</p></EmptyState>}
       {knownIncident && <PrimaryAction tone="secondary" busy={incident.status === 'loading'} disabled={locked} onClick={() => void store.loadIncident()}>{t('refresh')}</PrimaryAction>}
     </section><ResponseForm key={snapshot.journey.session?.actorId ?? 'none'} store={store} snapshot={snapshot} /></div><aside><Location store={store} snapshot={snapshot} />

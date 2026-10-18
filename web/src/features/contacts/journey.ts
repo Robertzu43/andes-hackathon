@@ -32,7 +32,8 @@ interface Incident {
   id: string; tripId: string; status: 'active' | 'resolved'; createdAt: string;
   resolvedAt: string | null; groupCapability: 'unavailable';
 }
-type ReadState<T> = { status: 'unread' | 'loading' | 'recorded' | 'denied' | 'unknown'; data: T | null };
+type ReadState<T> = { status: 'unread' | 'loading' | 'recorded' | 'denied' | 'unknown'; data: T | null;
+  observation: { receivedAt: string; source: 'this-device'; current: false } | null };
 type Operation = { kind: string; status: 'idle' | 'pending' | 'recorded' | 'rejected' | 'uncertain';
   failure: 'authentication' | 'forbidden' | 'missing' | 'conflict' | 'invalid' | 'unsupported' | 'server' | 'network' | null };
 interface State {
@@ -41,7 +42,7 @@ interface State {
   receipts: { actorId: string; incidentId: string; recorded: 'acknowledged' | 'action'; action: string | null }[];
   tripRevoked: boolean; operation: Operation;
 }
-const unread = <T>(): ReadState<T> => ({ status: 'unread', data: null });
+const unread = <T>(): ReadState<T> => ({ status: 'unread', data: null, observation: null });
 const idle = (): Operation => ({ kind: '', status: 'idle', failure: null });
 const uuid = (value: unknown): string => {
   if (typeof value !== 'string' || !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(value)) {
@@ -78,7 +79,8 @@ export function locationAge(snapshot: Snapshot) {
 }
 
 /** Headless journey. Local view selection never grants server authority. */
-export function createContactJourney(api: ContactApi, keyFactory: () => string = () => crypto.randomUUID()) {
+export function createContactJourney(api: ContactApi, keyFactory: () => string = () => crypto.randomUUID(),
+  receiptTime: () => string = () => new Date().toISOString()) {
   let state: State = { session: null, trip: null, invitation: null, location: unread(),
     incident: unread(), receipts: [], tripRevoked: false, operation: idle() };
   let epoch = 0;
@@ -162,13 +164,14 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
     const started = epoch; const sequence = ++reads[slot];
     const controller = new AbortController(); requests.add(controller);
     readRequests.add(controller);
-    state[slot] = { status: 'loading', data: null };
+    state[slot] = { status: 'loading', data: null, observation: null };
     try {
       const raw = await request({ signal: controller.signal });
       if (started !== epoch || sequence !== reads[slot]) return 'superseded' as const;
       const data = parse(object(raw));
-      if (slot === 'location') state.location = { status: 'recorded', data: data as Snapshot };
-      else state.incident = { status: 'recorded', data: data as Incident };
+      const observation = { receivedAt: receiptTime(), source: 'this-device', current: false } as const;
+      if (slot === 'location') state.location = { status: 'recorded', data: data as Snapshot, observation };
+      else state.incident = { status: 'recorded', data: data as Incident, observation };
       return 'recorded' as const;
     } catch (error) {
       if (started !== epoch || sequence !== reads[slot]) return 'superseded' as const;
@@ -179,7 +182,7 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
       } else if (slot === 'incident' && (reason === 'forbidden' || reason === 'missing')) {
         state.receipts = [];
       }
-      state[slot] = { status: ['authentication', 'forbidden', 'missing'].includes(reason!) ? 'denied' : 'unknown', data: null };
+      state[slot] = { status: ['authentication', 'forbidden', 'missing'].includes(reason!) ? 'denied' : 'unknown', data: null, observation: null };
       return 'unavailable' as const;
     } finally { requests.delete(controller); readRequests.delete(controller); }
   }

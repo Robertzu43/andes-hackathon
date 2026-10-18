@@ -1,6 +1,8 @@
 import type { Locale } from '../../foundation/index.ts';
 
 const es = {
+  sourceDevice: 'Este dispositivo', incidentRead: 'Resultado recibido', incidentObservation: 'Consulta del incidente',
+  incidentLimit: 'Es una consulta anterior. El estado puede haber cambiado. Vuelve a consultar para comprobarlo.',
   contactsTitle: 'Mis contactos', privacyTitle: 'Privacidad', invitationTitle: 'Invitación de contacto', tripTitle: 'Viaje compartido',
   contacts: 'Contactos', permissions: 'Permisos', invite: 'Invitar contacto', close: 'Cerrar formulario',
   inviteHint: 'El contacto debe tener una cuenta y compartir su identificador contigo. Esta invitación no envía una notificación.',
@@ -50,6 +52,8 @@ const es = {
 } as const;
 type Messages = { [K in keyof typeof es]: string };
 const pt: Messages = {
+  sourceDevice: 'Este dispositivo', incidentRead: 'Resultado recebido', incidentObservation: 'Consulta do incidente',
+  incidentLimit: 'É uma consulta anterior. O estado pode ter mudado. Consulte novamente para verificar.',
   contactsTitle: 'Meus contatos', privacyTitle: 'Privacidade', invitationTitle: 'Convite de contato', tripTitle: 'Viagem compartilhada',
   contacts: 'Contatos', permissions: 'Permissões', invite: 'Convidar contato', close: 'Fechar formulário',
   inviteHint: 'O contato precisa ter uma conta e compartilhar o identificador com você. Este convite não envia uma notificação.',

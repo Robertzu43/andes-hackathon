@@ -393,3 +393,16 @@ test('gatekeeper resolve: re-reading an uncertain resolution cannot replace its 
   assert.equal(writes.length, 2);
   assert.equal(writes[0].args[1].idempotencyKey, writes[1].args[1].idempotencyKey);
 });
+
+test('gatekeeper incident time: a separate device receipt never masquerades as server read or creation time', async () => {
+  const { api } = apiFixture();
+  const receivedAt = '2026-10-17T12:40:00.000Z';
+  const journey = createContactJourney(api, undefined, () => receivedAt);
+  journey.setSession({ actorId: ids.contact, view: 'contact' }); journey.selectContactTrip(ids.trip);
+  await journey.loadIncident(ids.incident);
+  assert.deepEqual(journey.getState().incident.observation, { receivedAt, source: 'this-device', current: false });
+  assert.equal(journey.getState().incident.data.createdAt, incident().createdAt);
+  assert.equal('readAt' in journey.getState().incident.data, false);
+  journey.setSession(null);
+  assert.equal(journey.getState().incident.observation, null);
+});
