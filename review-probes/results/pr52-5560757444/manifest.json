@@ -1,0 +1,43 @@
+{
+  "reviewedBaseline": "9f87e2c08be8ac9e9324136fd0c4401ad8823bc6",
+  "sourceCorrection": "87c37895a7249f19b8ac89e75aa72bc2b20c1979",
+  "prHead": "091252042581490313437c9035c5165c76828221",
+  "node": "24.17.0",
+  "sourceTree": "2dd76225a21b5b53319769a7a42e7218d9845c1b",
+  "testTree": "c2ddc530d5a370a4d92544c6a3305d3529dc1696",
+  "sourceFiles": {
+    "src/phone-observations/adapter.mjs": "8be64497f74738d9d0672b41d7a5895a6e2249decf6e38fba3fb14ed34b8644c",
+    "src/phone-observations/trip-sharing.mjs": "89b4a20320b816720cf6cb104695be05613df77c6282fbd49fffbfb11d86bfb8",
+    "src/phone-observations/session-id.mjs": "b61e33d45311f8c305a66f7e38bdfc05d0609a24f0d1ccfb98b83ff3f616e66a",
+    "tests/phone-observations/adapter.test.mjs": "f3fd18374f1e26a0e872af6e96ab9858408487ac82476dc6c82e06a2d727eb2e"
+  },
+  "review": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560757444",
+  "checks": {
+    "baselineGate": {
+      "pass": 0,
+      "fail": 11,
+      "exit": 1
+    },
+    "authorRecorder": {
+      "pass": 113,
+      "fail": 0
+    },
+    "followup": {
+      "pass": 12,
+      "fail": 0
+    },
+    "priorContractV3AndIndependent": {
+      "pass": 27,
+      "fail": 0
+    },
+    "priorLifecycleV2": {
+      "pass": 16,
+      "fail": 0
+    },
+    "currentTotal": 168
+  },
+  "scope": "Narrow fixes of existing review findings only; no new development or backend composition",
+  "tapNormalization": "Trailing horizontal whitespace removed; assertions and outcomes unchanged",
+  "independentNewHead": "pending Q52",
+  "humanConfirmation": "pending; Q44 owns consolidated handoff"
+}
