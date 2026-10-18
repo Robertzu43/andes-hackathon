@@ -34,10 +34,9 @@ async function freePort() {
   return port;
 }
 
-// One file-level test. These four cases start PostgreSQL and write APP_INTEGRATION_PG_PORT;
-// the runner would otherwise overlap them and one shutdown would kill the other's connection.
-test('an interrupted integration run removes only its own resources', {timeout: 360000, concurrency: 1}, async t => {
-for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on an owned-cluster run stops its PostgreSQL and removes its directory`, {timeout: 90000}, async (t) => {
+// One file-level test serializes all five owned PostgreSQL scenarios.
+test('an interrupted integration run removes only its own resources', {timeout: 450000, concurrency: 1}, async t => {
+for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on an owned-cluster run stops its PostgreSQL and removes its directory`, {timeout: 90000}, async t => {
   const discovery = process.env.APP_INTEGRATION_PG_BIN ? null : spawnSync('pg_config', ['--bindir'], {encoding: 'utf8'});
   const bin = process.env.APP_INTEGRATION_PG_BIN ?? (discovery.status === 0 ? discovery.stdout.trim() : '');
   if (!existsSync(join(bin, 'initdb'))) return t.skip('No PostgreSQL server binaries for an owned cluster');
@@ -60,7 +59,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on an owned-
   await new Promise(resolve => probe.close(resolve));
 });
 
-for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on a shared-server run drops only its own database`, {timeout: 90000}, async t => {
+async function sharedControl(t, registerCleanup = cleanup => t.after(cleanup)) {
   // Own the entire control server: other test files create/drop databases concurrently.
   // Never infer ownership from a prefix or sweep databases belonging to sibling tests.
   const discovery = process.env.APP_INTEGRATION_PG_BIN ? null : spawnSync('pg_config', ['--bindir'], {encoding: 'utf8'});
@@ -74,11 +73,62 @@ for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on a shared-
     if (previousPort === undefined) delete process.env.APP_INTEGRATION_PG_PORT;
     else process.env.APP_INTEGRATION_PG_PORT = previousPort;
   }
-  const pool = new pg.Pool({connectionString: server.url, max: 1});
-  t.after(async () => {try { await pool.end(); } finally { await server.cleanup(); }});
-  await pool.query('CREATE TABLE interruption_control (value text NOT NULL)');
-  await pool.query("INSERT INTO interruption_control VALUES ('synthetic-do-not-reset')");
-  const databases = async () => (await pool.query('SELECT datname FROM pg_database ORDER BY datname')).rows.map(row => row.datname);
+  const client = new pg.Client({connectionString: server.url});
+  registerCleanup(async () => {try { await client.end(); } finally { await server.cleanup(); }});
+  await client.connect();
+  return {client, server};
+}
+
+await t.test('The shared-server fixture closes its observer before dropping its database', {timeout: 90000}, async t => {
+  let cleanup, teardown, releaseWireEnd;
+  t.after(async () => {
+    releaseWireEnd?.();
+    if (cleanup) await (teardown ??= cleanup());
+  });
+  const control = await sharedControl(t, hook => { cleanup = hook; });
+  if (!control) return;
+  const {client, server} = control;
+  const errors = [];
+  client.on('error', error => errors.push({code: error.code, message: error.message}));
+  await client.query('CREATE TABLE interruption_control (value text NOT NULL)');
+  await client.query("INSERT INTO interruption_control VALUES ('synthetic-do-not-reset')");
+  assert.deepEqual((await client.query('SELECT value FROM interruption_control')).rows,
+    [{value: 'synthetic-do-not-reset'}]);
+  // Also exercise the old idle-pool fixture when checking this regression against it.
+  const pooled = client instanceof pg.Pool;
+  const connection = pooled ? await client.connect() : client;
+  let didClose = false, closedBeforeDrop;
+  const closed = new Promise(resolve => connection.once('end', () => { didClose = true; resolve(); }));
+  const drop = server.cleanup;
+  server.cleanup = async () => { closedBeforeDrop = didClose; await drop(); };
+  // Hold the real protocol Terminate, leaving PostgreSQL able to report 57P01
+  // if the actual fixture cleanup runs before this observer disconnects.
+  const wireEnd = connection.connection.end.bind(connection.connection);
+  connection.connection.end = () => {};
+  releaseWireEnd = () => { connection.connection.end = wireEnd; wireEnd(); };
+  if (pooled) connection.release();
+  teardown = cleanup();
+  if (!pooled) {
+    assert.equal(closedBeforeDrop, undefined, 'Cleanup must wait while Client.end is blocked');
+    releaseWireEnd();
+    releaseWireEnd = undefined;
+  }
+  // The old Pool.end resolves with the wire held, so FORCE exposes the real error.
+  await teardown;
+  await closed;
+  t.diagnostic(JSON.stringify({closedBeforeDrop, errors}));
+  assert.deepEqual(errors, [], 'Fixture teardown must not kill its own still-connected observer');
+  assert.equal(closedBeforeDrop, true, 'The observer must disconnect before DROP DATABASE');
+  assert.equal(existsSync(server.directory), false, 'The fixture directory must be removed');
+});
+
+for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on a shared-server run drops only its own database`, {timeout: 90000}, async t => {
+  const control = await sharedControl(t);
+  if (!control) return;
+  const {client, server} = control;
+  await client.query('CREATE TABLE interruption_control (value text NOT NULL)');
+  await client.query("INSERT INTO interruption_control VALUES ('synthetic-do-not-reset')");
+  const databases = async () => (await client.query('SELECT datname FROM pg_database ORDER BY datname')).rows.map(row => row.datname);
   const temp = mkdtempSync(join(tmpdir(), 'q46-'));
   const before = await databases();
   t.after(async () => {
@@ -88,7 +138,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) await t.test(`${signal} on a shared-
   const run = await interruptRun({temp, group: false, signal, env: {APP_INTEGRATION_ADMIN_URL: server.url}});
   assert.equal(run.code, signal === 'SIGINT' ? 130 : 143, `Exit after cleanup, not killed by ${run.signal}`);
   assert.deepEqual(await databases(), before, 'The nested database must be dropped and nothing else touched');
-  assert.deepEqual((await pool.query('SELECT value FROM interruption_control')).rows,
+  assert.deepEqual((await client.query('SELECT value FROM interruption_control')).rows,
     [{value: 'synthetic-do-not-reset'}], 'The shared input database must retain its sentinel');
   assert.deepEqual(readdirSync(temp), []);
 });
