@@ -107,10 +107,6 @@ export function createZavuProvider(qualification: Qualification, apiKey: string,
     }
   };
 }
-/** A plain SMS outside alert qualification (demo codes), on the account's SMS channel name. */
-export function textPayload(qualification: Qualification, to: string, text: string, id: string): Payload {
-  return { to, channel: wire(qualification, 'sms'), messageType: 'text', text, fallbackEnabled: false, idempotencyKey: `andes:otp:${id}`, metadata: { attemptId: id } };
-}
 export function verifyCallback(raw: Buffer, signature: string | undefined, config: CallbackConfig, now: Date): CallbackEvent {
   const fail = () => problem(401, 'invalid_callback');
   if (!signature || signature.length > 1024 || raw.length > 128 * 1024) fail();
