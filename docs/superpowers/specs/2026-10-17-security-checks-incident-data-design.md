@@ -10,7 +10,7 @@ Date: 2026-10-17. Status: approved by Robert in brainstorming (parts 1 and 2). T
 
 ### Data (`db/migrations/003-security-checks.sql`)
 
-- `trips.expected_arrival_at timestamptz NULL`, filled from a new optional draft field `expectedArrivalAt` (ISO instant) in `DraftFields`/`fieldsSchema`. When null, only silence/sharing checks apply.
+- `trips.expected_arrival_at timestamptz NULL`, filled from a new optional draft field `expectedArrivalAt` (ISO instant, strictly in the future when drafted and when confirmed; Robert, 2026-10-17) in `DraftFields`/`fieldsSchema`. When null, only silence/sharing checks apply.
 - `trips.sharing_stopped_at timestamptz NULL`.
 - `contact_grants.role text NOT NULL DEFAULT 'family' CHECK (role IN ('family','colleague'))`; `POST /v1/contacts` accepts optional `role`.
 - `incidents.trigger text NOT NULL DEFAULT 'sos' CHECK (trigger IN ('sos','missed_check'))` and `incidents.check_reason text NULL CHECK (check_reason IN ('arrival_overdue','silence','sharing_stopped'))`.
@@ -130,15 +130,15 @@ Both mutations use `idempotent()` (Idempotency-Key header). Query parameters arr
 - `GET /v1/insights/hotspots?days=90` (1–365). **Public** (added to the auth exemption in `src/api/app.ts`), aggregate only:
   - cell = `floor(lat / 0.05)`, `floor(lon / 0.05)` (~5.5 km), returned as the cell centre;
   - band = `noche` when the local hour in `INSIGHTS_TIME_ZONE` is 22–05, else `dia`;
-  - rows `{lat, lon, band, robo, intentoRobo, total, synthetic}` (all counts; `synthetic` = how many of `total` are seeded) only where `total >= INSIGHTS_MIN_COUNT` (3);
+  - rows `{lat, lon, band, robo, intentoRobo, total, synthetic}` (all counts of distinct people, not events, per Robert on 2026-10-17; `synthetic` = how many of `total` are demo people) only where `total >= INSIGHTS_MIN_COUNT` (3);
   - envelope `{generatedAt, days, cellDegrees, minCount, includesSynthetic, cells}`. No IDs, drivers, routes or timestamps per event.
-- `GET /v1/insights/advice?lat=&lon=&locale=es|pt-BR`, authenticated: counts `security_events` in the 3×3 cells around the point, current band, last 90 days. If the count is at least the minimum it returns `{level:'caution', count, robo, intentoRobo, band, text}`, otherwise `{level:'none'}`. An attempt is not a robbery, so the text names the two apart and leaves out a kind with no events. Spanish text: `Reportes en esta zona de {noche|día} (últimos 90 días): {robo} de robo y {intentoRobo} de intento de robo. Si puedes, detente en un lugar concurrido y seguro.` A Brazilian Portuguese version is included as well. The driver page shows it as a banner or voice prompt that needs no tap.
+- `GET /v1/insights/advice?lat=&lon=&locale=es|pt-BR`, authenticated: counts distinct people behind `security_events` in the 3×3 cells around the point, current band, last 90 days. If the count is at least the minimum it returns `{level:'caution', count, robo, intentoRobo, band, text}`, otherwise `{level:'none'}`. An attempt is not a robbery, so the text names the two apart and leaves out a kind with no events. Spanish text: `{count} personas reportaron robos o intentos de robo en esta zona de {noche|día} (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro.` A Brazilian Portuguese version is included as well. The driver page shows it as a banner or voice prompt that needs no tap.
 
 `ponytail:` the advice is a count rule, not a model; it becomes a model once real labelled data exists. Time bands use one configured zone (default `America/Lima`); per-event zones come later.
 
 ### Seed (`scripts/seed-demo.mjs`)
 
-About 40 `synthetic=true` reports from a `seed/demo` identity, clustered along the Panamericana Sur south of Lima (Lurín, Chilca, Cañete), mostly at night. Any page that shows hotspots must say `incluye datos de demostración` when `includesSynthetic` is true.
+About 40 `synthetic=true` reports spread over 16 synthetic `seed/demo-<n>` identities (insights count people), clustered along the Panamericana Sur south of Lima (Lurín, Chilca, Cañete), mostly at night. Any page that shows hotspots must say `incluye datos de demostración` when `includesSynthetic` is true.
 
 ### Tests (`tests/insights.test.mjs`, real PostgreSQL)
 

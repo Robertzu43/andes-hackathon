@@ -17,19 +17,24 @@ const REPORTS_PER_DAY = 5; // ponytail: fixed per-identity budget against report
 const decimal = { type: 'string', maxLength: 32, pattern: '^-?\\d{1,3}(\\.\\d+)?$' }; // raw browser coordinates can carry 15+ decimals
 const centre = (cell: number) => Number(((cell + 0.5) * CELL).toFixed(4));
 // ponytail: a count rule, not a model; replace once real labelled incidents exist.
-// An attempt is not a robbery, so the two are always counted and named apart.
+// Counts are people (published cells have at least 3, so always plural). An attempt is not a robbery, so the two are
+// always named apart, and a kind nobody reported is left out.
 const adviceText = {
-  es: (robo: number, intento: number, night: boolean) => `Reportes en esta zona de ${night ? 'noche' : 'día'} (últimos 90 días): ${[robo && `${robo} de robo`, intento && `${intento} de intento de robo`].filter(Boolean).join(' y ')}. Si puedes, detente en un lugar concurrido y seguro.`,
-  'pt-BR': (robo: number, intento: number, night: boolean) => `Relatos nesta região ${night ? 'à noite' : 'durante o dia'} (últimos 90 dias): ${[robo && `${robo} de roubo`, intento && `${intento} de tentativa de roubo`].filter(Boolean).join(' e ')}. Se puder, pare em um local movimentado e seguro.`
+  es: (people: number, robo: number, intento: number, night: boolean) => `${people} personas reportaron ${[robo && 'robos', intento && 'intentos de robo'].filter(Boolean).join(' o ')} en esta zona de ${night ? 'noche' : 'día'} (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro.`,
+  'pt-BR': (people: number, robo: number, intento: number, night: boolean) => `${people} pessoas relataram ${[robo && 'roubos', intento && 'tentativas de roubo'].filter(Boolean).join(' ou ')} nesta região ${night ? 'à noite' : 'durante o dia'} (últimos 90 dias). Se puder, pare em um local movimentado e seguro.`
 };
 const demoNotice = { es: ' Incluye datos de demostración.', 'pt-BR': ' Inclui dados de demonstração.' };
-type Cell = { cy: number; cx: number; band: string; robo: number; intentoRobo: number; total: number; synthetic: number };
+// Contributor IDs per cell stay in memory so advice can count a person once across neighbouring cells; they are never sent.
+type Cell = { cy: number; cx: number; band: string; robo: string[]; intento: string[]; all: string[]; synthetic: string[] };
+const people = (cells: Cell[], pick: (cell: Cell) => string[]) => new Set(cells.flatMap(pick)).size;
 // `demo` is true only when demo-persona sign-in is on: personas are free to mint, so their data is demo data.
 export function insightRoutes(app: FastifyInstance, ctx: Context, demo = false) {
   // The only view of the data anyone gets: one fixed 90-day window ending on the hour (a single window leaves nothing to
-  // subtract). Real events need MIN_COUNT distinct phone-verified contributors in a cell and band on their own; seeded rows
-  // are added on top and never help reach it. Computed once per hour and shared by every caller, so public traffic cannot
-  // load the SOS pool, and labels, relabels and backdated reports all surface together at the next hour.
+  // subtract). Every number is distinct people (the incident's driver, or the reporter), never events: one person filing
+  // ten times counts once. Real events need MIN_COUNT distinct phone-verified people in a cell and band on their own;
+  // seeded rows are added on top and never help reach it, and a published cell has MIN_COUNT people in all. Computed once
+  // per hour and shared by every caller, so public traffic cannot load the SOS pool, and labels, relabels and backdated
+  // reports all surface together at the next hour.
   let cached: { hour: number; cells: Promise<Cell[]> } | null = null;
   function publicCells(now: Date): Promise<Cell[]> {
     const hour = Math.floor(now.getTime() / HOUR);
@@ -41,14 +46,18 @@ export function insightRoutes(app: FastifyInstance, ctx: Context, demo = false) 
     return cached.cells;
   }
   async function computeCells(end: Date): Promise<Cell[]> {
-    const rows = (await ctx.pool.query(`SELECT cy, cx, band, sum(robo)::int AS robo, sum(intento)::int AS intento, sum(n)::int AS total, coalesce(sum(n) FILTER (WHERE synthetic), 0)::int AS synthetic
-      FROM (SELECT floor(e.latitude/$1)::int AS cy, floor(e.longitude/$1)::int AS cx, time_band(e.occurred_at,$2) AS band, e.synthetic,
-          count(*) FILTER (WHERE e.kind='robo') AS robo, count(*) FILTER (WHERE e.kind='intento_robo') AS intento, count(*) AS n
-        FROM security_events e JOIN identities i ON i.id = e.contributor WHERE e.occurred_at > $3 AND e.occurred_at <= $4 GROUP BY 1,2,3,4
-        HAVING e.synthetic OR count(DISTINCT e.contributor) FILTER (WHERE i.phone_verified) >= $5::int) s
-      GROUP BY 1,2,3 HAVING sum(n) >= $5::int ORDER BY total DESC,1,2,3`,
+    const rows = (await ctx.pool.query(`WITH s AS (SELECT floor(e.latitude/$1)::int AS cy, floor(e.longitude/$1)::int AS cx,
+          time_band(e.occurred_at,$2) AS band, e.kind, e.synthetic, e.contributor, i.phone_verified
+        FROM security_events e JOIN identities i ON i.id = e.contributor WHERE e.occurred_at > $3 AND e.occurred_at <= $4),
+      real AS (SELECT cy, cx, band FROM s WHERE NOT synthetic AND phone_verified GROUP BY 1,2,3 HAVING count(DISTINCT contributor) >= $5::int)
+      SELECT cy, cx, band, array_agg(DISTINCT contributor) AS everyone,
+        coalesce(array_agg(DISTINCT contributor) FILTER (WHERE kind='robo'), '{}') AS robo,
+        coalesce(array_agg(DISTINCT contributor) FILTER (WHERE kind='intento_robo'), '{}') AS intento,
+        coalesce(array_agg(DISTINCT contributor) FILTER (WHERE synthetic), '{}') AS synthetic
+      FROM s WHERE synthetic OR (cy, cx, band) IN (SELECT cy, cx, band FROM real)
+      GROUP BY 1,2,3 HAVING count(DISTINCT contributor) >= $5::int ORDER BY count(DISTINCT contributor) DESC,1,2,3`,
     [CELL, TIME_ZONE, new Date(end.getTime() - WINDOW_DAYS * DAY), end, MIN_COUNT])).rows;
-    return rows.map(r => ({ cy: r.cy, cx: r.cx, band: r.band, robo: r.robo, intentoRobo: r.intento, total: r.total, synthetic: r.synthetic }));
+    return rows.map(r => ({ cy: r.cy, cx: r.cx, band: r.band, robo: r.robo, intento: r.intento, all: r.everyone, synthetic: r.synthetic }));
   }
   const map = readFileSync(new URL('../../public/mapa.html', import.meta.url)); // read once; a missing file fails at startup
   app.get('/mapa', async (_request, reply) => reply.type('text/html; charset=utf-8').send(map));
@@ -79,7 +88,7 @@ export function insightRoutes(app: FastifyInstance, ctx: Context, demo = false) 
   })));
   app.get('/v1/insights/hotspots', async () => {
     const now = ctx.clock();
-    const cells = (await publicCells(now)).map(({ cy, cx, ...cell }) => ({ lat: centre(cy), lon: centre(cx), ...cell }));
+    const cells = (await publicCells(now)).map(c => ({ lat: centre(c.cy), lon: centre(c.cx), band: c.band, robo: c.robo.length, intentoRobo: c.intento.length, total: c.all.length, synthetic: c.synthetic.length }));
     return { generatedAt: now.toISOString(), days: WINDOW_DAYS, cellDegrees: CELL, minCount: MIN_COUNT, includesSynthetic: cells.some(c => c.synthetic > 0), cells };
   });
   app.get('/v1/insights/advice', { schema: { querystring: object({ lat: decimal, lon: decimal, locale: { type: 'string', maxLength: 35 } }, ['lat', 'lon']) } }, async request => {
@@ -87,12 +96,12 @@ export function insightRoutes(app: FastifyInstance, ctx: Context, demo = false) 
     const lat = Number(query.lat), lon = Number(query.lon);
     if (Math.abs(lat) > 90 || Math.abs(lon) > 180) problem(400, 'invalid_coordinates');
     const now = ctx.clock(); const band = (await ctx.pool.query('SELECT time_band($1,$2) AS band', [now, TIME_ZONE])).rows[0].band as string;
-    // Advice sums only cells the public map already shows, so it can never locate or time a hidden report.
+    // Advice counts people only in cells the public map already shows, so it can never locate or time a hidden report.
     const cy = Math.floor(lat / CELL), cx = Math.floor(lon / CELL);
     const near = (await publicCells(now)).filter(c => c.band === band && Math.abs(c.cy - cy) <= 1 && Math.abs(c.cx - cx) <= 1);
-    const count = near.reduce((sum, c) => sum + c.total, 0), robo = near.reduce((sum, c) => sum + c.robo, 0), intentoRobo = near.reduce((sum, c) => sum + c.intentoRobo, 0);
+    const count = people(near, c => c.all), robo = people(near, c => c.robo), intentoRobo = people(near, c => c.intento);
     if (!count) return { level: 'none' };
-    const locale = query.locale?.toLowerCase().startsWith('pt') ? 'pt-BR' : 'es', includesSynthetic = near.some(c => c.synthetic > 0);
-    return { level: 'caution', count, robo, intentoRobo, includesSynthetic, band, text: adviceText[locale](robo, intentoRobo, band === 'noche') + (includesSynthetic ? demoNotice[locale] : '') };
+    const locale = query.locale?.toLowerCase().startsWith('pt') ? 'pt-BR' : 'es', includesSynthetic = near.some(c => c.synthetic.length > 0);
+    return { level: 'caution', count, robo, intentoRobo, includesSynthetic, band, text: adviceText[locale](count, robo, intentoRobo, band === 'noche') + (includesSynthetic ? demoNotice[locale] : '') };
   });
 }
