@@ -49,6 +49,16 @@ test('status preserves latest active SOS after arrival and source facts without 
   assert.equal('phone' in result.deliveries[0], false); assert.equal('recipientId' in result.incident, false);
 });
 
+test('status location freshness must agree with its age at the server 120000ms bound', async () => {
+  for (const [freshness, ageMs, ok] of [['fresh', 3_600_000, false], ['stale', 1_000, false],
+    ['fresh', 120_000, true], ['stale', 120_001, true]]) {
+    const raw = status(); raw.location = { freshness, ageMs, capturedAt: stamp, accuracy: 20 };
+    const { api } = setup(async () => Response.json(raw));
+    if (ok) assert.equal((await api.getTripStatus(trip)).location.freshness, freshness);
+    else await assert.rejects(api.getTripStatus(trip), invalid); // An hour-old position is never shown as live.
+  }
+});
+
 test('status distinguishes omitted location, unavailable location and server asking deadline', async () => {
   const raw = status(); raw.check = { status: 'asking', reason: 'sharing_stopped', askUntil: stamp };
   const { api } = setup(async () => Response.json(raw));

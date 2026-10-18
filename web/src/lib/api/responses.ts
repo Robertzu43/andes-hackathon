@@ -79,6 +79,8 @@ const statusLocation: Decoder<NonNullable<T.TripStatus['location']>> = value => 
   if (parsed.freshness === 'unavailable'
     ? parsed.ageMs !== null || parsed.capturedAt !== null || parsed.accuracy !== null
     : parsed.ageMs === null || parsed.capturedAt === null || parsed.accuracy === null) invalid();
+  // No readAt here, so age is the only anchor: freshness must follow the server's 120000ms bound.
+  if (parsed.ageMs !== null && parsed.freshness !== (parsed.ageMs <= 120_000 ? 'fresh' : 'stale')) invalid();
   return parsed;
 };
 const statusWire = object({
