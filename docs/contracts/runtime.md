@@ -197,4 +197,3 @@ He accepted the other 10 as documented production limits for the hackathon. Limi
 10. **Unsalted destination hash.** `destination_hash` is an unsalted SHA-256 of the E.164 number and is kept indefinitely in attempts and callback evidence.
 
 Apart from limit 3, none of these is fixed or claimed fixed. Each needs its own change and test before production use.
-
