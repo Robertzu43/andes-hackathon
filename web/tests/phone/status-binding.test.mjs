@@ -41,3 +41,8 @@ for (const operation of ['constructor', 'toString', 'unsupportedOperation']) {
       { kind: 'not_sent', code: 'unsupported_operation' });
   });
 }
+test('an unknown driver operation still throws unsupported', () => {
+  assert.throws(() => decodeDriverResponse({ operation: 'notAnOperation' }, { id }), error =>
+    error.kind === 'unsupported' && error.code === 'unsupported_operation'
+    && error.operation === 'notAnOperation' && error.outcome === 'not_applicable');
+});

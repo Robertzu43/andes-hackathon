@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { browser } from '../foundation/cdp.mjs';
+import { copyPhoneCaptures } from './captures.mjs';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const phone = /\+[1-9]\d{6,14}/;
@@ -93,6 +94,7 @@ test('a private window can register a trip, raise SOS, and read the contact aler
     const checks = await ctx.pool.query(`SELECT count(*)::int AS n FROM trip_events WHERE kind = 'checkin_ok'`);
     assert.equal(checks.rows[0].n, 1);
     console.log(`Phone journey captures: ${join(shots, 'captures')}`);
+    await copyPhoneCaptures(shots, process.env.ANDES_SCREENSHOT_DIR);
   } catch (error) {
     console.error(error);
     throw error;
