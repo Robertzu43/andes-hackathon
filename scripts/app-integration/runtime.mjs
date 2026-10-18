@@ -47,13 +47,27 @@ export async function stop(child) {
   try { await exited; } finally { clearTimeout(timer); }
 }
 
+const running = new Set();
+let interrupted = false;
+// SIGINT/SIGTERM: stop current commands and start no new ones, so the caller's
+// normal finally path drops the database, stops PostgreSQL and removes the directory.
+export function onInterrupt() {
+  for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => {
+    interrupted = true;
+    process.exitCode = signal === 'SIGINT' ? 130 : 143;
+    for (const child of running) child.kill('SIGTERM');
+  });
+}
+
 export async function command(file, args, options = {}) {
+  assert.ok(!interrupted, 'Interrupted');
   const child = spawn(file, args, {stdio: 'inherit', env: testEnvironment(), ...options});
+  running.add(child);
   const timer = setTimeout(() => child.kill('SIGKILL'), 120000);
   try {
     const [code, signal] = await once(child, 'exit');
     assert.equal(code, 0, `${file} failed (${signal ?? code})`);
-  } finally { clearTimeout(timer); await stop(child); }
+  } finally { running.delete(child); clearTimeout(timer); await stop(child); }
 }
 
 export async function disposableDatabase() {
@@ -98,8 +112,9 @@ export async function disposableDatabase() {
         initialized = spawnSync(join(bin, 'initdb'), ['-D', data, '-U', 'andes_q46', '--auth-local=trust', '--auth-host=scram-sha-256', '--pwfile=' + passwordFile, '--no-locale', '--encoding=UTF8'], {encoding: 'utf8', timeout: 30000});
       } finally { await rm(passwordFile, {force: true}); }
       assert.equal(initialized.status, 0, 'Could not initialize owned PostgreSQL cluster');
-      // Foreground child; loopback SCRAM and private Unix socket, never a shared service.
-      postgres = spawn(join(bin, 'postgres'), ['-D', data, '-k', socket, '-h', '127.0.0.1', '-p', String(port), '-c', 'max_connections=100'], {stdio: 'ignore'});
+      // Loopback SCRAM and private Unix socket, never a shared service. Its own process group, so a
+      // terminal Ctrl-C reaches only this runner, which drops the database before stopping it.
+      postgres = spawn(join(bin, 'postgres'), ['-D', data, '-k', socket, '-h', '127.0.0.1', '-p', String(port), '-c', 'max_connections=100'], {stdio: 'ignore', detached: true});
       let startError;
       postgres.on('error', error => { startError = error; });
       adminUrl = new URL(`postgresql://andes_q46@127.0.0.1:${port}/postgres`);

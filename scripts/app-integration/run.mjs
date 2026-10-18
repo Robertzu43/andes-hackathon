@@ -4,7 +4,7 @@ import {existsSync} from 'node:fs';
 import {mkdir, readdir, readFile} from 'node:fs/promises';
 import {isAbsolute, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {command, disposableDatabase, testEnvironment} from './runtime.mjs';
+import {command, disposableDatabase, onInterrupt, testEnvironment} from './runtime.mjs';
 import {writeCapture} from './receipts.mjs';
 import {verifiedBackendSource} from './source-pin.mjs';
 
@@ -18,6 +18,7 @@ function producerRevision() {
 process.chdir(fileURLToPath(new URL('../../', import.meta.url)));
 assert.ok(Number(process.versions.node.split('.')[0]) >= 24 && Number(process.versions.node.split('.')[0]) < 27, 'Use Node 24–26');
 assert.equal(process.argv.length, 2, 'No flags accepted; see docs/testing/local-app.md');
+onInterrupt();
 let runtime;
 try {
   const evidenceDirectory = process.env.APP_INTEGRATION_EVIDENCE_DIR;
@@ -30,6 +31,8 @@ try {
   console.log(`SYNTHETIC integration: Node ${process.version}; PostgreSQL ${runtime.postgresVersion}; owned disposable database; stub transport only`);
   const env = testEnvironment({TEST_DATABASE_URL: runtime.url,
     APP_INTEGRATION_DATABASE_URL: runtime.url, APP_INTEGRATION_RUN_DIR: runtime.directory,
+    // The interrupt test starts its own owned cluster with the same server binaries.
+    ...(process.env.APP_INTEGRATION_PG_BIN ? {APP_INTEGRATION_PG_BIN: process.env.APP_INTEGRATION_PG_BIN} : {}),
     ...(process.env.APP_INTEGRATION_CLIENT_MODULE ? {
       APP_INTEGRATION_CLIENT_MODULE: process.env.APP_INTEGRATION_CLIENT_MODULE,
       APP_INTEGRATION_CLIENT_SHA: process.env.APP_INTEGRATION_CLIENT_SHA,
@@ -56,7 +59,7 @@ try {
   // Child tests print assertion evidence. Never print connection strings/environment.
   console.error('Local integration failed; check test output and documented prerequisites (connection details redacted)');
   if (error.message.startsWith('Integration database setup failed (')) console.error(error.message);
-  process.exitCode = 1;
+  process.exitCode ??= 1; // An interrupt already set 130/143.
 } finally {
   try { await runtime?.cleanup(); }
   catch { console.error('Owned integration cleanup failed; inspect only this run’s resources'); process.exitCode = 1; }
