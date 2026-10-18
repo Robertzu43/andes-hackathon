@@ -119,23 +119,38 @@ test('only the driver labels incidents and only robbery labels enter hotspots', 
 test('advice needs distinct contributors in the current band, flags demo data and needs a signed driver', async t => {
   const f = await fixture(t); const day = '2026-10-10T17:00:00Z'; // 12:00 in Lima: same band as the fixture clock
   const advice = query => f.req('GET', `/v1/insights/advice${query}`);
-  const text = '3 reportes de robo en esta zona de día (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro.';
+  const text = (counts) => `Reportes en esta zona de día (últimos 90 días): ${counts}. Si puedes, detente en un lugar concurrido y seguro.`;
   for (const jwt of [f.driver, f.stranger]) await report(f, 'robo', -12.525, -76.725, day, jwt);
   for (const jwt of [f.driver, f.stranger, f.contact]) await report(f, 'robo', -12.525, -76.725, '2026-10-11T04:00:00Z', jwt); // 23:00 in Lima
   assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'none' });
   await report(f, 'intento_robo', -12.525, -76.725, day, f.contact);
   nextHour(f);
-  assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'caution', count: 3, includesSynthetic: false, band: 'dia', text });
-  assert.match((await advice('?lat=-12.47&lon=-76.68&locale=pt-BR')).body.text, /^3 relatos de roubo nesta região durante o dia/);
+  assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'caution', count: 3, robo: 2, intentoRobo: 1, includesSynthetic: false, band: 'dia', text: text('2 de robo y 1 de intento de robo') });
+  assert.match((await advice('?lat=-12.47&lon=-76.68&locale=pt-BR')).body.text, /^Relatos nesta região durante o dia \(últimos 90 dias\): 2 de roubo e 1 de tentativa de roubo\./);
   assert.deepEqual((await advice('?lat=-12.37&lon=-76.68')).body, { level: 'none' });
   for (let i = 0; i < 3; i++) await seeded(f, 'robo', -13.075, -76.375, day);
   nextHour(f);
-  assert.deepEqual((await advice('?lat=-13.075&lon=-76.375')).body, { level: 'caution', count: 3, includesSynthetic: true, band: 'dia', text: `${text} Incluye datos de demostración.` });
+  assert.deepEqual((await advice('?lat=-13.075&lon=-76.375')).body, { level: 'caution', count: 3, robo: 3, intentoRobo: 0, includesSynthetic: true, band: 'dia', text: `${text('3 de robo')} Incluye datos de demostración.` });
   assert.match((await advice('?lat=-13.075&lon=-76.375&locale=pt-BR')).body.text, /Inclui dados de demonstração\.$/);
   assert.equal((await advice('?lat=-12.046373100000001&lon=-77.042754')).status, 200);
   assert.equal((await advice('?lat=95&lon=0')).status, 400);
   assert.equal((await advice('?lat=abc&lon=0')).status, 400);
   assert.equal((await f.app.inject({ method: 'GET', url: '/v1/insights/advice?lat=0&lon=0' })).statusCode, 401);
+});
+
+// An attempt is not a robbery: calling three attempts "3 reportes de robo" overstates the danger of a zone.
+test('attempts are never counted or worded as robberies in hotspots or advice', async t => {
+  const f = await fixture(t); const day = '2026-10-10T17:00:00Z'; // 12:00 in Lima
+  for (const jwt of [f.driver, f.stranger, f.contact]) await report(f, 'intento_robo', -12.525, -76.725, day, jwt);
+  for (const jwt of [f.driver, f.stranger, f.contact]) await report(f, jwt === f.driver ? 'robo' : 'intento_robo', -13.075, -76.725, day, jwt);
+  assert.deepEqual((await hotspots(f)).body.cells.map(c => `${c.lat}:${c.robo}/${c.intentoRobo}/${c.total}`).sort(), ['-12.525:0/3/3', '-13.075:1/2/3']);
+  const advice = async (lat, locale) => (await f.req('GET', `/v1/insights/advice?lat=${lat}&lon=-76.725&locale=${locale}`)).body;
+  const es = ' Si puedes, detente en un lugar concurrido y seguro.', pt = ' Se puder, pare em um local movimentado e seguro.';
+  assert.deepEqual(await advice(-12.525, 'es'), { level: 'caution', count: 3, robo: 0, intentoRobo: 3, includesSynthetic: false, band: 'dia', text: `Reportes en esta zona de día (últimos 90 días): 3 de intento de robo.${es}` });
+  assert.equal((await advice(-12.525, 'pt-BR')).text, `Relatos nesta região durante o dia (últimos 90 dias): 3 de tentativa de roubo.${pt}`);
+  assert.equal((await advice(-13.075, 'es')).text, `Reportes en esta zona de día (últimos 90 días): 1 de robo y 2 de intento de robo.${es}`);
+  assert.equal((await advice(-13.075, 'pt-BR')).text, `Relatos nesta região durante o dia (últimos 90 dias): 1 de roubo e 2 de tentativa de roubo.${pt}`);
+  assert.match((await f.app.inject({ method: 'GET', url: '/mapa' })).body, /<h1 id="title">Robos e intentos de robo en carretera<\/h1>/);
 });
 
 // Judges open the map from a private window: it must load without login, as HTML, wired to the public aggregate.
@@ -161,8 +176,8 @@ test('advice only sums published cells, so it cannot locate or time a hidden rep
   f.advance(31 * 60000);
   assert.equal((await advice(-13.075, -76.375)).count, 3);
   for (const locale of ['es-PE', 'es-419', 'pt-br']) assert.equal((await f.req('GET', `/v1/insights/advice?lat=-13.075&lon=-76.375&locale=${locale}`)).status, 200, locale);
-  assert.match((await f.req('GET', '/v1/insights/advice?lat=-13.075&lon=-76.375&locale=es-PE')).body.text, /^3 reportes de robo/);
-  assert.match((await f.req('GET', '/v1/insights/advice?lat=-13.075&lon=-76.375&locale=pt-br')).body.text, /^3 relatos de roubo/);
+  assert.match((await f.req('GET', '/v1/insights/advice?lat=-13.075&lon=-76.375&locale=es-PE')).body.text, /: 3 de robo\./);
+  assert.match((await f.req('GET', '/v1/insights/advice?lat=-13.075&lon=-76.375&locale=pt-br')).body.text, /: 3 de roubo\./);
 });
 
 // Demo personas are free to mint, so in demo mode every report is demo data and every view must say so.

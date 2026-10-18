@@ -17,9 +17,10 @@ const REPORTS_PER_DAY = 5; // ponytail: fixed per-identity budget against report
 const decimal = { type: 'string', maxLength: 32, pattern: '^-?\\d{1,3}(\\.\\d+)?$' }; // raw browser coordinates can carry 15+ decimals
 const centre = (cell: number) => Number(((cell + 0.5) * CELL).toFixed(4));
 // ponytail: a count rule, not a model; replace once real labelled incidents exist.
+// An attempt is not a robbery, so the two are always counted and named apart.
 const adviceText = {
-  es: (n: number, night: boolean) => `${n} reportes de robo en esta zona de ${night ? 'noche' : 'día'} (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro.`,
-  'pt-BR': (n: number, night: boolean) => `${n} relatos de roubo nesta região ${night ? 'à noite' : 'durante o dia'} (últimos 90 dias). Se puder, pare em um local movimentado e seguro.`
+  es: (robo: number, intento: number, night: boolean) => `Reportes en esta zona de ${night ? 'noche' : 'día'} (últimos 90 días): ${[robo && `${robo} de robo`, intento && `${intento} de intento de robo`].filter(Boolean).join(' y ')}. Si puedes, detente en un lugar concurrido y seguro.`,
+  'pt-BR': (robo: number, intento: number, night: boolean) => `Relatos nesta região ${night ? 'à noite' : 'durante o dia'} (últimos 90 dias): ${[robo && `${robo} de roubo`, intento && `${intento} de tentativa de roubo`].filter(Boolean).join(' e ')}. Se puder, pare em um local movimentado e seguro.`
 };
 const demoNotice = { es: ' Incluye datos de demostración.', 'pt-BR': ' Inclui dados de demonstração.' };
 type Cell = { cy: number; cx: number; band: string; robo: number; intentoRobo: number; total: number; synthetic: number };
@@ -89,9 +90,9 @@ export function insightRoutes(app: FastifyInstance, ctx: Context, demo = false) 
     // Advice sums only cells the public map already shows, so it can never locate or time a hidden report.
     const cy = Math.floor(lat / CELL), cx = Math.floor(lon / CELL);
     const near = (await publicCells(now)).filter(c => c.band === band && Math.abs(c.cy - cy) <= 1 && Math.abs(c.cx - cx) <= 1);
-    const count = near.reduce((sum, c) => sum + c.total, 0);
+    const count = near.reduce((sum, c) => sum + c.total, 0), robo = near.reduce((sum, c) => sum + c.robo, 0), intentoRobo = near.reduce((sum, c) => sum + c.intentoRobo, 0);
     if (!count) return { level: 'none' };
     const locale = query.locale?.toLowerCase().startsWith('pt') ? 'pt-BR' : 'es', includesSynthetic = near.some(c => c.synthetic > 0);
-    return { level: 'caution', count, includesSynthetic, band, text: adviceText[locale](count, band === 'noche') + (includesSynthetic ? demoNotice[locale] : '') };
+    return { level: 'caution', count, robo, intentoRobo, includesSynthetic, band, text: adviceText[locale](robo, intentoRobo, band === 'noche') + (includesSynthetic ? demoNotice[locale] : '') };
   });
 }
