@@ -10,6 +10,8 @@ An engineering backend now implements confirmed trips, consented timestamped loc
 
 With Node 24 and a disposable PostgreSQL database, run `npm ci`, set `TEST_DATABASE_URL`, then `npm test` and `npm run demo`. The demo uses signed synthetic identities and test-only provider/queue boundaries; it includes actual child-process restart with simulated lease time and makes no live sends. See the runbook for least-privilege local bootstrap and trusted OIDC setup. No audio interpretation, automatic nonresponse escalation, physical-device qualification or provider activation is implied.
 
+The [integrated backend baseline](docs/testing/integrated-backend.md) combines this runtime with the reviewed offline toolkits. With Python 3.10+ available, `npm run test:all` runs both sets of checks; `npm run test:tooling` runs only the offline tools.
+
 ## Start here
 
 [Reconstruct freight trip incidents](https://github.com/Bimbi-Dev/andes-hackathon/issues/8) is the first task. Follow the section gates and GitHub blocked-by links.

@@ -13,6 +13,7 @@ export async function fixture(t, options = {}) {
   await admin.query(`CREATE SCHEMA ${schema}`);
   const url = new URL(process.env.TEST_DATABASE_URL);
   url.searchParams.set('options', `-c search_path=${schema}`);
+  url.searchParams.set('application_name', schema); // lets lock barriers watch only this test's connections
   let now = new Date('2026-10-17T12:00:00Z');
   const ctx = createContext(url.toString(), () => now);
   const { publicKey, privateKey } = await generateKeyPair('RS256');
@@ -21,7 +22,7 @@ export async function fixture(t, options = {}) {
     channelSupport: ['sms', 'whatsapp', 'voice'].map(channel => ({ channel, country: 'BR', locale: 'pt-BR' })), ...options });
   await app.ready();
   t.after(async () => { await app.close(); await admin.query(`DROP SCHEMA ${schema} CASCADE`); await admin.end(); });
-  const phones = { driver: '+5511999990011', stranger: '+5511999990022', contact: '+5511999990033' };
+  const phones = { driver: '+15555550101', stranger: '+15555550102', contact: '+15555550100' };
   function phoneFor(subject) {
     phones[subject] ??= `+1555555${String(100 + Object.keys(phones).length).padStart(4, '0')}`;
     return phones[subject];

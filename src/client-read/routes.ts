@@ -26,8 +26,7 @@ async function readTrucks(client: Client, actor: Actor): Promise<ClientTrucks> {
 }
 
 async function readContacts(client: Client, actor: Actor): Promise<ClientContacts> {
-  // The reconciled runtime adds role; absent/unrecorded data remains null on the parent schema.
-  const rows = (await client.query(`SELECT id,contact_id,to_jsonb(cg)->>'role' AS role,map_requested,incident_requested,map_accepted,incident_accepted,accepted_at,revoked_at,revoked_by,driver_id
+  const rows = (await client.query(`SELECT id,contact_id,role,map_requested,incident_requested,map_accepted,incident_accepted,accepted_at,revoked_at,revoked_by,driver_id
     FROM contact_grants cg WHERE driver_id=$1 ORDER BY id LIMIT $2`, [actor.id, CONTACT_LIMIT + 1])).rows as Row[];
   return {
     contacts: rows.slice(0, CONTACT_LIMIT).map(row => ({
@@ -69,8 +68,7 @@ function tripSummary(row: Row): ClientTripSummary {
 }
 
 const tripSelect = `SELECT t.id,t.truck_id,t.origin,t.destination,t.country,t.locale,t.time_zone,t.status,t.map_active,t.checkins_active,t.paused,t.version,t.created_at,t.closed_at,
-  (to_jsonb(t)->>'expected_arrival_at')::timestamptz AS expected_arrival_at,
-  (to_jsonb(t)->>'sharing_stopped_at')::timestamptz AS sharing_stopped_at,
+  t.expected_arrival_at,t.sharing_stopped_at,
   COALESCE((SELECT array_agg(tg.grant_id ORDER BY tg.grant_id) FROM trip_grants tg JOIN contact_grants cg ON cg.id=tg.grant_id
     WHERE tg.trip_id=t.id AND tg.revoked_at IS NULL AND cg.revoked_at IS NULL AND cg.accepted_at IS NOT NULL
       AND (cg.map_accepted OR cg.incident_accepted)), '{}') AS contact_grant_ids

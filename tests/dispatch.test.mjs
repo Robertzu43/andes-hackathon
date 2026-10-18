@@ -11,7 +11,7 @@ test('recipient discovers incident from frozen alerts and can read and respond a
   const sms=jobs.find(j=>j.channel==='sms');
   await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,sms,'recipient-alert'),p);
   const frozen=(await f.ctx.pool.query('SELECT payload FROM dispatch_attempts WHERE job_id=$1',[sms.id])).rows[0].payload;
-  const match=frozen.text.match(/Incidente ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12});/);
+  const match=frozen.text.match(/Incidente ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\./);
   assert.ok(match,'recipient-facing summary must identify the exact incident');
   const id=match[1];const path=`/v1/incidents/${id}`;
   const expected={id,tripId:trip,status:'active',createdAt:'2026-10-17T12:00:00.000Z',resolvedAt:null,groupCapability:'unavailable'};
@@ -36,7 +36,7 @@ test('recipient discovers incident from frozen alerts and can read and respond a
     const attempt=await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,job,'after-arrival'),p);assert.ok(attempt);
     const payload=(await f.ctx.pool.query('SELECT payload FROM dispatch_attempts WHERE id=$1',[attempt.id])).rows[0].payload;
     const summary=payload.text ?? payload.content.templateVariables['1'];
-    assert.ok(summary.includes(`Incidente ${id};`));assert.match(summary,/ubicación no disponible/);assert.doesNotMatch(summary,/última ubicación/);
+    assert.ok(summary.includes(`Incidente ${id}.`));assert.match(summary,/ubicación no disponible/);assert.doesNotMatch(summary,/maps\.google\.com/);
   }
   assert.deepEqual((await f.ctx.pool.query('SELECT payload FROM dispatch_attempts WHERE job_id=$1',[sms.id])).rows[0].payload,frozen);
   assert.equal((await f.req('POST',`${path}/acknowledgements`,{},f.contact)).status,200);
@@ -90,9 +90,9 @@ test('stale claim cannot authorize, stop-first denies and authorize-first surviv
 test('authorization rechecks standing scope, trip scope, phone and incident; arrival keeps SOS without coordinates', async t => {
   const d=await runtime();const f=await fixture(t);const {jobs,trip}=await sos(f);const p=provider();
   await f.req('POST',`/v1/trips/${trip}/locations`,{observations:[{capturedAt:f.ctx.clock().toISOString(),latitude:-12,longitude:-77,accuracy:7}]});
-  const first=await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,jobs[0],'a'),p);assert.match(JSON.stringify(first.payload),/-12/);assert.match(JSON.stringify(first.payload),/2026-10-17/);
+  const first=await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,jobs[0],'a'),p);assert.match(JSON.stringify(first.payload),/-12/);assert.match(JSON.stringify(first.payload),/maps\.google\.com\/\?q=-12,-77/);
   await f.req('POST',`/v1/trips/${trip}/commands`,{type:'arrived'});
-  const second=await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,jobs[1],'b'),p);assert.ok(second);assert.doesNotMatch(JSON.stringify(second.payload),/última ubicación -12,-77/);assert.match(JSON.stringify(second.payload),/no disponible/);
+  const second=await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,jobs[1],'b'),p);assert.ok(second);assert.doesNotMatch(JSON.stringify(second.payload),/maps\.google\.com/);assert.match(JSON.stringify(second.payload),/no disponible/);
   await f.ctx.pool.query('UPDATE identities SET phone_verified=false WHERE id=$1',[f.contactIdentity.id]);
   assert.equal(await d.authorizeJob(f.ctx,await d.claimJob(f.ctx,jobs[2],'c'),p),null);
 });
@@ -226,7 +226,7 @@ test('ordinary reservations stop at configured emergency margin', async t => {
 });
 test('authorization independently rechecks current standing consent and per-trip consent', async t => {
   const d=await runtime();
-  for(const mutate of ["UPDATE contact_grants SET revoked_at=now()", "UPDATE contact_grants SET incident_accepted=false", "UPDATE trip_grants SET revoked_at=now()", "UPDATE identities SET phone='+5511000000000'"]){
+  for(const mutate of ["UPDATE contact_grants SET revoked_at=now()", "UPDATE contact_grants SET incident_accepted=false", "UPDATE trip_grants SET revoked_at=now()", "UPDATE identities SET phone='+15555550199'"]){
     const f=await fixture(t);const {jobs}=await sos(f);const claim=await d.claimJob(f.ctx,jobs[0],'claimed-before-change');await f.ctx.pool.query(mutate);
     assert.equal(await d.authorizeJob(f.ctx,claim,provider()),null,mutate);
   }
