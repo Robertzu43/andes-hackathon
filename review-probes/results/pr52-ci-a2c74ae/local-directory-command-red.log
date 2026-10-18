@@ -1,0 +1,56 @@
+node:internal/modules/cjs/loader:1503
+  throw err;
+  ^
+
+Error: Cannot find module '/private/tmp/andes-q57-pr52-append/tests/phone-capability'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1500:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1116:12)
+    at Module._load (node:internal/modules/cjs/loader:1285:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v24.17.0
+✖ tests/phone-capability (25.588584ms)
+node:internal/modules/cjs/loader:1503
+  throw err;
+  ^
+
+Error: Cannot find module '/private/tmp/andes-q57-pr52-append/tests/phone-observations'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1500:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1116:12)
+    at Module._load (node:internal/modules/cjs/loader:1285:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v24.17.0
+✖ tests/phone-observations (24.471292ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 29.06325
+
+✖ failing tests:
+
+test at tests/phone-capability:1:1
+✖ tests/phone-capability (25.588584ms)
+  'test failed'
+
+test at tests/phone-observations:1:1
+✖ tests/phone-observations (24.471292ms)
+  'test failed'

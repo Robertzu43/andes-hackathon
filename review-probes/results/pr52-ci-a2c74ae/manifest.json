@@ -1,0 +1,44 @@
+{
+  "candidateCommit": "a2c74ae2a4458bb076fa8d093d99a6cb959ea302",
+  "sourceEvidenceCommit": "b5a9eb5465513bdbcc392c0a80b51467ca8a2964",
+  "ciOnlyDiff": [
+    ".github/workflows/phone-observations.yml"
+  ],
+  "sourceTestDocTreesUnchanged": {
+    "src/phone-observations": "ae66e1d97282302c3ebddfafa42f83eb13daf313",
+    "tests/phone-observations": "dc695d51ad95205001bb82d74387f80255bed5da",
+    "tools/phone-capability": "a230d8d0b43da6d1eea39c8f350949d4db58441d",
+    "tests/phone-capability": "bfedde47568732c4de307d537fa8245faf6fbe5d",
+    "docs/phone-observations": "5973d0762dc0ed1a3c51235532735e377c0c68fc"
+  },
+  "workflowBlob": "d2b3d387ac6bc013d2f1de337f8801b3e5020d2c",
+  "ciRun": "https://github.com/Bimbi-Dev/andes-hackathon/actions/runs/39087194252",
+  "ciJob": "https://github.com/Bimbi-Dev/andes-hackathon/actions/runs/39087194252/job/117556131871",
+  "ciRunHead": "a2c74ae2a4458bb076fa8d093d99a6cb959ea302",
+  "testedMerge": {
+    "parents": [
+      "414b69b394b89e0fb2b4a5e0cf6e2a95a6580e5e",
+      "a2c74ae2a4458bb076fa8d093d99a6cb959ea302"
+    ],
+    "sha": "8476996bc37ce9d1c310e1ab3ff8078340523a83",
+    "tree": "6172a3c8ebb1367e50e3a120a6ee1830e6e878b0"
+  },
+  "ciConclusion": "success",
+  "ciRuntime": "Node24.17.0 Ubuntu",
+  "ciTests": {
+    "pass": 124,
+    "fail": 0,
+    "skip": 0
+  },
+  "independentSourceReview": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560969734",
+  "independentArtifactCommit": "d5e68e8cc2690e8b8b00d47c2066ade2f7036e0a",
+  "independentSourceResult": "124 current +11 unchanged +3 versioned pass. Original six-case suite5pass/1supersededR05red preserved. Source review bound to b5a9eb5; new workflow/head rebind requested.",
+  "security": "read-only contents; immutable official actions; checkout credentials not persisted; no caches/install/secrets/elevated event; bounded hosted job",
+  "uiEvidence": "CI-only delta, no UI changes",
+  "filesSha256": {
+    "local-file-glob-green.log": "0cf704824af17b1a71ee333042424e23cda4f5e44d80a06e27399a70e54fe4c6",
+    "remote-tests.log": "206adf10e417c319a28c699106072214017ee37516e9b196ce13568513e0302a",
+    "local-directory-command-red.log": "048011c70e6143d3c2d20c3d2aea4bd22a18fabee87ab7b529e9c8fde867577e",
+    "run.json": "fdae2c887eed4c684f46e81b32aec6f64ab2b92b1f9e52bd13fc5eefdf1db84c"
+  }
+}
