@@ -241,12 +241,13 @@ test('a check opened after waiting for the trip lock gets its full grace window 
   f.advance(120001); await sweep(f);
   assert.deepEqual(await askUntil(control), {created_at: new Date('2026-10-17T12:02:00.001Z'), ask_until: new Date('2026-10-17T12:03:00.001Z')});
   await f.ctx.pool.query("DELETE FROM security_checks WHERE trip_id=$1", [waited]);
-  const blocker = await f.ctx.pool.connect(); await blocker.query('BEGIN');
-  await blocker.query('SELECT 1 FROM trips WHERE id=$1 FOR UPDATE', [waited]);
-  const running = sweep(f);
-  await waitForBlockedQueries(f.ctx.pool, 'SELECT * FROM trips WHERE id=$1 FOR UPDATE%', 1);
-  f.advance(50000);
-  await blocker.query('COMMIT'); blocker.release(); await running;
+  const blocker = await f.ctx.pool.connect(); let running;
+  try {
+    await blocker.query('BEGIN'); await blocker.query('SELECT 1 FROM trips WHERE id=$1 FOR UPDATE', [waited]);
+    running = sweep(f);
+    await waitForBlockedQueries(f.ctx.pool, 'SELECT * FROM trips WHERE id=$1 FOR UPDATE%', 1);
+    f.advance(50000);
+  } finally { await blocker.query('COMMIT'); blocker.release(); await running; }
   assert.deepEqual(await askUntil(waited), {created_at: new Date('2026-10-17T12:02:50.001Z'), ask_until: new Date('2026-10-17T12:03:50.001Z')});
   f.advance(10000); await sweep(f);
   assert.deepEqual((await checksOf(f, waited)).map(c => c.status), ['asking'], 'not escalated before its own grace window ends');

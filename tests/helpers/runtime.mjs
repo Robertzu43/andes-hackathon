@@ -13,6 +13,7 @@ export async function fixture(t, options = {}) {
   await admin.query(`CREATE SCHEMA ${schema}`);
   const url = new URL(process.env.TEST_DATABASE_URL);
   url.searchParams.set('options', `-c search_path=${schema}`);
+  url.searchParams.set('application_name', schema); // lets lock barriers watch only this test's connections
   let now = new Date('2026-10-17T12:00:00Z');
   const ctx = createContext(url.toString(), () => now);
   const { publicKey, privateKey } = await generateKeyPair('RS256');
