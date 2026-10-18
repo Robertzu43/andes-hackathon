@@ -10,9 +10,11 @@ export interface Qualification {
   allowedDestinations?: string[];
   /** Optional live-send budget, checked at authorization: attempts per incident and per recipient identity (a demo world's one consented persona). */
   demoLimits?: { perIncident: number; perSession: number };
+  /** Optional: 'oneway' when the account's SMS sender is Zavu's one-way kind. Internal 'sms' then goes out and reads back as 'sms_oneway'. */
+  smsMode?: 'oneway';
 }
 export interface SendInput { attemptId: string; to: string; channel: Channel; country: string; locale: string; summary: string }
-export interface Payload { to: string; channel: Channel; messageType: 'text' | 'template'; text?: string;
+export interface Payload { to: string; channel: Channel | 'sms_oneway'; messageType: 'text' | 'template'; text?: string;
   content?: { templateId: string; templateVariables: Record<string, string> }; voiceLanguage?: string;
   fallbackEnabled: false; idempotencyKey: string; metadata: { attemptId: string } }
 export type Outcome = { state: 'accepted'; messageId: string; providerMessageId?: string; status: string }
@@ -24,6 +26,9 @@ export interface CallbackConfig { projectId: string; senderId: string; secret: s
 export interface CallbackEvent { id: string; type: string; timestamp: number; senderId: string; projectId: string;
   data: { messageId: string; to: string; channel: Channel; status: string; errorCode?: string } }
 const channels = ['sms', 'whatsapp', 'voice'];
+const providerChannels = [...channels, 'sms_oneway'];
+/** The name Zavu uses on this account for an internal channel. */
+const wire = (q: Qualification, channel: Channel): Payload['channel'] => channel === 'sms' && q.smsMode === 'oneway' ? 'sms_oneway' : channel;
 function bounded(value: unknown, max = 256): value is string { return typeof value === 'string' && value.length > 0 && value.length <= max; }
 export function loadQualification(env: NodeJS.ProcessEnv): Qualification | null {
   const live = env.ZAVU_LIVE_SEND === 'true';
@@ -37,6 +42,7 @@ export function loadQualification(env: NodeJS.ProcessEnv): Qualification | null 
     if (q.emergencyReserve >= Math.min(q.dailyLimit, q.channelDailyLimit, q.minuteLimit)) throw Error();
     if (q.allowedDestinations !== undefined && (!Array.isArray(q.allowedDestinations) || q.allowedDestinations.length > 10 || q.allowedDestinations.some(to => typeof to !== 'string' || !/^\+[1-9]\d{6,14}$/.test(to)))) throw Error();
     if (q.demoLimits !== undefined && (typeof q.demoLimits !== 'object' || !q.demoLimits || [q.demoLimits.perIncident, q.demoLimits.perSession].some(n => !Number.isSafeInteger(n) || n < 1))) throw Error();
+    if (q.smsMode !== undefined && q.smsMode !== 'oneway') throw Error();
     const seen = new Set<string>();
     for (const entry of q.entries) {
       const key = `${entry.country}:${entry.locale}:${entry.channel}`;
@@ -53,7 +59,7 @@ export function createZavuProvider(qualification: Qualification, apiKey: string,
   const headers = { Authorization: `Bearer ${apiKey}`, 'Zavu-Sender': qualification.senderId, 'Content-Type': 'application/json' };
   function accepted(body: unknown, expected?: Payload): Outcome {
     const m = (body as { message?: Record<string, unknown> })?.message;
-    if (!m || !bounded(m.id) || !bounded(m.status, 80) || m.direction !== 'outbound' || !channels.includes(String(m.channel)) || !bounded(m.to, 20) || (expected && (m.channel !== expected.channel || m.to !== expected.to))) return { state: 'unknown' };
+    if (!m || !bounded(m.id) || !bounded(m.status, 80) || m.direction !== 'outbound' || !providerChannels.includes(String(m.channel)) || !bounded(m.to, 20) || (expected && (m.channel !== expected.channel || m.to !== expected.to))) return { state: 'unknown' };
     return { state: 'accepted', messageId: m.id, status: m.status, ...(bounded(m.providerMessageId) ? { providerMessageId: m.providerMessageId } : {}) };
   }
   async function request(path: string, init: RequestInit) {
@@ -66,7 +72,7 @@ export function createZavuProvider(qualification: Qualification, apiKey: string,
     payload(input) {
       const entry = qualification.entries.find(e => e.channel === input.channel && e.country === input.country && e.locale === input.locale);
       if (!entry || !/^\+[1-9]\d{6,14}$/.test(input.to)) throw new Error('Unqualified destination');
-      const base = { to: input.to, channel: input.channel, fallbackEnabled: false as const,
+      const base = { to: input.to, channel: wire(qualification, input.channel), fallbackEnabled: false as const,
         idempotencyKey: `andes:${input.attemptId}:${input.channel}`, metadata: { attemptId: input.attemptId } };
       if (input.channel === 'whatsapp') {
         if (!entry.templateId || !entry.summaryVariable) throw new Error('Approved WhatsApp template required');
@@ -95,7 +101,7 @@ export function createZavuProvider(qualification: Qualification, apiKey: string,
         if (response.status !== 200) return { state: 'unknown' };
         const result = accepted(body);
         const message = (body as { message?: { channel?: string; to?: string } })?.message;
-        if (expected && (message?.channel !== expected.channel || typeof message.to !== 'string' || createHash('sha256').update(message.to).digest('hex') !== expected.destinationHash)) return { state: 'unknown' };
+        if (expected && (message?.channel !== wire(qualification, expected.channel) || typeof message.to !== 'string' || createHash('sha256').update(message.to).digest('hex') !== expected.destinationHash)) return { state: 'unknown' };
         return result.state === 'accepted' && result.messageId === messageId ? result : { state: 'unknown' };
       } catch { return { state: 'unknown' }; }
     }
@@ -120,6 +126,9 @@ export function verifyCallback(raw: Buffer, signature: string | undefined, confi
   if (!timingSafeEqual(expected, Buffer.from(digest, 'hex'))) fail();
   let event: CallbackEvent;
   try { event = JSON.parse(raw.toString('utf8')); } catch { return fail(); }
+  // The one-way SMS sender reports 'sms_oneway': that is internal 'sms'. Correlation still needs the exact message ID, sender and destination.
+  const data = (event! as { data?: { channel?: unknown } } | null)?.data;
+  if (data?.channel === 'sms_oneway') data.channel = 'sms';
   if (!event! || !bounded(event.id) || !bounded(event.type, 100) || !Number.isSafeInteger(event.timestamp) || event.projectId !== config.projectId || event.senderId !== config.senderId || !event.data || !bounded(event.data.messageId) || !/^\+[1-9]\d{6,14}$/.test(event.data.to) || !channels.includes(event.data.channel) || !bounded(event.data.status, 80) || (event.data.errorCode !== undefined && (!bounded(event.data.errorCode, 80) || !/^[A-Za-z0-9_]+$/.test(event.data.errorCode)))) fail();
   return event!;
 }

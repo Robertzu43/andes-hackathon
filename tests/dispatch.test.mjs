@@ -244,3 +244,28 @@ test('control reconciles known IDs with new sends off and denies new authorizati
   finally{abort.abort();await running;}
   assert.deepEqual(methods,['GET']);assert.equal((await f.ctx.pool.query('SELECT count(*) n FROM dispatch_attempts')).rows[0].n,'1');
 });
+test('a one-way SMS sender: the sms_oneway send reply, read-back and signed callback all land on the internal sms attempt', async t => {
+  const config={projectId:'prj_fixture',senderId:'snd_fixture',secret:'syntheticfixture-callback-secret'};
+  const d=await runtime();const f=await fixture(t,{callbackConfig:config});const {jobs}=await sos(f);
+  const {createZavuProvider}=await import('../dist/notifications/zavu.js');
+  const posted=[];
+  const p=createZavuProvider({...qualification,smsMode:'oneway'},'syntheticfixture-key',async(_url,init)=>{
+    if(init.method==='POST')posted.push(JSON.parse(init.body));
+    return new Response(JSON.stringify({message:{id:'msg_oneway',channel:'sms_oneway',to:'+15555550100',status:init.method==='POST'?'queued':'sent',direction:'outbound'}}),{status:init.method==='POST'?202:200});
+  });
+  const sms=jobs.find(j=>j.channel==='sms');
+  await d.runJob(f.ctx,sms,p,'oneway');
+  assert.equal(posted[0].channel,'sms_oneway');
+  const attempt=async()=>(await f.ctx.pool.query('SELECT channel,state,provider_message_id,delivery_status FROM dispatch_attempts WHERE job_id=$1',[sms.id])).rows[0];
+  assert.deepEqual(await attempt(),{channel:'sms',state:'accepted',provider_message_id:'msg_oneway',delivery_status:'queued'},'send reply');
+  f.advance(60001);assert.equal(await d.reconcileOnce(f.ctx,p,undefined,'sms'),true);
+  assert.equal((await attempt()).delivery_status,'sent','read-back');
+  const stamp=Math.floor(f.ctx.clock().getTime()/1000);
+  const raw=Buffer.from(JSON.stringify({id:'evt_oneway_1',type:'message.delivered',timestamp:stamp*1000,senderId:'snd_fixture',projectId:'prj_fixture',
+    data:{messageId:'msg_oneway',to:'+15555550100',channel:'sms_oneway',status:'delivered'}}));
+  const signature=`t=${stamp},v2=${createHmac('sha256',config.secret).update(`${stamp}.`).update(raw).digest('hex')}`;
+  const callback=await f.app.inject({method:'POST',url:'/v1/callbacks/zavu',headers:{'content-type':'application/json','x-zavu-signature':signature},payload:raw});
+  assert.equal(callback.statusCode,200,'callback');
+  assert.deepEqual((await f.ctx.pool.query('SELECT channel,disposition FROM provider_events')).rows,[{channel:'sms',disposition:'applied'}]);
+  assert.equal((await attempt()).delivery_status,'delivered');
+});

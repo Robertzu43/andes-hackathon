@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { qualification } from './helpers/dispatch.mjs';
 async function api() {
   const m = await import('../dist/notifications/zavu.js').catch(() => ({}));
@@ -71,4 +73,36 @@ test('sends-off configuration retains read-only provider but denies POST and del
   assert.deepEqual(await p.send(p.payload(input)),{state:'rejected',code:'live_send_disabled'});assert.deepEqual(methods,['GET']);
   assert.equal(configuredProvider({}),null);
   for(const providerEnv of [{},env])await assert.rejects(startWorker('emergency',{DATABASE_URL:'postgresql://syntheticfixture/none',AWS_REGION:'us-east-1',SQS_EMERGENCY_URL:'https://sqs.fixture/emergency',SQS_ORDINARY_URL:'https://sqs.fixture/ordinary',...providerEnv}),/Delivery disabled/);
+});
+test('a one-way SMS sender: internal sms goes out and reads back as sms_oneway, and callbacks map it to sms', async () => {
+  const {createZavuProvider, verifyCallback, loadQualification, textPayload} = await api();
+  const oneway = {...qualification, smsMode: 'oneway'};
+  const sent = [];
+  const reply = (channel, status) => new Response(JSON.stringify({message: {id: 'msg_oneway', channel, to: input.to, status: 'queued', direction: 'outbound'}}), {status});
+  const p = createZavuProvider(oneway, 'fixture-key', async (_url, init) => {
+    if (init.method === 'POST') { sent.push(JSON.parse(init.body)); return reply(sent.at(-1).channel, 202); }
+    return reply('sms_oneway', 200);
+  });
+  const payload = p.payload(input);
+  assert.equal(payload.channel, 'sms_oneway'); assert.equal(payload.idempotencyKey, 'andes:attempt-fixture:sms');
+  assert.equal((await p.send(payload)).state, 'accepted', 'the send reply says sms_oneway'); assert.equal(sent[0].channel, 'sms_oneway');
+  assert.equal(p.payload({...input, channel: 'whatsapp'}).channel, 'whatsapp', 'only sms has a one-way form');
+  const destinationHash = createHash('sha256').update(input.to).digest('hex');
+  assert.equal((await p.read('msg_oneway', undefined, {channel: 'sms', destinationHash})).state, 'accepted', 'read-back');
+  const twoWay = createZavuProvider(qualification, 'fixture-key', async () => reply('sms_oneway', 200));
+  assert.equal(twoWay.payload(input).channel, 'sms');
+  assert.equal((await twoWay.read('msg_oneway', undefined, {channel: 'sms', destinationHash})).state, 'unknown', 'a two-way account never accepts the one-way form');
+  assert.equal(textPayload, undefined, 'OTP text payloads belong to the deferred phone-code tasks');
+  assert.equal(readFileSync(fileURLToPath(new URL('../dist/notifications/zavu.js', import.meta.url)), 'utf8').includes('andes:otp:'), false);
+  const config = {projectId: 'prj_fixture', senderId: 'snd_fixture', secret: 'fixture-secret-not-a-credential'};
+  const signed = channel => {
+    const raw = Buffer.from(JSON.stringify({id: 'evt_oneway', type: 'message.delivered', timestamp: 1792238400000, senderId: 'snd_fixture', projectId: 'prj_fixture',
+      data: {messageId: 'msg_oneway', to: input.to, channel, status: 'delivered'}}));
+    return [raw, `t=1792238400,v2=${createHmac('sha256', config.secret).update('1792238400.').update(raw).digest('hex')}`];
+  };
+  assert.equal(verifyCallback(...signed('sms_oneway'), config, new Date(1792238400000)).data.channel, 'sms', 'callback');
+  assert.throws(() => verifyCallback(...signed('sms_twoway'), config, new Date(1792238400000)), /invalid_callback/);
+  const retained = {...qualification, evidence: 'test-only syntheticfixture: retained', entries: qualification.entries.map(e => ({...e, evidence: 'test-only syntheticfixture: channel'}))};
+  assert.equal(loadQualification({ZAVU_QUALIFICATION_JSON: JSON.stringify({...retained, smsMode: 'oneway'})}).smsMode, 'oneway');
+  assert.throws(() => loadQualification({ZAVU_QUALIFICATION_JSON: JSON.stringify({...retained, smsMode: 'twoway'})}), /qualification/);
 });

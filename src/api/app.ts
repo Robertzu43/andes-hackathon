@@ -13,16 +13,20 @@ import { clientReadRoutes } from '../client-read/routes.js';
 import { recipientReadRoutes } from '../client-read/recipient.js';
 import { demoRoutes, type DemoIssuer } from '../demo.js';
 import { insightRoutes } from '../insights/routes.js';
+import { isWebRoute, webRoutes } from './web.js';
 declare module 'fastify' { interface FastifyRequest { actor: Actor } }
-export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer; automaticChecks?: boolean }
-export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo, automaticChecks = false }: AppOptions) {
+export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer; automaticChecks?: boolean; webRoot?: string; trustProxyHops?: number }
+export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo, automaticChecks = false, webRoot, trustProxyHops = 0 }: AppOptions) {
   const authenticate = authenticator(auth);
-  const app = Fastify({ logger: false, bodyLimit: 128 * 1024, requestTimeout: 10000, ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } } });
+  // Exactly this many proxies (0 = none), so request.ip is the address the nearest trusted proxy saw. Never `true`.
+  // shortcut: Fastify 5.12 ignores a numeric hop count, so this function trusts exactly that many hops. Revisit if the proxy addresses are known.
+  const app = Fastify({ logger: false, trustProxy: trustProxyHops > 0 ? (_address, hop) => hop < trustProxyHops : false, bodyLimit: 128 * 1024, requestTimeout: 10000, ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } } });
   app.decorateRequest('actor');
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store');
     if (demo && request.routeOptions.url === '/v1/demo/session') return;
     if (request.routeOptions.url === '/health' || request.routeOptions.url === '/v1/insights/hotspots' || request.routeOptions.url === '/mapa' || (callbackConfig && request.routeOptions.url === '/v1/callbacks/zavu')) return;
+    if (isWebRoute(request)) return; // the app shell and its files are public; every /v1 path stays authenticated
     const telemetry = request.routeOptions.url?.endsWith('/locations') || request.routeOptions.url?.endsWith('/snapshot');
     // Client catalog reads authenticate on the telemetry pool too, so polling never borrows SOS connections.
     request.actor = await authenticate(request.headers.authorization, telemetry || request.routeOptions.config?.clientRead ? ctx.telemetryPool : ctx.pool, ctx.clock());
@@ -44,5 +48,6 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
   clientReadRoutes(app, ctx); recipientReadRoutes(app, ctx);
   tripRoutes(app, ctx, automaticChecks); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport); insightRoutes(app, ctx, Boolean(demo));
   if (callbackConfig) callbackRoutes(app, ctx, callbackConfig);
+  if (webRoot) webRoutes(app, webRoot);
   return app;
 }
