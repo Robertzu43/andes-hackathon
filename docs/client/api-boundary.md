@@ -172,6 +172,16 @@ the shared session and `/v1/me`. It first clears its controller, then `activate(
 reads the backend identity and sets that UUID only if the session and activation
 are still current. `setActor(null)` must synchronously clear protected state. The
 binding does not interpret OIDC subjects or change tokens to match a local role.
+Disposal clears the controller once and retires queued session notifications, even
+when another listener disposes the binding during the same invalidation dispatch.
+An obsolete callback cannot reopen a closed view after gateway sign-out.
+
+`node --test web/tests/api/contact-view.integration.mjs` reproduces this 401
+teardown against the actual contact view store at
+`e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6`, with this branch's shared API module.
+It checks that both views stay closed with protected data cleared, then recover
+only through an explicit gateway begin. The fetched Git object is required;
+synthetic HTTP and native store assertions do not establish browser acceptance.
 
 For the published contact controller, the host supplies a fixed-view callback:
 

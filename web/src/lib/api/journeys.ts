@@ -29,7 +29,10 @@ export function bindJourneySession(session: MemorySession, api: Pick<ApiClient, 
   let disposed = false;
   const reset = () => { generation += 1; setActor(null); };
   reset();
-  const unsubscribe = session.subscribe(reset);
+  const unsubscribe = session.subscribe(() => {
+    // An earlier listener can dispose this binding during a notification snapshot.
+    if (!disposed) reset();
+  });
   return {
     async activate(options?: RequestOptions) {
       if (disposed) throw new ApiError('session_changed', { operation: 'activateJourney' });
