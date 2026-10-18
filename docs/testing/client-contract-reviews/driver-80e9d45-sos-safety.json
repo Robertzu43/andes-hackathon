@@ -1,0 +1,98 @@
+{
+  "schema": "andes.reviewer-demo-sos/1",
+  "claimedCandidateSha": "80e9d45f9a234de54b1017e856e8349c097b8760",
+  "candidateIdentityVerifiedByRunner": false,
+  "wholeAppAccepted": false,
+  "nodeVersion": "26.3.0",
+  "gatekeeperReview": 5560841617,
+  "probeSha256": "3f9e30471f6f6baef338f9ae362624dfc4f9f07f1ae73dfd643ec6b56b29e570",
+  "results": {
+    "passed": false,
+    "checks": [
+      {
+        "id": "control:ordinary-command-remains-behind-the-moving-interaction-gate",
+        "passed": true
+      },
+      {
+        "id": "sos:unknown-interaction-does-not-block-help",
+        "passed": false,
+        "actual": {
+          "result": "blocked",
+          "code": "interaction-not-allowed",
+          "requests": 0
+        }
+      },
+      {
+        "id": "sos:moving-interaction-does-not-block-help",
+        "passed": false,
+        "actual": {
+          "result": "blocked",
+          "code": "interaction-not-allowed",
+          "requests": 0
+        }
+      },
+      {
+        "id": "sos:cached-active-incident-cannot-swallow-a-new-press",
+        "passed": false,
+        "actual": {
+          "result": "ok",
+          "requests": 0,
+          "returnedOldCache": true
+        }
+      },
+      {
+        "id": "sos:explicit-new-press-after-unknown-can-reach-the-server",
+        "passed": false,
+        "actual": {
+          "result": "blocked",
+          "code": "unresolved-submission",
+          "requests": 1
+        }
+      },
+      {
+        "id": "sos:known-receipt-survives-wall-clock-shift-20000",
+        "passed": false,
+        "actual": {
+          "result": "unknown",
+          "code": "submission-timeout-unknown",
+          "requests": 1
+        }
+      },
+      {
+        "id": "sos:known-receipt-survives-wall-clock-shift--1",
+        "passed": false,
+        "actual": {
+          "result": "unknown",
+          "code": "submission-timeout-unknown",
+          "requests": 1
+        }
+      },
+      {
+        "id": "checkin:each-sequential-explicit-OK-has-a-new-request-and-key",
+        "passed": false,
+        "actual": {
+          "result": "ok",
+          "requests": 1,
+          "distinctKeys": 1
+        }
+      },
+      {
+        "id": "session:same-verified-actor-preserves-bound-trip-and-unknown-SOS",
+        "passed": false,
+        "actual": {
+          "tripStillBound": false,
+          "sosState": null
+        }
+      },
+      {
+        "id": "control:overlapping-SOS-presses-share-one-pending-request",
+        "passed": true
+      },
+      {
+        "id": "control:another-actor-still-retires-private-trip-and-SOS",
+        "passed": true
+      }
+    ],
+    "limitation": "Frozen nonvisual driver controller and synthetic transport scheduling; no API/backend/browser/device/provider qualification."
+  }
+}

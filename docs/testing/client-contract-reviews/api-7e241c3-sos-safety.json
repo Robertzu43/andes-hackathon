@@ -1,0 +1,112 @@
+{
+  "schema": "andes.reviewer-demo-sos/1",
+  "claimedCandidateSha": "7e241c39a31d4eaba5f8028fd977e06f6ca72d4d",
+  "candidateIdentityVerifiedByRunner": false,
+  "wholeAppAccepted": false,
+  "nodeVersion": "26.3.0",
+  "gatekeeperReview": 5560836622,
+  "probeSha256": "2fc3f546749b2f73fc28335f2af11cd4d94c60511c983dcd1d5cdb95736b277d",
+  "results": {
+    "passed": false,
+    "checks": [
+      {
+        "id": "control:accepted-sos-is-a-single-request-and-an-incident",
+        "passed": true
+      },
+      {
+        "id": "refresh:body-pending-sos-survives-same-identity-token-rotation",
+        "passed": false,
+        "actual": {
+          "result": "unknown",
+          "sosRequests": 1,
+          "tripStillBound": false,
+          "incidentStillRecorded": false,
+          "sosState": null
+        }
+      },
+      {
+        "id": "refresh:already-accepted-sos-survives-same-identity-token-rotation",
+        "passed": false,
+        "actual": {
+          "result": "ok",
+          "sosRequests": 1,
+          "tripStillBound": false,
+          "incidentStillRecorded": false,
+          "sosState": null
+        }
+      },
+      {
+        "id": "not-sent:signed-out-cannot-become-unknown",
+        "passed": false,
+        "actual": {
+          "result": "unknown",
+          "code": "unauthenticated",
+          "fetches": 0
+        }
+      },
+      {
+        "id": "not-sent:invalid-key-cannot-become-unknown",
+        "passed": false,
+        "actual": {
+          "result": "unknown",
+          "code": "invalid_input",
+          "fetches": 0
+        }
+      },
+      {
+        "id": "not-sent:invalid-resource-cannot-become-unknown",
+        "passed": false,
+        "actual": {
+          "result": "unknown",
+          "code": "invalid_input",
+          "fetches": 0
+        }
+      },
+      {
+        "id": "not-sent:pre-aborted-cannot-become-unknown",
+        "passed": false,
+        "actual": {
+          "result": "unknown",
+          "code": "cancelled",
+          "fetches": 0
+        }
+      },
+      {
+        "id": "rejection:429-is-a-definite-server-rejection",
+        "passed": false,
+        "actual": {
+          "result": "unknown",
+          "status": 429,
+          "fetches": 1
+        }
+      },
+      {
+        "id": "compatibility:missing-AbortSignal-any-still-sends-and-cleans-its-timer",
+        "passed": false,
+        "actual": {
+          "result": "unknown",
+          "fetches": 0,
+          "outstandingRequestTimers": 1
+        }
+      },
+      {
+        "id": "control:failure-after-dispatch-stays-unknown-with-no-retry",
+        "passed": true,
+        "actual": {
+          "result": "unknown",
+          "fetches": 1
+        }
+      },
+      {
+        "id": "control:caller-abort-after-dispatch-stays-unknown-with-no-retry",
+        "passed": true,
+        "actual": {
+          "result": "unknown",
+          "fetches": 1
+        }
+      }
+    ],
+    "limitation": "Frozen client and driver exports with synthetic HTTP scheduling; no backend, browser, physical iOS or provider qualification."
+  },
+  "driverBindingSha": "80e9d45f9a234de54b1017e856e8349c097b8760"
+}

@@ -1,0 +1,118 @@
+{
+  "schema": "andes.reviewer-client-backend-summary/1",
+  "kind": "prior-isolated-backend-run-summary",
+  "backendSha": "ebc8fb1d36f441ef012ca585201cefabf61383d6",
+  "clientSha": "78efad0a207e98cc44336a03ba6af9fc0c1d2901",
+  "runtimeSha": "df05aeb782703e7f1a2ccbb8fd92b509d388c537",
+  "sourceIdentityVerifiedByRunner": false,
+  "wholeAppAccepted": false,
+  "externalSends": false,
+  "isolatedDatabase": true,
+  "recordedHttpExchanges": 37,
+  "recordedCasesPassed": 12,
+  "originalPrivateReceiptSha256": "ac1ee4184c29fde73c523ba7734ec42a0de28894261313d21c97c06f0a9cc1a3",
+  "cases": [
+    {
+      "id": "setup",
+      "recordedSteps": 4,
+      "httpStatuses": [
+        200,
+        200,
+        200,
+        200
+      ]
+    },
+    {
+      "id": "explicit-confirm",
+      "recordedSteps": 2,
+      "httpStatuses": [
+        200,
+        200
+      ]
+    },
+    {
+      "id": "duplicate-confirm",
+      "recordedSteps": 3,
+      "httpStatuses": [
+        200,
+        200,
+        409
+      ]
+    },
+    {
+      "id": "unavailable-snapshot",
+      "recordedSteps": 1,
+      "httpStatuses": [
+        200
+      ]
+    },
+    {
+      "id": "stale-snapshot",
+      "recordedSteps": 2,
+      "httpStatuses": [
+        200,
+        200
+      ]
+    },
+    {
+      "id": "cross-user",
+      "recordedSteps": 2,
+      "httpStatuses": [
+        403,
+        403
+      ]
+    },
+    {
+      "id": "self-report",
+      "recordedSteps": 2,
+      "httpStatuses": [
+        200,
+        200
+      ]
+    },
+    {
+      "id": "sos-acceptance",
+      "recordedSteps": 2,
+      "httpStatuses": [
+        200,
+        200
+      ]
+    },
+    {
+      "id": "acknowledgement-action",
+      "recordedSteps": 2,
+      "httpStatuses": [
+        200,
+        200
+      ]
+    },
+    {
+      "id": "revocation",
+      "recordedSteps": 3,
+      "httpStatuses": [
+        200,
+        403,
+        403
+      ]
+    },
+    {
+      "id": "arrival-preserves-sos",
+      "recordedSteps": 4,
+      "httpStatuses": [
+        200,
+        200,
+        200,
+        403
+      ]
+    },
+    {
+      "id": "owner-resolution",
+      "recordedSteps": 2,
+      "httpStatuses": [
+        403,
+        200
+      ]
+    }
+  ],
+  "limitation": "Summary of the earlier executed run, not a new execution or an app-acceptance interchange receipt. Full generated HTTP/SQL receipt remains private outside Git; no raw bodies, identifiers, phone or position fields are published here."
+}

@@ -1,3 +1,7 @@
+> Historical review archive. Each result applies only to its recorded source pin.
+> This branch is not product code or approval authority. The former full bridge
+> receipt is private; only its prior-run summary is published at this head.
+
 # Independent client contract oracle
 
 Reviewer lane 47 owns `tests/client-contract-review/`. The source contract is
@@ -721,8 +725,10 @@ cross-user rejection, reports, SOS, acknowledgement/action, owner resolution and
 arrival preserving SOS. Revocation uses a separate still-active trip to isolate
 permission loss from map closure. Local signout makes no subsequent HTTP request.
 
-The resulting sanitized synthetic-run receipt is committed at
-[`client-contract-reviews/bridge-78efad0.receipt.json`](client-contract-reviews/bridge-78efad0.receipt.json).
+A summary of that earlier executed run is published at
+[`client-contract-reviews/bridge-78efad0.summary.json`](client-contract-reviews/bridge-78efad0.summary.json).
+The full generated receipt is retained privately outside Git; the summary is not
+an acceptance-interchange receipt and contains no raw HTTP bodies or identities.
 Lane52 PR60 **5f43ebb** checker returned `backend-receipt-checks-pass` for all 12
 cases and `wholeAppAccepted: false`. All identities and coordinates are synthetic.
 This records actual local code execution, not participant/device/provider evidence.
