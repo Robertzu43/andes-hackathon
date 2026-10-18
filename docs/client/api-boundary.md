@@ -69,7 +69,7 @@ configuration. A browser base URL is public configuration, not a credential.
 | Client operation | HTTP contract |
 |---|---|
 | `getIdentity` | GET `/v1/me` → server identity UUID |
-| `getProfile`, `getBootstrap` | GET `/v1/profile`, `/v1/bootstrap`; additive owner read contract PR65/748d30c |
+| `getProfile`, `getBootstrap` | GET `/v1/profile`, `/v1/bootstrap`; additive owner read contract PR65/3ea6e1b with source readAt |
 | `listTrucks`, `listContacts`, `listTrips` | GET `/v1/trucks`, `/v1/contacts`, `/v1/trips`; bounded first-page reads, not discovery for another identity |
 | `createTruck` | POST `/v1/trucks` with `{label}` |
 | `inviteContact` | POST `/v1/contacts` with existing `contactId`, international `phone`, explicit map/incident scopes |
@@ -154,7 +154,7 @@ The compiler's absolute path is environment-specific; the normal command above u
 the backend's existing pinned dev dependency when available. The root backend suite
 requires its own disposable PostgreSQL/credentials and is not a client-only test.
 
-Q47 independently reviews the frozen client candidate. Further Q41 status/time APIs, Q49 UI wiring,
+Q47 independently reviews the frozen client candidate. Unpublished discovery/history APIs, Q49 UI wiring,
 a real configured identity flow, trusted browser proxy/CORS, backend integration and
 physical/human/provider evidence remain separate dependencies. Existing product gates
 remain open; synthetic passing tests do not establish field safety or channel support.
@@ -249,8 +249,8 @@ repair or UI. Q47's exact-revision driver re-review remains a separate requireme
 
 ## Published owner reads
 
-Read API source: PR65 at `748d30c6e6c595fd1a2c2c648a045750de3dd9c8`, including
-[the frozen wire contract](https://github.com/Bimbi-Dev/andes-hackathon/blob/748d30c6e6c595fd1a2c2c648a045750de3dd9c8/docs/contracts/client-read.md)
+Read API source: PR65 at `3ea6e1b06e6dc3d3d01360f28ae9c61751657830`, including
+[the frozen wire contract](https://github.com/Bimbi-Dev/andes-hackathon/blob/3ea6e1b06e6dc3d3d01360f28ae9c61751657830/docs/contracts/client-read.md)
 and `src/client-read/routes.ts`. The client adds those five actual GET operations
 without importing or changing the backend implementation. Use types `Profile`,
 `TruckList`, `ContactList`, `TripList`, `Bootstrap` and their entry types.
@@ -269,17 +269,23 @@ Lists are bounded first pages: 100 trucks, 100 standing contacts, 50 active trip
 cursor, silent auto-pagination or claim of complete catalog coverage when truncated.
 Read failures remain errors, never fabricated empty lists. `/v1/contacts` is the
 driver's management list; it does not discover a contact's incoming invitations or
-authorised trips. Recipient discovery, `/status`, response/action history and other
-unpublished routes remain unavailable.
+authorised trips. Recipient discovery and response/action history remain unavailable.
+The separately published status route is covered in the PR74 addition below.
 
-These responses contain **no server readAt**. The client adds no browser timestamp
-and cannot yet manufacture the driver's `SelectionEvidence.readAt` from this wire
-contract. The missing source-time/normalisation seam was reported to Q41 and Brain.
-The backend must publish that meaning before a catalog adapter can claim server
-read-time provenance. The client also makes no stronger transaction-snapshot guarantee
-than the reviewed backend contract/implementation. Q44/Q46 must test these additions
-against their actual signed-JWT/PostgreSQL integration revision; mock read fixtures
-do not establish backend isolation or browser reload behaviour.
+Every top-level response now requires and preserves the server's `readAt` string.
+The source captures `ctx.clock()` at the start of the authenticated route handler,
+before its read transaction; it is not a client receipt time or a row's update time.
+Missing, null or malformed readAt fails as invalid_response. Bootstrap has one root
+timestamp; its nested profile/list entries do not get invented clocks. The old
+748d30c contract and accepted PR59 evidence remain preserved on their own branch.
+
+The transaction uses read-committed isolation. Bootstrap's read statements can
+observe committed changes between statements; this is not a repeatable-read
+snapshot or a stronger atomic load. Consumers may attribute the provided source
+read-start time without substituting browser time or treating it as a current
+permission grant. The signed HTTP/PostgreSQL test below explicitly mounts this
+published read module for candidate contract checks. Q44/Q46 still own final
+integrated backend/browser qualification.
 
 ## Foundation session gateway
 
@@ -411,7 +417,7 @@ source and Q46's disposable-resource helper at c2501a4, reuses existing locked
 dependencies read-only, and cleans up its isolated PostgreSQL cluster:
 
 ```sh
-git fetch origin pull/74/head pull/73/head
+git fetch origin pull/74/head pull/73/head pull/65/head
 APP_INTEGRATION_PG_BIN=/absolute/path/to/postgresql/bin \
 APP_INTEGRATION_PG_PORT=<owned-free-port> \
 ANDES_BACKEND_NODE_MODULES=/absolute/path/to/existing/backend/node_modules \
@@ -419,9 +425,12 @@ ANDES_TYPESCRIPT_TSC=/absolute/path/to/existing/typescript/bin/tsc \
   node --test web/tests/api/runtime.integration.mjs
 ```
 
-It runs the actual signed demo issuer, native HTTP and PostgreSQL for all three
-personas, explicit arrival, committed-response loss and same-key sharing replay,
+The test-only backend archive also mounts the exact published PR65 read module at
+3ea6e1b; it does not merge that implementation into this repository. It runs the
+actual signed demo issuer, native HTTP and PostgreSQL for all three personas,
+all five owner reads with an injected server-clock assertion, explicit arrival,
+committed-response loss and same-key sharing replay,
 one persisted sharing event, changed-body409, stale location, active SOS after
 arrival and revoked-contact403. No external provider/worker runs. This proves
-those additive routes at that isolated source; it does not mount Q41's separate
-read routes, qualify browser demo acquisition or accept PR74's backend policy.
+those additive routes at the stated isolated sources; it does not qualify browser
+demo acquisition, final backend composition or PR74's backend policy.

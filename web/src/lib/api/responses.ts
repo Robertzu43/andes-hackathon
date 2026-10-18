@@ -107,11 +107,12 @@ export const snapshot: Decoder<T.LocationSnapshot> = value => {
 
 const phone: Decoder<string> = value => typeof value === 'string' && /^\+[1-9]\d{6,14}$/.test(value) ? value : invalid();
 const profileWire = object({ id: uuid, phone: nullable(phone), phoneVerified: bool });
-export const profile: Decoder<T.Profile> = value => {
+const profileData: Decoder<Omit<T.Profile, 'readAt'>> = value => {
   const parsed = profileWire(value);
   if (parsed.phoneVerified && parsed.phone === null) invalid();
   return parsed;
 };
+export const profile: Decoder<T.Profile> = value => ({ ...profileData(value), readAt: object({ readAt: date })(value).readAt });
 const contactWire = object({ id: uuid, contactId: uuid, phone,
   map: object({ requested: bool, accepted: bool }), incident: object({ requested: bool, accepted: bool }),
   status: choice('pending', 'accepted', 'revoked'), acceptedAt: nullable(date), revokedAt: nullable(date),
@@ -147,11 +148,11 @@ const recentRows: Decoder<T.TripSummary[]> = value => {
   if (result.some(row => row.status === 'active')) invalid();
   return result;
 };
-export const trucks: Decoder<T.TruckList> = object({ trucks: truckRows, limit: literal(100), hasMore: bool });
-export const contacts: Decoder<T.ContactList> = object({ contacts: contactRows, limit: literal(100), hasMore: bool });
+export const trucks: Decoder<T.TruckList> = object({ trucks: truckRows, limit: literal(100), hasMore: bool, readAt: date });
+export const contacts: Decoder<T.ContactList> = object({ contacts: contactRows, limit: literal(100), hasMore: bool, readAt: date });
 export const trips: Decoder<T.TripList> = object({ active: activeRows, recent: recentRows,
-  limits: object({ active: literal(50), recent: literal(20) }), hasMore: object({ active: bool, recent: bool }) });
-export const bootstrap: Decoder<T.Bootstrap> = object({ profile, trucks: truckRows, contacts: contactRows,
+  limits: object({ active: literal(50), recent: literal(20) }), hasMore: object({ active: bool, recent: bool }), readAt: date });
+export const bootstrap: Decoder<T.Bootstrap> = object({ profile: profileData, trucks: truckRows, contacts: contactRows,
   trips: object({ active: activeRows, recent: recentRows }),
   limits: object({ trucks: literal(100), contacts: literal(100), activeTrips: literal(50), recentTrips: literal(20) }),
-  hasMore: object({ trucks: bool, contacts: bool, activeTrips: bool, recentTrips: bool }) });
+  hasMore: object({ trucks: bool, contacts: bool, activeTrips: bool, recentTrips: bool }), readAt: date });

@@ -73,8 +73,9 @@ export interface DemoWorld {
 /** Explicit demo-only exception: unauthenticated POST, no actor/idempotency key yet. */
 export interface DemoSessionOptions extends RequestOptions { demo: true }
 
-/** Owner-scoped read contract from PR65/748d30c; first-page bounds, no cursor or server readAt. */
-export interface Profile extends IdResponse { phone: string | null; phoneVerified: boolean }
+/** PR65/3ea6e1b server read-start time; read-committed statements are not one snapshot. */
+export interface ServerRead { readAt: string }
+export interface Profile extends IdResponse, ServerRead { phone: string | null; phoneVerified: boolean }
 export interface TruckSummary extends IdResponse { label: string }
 export interface ContactSummary extends IdResponse {
   contactId: UUID; phone: string;
@@ -87,14 +88,14 @@ export interface TripSummary extends IdResponse, Omit<TripFields, 'expectedArriv
   status: 'active' | 'arrived' | 'cancelled'; mapActive: boolean; checkinsActive: boolean;
   paused: boolean; version: number; createdAt: string; closedAt: string | null; contactGrantIds: UUID[];
 }
-export interface TruckList { trucks: TruckSummary[]; limit: 100; hasMore: boolean }
-export interface ContactList { contacts: ContactSummary[]; limit: 100; hasMore: boolean }
-export interface TripList {
+export interface TruckList extends ServerRead { trucks: TruckSummary[]; limit: 100; hasMore: boolean }
+export interface ContactList extends ServerRead { contacts: ContactSummary[]; limit: 100; hasMore: boolean }
+export interface TripList extends ServerRead {
   active: TripSummary[]; recent: TripSummary[];
   limits: { active: 50; recent: 20 }; hasMore: { active: boolean; recent: boolean };
 }
-export interface Bootstrap {
-  profile: Profile; trucks: TruckSummary[]; contacts: ContactSummary[];
+export interface Bootstrap extends ServerRead {
+  profile: Omit<Profile, 'readAt'>; trucks: TruckSummary[]; contacts: ContactSummary[];
   trips: { active: TripSummary[]; recent: TripSummary[] };
   limits: { trucks: 100; contacts: 100; activeTrips: 50; recentTrips: 20 };
   hasMore: { trucks: boolean; contacts: boolean; activeTrips: boolean; recentTrips: boolean };

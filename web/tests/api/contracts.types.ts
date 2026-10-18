@@ -25,11 +25,12 @@ const limit: 50 = loaded.limits.activeTrips;
 void more; void limit;
 // @ts-expect-error owner selection is authenticated, not an input parameter
 api.getBootstrap({ ownerId: 'another-actor' });
-// @ts-expect-error the published read contract supplies no server readAt
 const readAt: string = loaded.readAt;
+// @ts-expect-error only the whole bootstrap carries the source read-start timestamp
+const nestedReadAt: string = loaded.profile.readAt;
 // @ts-expect-error summaries never include raw draft text
 const rawText: string = loaded.trips.active[0]?.rawText;
-void readAt; void rawText;
+void readAt; void nestedReadAt; void rawText;
 
 import { createSessionGateway } from '../../src/lib/api/index.ts';
 const gateway = createSessionGateway({ session: new MemorySession(), api, mode: 'external' });
