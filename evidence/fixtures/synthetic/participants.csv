@@ -1,0 +1,5 @@
+participant_id,pair_id,role,country_of_residence,preferred_language,phone_platform,work_arrangement,trucks_operated,relationship_to_driver,consent_ref,consent_recording,consent_share_redacted
+SYN-A-D,SYN-A,driver,BR,pt-BR,iphone,owner_operator,1,not_applicable,SYNTHETIC no consent form,yes,yes
+SYN-A-C,SYN-A,contact,BR,pt-BR,unknown,not_applicable,not_applicable,family,SYNTHETIC no consent form,yes,yes
+SYN-B-D,SYN-B,driver,CO,es,iphone,owner_operator,2,not_applicable,SYNTHETIC no consent form,yes,yes
+SYN-B-C,SYN-B,contact,CO,es,unknown,not_applicable,not_applicable,fellow_driver,SYNTHETIC no consent form,yes,yes

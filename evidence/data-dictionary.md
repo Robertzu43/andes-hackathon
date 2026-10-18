@@ -1,14 +1,14 @@
 # Data dictionary · #8 freight trip reconstruction
 
-Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column names. Blank copies are in `templates/`. Use this dictionary to enter and manually review the sheets. Automated checking and export tooling are outside this materials-only slice.
+Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact, unique column names. Blank copies are in `templates/`. Use this dictionary to enter and manually review the sheets; the optional checker and export commands in `README.md` enforce the declared handoff conditions. Duplicate columns, including whitespace variants, are rejected.
 
 ## Conventions
 
-- **IDs** use capital letters, digits and hyphens, with at least one letter: `P03-D`, `C03-W`, `C03-W-S2`, `C03-W-E07`. They are codes. Never use a name, phone number or plate as an ID. The key linking codes to people stays offline with the consent forms.
+- **IDs** use capital letters, digits and hyphens, with at least one letter: `P03-D`, `C03-W`, `C03-W-S2`, `C03-W-E07`. They are codes. `SYN-` and `CAS-` followed by exactly four digits are reserved assigned-code namespaces (`SYN-1234`, `CAS-0001`); other plate-shaped IDs remain rejected. Never copy a name, phone number or plate into any ID, including a reserved namespace. The key linking codes to people stays offline with the consent forms.
 - **Lists** separate values with `;`.
 - **Times** are ISO 8601 with the UTC offset in force at that moment: `2026-09-14T21:40-03:00`. Format time columns as plain text so the spreadsheet does not rewrite them. A WhatsApp export shows local phone time without an offset; convert it with the phone's time zone and record that zone in `source_time_zone`.
 - **`unknown`** is a recorded answer only where the field allows it. Sensitive/rest event labels never use `occurrence=unknown`; missing incident evidence stays a generic unknown-contact row. Leave a cell blank only where this page says it may be blank.
-- **Review flags** below are manual review decisions. This materials-only slice supplies no automated warnings or validator.
+- **Review flags** below are manual review decisions. The checker enforces the declared states but cannot establish that a review occurred or was independent.
 - **Exported** says whether the column leaves the private folder in the redacted export. `private` columns never do, and neither does any column added to a sheet. "Scanned" columns need identifier checks before sharing (see the export section).
 
 ## participants.csv
@@ -63,7 +63,7 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 | `provided_by` | participant ID | yes | Who supplied it. An interview comes from the person with the matching role. |
 | `evidence_basis` | `attributed_account`, `independent_observation`, `contact_status_only`, `unknown` | yes | What the source contains. Interviews and a complaint merely repeating a driver's allegation use `attributed_account`. Call status or location metadata alone uses `contact_status_only`. `independent_observation` requires `kind=independent_record` and actual observations independent of the allegation; describe what supports the specific event in its `basis_note`. If not established, use `unknown`. For mixed documents, make separate source rows for the relevant excerpts. |
 | `timestamped_record` | `yes`, `no` | yes | `yes` when the source carries its own clock times. Interviews are always `no`. |
-| `source_time_zone` | IANA zone or `unknown`; required when timestamped | yes | Zone of the clock that produced the source's times. |
+| `source_time_zone` | IANA zone or `unknown`; required when timestamped | yes, scanned | Zone of the clock that produced the source's times. Identifier scanning and zone syntax checks apply even without a time-zone database. |
 | `storage_ref` | free text, may be blank | private | Where the original is held in private storage. |
 | `note_private` | free text, may be blank | private | |
 
@@ -85,7 +85,7 @@ Four tables, kept as spreadsheets and saved as UTF-8 CSV with these exact column
 | `observed_time` | time, may be blank | as minutes | Time taken from a record. |
 | `observed_source_id` | source ID, may be blank | yes | The timestamped record that gives `observed_time`. It must also be in `source_ids`. |
 | `recalled_earliest`, `recalled_latest` | times, may be blank | as minutes | The range the person remembers. Repeat the time for a single moment. Never narrow a range to make it look precise. |
-| `time_zone` | IANA zone or `unknown`; required when a time is given | yes | Zone the times are written in. Offsets must match it. |
+| `time_zone` | IANA zone or `unknown`; required when a time is given | yes, scanned | Zone the times are written in. Offsets must match it when a time-zone database is available. Identifier scanning and zone syntax checks always apply. |
 | `knew` | free text, may be blank | yes, scanned | What the actor knew at this point, and the cues behind any decision. |
 | `conflicts_with` | list of event IDs in the same case, may be blank | yes | Rows that disagree with this one. Keep both. |
 | `note_redacted` | free text, may be blank | yes, scanned | Short redacted description. |
@@ -124,13 +124,15 @@ Keep contact status and incident verification in separate rows. An unanswered ca
 
 ## Export
 
-The following is the proposed handoff contract for later tooling, not an export command available in this materials-only slice. A handoff requires both participants' sharing consent, reviewed redaction and an independent trace review; prepare no handoff until those conditions are met.
+The optional exporter implements this handoff contract. A handoff requires both participants' sharing consent, completed participant reviews, reviewed redaction and an independent trace review; prepare no handoff until those conditions are met.
 
-- **Cases included:** `redaction_status` is `reviewed` and both people in the pair have `consent_share_redacted` set to `yes`. Exclusions are generic counts by reason only, with no excluded case/person identifiers, timestamps, row content or individual consent decisions.
+- **Cases included:** `redaction_status` is `reviewed`, both enrolled people in the pair have `consent_share_redacted=yes`, both participant reviews are `confirmed` or `corrected`, and `trace_review=traced`. Exclusions are generic counts by reason only, with no excluded case/person identifiers, timestamps, row content or individual consent decisions. Version 2 uses `excluded_cases.count` and `excluded_cases.by_reason`; overlapping reasons are counted once each per case. Private `check` output retains the detailed collection diagnostics; successful export diagnostics contain no excluded IDs.
 - **Removed:** calendar dates, `consent_ref`, `consent_recording`, `consent_share_redacted`, `redaction_status`, `storage_ref`, both private notes and any added column.
 - **Times:** minutes from the earliest time in the case, in `observed_offset_min` and `recalled_offset_min` (`earliest`, `latest`). `anchor_local_hour` keeps the local hour of that earliest time.
 - **`recall_gap_min`:** for `both` rows, the minutes by which the record falls outside the remembered range. Negative when the record is earlier than remembered, 0 inside the range.
 - **`window`:** the claimed window with the basis of each end. `duration_min` gives the shortest and longest possible window from the endpoint times, or null when an end has no time. `traceable_to_records` is true only when both ends have observed times.
 - **`conflicts_with`** lists both directions.
 - **`coverage`** counts countries, languages, phone platforms, drivers by trucks operated and case concerns, and lists gaps: Spanish (any `es` locale), Brazilian Portuguese (exact `pt-BR`; `pt-PT` does not count), iPhone, Android, security or robbery cases and fatigue cases.
-- **Scanned text:** `corridor_label`, `arrangement`, `knew`, `basis_note` and `note_redacted` must not contain calendar dates, email addresses, links, coordinates, phone numbers or vehicle plates. Remove identifiers before sharing. Clock times are allowed. Human redaction review must also cover names, places and cargo details; no automated scan is supplied by this slice.
+- **Scanned text:** codes, `corridor_label`, `arrangement`, `knew`, `basis_note`, `note_redacted` and both time-zone fields must not contain calendar dates, email addresses, links, coordinates, phone numbers or vehicle plates. Remove identifiers before sharing. Clock times, ordinary distances/weights and fractions such as `1/2` or `24/7` are allowed. Short dates use two-digit day/month notation; full dates and Spanish/Portuguese month-name dates are also scanned. The scan is bounded and cannot guarantee complete redaction. Human redaction review must also cover names, places and cargo details.
+
+The own-account rule requires at least one cited attributed account belonging to the named reporter; a co-cited unrelated source does not itself establish that account. Interviews and other non-message sources must be supplied by that reporter. A WhatsApp/SMS export may be supplied by the other participant, but every message-account use generates a private authorship-tracing warning. The independent reviewer must locate the named speaker's actual words supporting this specific event, rather than treating an unrelated interview as support. Recalled times and suspicions additionally require the relevant account to be supplied by the named participant. A corroborated rest label requires a cited participant account as well as the independent observations; location alone can establish only a stop.

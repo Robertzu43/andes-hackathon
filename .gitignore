@@ -26,3 +26,7 @@ node_modules/
 
 # Real participant material stays outside Git
 evidence/private/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
