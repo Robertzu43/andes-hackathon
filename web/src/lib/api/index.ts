@@ -11,5 +11,6 @@ export { snapshot as decodeLocationSnapshot, incident as decodeIncidentSummary }
 export type { DriverRequest, DriverTransportResult } from './driver.ts';
 export { createSessionGateway } from './gateway.ts';
 export type { GatewaySnapshot, SessionGatewayConfig, SessionGateway } from './gateway.ts';
-export { createDemoSessionGateway } from './demo.ts';
+export { createDemoSessionGateway, createDemoWorld } from './demo.ts';
+export type { DemoWorldSource } from './demo.ts';
 export type * from './types.ts';

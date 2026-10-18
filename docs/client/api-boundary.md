@@ -180,10 +180,28 @@ off the backend's auth hook answers401; a missing route is404; rate limiting is
 The returned `DemoWorld` holds sensitive tokens for driver/family/colleague: keep it
 in memory only, never render, log or persist it.
 
-`createDemoSessionGateway({session,api,persona})` fixes mode to `demo` and needs an
-explicit persona. Unverified JWT claims supply issuer/subject/expiry metadata only;
-the gateway still requires server verification and a matching `/v1/me` UUID before
-it publishes authenticated.
+`createDemoSessionGateway({session,api,persona,world?})` fixes mode to `demo` and
+needs an explicit persona. Unverified JWT claims supply issuer/subject/expiry metadata
+only; the gateway still requires server verification and a matching `/v1/me` UUID
+before it publishes authenticated.
+
+One world serves every persona and every begin. `createDemoWorld(api)` mints a world
+on first use and reuses it in memory until its declared 7200s lifetime ends, so a
+second begin(), or end() then begin(), returns to the same trip and SOS instead of
+stranding them. Pass the same `world` to the driver, family and colleague gateways
+so contacts reach the driver's trip:
+
+```ts
+const world = createDemoWorld(api);
+const driver = createDemoSessionGateway({session, api, persona: 'driver', world});
+const family = createDemoSessionGateway({session, api, persona: 'family', world});
+```
+
+A world is dropped (and the next begin mints a new one) only when it expires, its
+tokens fail local validation, or the server rejects them with401 (for example after
+a restart, which kills the in-memory signing key). A page reload loses the world
+because tokens are never persisted; the backend's abandoned-world rule then stops
+automatic checks on the old trip, while an explicit SOS keeps escalating.
 
 `web/tests/api/runtime.test.mjs` covers this with synthetic HTTP. The real-backend
 `runtime.integration.mjs` extracts PR74 at 4c138ca, PR65's read module at 3ea6e1b and

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ApiError, MemorySession, createApiClient, createDemoSessionGateway } from '../../src/lib/api/index.ts';
+import { ApiError, MemorySession, createApiClient, createDemoSessionGateway, createDemoWorld } from '../../src/lib/api/index.ts';
 
 const trip = '11111111-1111-4111-8111-111111111111';
 const family = '22222222-2222-4222-8222-222222222222';
@@ -128,7 +128,7 @@ test('demo session is explicit, anonymous and unkeyed even with another active i
   assert.equal(session.snapshot().subject, 'synthetic', 'Acquisition must not install credentials by itself');
 });
 
-test('demo404/429 and ambiguous creation retain their safe status without clearing or replaying an account', async () => {
+test('demo 401 (demo mode off), 404 and 429 and ambiguous creation retain their safe status without clearing or replaying an account', async () => {
   for (const status of [401, 404, 429]) {
     const { session, api } = setup(async () => Response.json({ code: status === 429 ? 'demo_rate_limited' : 'unauthorized' }, { status }));
     await assert.rejects(api.createDemoSession({ demo: true }), e => e.status === status && e.outcome === 'rejected'
@@ -190,7 +190,7 @@ test('demo gateway rejects token metadata and mismatched server identity without
   finally { gateway.dispose(); }
 });
 
-test('demo logout retires late acquisition and a later explicit begin creates a new world', async () => {
+test('demo logout retires late acquisition and a later explicit begin reuses that world', async () => {
   let creates = 0; let finish;
   const { session, api } = setup(async url => {
     if (url.pathname === '/v1/me') return Response.json({ id: trip });
@@ -202,6 +202,58 @@ test('demo logout retires late acquisition and a later explicit begin creates a 
     const pending = gateway.begin(); await new Promise(resolve => setImmediate(resolve));
     gateway.end(); finish(); await pending;
     assert.equal(session.snapshot().status, 'anonymous'); assert.equal(gateway.getSnapshot().state, 'signed-out');
+    await gateway.begin(); assert.equal(gateway.getSnapshot().state, 'authenticated'); assert.equal(creates, 1);
+  } finally { gateway.dispose(); }
+});
+
+test('a second begin reuses the unexpired world so the active trip and SOS stay reachable', async () => {
+  let creates = 0;
+  const { session, api } = setup(async url => {
+    if (url.pathname === '/v1/demo/session') { creates++; return Response.json(world()); }
+    return Response.json({ id: trip });
+  }, false);
+  const gateway = createDemoSessionGateway({ api, session, persona: 'driver' });
+  const realNow = Date.now;
+  try {
+    await gateway.begin(); await gateway.begin(); gateway.end(); await gateway.begin();
+    assert.equal(gateway.getSnapshot().state, 'authenticated');
+    assert.equal(creates, 1);
+    Date.now = () => realNow() + 7_201_000; // Past the world's declared 7200s lifetime.
+    await gateway.begin();
+    assert.equal(gateway.getSnapshot().state, 'authenticated');
+    assert.equal(creates, 2);
+  } finally { Date.now = realNow; gateway.dispose(); }
+});
+
+test('driver, family and colleague personas share one world so contacts reach the driver trip', async () => {
+  let creates = 0; const raw = world();
+  const { session, api } = setup(async (url, init) => {
+    if (url.pathname === '/v1/demo/session') { creates++; return Response.json(raw); }
+    const persona = ['driver', 'family', 'colleague'].find(p => init.headers.Authorization === `Bearer ${raw[p].token}`);
+    return Response.json({ id: raw[persona].id });
+  }, false);
+  const shared = createDemoWorld(api);
+  for (const persona of ['driver', 'family', 'colleague']) {
+    const gateway = createDemoSessionGateway({ api, session, persona, world: shared });
+    try {
+      await gateway.begin();
+      assert.equal(gateway.getSnapshot().state, 'authenticated');
+      assert.equal(session.snapshot().subject, `${incident}:${persona}`);
+    } finally { gateway.dispose(); }
+  }
+  assert.equal(creates, 1);
+});
+
+test('a world whose tokens the server rejects (restart) is dropped so the next begin recovers', async () => {
+  let creates = 0; let restarted = false;
+  const { session, api } = setup(async url => {
+    if (url.pathname === '/v1/demo/session') { creates++; restarted = false; return Response.json(world()); }
+    return restarted ? Response.json({ code: 'unauthorized' }, { status: 401 }) : Response.json({ id: trip });
+  }, false);
+  const gateway = createDemoSessionGateway({ api, session, persona: 'driver' });
+  try {
+    await gateway.begin(); restarted = true;
+    await gateway.begin(); assert.equal(gateway.getSnapshot().state, 'error'); assert.equal(creates, 1);
     await gateway.begin(); assert.equal(gateway.getSnapshot().state, 'authenticated'); assert.equal(creates, 2);
   } finally { gateway.dispose(); }
 });
