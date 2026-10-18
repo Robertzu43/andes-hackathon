@@ -215,6 +215,27 @@
           ]
         }
       ]
+    },
+    {
+      "pr": 65,
+      "sha": "3ea6e1b06e6dc3d3d01360f28ae9c61751657830",
+      "tree": "282638e1336aaf6b252d31b84fa65c35a698aa85",
+      "role": "follow-up reviewed before handoff",
+      "files": [
+        {
+          "path": "src/client-read/routes.ts",
+          "blob": "c8fcb5786cc9a2e9af29627f15fa5f5457f22349"
+        },
+        {
+          "path": "docs/contracts/client-read.md",
+          "blob": "6033a21b717dacbe9e2477db8882c46aee835300"
+        },
+        {
+          "path": "tests/client-read.test.mjs",
+          "blob": "51c1d104847f1aade222ca43ea24d5d12da725e5"
+        }
+      ],
+      "delta": "All five owner reads now have server route-entry readAt; read-committed bootstrap explicitly not atomic; no recipient discovery"
     }
   ],
   "pr74Feedback": {
@@ -236,5 +257,6 @@
     "verification": "pl_mvd1veds_9ee560"
   },
   "ownership": "44 freezes interface;41 owner reads;45 typed adapter;51 contact UI;Robert status/sharing",
-  "implementation": "none"
+  "implementation": "none",
+  "refreshedAt": "2026-10-18T00:00:03.591Z"
 }

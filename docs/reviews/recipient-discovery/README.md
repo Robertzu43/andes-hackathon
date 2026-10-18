@@ -19,6 +19,7 @@ not a completed product journey.
 | Robert PR74 | 4c138ca1d00742400a850cd72b0888cc59260a36 | Actual status/sharing endpoints, role-based incident fan-out, demo personas |
 | Integration PR68 | 938a8dfcd5d35b39ae91171dd7fe7d538c2eb2bf | Integrates owner-scoped catalog reads, not recipient discovery |
 | Owner reads PR65 | 748d30c6e6c595fd1a2c2c648a045750de3dd9c8 | Profile, trucks, contacts, trips, bootstrap; contacts/trips filter driver_id=actor |
+| Owner reads PR65 follow-up | 3ea6e1b06e6dc3d3d01360f28ae9c61751657830 | Adds real server readAt to all five owner reads; recipient lists still absent |
 
 PR74's issue discussion, reviews and inline comments were fetched with complete
 pagination: all empty at intake. These are unmerged source candidates, not a
@@ -46,6 +47,14 @@ driver's own catalog. Changing their meaning based on a UI role would conflate
 two authorization domains. An empty owner list is not evidence that a contact
 has no received invitation/shared trip.
 
+The subsequent [PR65 readAt change](https://github.com/Bimbi-Dev/andes-hackathon/blob/3ea6e1b06e6dc3d3d01360f28ae9c61751657830/src/client-read/routes.ts#L81)
+was inspected before handoff: each owner response now samples ctx.clock() on route
+entry and returns that server readAt. This closes the older owner-catalog timestamp
+absence; it does not add a recipient list or add readAt to PR74 status. Bootstrap
+still performs sequential statements in a read-committed transaction, not one
+repeatable-read snapshot. Preserve this documented timing/isolation limit when
+binding current owner catalogs; do not manufacture a new timestamp in the client.
+
 ## Minimal proposed capabilities
 
 These are semantic capability names, **not published HTTP paths or DTOs**. Q44
@@ -66,8 +75,9 @@ explicit bound; hasMore=true must not be labelled “all invitations/trips”. C
 pagination or exhaustive retrieval is a further owner decision, not claimed here.
 
 The two reads should carry a server-owned readAt for their own query result.
-That field means when the server assembled the read; it is not invitation creation
-time, location capture time, or a promise that later authorization is unchanged.
+The owner must specify its sampling point; PR65's current convention is server
+route entry. It is not invitation creation time, location capture time, a whole
+catalog snapshot guarantee, or a promise that later authorization is unchanged.
 Do not copy a browser timestamp into readAt. Current contact_grants has no
 created_at column, so invitedAt cannot be supplied without a separately approved
 source/schema change. Existing accepted_at/revoked_at may be exposed if needed,
