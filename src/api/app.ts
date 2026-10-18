@@ -22,7 +22,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
     if (demo && request.routeOptions.url === '/v1/demo/session') return;
     if (request.routeOptions.url === '/health' || request.routeOptions.url === '/v1/insights/hotspots' || request.routeOptions.url === '/mapa' || (callbackConfig && request.routeOptions.url === '/v1/callbacks/zavu')) return;
     const telemetry = request.routeOptions.url?.endsWith('/locations') || request.routeOptions.url?.endsWith('/snapshot');
-    request.actor = await authenticate(request.headers.authorization, telemetry ? ctx.telemetryPool : ctx.pool);
+    request.actor = await authenticate(request.headers.authorization, telemetry ? ctx.telemetryPool : ctx.pool, ctx.clock());
   });
   app.setErrorHandler((error, _request, reply) => {
     const failure = error instanceof Error ? error as FastifyError : undefined;
@@ -37,7 +37,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
   checkRoutes(app, ctx);
   if (demo) demoRoutes(app, ctx, demo);
   app.get('/v1/me', async request => ({ id: request.actor.id }));
-  tripRoutes(app, ctx); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport); insightRoutes(app, ctx);
+  tripRoutes(app, ctx); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport); insightRoutes(app, ctx, Boolean(demo));
   if (callbackConfig) callbackRoutes(app, ctx, callbackConfig);
   return app;
 }

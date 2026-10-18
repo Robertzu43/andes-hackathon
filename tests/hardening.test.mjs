@@ -41,10 +41,10 @@ test('a token without a verified phone never downgrades the stored phone or canc
   for (const claims of [{phone_number: undefined, phone_number_verified: undefined}, {phone_number_verified: false}]) {
     assert.equal((await f.req('GET', '/v1/me', undefined, await f.token('contact', claims))).status, 200);
   }
-  assert.deepEqual((await f.ctx.pool.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [f.contactIdentity.id])).rows, [{phone: '+5511999990000', phone_verified: true}]);
+  assert.deepEqual((await f.ctx.pool.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [f.contactIdentity.id])).rows, [{phone: '+15555550100', phone_verified: true}]);
   assert.ok(await d.authorizeJob(f.ctx, await d.claimJob(f.ctx, jobs[0], 'phone'), provider()));
-  await f.req('GET', '/v1/me', undefined, await f.token('contact', {phone_number: '+5511999991111'}));
-  assert.equal((await f.ctx.pool.query('SELECT phone FROM identities WHERE id=$1', [f.contactIdentity.id])).rows[0].phone, '+5511999991111');
+  await f.req('GET', '/v1/me', undefined, await f.token('contact', {phone_number: '+15555550111'}));
+  assert.equal((await f.ctx.pool.query('SELECT phone FROM identities WHERE id=$1', [f.contactIdentity.id])).rows[0].phone, '+15555550111');
 });
 
 test('rate-limit and auth/payment rejections retry within a bounded persisted budget; permanent ones stay terminal', async t => {
