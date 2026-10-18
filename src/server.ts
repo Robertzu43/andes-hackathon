@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { configuredProvider } from './worker.js';
 import { loadCallbackConfig } from './notifications/callback.js';
 import { createContext, databaseConfig } from './db.js';
@@ -11,7 +12,8 @@ const provider = configuredProvider(process.env);
 const callbackConfig = loadCallbackConfig(process.env);
 const ctx = createContext(databaseConfig());
 const app = createApp({ ctx, channelSupport: provider?.qualification.live ? provider.qualification.entries : [], callbackConfig, auth: demo?.auth ?? { issuer: OIDC_ISSUER!, audience: OIDC_AUDIENCE!, jwksUrl: OIDC_JWKS_URL! }, demo,
-  automaticChecks: checkConfig(process.env) !== null }); // same timings as the control worker
+  automaticChecks: checkConfig(process.env) !== null, // same timings as the control worker
+  webRoot: fileURLToPath(new URL('../web/dist', import.meta.url)) }); // build web/ first; a missing build fails here
 let closing = false;
 async function shutdown() { if (closing) return; closing = true; await app.close(); }
 process.once('SIGTERM', () => void shutdown()); process.once('SIGINT', () => void shutdown());
