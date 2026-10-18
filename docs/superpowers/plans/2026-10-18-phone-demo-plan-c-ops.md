@@ -1,10 +1,12 @@
 # Phone Demo · Plan C (Operations) Implementation Plan
 
+**Status:** frozen.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Run Tándem end to end on two physical phones with real Zavu alerts. First run it from this laptop behind a Cloudflare quick tunnel (stage 1), then from the corrected AWS demo deploy (stage 2). Record both runs as evidence and put the AWS URL in the deck and the submission docs.
 
-**Architecture:** This plan changes no product code. Stage 1 runs the API and the `control`, `emergency` and `ordinary` workers locally through one launcher, `scripts/demo-local.sh`, with `HOST=127.0.0.1`. They use the real SQS queues from `deploy.sh prepare` and Postgres from `compose.yaml`, and `cloudflared` exposes them over HTTPS. Stage 2 runs the same image as one ECS Express task through `infra/demo/deploy.sh`, corrected in four ways: it starts the consumers only when `ZAVU_LIVE_SEND=true`, grants them their queue actions, injects six new secrets, and updates the service in place. On the Zavu side there is one sender, «Tándem Demo», and its webhook points at `<public URL>/v1/callbacks/zavu`. Today it carries only `sms_oneway`, so both stages run **SMS-only** and show calls as «No disponible». Buying a voice number (Task 3) is deferred: nothing waits for it, and Task 3 Step 8 switches a running stack to voice.
+**Architecture:** This plan changes no product code. Stage 1 runs the API and the `control`, `emergency` and `ordinary` workers locally through one launcher, `scripts/demo-local.sh`, with `HOST=127.0.0.1`. They use the real SQS queues from `deploy.sh prepare` and Postgres from `compose.yaml`, and `cloudflared` exposes them over HTTPS. Stage 2 runs the same image as one ECS Express task through `infra/demo/deploy.sh`, corrected in four ways: it starts the consumers only when `ZAVU_LIVE_SEND=true`, grants them their queue actions, injects six new secrets, and updates the service in place. On the Zavu side there is one sender, «Tándem Demo», and its webhook points at `<public URL>/v1/callbacks/zavu`. Today it carries only `sms_oneway`, so both stages run **SMS-only** and show calls as «No disponible». Buying a voice number is deferred (appendix); nothing in this plan waits on it.
 
 **Tech Stack:** bash (macOS `/bin/bash` 3.2 on the laptop, bash 5 in the container), AWS CLI v2 (SQS, Secrets Manager, IAM, ECR, RDS, ECS Express), Docker Compose with `postgres:18-bookworm`, `cloudflared` quick tunnels, the Zavu REST API through `curl` plus `node` one-liners, and the Node 24 test runner for `tests/infra.test.mjs`.
 
@@ -22,16 +24,13 @@
 - Tasks 1–6 can run in parallel with both.
 - If a stage fails because of backend or web behavior, file it against Plan A or B. Do not patch it here.
 
-**Robert provides or approves (record each answer and its time in chat):**
-1. His AWS profile and account. Both are already in `.env`: `AWS_PROFILE=default` and `ANDES_AWS_ACCOUNT=645868669589`.
-2. **Voice only (deferred):** that the event coupon is redeemed in the Zavu dashboard, and his go-ahead to buy **one** voice number (Task 3).
-3. Go-ahead for each AWS step marked `$` (Task 9).
-4. The caps. The defaults are sized to the real Zavu account, which is on the free plan, has a $2 balance and is unverified, so Zavu sends at most **25 SMS a day**:
-   - `DEMO_SMS_DAILY_CAP=8` (codes);
-   - qualification `channelDailyLimit` 12 and `dailyLimit` 12 (alerts);
-   - `DEMO_ALERTS_PER_NUMBER_DAILY=6`.
+**GPS packet for Plan B.** `createTripPhoneObservations` (`src/phone-observations/trip-sharing.mjs`) defaults `reviewedContext` to null. `adapter.mjs` `allowed()` stays `unqualified` unless it gets an `andes.phone-observations.qualification/1` packet: `kind: physical-device-review`, `disposition: qualified`, evidence and context refs, the matching budget revision, and `streams.geolocation: true`. Plan C writes that packet from the physical-phone review and hands it to Plan B. GPS stays off until the packet exists; until then the location rows record «sin datos». The CI browser test is not that packet.
 
-   8 + 12 = 20, which leaves 5 SMS spare under Zavu's ceiling. **Recommend that Robert runs «Verify» in the Zavu dashboard**, since identity verification raises the ceilings.
+**Robert provides or approves (record each answer and its time in chat):**
+1. His AWS profile and account. Both are already in `.env`: `AWS_PROFILE=default` and `ANDES_AWS_ACCOUNT=645868669589`. **DECISION PENDING (Robert): keep or remove account ID.**
+2. Voice purchase is the appendix. Nothing here waits on it.
+3. Go-ahead for each AWS step marked `$` (Task 9).
+4. SMS caps: the single table in the spec («Topes de SMS»), **DECISION PENDING (Robert)**. `scripts/demo-local.sh` and the qualification `dailyLimit` / `channelDailyLimit` copy that table. Recommended default: `DEMO_SMS_DAILY_CAP=8` codes/day and 6 alerts per number/day, under Zavu's 25 SMS/day free plan.
 5. Two phones. The **contact** phone must have a number whose country is in `DEMO_ALLOWED_COUNTRIES` and that is **not** +1. US and Canadian numbers need 10DLC to receive SMS (`403 ten_dlc_required`).
 6. The person holding the contact phone knows it is a test and **will not call 105/190**.
 
@@ -127,7 +126,7 @@ fi
 grep -q '^AWS_REGION=' "$MAIN/.env" || echo 'AWS_REGION=us-east-1' >> "$MAIN/.env"
 ```
 
-Expected: `profile default is account 645868669589`. The `else` branch runs only if the values were missing. The account ID is Robert's explicit opt-in, so it is typed in, never derived from the profile. If the session expired, run `aws login` or `aws sso login` first.
+Expected: `profile default is account 645868669589`. **DECISION PENDING (Robert): keep or remove account ID.** The `else` branch runs only if the values were missing. The account ID is Robert's explicit opt-in, so it is typed in, never derived from the profile. If the session expired, run `aws login` or `aws sso login` first.
 
 ---
 
@@ -147,7 +146,7 @@ In the dashboard, record for the evidence file:
 
 Then work out how many SMS the $2 buys. At `402 insufficient_balance`, `zavu.ts:86` treats the reply as retryable: alerts retry three times and then end unsent.
 
-**Recommend that Robert runs «Verify»** (identity verification) in the dashboard. It raises the ceilings and does not cost money. If he does, record the new ceilings. The caps in this plan stay as they are unless he asks to raise them.
+**Recommend that Robert runs «Verify»** (identity verification) in the dashboard. It raises the ceilings and does not cost money. If he does, record the new ceilings. Caps change only when he edits the spec SMS table.
 
 The 25 a day are shared by both stages and every judge, while the app's caps apply per database. A full stage 1 run uses 3 SMS (1 code and 2 alerts) and a short stage 2 run uses 2 (1 code and 1 alert). That leaves about 20 for judges on the same UTC day. Zavu's `429 daily_limit_exceeded` is the backstop.
 
@@ -173,77 +172,9 @@ There is no URL-verification step. Zavu verifies each exact URL, so the spec (§
 
 ---
 
-### Task 3: Buy one voice number and turn voice on (`$`, one number approved)
+### Task 3: Deferred
 
-**Files:** none (Zavu account state)
-
-- [ ] **Step 1: Search** (free)
-
-```bash
-zavu GET "/phone-numbers/available?countryCode=US&type=local&capabilities=voice,sms&limit=10" \
-  | node -e 'for (const n of JSON.parse(require("fs").readFileSync(0,"utf8")).items) console.log(n.phoneNumber, n.locality ?? "-", JSON.stringify(n.capabilities), "monthly", n.pricing?.monthlyPrice ?? "?", "upfront", n.pricing?.upfrontPrice ?? 0, n.pricing?.isFreeEligible ? "FREE-ELIGIBLE" : "")'
-```
-
-Expected: up to 10 lines. Pick the first `FREE-ELIGIBLE` line whose capabilities include `"voice":true`, and set `NUMBER=+1…` in the shell.
-
-Why a US number:
-- A paid plan includes one +1 number, once per account, at no monthly charge.
-- US numbers have no regulatory review, so the number can call today.
-
-A PE number may need documents and wait in `pending_review`, and it cannot call until approved. If Robert prefers PE, run the same search with `countryCode=PE` and Step 2. Buy it only if it has no requirements.
-
-- [ ] **Step 2: Check regulatory requirements** (free)
-
-```bash
-zavu GET "/phone-numbers/requirements?phoneNumber=$(node -p 'encodeURIComponent(process.argv[1])' "$NUMBER")&type=local" \
-  | node -e 'const r=JSON.parse(require("fs").readFileSync(0,"utf8")); console.log("requirements:", r.items?.length ?? JSON.stringify(r))'
-```
-
-Expected: `requirements: 0`.
-- A `502 requirements_unavailable` reply means retry. Never treat it as zero.
-- If the count is above zero, pick another number.
-
-- [ ] **Step 3 (human, Robert): Approve**
-
-Robert confirms in chat:
-1. the coupon is redeemed;
-2. "buy `<NUMBER>` at `<monthly>`/month".
-
-Record the time of his message.
-
-- [ ] **Step 4: Purchase** (`$` unless free-eligible)
-
-```bash
-zavu POST /phone-numbers "{\"phoneNumber\":\"$NUMBER\",\"name\":\"Tándem Demo voz\"}" | pick phoneNumber.id phoneNumber.status phoneNumber.regulatoryStatus
-```
-
-Expected: `pn_… active undefined` (or `approved`). Set `PN_ID=pn_…`.
-- `paid_plan_required` (402): the coupon did not give a paid plan. Stop and tell Robert.
-- `number_unavailable`: pick the next number.
-
-- [ ] **Step 5: Assign the number to the sender**
-
-```bash
-zavu PATCH "/phone-numbers/$PN_ID" "{\"senderId\":\"$ZAVU_SENDER_ID\"}" | pick phoneNumber.id id
-```
-
-Expected: the number's id, under whichever field Zavu returns.
-
-- [ ] **Step 6: Turn on voice**
-
-```bash
-zavu PATCH "/senders/$ZAVU_SENDER_ID" '{"enableVoice":true}' | pick channels
-```
-
-Expected: a list that contains `"voice"`, for example `["sms","sms_oneway","voice"]`. A 400 means the number is not provisioned for calls yet. Check `zavu GET "/phone-numbers/$PN_ID" | pick phoneNumber.status phoneNumber.regulatoryStatus status`, wait, and retry.
-
-- [ ] **Step 7: Verify the sender**
-
-```bash
-zavu GET "/senders/$ZAVU_SENDER_ID" | pick name channels isDefault
-```
-
-Expected: `Tándem Demo [... "sms_oneway" ... "voice" ...] true`. Record the channel list and the date for the evidence. WhatsApp stays absent, because there is no WABA and no templates. The app shows it as «No disponible».
+Voice purchase is the appendix. This task does not run. Calls stay «No disponible».
 
 ---
 
@@ -255,10 +186,10 @@ Notes on the values:
 - `live` is not in the file: `loadQualification` takes it from `ZAVU_LIVE_SEND` (`src/notifications/zavu.ts:48`).
 - `smsMode: "oneway"` is Plan A's option. It sends SMS as `sms_oneway`, which the sender already had before the number.
 - There is no `allowedDestinations`, because Plan A drops it in `DEMO_MODE`.
-- `demoLimits` 8/8: one run sends two waves (check, then SOS) of SMS and a call, so 4 attempts. The spec asks for at least 6. The extra room covers one retryable rejection.
-- The alert body is Spanish only (`src/notifications/wording.ts:15`). So the `pt-BR` SMS prefix says so, and both voice entries use `es-ES`.
+- `demoLimits` 8/8 stays above the spec minimum of 6. SMS caps and `dailyLimit` / `channelDailyLimit` copy the spec table (DECISION PENDING). Recommended: 6, not 100/60.
+- The alert body is Spanish only (`src/notifications/wording.ts:15`). The `pt-BR` SMS prefix says so. No voice entries until the appendix.
 
-- [ ] **Step 1: Write the file** (only after Task 3 Step 7 showed `voice`)
+- [ ] **Step 1: Write the file** (SMS-only)
 
 ```bash
 set -a; . "$MAIN/.env"; set +a
@@ -266,10 +197,10 @@ cat > "$MAIN/.env.qualification.json" <<JSON
 {
   "accountId": "$ZAVU_PROJECT_ID",
   "senderId": "$ZAVU_SENDER_ID",
-  "evidence": "Zavu project $ZAVU_PROJECT_ID, sender $ZAVU_SENDER_ID (Tándem Demo). 2026-10-18: GET /v1/me isTestMode=false; GET /v1/senders/$ZAVU_SENDER_ID channels include sms_oneway and voice; event coupon redeemed, balance and daily ceilings read in the dashboard by Robert; voice number bought with his approval.",
+  "evidence": "Zavu project $ZAVU_PROJECT_ID, sender $ZAVU_SENDER_ID (Tándem Demo). 2026-10-18: GET /v1/me isTestMode=false; GET /v1/senders/$ZAVU_SENDER_ID channels include sms_oneway. SMS-only until the voice appendix.",
   "smsMode": "oneway",
-  "dailyLimit": 100,
-  "channelDailyLimit": 60,
+  "dailyLimit": 6,
+  "channelDailyLimit": 6,
   "minuteLimit": 30,
   "emergencyReserve": 5,
   "demoLimits": { "perIncident": 8, "perSession": 8 },
@@ -277,25 +208,15 @@ cat > "$MAIN/.env.qualification.json" <<JSON
     { "country": "PE", "locale": "es", "channel": "sms",
       "text": "Demo de Tándem:",
       "evidence": "2026-10-18: sender $ZAVU_SENDER_ID lists sms_oneway; PE trips; Spanish copy reviewed by Robert." },
-    { "country": "PE", "locale": "es", "channel": "voice", "voiceLanguage": "es-ES",
-      "text": "Demo de Tándem. Mensaje de prueba de seguridad.",
-      "evidence": "2026-10-18: sender $ZAVU_SENDER_ID lists voice after the number purchase and enableVoice; es-ES text to speech." },
     { "country": "PE", "locale": "pt-BR", "channel": "sms",
       "text": "Demo de Tándem (mensagem em espanhol):",
-      "evidence": "2026-10-18: sender $ZAVU_SENDER_ID lists sms_oneway; the alert body is Spanish-only (src/notifications/wording.ts), so the prefix says so." },
-    { "country": "PE", "locale": "pt-BR", "channel": "voice", "voiceLanguage": "es-ES",
-      "text": "Demo de Tándem. Mensaje de prueba de seguridad, en español.",
-      "evidence": "2026-10-18: sender $ZAVU_SENDER_ID lists voice; es-ES voice because the alert body is Spanish-only." }
+      "evidence": "2026-10-18: sender $ZAVU_SENDER_ID lists sms_oneway; the alert body is Spanish-only (src/notifications/wording.ts), so the prefix says so." }
   ]
 }
 JSON
 ```
 
-The global limits guard money across every judge:
-- `dailyLimit` 100 attempts a day in total;
-- `channelDailyLimit` 60 a day per channel, below Zavu's paid SMS floor of 200;
-- `minuteLimit` 30 provider requests a minute, which reconciliation reads also count against;
-- `emergencyReserve` 5, held back from ordinary jobs.
+`dailyLimit` and `channelDailyLimit` copy the spec SMS caps table (recommended 6). `minuteLimit` 30 and `emergencyReserve` 5 are unchanged.
 
 - [ ] **Step 2: Validate it against the real loader**
 
@@ -311,7 +232,7 @@ console.log('ok', q.entries.length, 'entries, live', q.live, ', prefix', prefix,
 " "$MAIN/.env.qualification.json"
 ```
 
-Expected: `ok 4 entries, live true , prefix true , demoLimits {"perIncident":8,"perSession":8} , allowedDestinations none`. This was checked against the loader at 23e9f33. `Complete evidenced Zavu qualification required` means the JSON is wrong, so fix the file. Task 7 Step 7 runs the stricter Plan A startup check.
+Expected: `ok 2 entries, live true , prefix true , demoLimits {"perIncident":8,"perSession":8} , allowedDestinations none`. This was checked against the loader at 23e9f33. `Complete evidenced Zavu qualification required` means the JSON is wrong, so fix the file. Task 7 Step 7 runs the stricter Plan A startup check.
 
 ---
 
@@ -355,9 +276,9 @@ ZAVU_QUALIFICATION_JSON=$(cat "$QUALIFICATION_FILE")
 export SQS_EMERGENCY_URL SQS_ORDINARY_URL ZAVU_QUALIFICATION_JSON
 export PGHOST=127.0.0.1 PGPORT=5432 PGDATABASE=andes PGUSER=andes_app PGPASSWORD="$LOCAL_APP_PASSWORD"
 export HOST=127.0.0.1 PORT=3000 TRUST_PROXY_HOPS=1 DEMO_MODE=true ZAVU_LIVE_SEND=${ZAVU_LIVE_SEND:-true}
-# Same demo values as infra/demo/deploy.sh `service` (spec §5); the caps are Robert's call.
+# Same demo values as infra/demo/deploy.sh `service` (spec §5). SMS caps copy the spec table (DECISION PENDING). Recommended: 8 codes/day, 6 alerts/number/day.
 export DEMO_ALLOWED_COUNTRIES=${DEMO_ALLOWED_COUNTRIES:-PE,BR,CL,CO,MX,AR} DEMO_OTP_PER_NUMBER_HOURLY=${DEMO_OTP_PER_NUMBER_HOURLY:-3}
-export DEMO_OTP_PER_IP_HOURLY=${DEMO_OTP_PER_IP_HOURLY:-5} DEMO_SMS_DAILY_CAP=${DEMO_SMS_DAILY_CAP:-40} DEMO_ALERTS_PER_NUMBER_DAILY=${DEMO_ALERTS_PER_NUMBER_DAILY:-12}
+export DEMO_OTP_PER_IP_HOURLY=${DEMO_OTP_PER_IP_HOURLY:-5} DEMO_SMS_DAILY_CAP=${DEMO_SMS_DAILY_CAP:-8} DEMO_ALERTS_PER_NUMBER_DAILY=${DEMO_ALERTS_PER_NUMBER_DAILY:-6}
 export SILENCE_MS=120000 ASK_GRACE_MS=60000 ARRIVAL_GRACE_MS=120000 CHECK_SWEEP_MS=5000
 export EMERGENCY_NUMBERS='{"PE":"105","BR":"190"}' INSIGHTS_TIME_ZONE=America/Lima
 npm run build >/dev/null
@@ -551,8 +472,8 @@ service) # $ ~1.5/day: Fargate 0.5 vCPU/1 GB + Express-managed HTTPS load balanc
    {"name":"AWS_REGION","value":"$AWS_REGION"},{"name":"SQS_EMERGENCY_URL","value":"$(queue_url emergency)"},{"name":"SQS_ORDINARY_URL","value":"$(queue_url ordinary)"},
    {"name":"ZAVU_LIVE_SEND","value":"$LIVE"},{"name":"DEMO_MODE","value":"true"},{"name":"TRUST_PROXY_HOPS","value":"1"},
    {"name":"DEMO_ALLOWED_COUNTRIES","value":"${DEMO_ALLOWED_COUNTRIES:-PE,BR,CL,CO,MX,AR}"},{"name":"DEMO_OTP_PER_NUMBER_HOURLY","value":"${DEMO_OTP_PER_NUMBER_HOURLY:-3}"},
-   {"name":"DEMO_OTP_PER_IP_HOURLY","value":"${DEMO_OTP_PER_IP_HOURLY:-5}"},{"name":"DEMO_SMS_DAILY_CAP","value":"${DEMO_SMS_DAILY_CAP:-40}"},
-   {"name":"DEMO_ALERTS_PER_NUMBER_DAILY","value":"${DEMO_ALERTS_PER_NUMBER_DAILY:-12}"},
+   {"name":"DEMO_OTP_PER_IP_HOURLY","value":"${DEMO_OTP_PER_IP_HOURLY:-5}"},{"name":"DEMO_SMS_DAILY_CAP","value":"${DEMO_SMS_DAILY_CAP:-8}"},
+   {"name":"DEMO_ALERTS_PER_NUMBER_DAILY","value":"${DEMO_ALERTS_PER_NUMBER_DAILY:-6}"},
    {"name":"SILENCE_MS","value":"120000"},{"name":"ASK_GRACE_MS","value":"60000"},{"name":"ARRIVAL_GRACE_MS","value":"120000"},{"name":"CHECK_SWEEP_MS","value":"5000"},
    {"name":"EMERGENCY_NUMBERS","value":"{\"PE\":\"105\",\"BR\":\"190\"}"},{"name":"INSIGHTS_TIME_ZONE","value":"America/Lima"}]}}
 JSON
@@ -616,7 +537,7 @@ Expected:
 arn:aws:ecs:stub:service/andes-demo
 node dist/worker.js control & if [ "$ZAVU_LIVE_SEND" = true ]; then node dist/worker.js emergency & node dist/worker.js ordinary & fi; node dist/server.js & wait -n; exit 1
 PGPASSWORD,ZAVU_API_KEY,ZAVU_CALLBACK_SECRET,ZAVU_QUALIFICATION_JSON,DEMO_PHONE_PEPPER,ZAVU_PROJECT_ID,ZAVU_SENDER_ID
-ZAVU_LIVE_SEND=true DEMO_MODE=true TRUST_PROXY_HOPS=1 DEMO_ALLOWED_COUNTRIES=PE,BR,CL,CO,MX,AR DEMO_OTP_PER_NUMBER_HOURLY=3 DEMO_OTP_PER_IP_HOURLY=5 DEMO_SMS_DAILY_CAP=40 DEMO_ALERTS_PER_NUMBER_DAILY=12
+ZAVU_LIVE_SEND=true DEMO_MODE=true TRUST_PROXY_HOPS=1 DEMO_ALLOWED_COUNTRIES=PE,BR,CL,CO,MX,AR DEMO_OTP_PER_NUMBER_HOURLY=3 DEMO_OTP_PER_IP_HOURLY=5 DEMO_SMS_DAILY_CAP=8 DEMO_ALERTS_PER_NUMBER_DAILY=6
 false
 ```
 
@@ -733,11 +654,11 @@ Expected: `1`. Regenerating invalidates the old secret at once. Never regenerate
 
 ```bash
 ( set -a; . "$MAIN/.env"; set +a
-  export ZAVU_LIVE_SEND=true DEMO_MODE=true DEMO_SMS_DAILY_CAP=40 DEMO_ALERTS_PER_NUMBER_DAILY=12 ZAVU_QUALIFICATION_JSON="$(cat "$MAIN/.env.qualification.json")"
+  export ZAVU_LIVE_SEND=true DEMO_MODE=true DEMO_SMS_DAILY_CAP=8 DEMO_ALERTS_PER_NUMBER_DAILY=6 ZAVU_QUALIFICATION_JSON="$(cat "$MAIN/.env.qualification.json")"
   node --input-type=module -e "import {configuredProvider} from './dist/worker.js'; const p=configuredProvider(process.env); console.log('provider ok, live', p.qualification.live, ', entries', p.qualification.entries.length)" )
 ```
 
-Expected: `provider ok, live true , entries 4`. Any thrown message names the missing or mismatched setting, such as the callback project or sender, the prefix, `demoLimits` or the caps.
+Expected: `provider ok, live true , entries 2`. Any thrown message names the missing or mismatched setting, such as the callback project or sender, the prefix, `demoLimits` or the caps.
 
 - [ ] **Step 8: Launch** (terminal 3; keep it open)
 
@@ -815,8 +736,8 @@ Reglas: aquí no se anotan números de teléfono, códigos, tokens, el link del 
 | Commit de `main` | | |
 | Backend | laptop: API y 3 workers, Postgres 18 en Docker, SQS real | ECS Express: 1 tarea, RDS `db.t4g.micro`, SQS |
 | `ZAVU_LIVE_SEND` | `true` | `true` |
-| Canales calificados | PE · `es` y `pt-BR` · SMS (one-way) y llamada | igual |
-| Topes | `demoLimits` 8/8 · alertas por número 12/día · códigos 40/día | igual |
+| Canales calificados | PE · `es` y `pt-BR` · SMS (one-way). Llamada: «No disponible» | igual |
+| Topes | tabla de SMS de la spec (DECISION PENDING). Recomendado: 8 códigos/día, 6 alertas/número/día | igual |
 | Plan y saldo de Zavu antes / después (USD) | | |
 | Verificación de URL de mapa (`POST /v1/urls`) | | — |
 
@@ -929,7 +850,7 @@ q "SELECT type, status, disposition, count(*) FROM provider_events GROUP BY 1,2,
 
 Expected:
 - One incident with `sos` · `silence` · `resolved`. The trigger is `sos` because the SOS upgraded the missed-check incident.
-- Family jobs for `sms` and `voice` with `trigger` `missed_check` and `sos`, each in `accepted` or `delivered`.
+- Family jobs for `sms` with `trigger` `missed_check` and `sos`, each in `accepted` or `delivered`. `voice` stays `unavailable` until the appendix.
 - `whatsapp` jobs in `unavailable` · `country_channel_locale_unqualified`.
 - Colleague jobs refused, with the reason Plan A uses.
 - `provider_events` rows mean signed callbacks arrived. If there are none, check the webhook URL, the secret, and whether Plan A maps `sms_oneway` callbacks.
@@ -941,7 +862,7 @@ zavu GET "/messages?limit=15" | node -e 'for (const m of JSON.parse(require("fs"
 ```
 
 Expected:
-- `delivered` or `sent` for the code SMS, the two alert SMS and the two calls.
+- `delivered` or `sent` for the code SMS and the alert SMS. No calls until the appendix.
 - `pending_url_verification` on an alert SMS confirms the Task 2 Step 4 risk. Record it.
 - `RISK_*` codes mean Zavu's content review refused the message. Record it and tell Robert. Do not resend the same text.
 
@@ -1013,7 +934,7 @@ aws secretsmanager get-secret-value --secret-id andes-demo/zavu-qualification --
 aws iam get-role-policy --role-name andes-demo-exec --policy-name demo-secrets --query 'length(PolicyDocument.Statement[0].Resource)'
 ```
 
-Expected: `stored 6 secrets`, `project id matches`, `4 entries, this project`, `6`.
+Expected: `stored 6 secrets`, `project id matches`, `2 entries, this project`, `6`.
 
 - [ ] **Step 6: `image`** (free, ECR cents; 5–15 min on Apple Silicon because it emulates amd64)
 
@@ -1053,7 +974,7 @@ Expected: `locked`.
 ZAVU_LIVE_SEND=true infra/demo/deploy.sh service
 ```
 
-Expected: `arn:aws:ecs:us-east-1:<account>:service/andes-demo/andes-demo` or similar. Pass `DEMO_SMS_DAILY_CAP=…` and `DEMO_ALERTS_PER_NUMBER_DAILY=…` on the same line if Robert chose values other than 40 and 12.
+Expected: `arn:aws:ecs:us-east-1:<account>:service/andes-demo/andes-demo` or similar. Pass `DEMO_SMS_DAILY_CAP` and `DEMO_ALERTS_PER_NUMBER_DAILY` on the same line only if Robert changed the spec SMS caps table.
 
 - [ ] **Step 11: Get the URL and wait for health**
 
@@ -1268,12 +1189,7 @@ zavu PATCH "/senders/$ZAVU_SENDER_ID" '{"webhookUrl":null}' | pick id
 
   If AWS is still up, also run `infra/demo/deploy.sh secrets` and then `aws ecs update-service --cluster andes-demo --service "$arn" --force-new-deployment`.
 
-- [ ] **Step 5: Decide about the number.** A free-eligible number costs nothing. Releasing it forfeits the account's one included number. If it is a paid number, release it:
-
-```bash
-zavu PATCH "/phone-numbers/$PN_ID" '{"senderId":null}' | pick id phoneNumber.id
-zavu DELETE "/phone-numbers/$PN_ID"
-```
+- [ ] **Step 5: Voice number.** Only if the appendix bought one. A paid number is released there before teardown.
 
 - [ ] **Step 6: Delete the local demo data.** It holds verified contact numbers, and the 24 h purge runs only while `worker control` runs.
 
@@ -1291,11 +1207,10 @@ git -C "$MAIN" worktree remove "$RUN"
 | Zavu verifies URLs **one exact URL at a time**, and each alert SMS has a unique `maps.google.com/?q=` link (`wording.ts:26`) | Alert SMS may wait in `pending_url_verification` until manual approval | Task 2 Step 4 checks auto-approval up front. If it is not automatic, Plan A decides whether to drop the link from demo SMS. Calls are unaffected |
 | Zavu content review reads every SMS and call ("posible robo", "pidió ayuda") | Messages held (`queued` for up to a couple of hours) or refused (`RISK_*`). Repeated refusals suspend sending | Every text starts «Demo de Tándem». Task 8 Step 6 records the states. Never resend refused text |
 | +1 destinations need 10DLC for SMS | A US or Canadian contact cannot get the code | The contact phone must have a non-+1 number in `DEMO_ALLOWED_COUNTRIES` (Robert item 6) |
-| Zavu daily ceilings (unverified floor: 25 SMS and 5 calls a day) | Judges run out of codes or calls | Task 2 Step 1 reads the ceilings. A paid plan has no voice ceiling. The qualification's limits stay below them |
+| Zavu daily ceilings (unverified floor: 25 SMS a day) | Judges run out of codes | Task 2 Step 1 reads the ceilings. Qualification limits copy the SMS caps table and stay under 25 |
 | Plan A's `smsMode: 'oneway'` must also handle `sms_oneway` in the send reply (`zavu.ts:56`), in reads, and in callbacks (`zavu.ts:123` accepts only `sms`, `whatsapp` and `voice`) | Otherwise SMS attempts end `unknown` and callbacks get 401 | Task 7 Step 7 and the `provider_events` query in Task 8 Step 5 expose it. Fix it in Plan A |
-| The calls come from a US +1 number | Contacts in Peru may not answer an unknown international caller | Brief B's holder before the run. A PE number would need regulatory review |
-| The voice body reads «Incidente <uuid>» aloud (`wording.ts:29,32`) | The call carries about 15 s of noise | Recorded as a finding for Plan A. The fix is one line: omit the ID for voice |
-| Alert bodies are Spanish only (`wording.ts:15`) | `pt-BR` users get Spanish | The pt-BR SMS prefix says «mensagem em espanhol», and voice uses `es-ES` |
+| Voice purchase is the appendix | Calls stay «No disponible» | Do not add voice qualification entries in Tasks 1–12 |
+| Alert bodies are Spanish only (`wording.ts:15`) | `pt-BR` users get Spanish | The pt-BR SMS prefix says «mensagem em espanhol» |
 | Recording a page reload creates a new world (#81) | A reload in the middle of a run blocks the SOS steps | Airplane mode replaces screen lock for the silence step. The lock test runs on a second trip after the main run |
 | iOS stops location with the screen locked | The contact sees «sin datos» | The run records it honestly (row 8.x). The server check covers the gap only while B's screen stays open |
 | The quick tunnel URL changes on every restart, and it has no uptime guarantee | The webhook goes stale | After any restart, run the Task 7 Step 6 PATCH again. Stage 1 is for rehearsal; judges get the AWS URL |
@@ -1306,8 +1221,12 @@ git -C "$MAIN" worktree remove "$RUN"
 
 ## Spec items this plan changes or cannot meet
 
-1. **Success criterion 6** ("SMS, WhatsApp y llamada reales") **cannot be met for WhatsApp**: there is no WABA and there are no approved templates. WhatsApp shows «No disponible», as §5 allows. SMS and calls are real.
+1. **Success criterion 6** ("SMS, WhatsApp y llamada reales") **cannot be met for WhatsApp or calls**: there is no WABA, and voice is the appendix. Both show «No disponible». SMS is real.
 2. **§1 assumed `create-express-gateway-service` only.** Flipping `ZAVU_LIVE_SEND` and rolling out changes needs `update-express-gateway-service`, so `service` now updates in place.
 3. **§1 says `deploy.sh prepare` is free; the new secrets are not** (≈ 0.40 USD/month each). They live in a separate `$` step, `secrets`, so stage 1 can run `prepare` before Zavu is fully set up.
 4. **§8 step 3 (behavior with the screen locked)** conflicts with "a reload ruins the run". It moves to a second trip after the main run (rows 8.x).
 5. **`CONTACT_APP_URL` stays unset.** Its `/incidents/<id>` link is not a route in the spec's web app, and Zavu would have to verify one more URL.
+
+## Appendix: deferred Zavu voice purchase
+
+Not on the critical path. Both stages stay SMS-only and show calls as «No disponible». Buying one voice number needs Robert's go and a redeemed coupon. Until that number is live, do not add voice qualification entries and do not treat calls as part of the run. After it is live, add the voice entries and switch the stack; that work is outside Tasks 1–12. Release a paid number before teardown.

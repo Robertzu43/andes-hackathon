@@ -1,6 +1,14 @@
 # App funcional en teléfonos reales: diseño
 
-Fecha: 2026-10-18. Estado: aprobado por Robert, sección por sección, en brainstorming. Revisión 3: incorpora dos revisiones de la spec. Base: `main` 23e9f33.
+Fecha: 2026-10-18. Estado: aprobado por Robert, sección por sección, en brainstorming. Revisión 3: incorpora dos revisiones de la spec. Base: `main` 23e9f33. Planes A, B y C congelados.
+
+## Revisiones de la spec
+
+El cuerpo del PR #96 dice que la spec tuvo tres revisiones aprobadas. Ni el cuerpo ni los comentarios traen enlaces:
+
+1. link pending
+2. link pending
+3. link pending
 
 ## Objetivo y criterio de éxito
 
@@ -104,7 +112,7 @@ Los campos que exige el borrador (`requiredFields` en `src/trips/routes.ts`) se 
 - **Polling** de `/status` cada 5 s. Si hay un check abierto, abre el banner.
 
 **GPS:**
-- El adaptador de #52 (`src/phone-observations/`, en el árbol del backend) alimenta la cola de #66, que sube a `/v1/trips/:id/locations`.
+- El adaptador de #52 (`src/phone-observations/`, en el árbol del backend) alimenta la cola de #66, que sube a `/v1/trips/:id/locations`. El GPS sigue apagado hasta el paquete de calificación de dispositivo físico de Plan C.
 - La web lo importa con un alias de Vite. El plan decide si moverlo a un paquete compartido.
 - `ownerSubject` es igual al `sub` del token del conductor.
 - Si se niega el permiso o se detiene el envío, se ve en la pantalla y se notifica a `POST /v1/trips/:id/sharing`.
@@ -225,8 +233,7 @@ Un test verifica que después de la purga no queda el número en ninguna tabla. 
 | `DEMO_ALLOWED_COUNTRIES` | por ejemplo `PE,BR,CL,CO,MX,AR` |
 | `DEMO_OTP_PER_NUMBER_HOURLY` | 3 |
 | `DEMO_OTP_PER_IP_HOURLY` | 5 |
-| `DEMO_SMS_DAILY_CAP` | lo fija Robert (solo SMS de código) |
-| `DEMO_ALERTS_PER_NUMBER_DAILY` | lo fija Robert |
+| Topes de SMS | la tabla de abajo (una sola) |
 | `DEMO_PHONE_PEPPER` | secreto aleatorio |
 | `TRUST_PROXY_HOPS` | 1 |
 | `SILENCE_MS` | 120000 (valor de demo, no un umbral de seguridad) |
@@ -239,7 +246,17 @@ La API key de Zavu y el secreto de callbacks van en el entorno local, o en Secre
 
 En la URL de los jueces (AWS), los envíos reales quedan **activados con tope**. Se apagan con `ZAVU_LIVE_SEND=false`. La app sigue arriba, pero sin SMS no hay códigos: el contacto no puede verificarse y las alertas quedan como no disponibles.
 
-**Topes para un ensayo completo:** una corrida manda dos olas a la familia (el check y después el SOS), con 3 canales cada una. Por eso `demoLimits.perIncident`, `perSession` y `DEMO_ALERTS_PER_NUMBER_DAILY` tienen que ser **al menos 6**.
+### Topes de SMS
+
+**DECISION PENDING (Robert).** Una sola tabla. `scripts/demo-local.sh` y los límites de la calificación (`dailyLimit`, `channelDailyLimit`) copian esta fila.
+
+| Tope | Default recomendado |
+|---|---|
+| `DEMO_SMS_DAILY_CAP` | 8 códigos/día |
+| `DEMO_ALERTS_PER_NUMBER_DAILY`, `dailyLimit` y `channelDailyLimit` | 6 alertas por número/día |
+| Techo de Zavu (plan gratis, no verificado) | 25 SMS/día |
+
+Un ensayo manda dos olas a la familia, así que `demoLimits.perIncident` y `perSession` siguen en al menos 6.
 
 ## 6. Privacidad y abuso
 
@@ -293,9 +310,9 @@ Cada grupo tiene su propio plan de implementación y sus PRs. El revisor verific
 2. OTP, `demo_phone_verifications`, allowlist dinámico que falla cerrado, sesión demo sin camión ni grant family, validación de prefijos y purga.
 
 **Plan B, web:**
-3. Arranque de producción y pantallas del conductor, en el orden de la sección 2.
+3. Arranque de producción y pantallas del conductor, en el orden de la sección 2. `web/src/main.tsx` monta las rutas del conductor y del contacto con un `SessionGateway` real (hoy renderiza `<FoundationRoot />` sin `routes` ni `session`).
 4. Recorrido guiado.
-5. Contacto: link, OTP, aceptación, polling de viajes y de status.
+5. Contacto: link, OTP, aceptación, polling de viajes y de status. E2E de navegador en CI: conductor → alerta → contacto, contra el backend real. El GPS sigue apagado hasta el paquete de Plan C.
 
 **Plan C, operaciones:**
 6. Túnel y prueba en dos teléfonos, con evidencia.
