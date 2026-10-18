@@ -1318,7 +1318,7 @@ with:
   app.post('/v1/demo/phone/verify', { schema: { body: object({ phone: { type: 'string' }, code: { type: 'string' } }) } }, async request => {
     const { phone, code } = request.body as { phone: string; code: string };
     // Decided inside the transaction, thrown after commit, so a failed try still counts.
-    const failed = await transaction(ctx.pool, async client => {
+    const failed = await transaction<'invalid_code' | 'code_expired' | 'too_many_attempts' | null>(ctx.pool, async client => {
       const now = ctx.clock();
       // Only this persona's latest code for this number: a code another persona or world asked for is never found.
       const challenge = (await client.query('SELECT id,code_hash,expires_at,attempts FROM demo_phone_challenges WHERE identity_id=$1 AND phone_hmac=$2 ORDER BY created_at DESC LIMIT 1 FOR UPDATE',

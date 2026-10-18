@@ -62,7 +62,7 @@ pick() { node -e 'const j=JSON.parse(require("fs").readFileSync(0,"utf8")),v=pro
 | `docs/evidence/phone-run-2026-10-18.md` | Create (Tasks 8, 10) | Evidence: devices, times and results, with an honest scope statement |
 | `docs/evidence/phone-run-2026-10-18/*.png` | Create (Tasks 8, 10) | Redacted screenshots only |
 | `docs/submission/deck/index.html`, `README.md`, `docs/submission/descripcion.md` | Modify (Task 11) | `DEMO_URL` and the demo and deploy status lines |
-| `$MAIN/.env` | Append, gitignored | `ZAVU_PROJECT_ID`, `ZAVU_CALLBACK_SECRET`, `DEMO_PHONE_PEPPER`, local DB passwords, AWS profile and account |
+| `$MAIN/.env` | Guarded appends, gitignored | Already holds `ZAVU_API_KEY`, `ZAVU_SENDER_ID`, `ZAVU_PROJECT_ID`, `AWS_PROFILE`, `AWS_REGION`, `ANDES_AWS_ACCOUNT` and both `SQS_*_URL`. This plan adds `ZAVU_CALLBACK_SECRET`, `DEMO_PHONE_PEPPER` and the local DB passwords, each only if absent |
 | `$MAIN/.env.qualification.json` | Create, gitignored by `.env.*` | `ZAVU_QUALIFICATION_JSON` |
 | `<run checkout>/evidence/private/phone-run-2026-10-18/` | Create, gitignored | Raw, unredacted screenshots |
 
@@ -100,9 +100,9 @@ git -C "$MAIN" check-ignore -v .env .env.qualification.json
 sed -E 's/=.*/=<hidden>/' "$MAIN/.env"
 ```
 
-Expected: `.gitignore:10:.env	.env` and `.gitignore:11:.env.*	.env.qualification.json`. The names list shows `ZAVU_API_KEY=<hidden>` and `ZAVU_SENDER_ID=<hidden>`.
+Expected: `.gitignore:10:.env	.env` and `.gitignore:11:.env.*	.env.qualification.json`. The names list shows these 8 names, each with a hidden value: `ZAVU_API_KEY`, `ZAVU_SENDER_ID`, `AWS_PROFILE`, `AWS_REGION`, `ANDES_AWS_ACCOUNT`, `SQS_EMERGENCY_URL`, `SQS_ORDINARY_URL` and `ZAVU_PROJECT_ID`.
 
-- [ ] **Step 3: Generate the local-only secrets**
+- [ ] **Step 3: Generate the local-only secrets** (each skipped if already present)
 
 ```bash
 for var in LOCAL_ADMIN_PASSWORD LOCAL_APP_PASSWORD DEMO_PHONE_PEPPER; do
@@ -111,44 +111,55 @@ done
 sed -E 's/=.*/=<hidden>/' "$MAIN/.env"
 ```
 
-Expected: the five names, with every value hidden.
+Expected: 11 names, each appearing once, with every value hidden: the 8 from Step 2 plus `LOCAL_ADMIN_PASSWORD`, `LOCAL_APP_PASSWORD` and `DEMO_PHONE_PEPPER`.
 
-- [ ] **Step 4 (human, Robert): Save the AWS profile and account**
-
-Robert runs this in his own terminal. The account ID is his explicit opt-in, so it is typed, never derived from the profile.
+- [ ] **Step 4: Check the AWS profile and account** (skipped if present; they are)
 
 ```bash
-read -r -p 'AWS profile: ' p; read -r -p 'AWS account ID (12 digits): ' a
-[ "$(aws sts get-caller-identity --profile "$p" --query Account --output text)" = "$a" ] \
-  && printf 'AWS_PROFILE=%s\nANDES_AWS_ACCOUNT=%s\nAWS_REGION=us-east-1\n' "$p" "$a" >> "$MAIN/.env" && echo saved \
-  || echo "profile and account do not match; nothing saved"
+set -a; . "$MAIN/.env"; set +a
+if [ -n "${AWS_PROFILE:-}" ] && [ -n "${ANDES_AWS_ACCOUNT:-}" ]; then
+  [ "$(aws sts get-caller-identity --query Account --output text)" = "$ANDES_AWS_ACCOUNT" ] && echo "profile $AWS_PROFILE is account $ANDES_AWS_ACCOUNT" || echo "MISMATCH: stop and ask Robert"
+else
+  printf 'AWS profile (ask Robert): '; read -r p; printf 'AWS account ID (12 digits, ask Robert): '; read -r a
+  [ "$(aws sts get-caller-identity --profile "$p" --query Account --output text)" = "$a" ] \
+    && printf 'AWS_PROFILE=%s\nANDES_AWS_ACCOUNT=%s\n' "$p" "$a" >> "$MAIN/.env" && echo saved || echo "profile and account do not match; nothing saved"
+fi
+grep -q '^AWS_REGION=' "$MAIN/.env" || echo 'AWS_REGION=us-east-1' >> "$MAIN/.env"
 ```
 
-Expected: `saved`. If the session expired, run `aws login --profile "$p"` (or `aws sso login --profile "$p"`) first.
+Expected: `profile default is account 645868669589`. The `else` branch runs only if the values were missing. The account ID is Robert's explicit opt-in, so it is typed in, never derived from the profile. If the session expired, run `aws login` or `aws sso login` first.
 
 ---
 
 ### Task 2: Zavu account checks (free)
 
-**Files:** `$MAIN/.env` (append `ZAVU_PROJECT_ID`)
+**Files:** `$MAIN/.env` (`ZAVU_PROJECT_ID`, already present)
 
-- [ ] **Step 1 (human, Robert): Redeem the coupon and read the ceilings**
+- [ ] **Step 1 (human, Robert): Read the account limits and decide on «Verify»**
 
-In the Zavu dashboard, redeem the event coupon. Then record these for the evidence file:
-- the plan name;
-- the balance in USD;
-- the daily ceilings for SMS and voice.
+The account today is on the **free plan**, has a **$2 balance** and is **unverified**. Zavu therefore allows **25 SMS a day** across `sms` and `sms_oneway`, and 5 calls a day. The counts reset at 00:00 UTC, which is 19:00 in Lima.
 
-Zavu's floor for an account with nothing verified is 25 SMS a day and 5 calls a day. A paid plan has no voice ceiling. If the voice ceiling is 5 a day, tell Robert. One full run uses 2 calls and one short run uses 1, so judges would run out the same day.
+In the dashboard, record for the evidence file:
+- the plan;
+- the balance;
+- the daily ceilings shown;
+- the price of one SMS to Peru, after the first code is sent in Task 8.
 
-- [ ] **Step 2: Save the project ID** (it is not a secret)
+Then work out how many SMS the $2 buys. At `402 insufficient_balance`, `zavu.ts:86` treats the reply as retryable: alerts retry three times and then end unsent.
+
+**Recommend that Robert runs «Verify»** (identity verification) in the dashboard. It raises the ceilings and does not cost money. If he does, record the new ceilings. The caps in this plan stay as they are unless he asks to raise them.
+
+The 25 a day are shared by both stages and every judge, while the app's caps apply per database. A full stage 1 run uses 3 SMS (1 code and 2 alerts) and a short stage 2 run uses 2 (1 code and 1 alert). That leaves about 20 for judges on the same UTC day. Zavu's `429 daily_limit_exceeded` is the backstop.
+
+- [ ] **Step 2: Check the project ID** (already in `.env`; it is not a secret)
 
 ```bash
-grep -q '^ZAVU_PROJECT_ID=' "$MAIN/.env" || zavu GET /me | node -e 'const m=JSON.parse(require("fs").readFileSync(0,"utf8")); if (m.isTestMode !== false || !m.project?.id) { console.error("need a live (zv_live_) key:", JSON.stringify(m)); process.exit(1) } console.log("ZAVU_PROJECT_ID="+m.project.id)' | tee -a "$MAIN/.env"
+grep -q '^ZAVU_PROJECT_ID=' "$MAIN/.env" && echo "ZAVU_PROJECT_ID present" || zavu GET /me | node -e 'const m=JSON.parse(require("fs").readFileSync(0,"utf8")); if (m.isTestMode !== false || !m.project?.id) { console.error("need a live (zv_live_) key; reply keys:", Object.keys(m).join(",")); process.exit(1) } console.log("ZAVU_PROJECT_ID="+m.project.id)' | tee -a "$MAIN/.env"
 set -a; . "$MAIN/.env"; set +a
+[ "$(zavu GET /me | pick project.id)" = "$ZAVU_PROJECT_ID" ] && echo "matches this API key's project"
 ```
 
-Expected: one line, `ZAVU_PROJECT_ID=…`. The backend requires this value to equal the qualification's `accountId` (`src/worker.ts:14`).
+Expected: `ZAVU_PROJECT_ID present`, then `matches this API key's project`. The backend requires this value to equal the qualification's `accountId` (`src/worker.ts:14`).
 
 - [ ] **Step 3: Read the sender**
 
@@ -158,18 +169,7 @@ zavu GET "/senders/$ZAVU_SENDER_ID" | pick name channels phoneNumber isDefault w
 
 Expected now: `Tándem Demo ["sms_oneway"] undefined true undefined`.
 
-- [ ] **Step 4: Check whether the alert's map link is held for verification**
-
-SMS alerts carry `https://maps.google.com/?q=<lat>,<lon>` (`src/notifications/wording.ts:26`). Zavu verifies URLs **one exact URL at a time**. A message with an unverified URL waits in `pending_url_verification`.
-
-```bash
-for q in -12.0464,-77.0428 -12.1000,-77.0300; do
-  zavu POST /urls "{\"url\":\"https://maps.google.com/?q=$q\"}" | pick url.status url.approvalType url.domain
-done
-```
-
-Expected best case, both lines: `approved auto_web_risk maps.google.com`. Copy both lines into the evidence notes.
-- If either says `pending`, `escalated` or `rejected`, or the reply is an error: SMS alerts with a location will be held until manual approval. Calls are not affected. Tell Robert. The fix belongs to Plan A (for example, no link in demo SMS), not here.
+There is no URL-verification step. Zavu verifies each exact URL, so the spec (§4, «Sin links en los SMS») now sends the location in SMS as text («Última ubicación hace {edad} (±{precisión} m): {lat}, {lon}»). Task 7 Step 1 checks that Plan A removed the map link.
 
 ---
 
