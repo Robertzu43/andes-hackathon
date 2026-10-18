@@ -7,7 +7,7 @@ export type { ApiClient, ApiClientConfig } from './client.ts';
 export { createContactApi, bindJourneySession } from './journeys.ts';
 export type { ContactJourneyApi } from './journeys.ts';
 export { createDriverTransport, decodeDriverResponse } from './driver.ts';
-export { snapshot as decodeLocationSnapshot, incident as decodeIncidentSummary } from './responses.ts';
+export { snapshot as decodeLocationSnapshot } from './responses.ts';
 export type { DriverRequest, DriverTransportResult } from './driver.ts';
 export { createSessionGateway } from './gateway.ts';
 export type { GatewaySnapshot, SessionGatewayConfig, SessionGateway } from './gateway.ts';

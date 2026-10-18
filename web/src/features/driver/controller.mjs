@@ -6,16 +6,15 @@ const blocked = (code, details = {}) => ({ kind: 'blocked', code, ...details });
 const blankFact = () => ({ state: 'not-loaded', data: null, clientReceivedAtMs: null, invalidated: false, error: null });
 const blankForm = () => ({ text: '', fields: Object.fromEntries(INPUT_FIELDS.map((key) => [key, ''])), contactGrantIds: [] });
 
-/** Nonvisual, memory-only controller. Transport/auth and monitoring projection are injected. */
+/** Nonvisual, memory-only controller. Transport and auth are injected. */
 export function createDriverJourney({
   transport = null, clock = () => Date.now(), keyFactory = () => globalThis.crypto.randomUUID(),
-  timers = globalThis, requestTimeoutMs = 15_000, monitoringProjection = null, decodeResponse = null,
+  timers = globalThis, requestTimeoutMs = 15_000, decodeResponse = null,
 } = {}) {
   if (transport !== null && typeof transport !== 'function') throw new TypeError('transport must be a function');
   if (typeof clock !== 'function' || typeof keyFactory !== 'function' ||
       typeof timers.setTimeout !== 'function' || typeof timers.clearTimeout !== 'function' ||
       !Number.isSafeInteger(requestTimeoutMs) || requestTimeoutMs < 1 || requestTimeoutMs > 60_000 ||
-      (monitoringProjection !== null && typeof monitoringProjection !== 'function') ||
       (decodeResponse !== null && typeof decodeResponse !== 'function')) throw new TypeError('Invalid controller inputs');
   let disposed = false;
   let notifying = false;
@@ -23,7 +22,6 @@ export function createDriverJourney({
   let auth = { state: 'unknown', actorId: null };
   let interaction = 'unknown';
   let network = 'unknown';
-  let permissions = { geolocation: 'unknown', motion: 'unknown' };
   let form = blankForm();
   let selection = null;
   let draft = null;
@@ -45,13 +43,8 @@ export function createDriverJourney({
 
   function snapshot() {
     const facts = copy({ trip, location, incident, status, activation });
-    let monitoring = { state: 'unavailable', reason: 'reviewed-projection-not-bound' };
-    if (monitoringProjection && !disposed && auth.state === 'authenticated') {
-      try { monitoring = copy(monitoringProjection(copy(facts), now())); }
-      catch { monitoring = { state: 'unavailable', reason: 'projection-error' }; }
-    }
-    return copy({ disposed, auth, interaction, network, permissions, form, selection, draft, activation,
-      tripId, ...facts, monitoring, operations: Object.fromEntries([...writes].map(([slot, run]) => [slot, operationState(run)])) });
+    return copy({ disposed, auth, interaction, network, form, selection, draft, activation,
+      tripId, ...facts, operations: Object.fromEntries([...writes].map(([slot, run]) => [slot, operationState(run)])) });
   }
 
   function notify() {
@@ -224,7 +217,7 @@ export function createDriverJourney({
     for (const run of [...writes.values(), ...reads.values()]) run.cancel('session-ended');
     writes.clear(); reads.clear(); selection = null; form = blankForm(); draft = null; activation = null;
     tripId = null; openingTripId = null; trip = blankFact(); location = blankFact(); incident = blankFact(); status = blankFact();
-    permissions = { geolocation: 'unknown', motion: 'unknown' }; interaction = 'unknown';
+    interaction = 'unknown';
     auth = { state: actorId ? 'authenticated' : 'unknown', actorId: actorId?.toLowerCase() ?? null };
     notify(); return { kind: 'local-state' };
   }
@@ -239,12 +232,6 @@ export function createDriverJourney({
     const problem = editable(); if (problem) return problem;
     if (!['unknown', 'online', 'offline'].includes(value)) return blocked('invalid-network');
     network = value; notify(); return { kind: 'local-state' };
-  }
-
-  function setPermission(stream, state) {
-    const problem = editable(); if (problem) return problem;
-    if (!['geolocation', 'motion'].includes(stream) || !['unknown', 'prompt', 'granted', 'denied', 'revoked'].includes(state)) return blocked('invalid-permission');
-    permissions[stream] = state; notify(); return { kind: 'local-state' };
   }
 
   function provideSelectionEvidence(value) {
@@ -409,7 +396,7 @@ export function createDriverJourney({
     auth = { state: 'unknown', actorId: null };
   }
 
-  return { snapshot, setSession, setInteractionMode, setNetwork, setPermission, provideSelectionEvidence,
+  return { snapshot, setSession, setInteractionMode, setNetwork, provideSelectionEvidence,
     editForm, selectContacts, registerTruck, saveDraft, confirmTrip, sendCommand, requestHelp, retryUnknown,
     openTrip, refreshLocation, refreshStatus, refreshIncident, dispose,
     subscribe(listener) {

@@ -1,5 +1,4 @@
 export type InteractionMode = 'unknown' | 'moving' | 'stationary' | 'allowed-assistance';
-export type PermissionState = 'unknown' | 'prompt' | 'granted' | 'denied' | 'revoked';
 export type Command = 'arrived' | 'cancel' | 'pause' | 'resume' | 'checkin_ok' | 'rest_report';
 export type WriteSlot = 'truck' | 'draft' | 'confirm' | 'command' | 'sos';
 export type Operation = 'createTruck' | 'createDraft' | 'confirmDraft' | 'command' | 'sos' | 'readTrip' | 'readSnapshot' | 'readIncident' | 'readStatus';
@@ -45,12 +44,10 @@ export interface JourneySnapshot extends JourneyFacts {
   auth: { state: 'unknown' | 'authenticated' | 'expired'; actorId: string | null };
   interaction: InteractionMode;
   network: 'unknown' | 'online' | 'offline';
-  permissions: { geolocation: PermissionState; motion: PermissionState };
   form: { text: string; fields: Required<DraftFields>; contactGrantIds: string[] };
   selection: SelectionEvidence | null;
   draft: { id: string; status: 'draft'; rawText: string; fields: DraftFields; missingFields: string[] } | null;
   tripId: string | null;
-  monitoring: unknown;
   operations: Partial<Record<WriteSlot, {
     state: 'pending' | 'accepted' | 'rejected' | 'unknown' | 'not_sent';
     request: DriverRequest; result: TransportResult | null; clientReceivedAtMs: number | null; sourceTime: null;
@@ -61,7 +58,6 @@ export interface DriverJourney {
   setSession(actorId?: string | null): LocalOutcome;
   setInteractionMode(mode: InteractionMode): LocalOutcome;
   setNetwork(network: 'unknown' | 'online' | 'offline'): LocalOutcome;
-  setPermission(stream: 'geolocation' | 'motion', state: PermissionState): LocalOutcome;
   provideSelectionEvidence(evidence: SelectionEvidence): LocalOutcome;
   editForm(patch: { text?: string; fields?: DraftFields }): LocalOutcome;
   selectContacts(grantIds: string[]): LocalOutcome;
@@ -85,5 +81,4 @@ export function createDriverJourney(options?: {
   timers?: { setTimeout(fn: () => void, ms: number): unknown; clearTimeout(id: unknown): void };
   requestTimeoutMs?: number;
   decodeResponse?: ((request: DriverRequest, data: unknown) => unknown) | null;
-  monitoringProjection?: ((facts: JourneyFacts, clientNowMs: number | null) => unknown) | null;
 }): DriverJourney;

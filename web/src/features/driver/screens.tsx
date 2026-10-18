@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { Field, PrimaryAction, useI18n, useMessages } from '../../foundation/index.ts';
 import { formattedTimestamp } from '../../foundation/time.ts';
 import type { DriverJourney, JourneySnapshot } from './controller.mjs';
@@ -25,13 +25,6 @@ function useGateway(gateway: PhoneDemoRuntime['gateway']) {
   }), [gateway]);
   const get = useCallback(() => cache.current, []);
   return useSyncExternalStore(subscribe, get, get);
-}
-function futureArrival(from = new Date()): string {
-  const date = new Date(from.getTime() + 4 * 60 * 60 * 1000);
-  const pad = (value: number) => String(Math.trunc(Math.abs(value))).padStart(2, '0');
-  const offset = -date.getTimezoneOffset();
-  const sign = offset >= 0 ? '+' : '-';
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}${sign}${pad(Math.floor(Math.abs(offset) / 60))}:${pad(Math.abs(offset) % 60)}`;
 }
 function statusOf(view: JourneySnapshot): TripStatus | null {
   const data = view.status.data as unknown as TripStatus | null;
@@ -120,7 +113,7 @@ export function Prepare({ runtime }: { runtime: PhoneDemoRuntime }) {
   const [text, setText] = useState('');
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
-  const [arrival] = useState(futureArrival);
+  const [arrival] = useState(() => new Date(Date.now() + 4 * 3_600_000).toISOString());
   function evidence(boot: Bootstrap) {
     const actorId = runtime.journey.snapshot().auth.actorId;
     if (!actorId) return false;
@@ -291,15 +284,6 @@ function TripBody({ runtime, view, tripId, mode }: { runtime: PhoneDemoRuntime; 
     {view.tripId && <Link data-action="open-contact" to={`/contact/trips/${view.tripId}`}>{t('contactView')}</Link>}
   </section>;
 }
-export function TripHome({ runtime, tripId }: { runtime: PhoneDemoRuntime; tripId: string }) {
-  return <TripBody runtime={runtime} view={useTrip(runtime, tripId)} tripId={tripId} mode="active" />;
-}
-export function CheckIn({ runtime, tripId }: { runtime: PhoneDemoRuntime; tripId: string }) {
-  return <TripBody runtime={runtime} view={useTrip(runtime, tripId)} tripId={tripId} mode="checkin" />;
-}
-export function Alerts({ runtime, tripId }: { runtime: PhoneDemoRuntime; tripId: string }) {
-  return <TripBody runtime={runtime} view={useTrip(runtime, tripId)} tripId={tripId} mode="alerts" />;
-}
-export function Summary({ runtime, tripId }: { runtime: PhoneDemoRuntime; tripId: string }) {
-  return <TripBody runtime={runtime} view={useTrip(runtime, tripId)} tripId={tripId} mode="summary" />;
+export function Trip({ runtime, tripId, mode }: { runtime: PhoneDemoRuntime; tripId: string; mode: 'active' | 'checkin' | 'alerts' | 'summary' }) {
+  return <TripBody runtime={runtime} view={useTrip(runtime, tripId)} tripId={tripId} mode={mode} />;
 }

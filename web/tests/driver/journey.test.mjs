@@ -208,10 +208,9 @@ test('5xx, malformed success or wrong-trip response never become a successful ac
   }
 });
 
-test('local permission and network changes never prompt, capture, schedule alarms or autosubmit', async () => {
+test('local network changes never prompt, capture, schedule alarms or autosubmit', async () => {
   const b = fixture(); b.ready(); b.journey.setNetwork('offline');
   assert.equal(b.journey.editForm({ text: 'Preparar sin conexión', fields }).kind, 'local-state');
-  for (const state of ['granted', 'denied', 'revoked', 'unknown']) b.journey.setPermission('geolocation', state);
   assert.equal((await b.journey.saveDraft()).code, 'offline');
   b.journey.setNetwork('online'); await settle(); assert.equal(b.calls.length + b.timers.size, 0);
   assert.equal((await b.journey.saveDraft()).kind, 'ok');
@@ -269,7 +268,6 @@ test('snapshot capture, server receipt/read and client receipt stay separate and
   assert.deepEqual(fact.data, b.server.snapshot); assert.equal(fact.clientReceivedAtMs, WALL);
   b.advance(3600_000);
   assert.deepEqual(b.journey.snapshot().location, fact);
-  assert.equal(b.journey.snapshot().monitoring.state, 'unavailable');
   b.handlers.readSnapshot = () => rejected(403, 'forbidden'); await b.journey.refreshLocation();
   assert.equal(b.journey.snapshot().location.data, null);
   assert.equal(b.journey.snapshot().location.error.status, 403);
@@ -312,15 +310,12 @@ test('dispose and reentrant view stop are idempotent and never begin a native re
   assert.equal((await b.journey.saveDraft()).code, 'disposed');
 });
 
-test('data and requests are detached; model consumes an injected projection without copying its rules', async () => {
-  const received = [];
-  const b = fixture({ monitoringProjection(facts, at) { received.push({ facts, at }); return { state: 'synthetic-projection', receivedAt: at }; } });
-  await b.active(); await b.journey.openTrip(ids.draft); const state = b.journey.snapshot();
+test('snapshot data and requests are detached from controller state', async () => {
+  const b = fixture(); await b.active(); await b.journey.openTrip(ids.draft); const state = b.journey.snapshot();
   state.form.fields.country = 'XX'; state.operations.confirm.request.body.fields.country = 'XX';
-  received.at(-1).facts.trip.data.status = 'arrived';
+  state.trip.data.status = 'arrived';
   assert.equal(b.journey.snapshot().form.fields.country, 'PE');
   assert.equal(b.journey.snapshot().trip.data.status, 'active');
-  assert.equal(b.journey.snapshot().monitoring.state, 'synthetic-projection');
 });
 
 test('wrong actor/trip incident reads and unsupported commands cannot become current facts', async () => {

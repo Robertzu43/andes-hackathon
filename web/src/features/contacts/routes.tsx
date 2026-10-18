@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { ActionGroup, AsyncState, AttributedUpdate, ConsentScope, EmptyState, ErrorRecovery,
   FactRow, Field, PermissionState, PrimaryAction, SelectField, TripIdentity, useI18n, useMessages,
   type FeatureRoutes } from '../../foundation/index.ts';
