@@ -9,7 +9,7 @@ const listen = server => new Promise(resolve => server.listen(0, '127.0.0.1', re
 test('production preview returns an honest unavailable API rather than SPA HTML', async () => {
   const old = process.env.ANDES_API_PROXY_TARGET;
   delete process.env.ANDES_API_PROXY_TARGET;
-  const app = await preview({ envFile: false, preview: { host: '127.0.0.1', port: 0 } });
+  const app = await preview({ envDir: false, preview: { host: '127.0.0.1', port: 0 } });
   try {
     const origin = `http://127.0.0.1:${app.httpServer.address().port}`;
     for (const path of ['/v1', '/v1?probe=1', '/v1/', '/v1/me?probe=1']) {
@@ -41,7 +41,7 @@ test('production preview proxies exact API paths, status and idempotency headers
   process.env.ANDES_API_PROXY_TARGET = `http://127.0.0.1:${fixture.address().port}`;
   let app;
   try {
-    app = await preview({ envFile: false, preview: { host: '127.0.0.1', port: 0 } });
+    app = await preview({ envDir: false, preview: { host: '127.0.0.1', port: 0 } });
     const origin = `http://127.0.0.1:${app.httpServer.address().port}`;
     assert.deepEqual(await (await fetch(`${origin}/v1?probe=1`)).json(), { requestTarget: '/v1?probe=1' });
     for (const path of ['/v10', '/v1evil', '/v1-admin']) {

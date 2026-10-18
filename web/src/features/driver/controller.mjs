@@ -1,7 +1,7 @@
 import { INPUT_FIELDS, COMMANDS, uuid, text, copy, validateFields, inputFields,
   selectionEvidence, acceptedGrantIds, responseData, correlateResponse } from './validation.mjs';
 
-const WRITE_SLOTS = ['truck', 'draft', 'confirm', 'command', 'sos'];
+const WRITE_SLOTS = ['truck', 'draft', 'confirm', 'command', 'sos', 'resolve'];
 const blocked = (code, details = {}) => ({ kind: 'blocked', code, ...details });
 const blankFact = () => ({ state: 'not-loaded', data: null, clientReceivedAtMs: null, invalidated: false, error: null });
 const blankForm = () => ({ text: '', fields: Object.fromEntries(INPUT_FIELDS.map((key) => [key, ''])), contactGrantIds: [] });
@@ -209,6 +209,14 @@ export function createDriverJourney({
       if (['arrived', 'cancel'].includes(request.body.type)) activation = null;
     } else if (slot === 'sos') {
       incident = { state: 'available', data, clientReceivedAtMs: receivedAt, invalidated: false, error: null };
+    } else if (slot === 'resolve') {
+      // An acknowledgement has no resolution time or refreshed incident/status.
+      // Reads dispatched before it cannot establish the state after this write.
+      for (const [readSlot, fact] of [['incident', incident], ['status', status]]) {
+        reads.get(readSlot)?.cancel('resolution-acknowledged');
+        fact.invalidated = true;
+        if (fact.state === 'loading') fact.state = fact.data ? 'available' : 'not-loaded';
+      }
     }
   }
 
@@ -328,6 +336,14 @@ export function createDriverJourney({
     return submit('sos', { operation: 'sos', params: { id: tripId }, body: {} }, { newIntent: true });
   }
 
+  function resolveIncident() {
+    const problem = writeGate(); if (problem) return Promise.resolve(problem);
+    if (!tripId || !uuid(incident.data?.id) || incident.data.tripId !== tripId || incident.data.status !== 'active') {
+      return Promise.resolve(blocked('active-incident-required'));
+    }
+    return submit('resolve', { operation: 'resolveIncident', params: { id: incident.data.id }, body: {} });
+  }
+
   // R8: a confirmation in flight or with a lost response may have committed, and
   // the trip ID is the draft ID. Settle it, read that trip, then send the SOS.
   async function reconcileThenHelp() {
@@ -410,7 +426,7 @@ export function createDriverJourney({
   }
 
   return { snapshot, setSession, setInteractionMode, setNetwork, setPermission, provideSelectionEvidence,
-    editForm, selectContacts, registerTruck, saveDraft, confirmTrip, sendCommand, requestHelp, retryUnknown,
+    editForm, selectContacts, registerTruck, saveDraft, confirmTrip, sendCommand, requestHelp, resolveIncident, retryUnknown,
     openTrip, refreshLocation, refreshStatus, refreshIncident, dispose,
     subscribe(listener) {
       if (disposed || typeof listener !== 'function' || listeners.size >= 16) throw new TypeError('Invalid or excessive view subscription');

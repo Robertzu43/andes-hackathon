@@ -507,18 +507,38 @@ test('item 1: an unscoped flush (online event before any scoped flush) uploads n
 test("item 1: one owner's samples are never sent with another identity's token", async () => {
   // user-1 left samples on the device; the session now belongs to user-2.
   const online = new EventTarget();
+  const tokenRequested = Promise.withResolvers();
+  const tokenReady = Promise.withResolvers();
+  let reconnecting = false;
   const { uploader, calls, queue } = await setup({
     fetchHandlers: [{ status: 404, body: { code: 'trip_not_found' } }],
-    uploaderOptions: { onlineTarget: online, getAccessToken: async () => tokenFor('user-2') },
+    uploaderOptions: {
+      onlineTarget: online,
+      getAccessToken: async () => {
+        if (reconnecting) {
+          tokenRequested.resolve();
+          await tokenReady.promise;
+        }
+        return tokenFor('user-2');
+      },
+    },
   });
   await uploader.flush({ userId: 'user-1' });
+  reconnecting = true;
   online.dispatchEvent(new Event('online'));
-  for (let i = 0; i < 5; i += 1) await tick();
+  // Hold reconnect after takeBatch marks the record uploading. Event-loop
+  // ticks cannot settle it; flush() joins the online handler's actual pump.
+  await tokenRequested.promise;
+  const reconnectFlush = uploader.flush();
+  tokenReady.resolve();
+  await reconnectFlush;
   assert.equal(calls.length, 0, "user-1's coordinates never travel with user-2's bearer token");
   assert.equal((await uploader.state()).lastError, 'token-owner-mismatch');
   const counts = await queue.counts();
   assert.equal(counts.pending, 1, "user-1's records are neither sent nor deleted");
   assert.equal(counts.rejectedMissing, 0);
+  assert.equal(counts.uploading, 0, 'the reconnect pump has settled');
+  assert.equal(counts.retained, 1, "user-1's record remains on the device");
 });
 
 test('item 1: an opaque (non-JWT) token is refused rather than trusted', async () => {
@@ -687,4 +707,22 @@ test('should-fix: a captive-portal 200 counts attempts and backs off instead of 
   const counts = await queue.counts();
   assert.equal(counts.failed, 1, 'the attempt budget applies to unverifiable receipts');
   assert.equal((await uploader.state()).unacknowledgedBatches, 0);
+});
+
+// Catch remote cleartext, credential/query leakage, and a local-only integration
+// becoming impossible because production HTTPS policy was applied to loopback.
+test('upload origins permit loopback HTTP and reject credential-bearing or remote cleartext URLs', async () => {
+  for (const baseUrl of ['http://localhost:1234', 'http://127.0.0.1:1234', 'http://[::1]:1234']) {
+    const { uploader, calls } = await setup({ uploaderOptions: { baseUrl } });
+    await uploader.flush({ userId: 'user-1' });
+    assert.equal(calls[0].url, `${baseUrl}/v1/trips/trip-1/locations`);
+    assert.equal(calls[0].init.credentials, 'omit');
+    assert.equal(calls[0].init.cache, 'no-store');
+    assert.equal(calls[0].init.redirect, 'error');
+    assert.equal(calls[0].init.referrerPolicy, 'no-referrer');
+  }
+  for (const baseUrl of ['http://example.invalid', 'https://user:password@example.invalid',
+    'https://example.invalid?token=synthetic', 'https://example.invalid/#synthetic', 'https://[broken']) {
+    await assert.rejects(setup({ uploaderOptions: { baseUrl } }), TypeError);
+  }
 });

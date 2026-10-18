@@ -1,8 +1,8 @@
 export type InteractionMode = 'unknown' | 'moving' | 'stationary' | 'allowed-assistance';
 export type PermissionState = 'unknown' | 'prompt' | 'granted' | 'denied' | 'revoked';
 export type Command = 'arrived' | 'cancel' | 'pause' | 'resume' | 'checkin_ok' | 'rest_report';
-export type WriteSlot = 'truck' | 'draft' | 'confirm' | 'command' | 'sos';
-export type Operation = 'createTruck' | 'createDraft' | 'confirmDraft' | 'command' | 'sos' | 'readTrip' | 'readSnapshot' | 'readIncident' | 'readStatus';
+export type WriteSlot = 'truck' | 'draft' | 'confirm' | 'command' | 'sos' | 'resolve';
+export type Operation = 'createTruck' | 'createDraft' | 'confirmDraft' | 'command' | 'sos' | 'resolveIncident' | 'readTrip' | 'readSnapshot' | 'readIncident' | 'readStatus';
 export interface DraftFields {
   truckId?: string; origin?: string; destination?: string;
   country?: string; locale?: string; timeZone?: string; expectedArrivalAt?: string;
@@ -70,6 +70,7 @@ export interface DriverJourney {
   confirmTrip(options?: { confirmed?: boolean }): Promise<Outcome>;
   sendCommand(command: Command, options?: { newIntent?: boolean }): Promise<Outcome>;
   requestHelp(): Promise<Outcome>;
+  resolveIncident(): Promise<Outcome>;
   retryUnknown(slot: WriteSlot, options?: { confirmed?: boolean }): Promise<Outcome>;
   openTrip(id: string): Promise<Outcome>;
   refreshStatus(): Promise<Outcome>;

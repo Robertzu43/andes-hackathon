@@ -76,7 +76,7 @@ export function correlateResponse(request, data, actorId) {
       INPUT_FIELDS.some(key => data.fields[key] !== body.fields[key]))) return null;
   if (operation === 'confirmDraft' && (data.id !== params.id ||
       INPUT_FIELDS.some(key => data.fields[key] !== body.fields[key]))) return null;
-  if (['command', 'readTrip', 'readIncident'].includes(operation) && data.id !== params.id) return null;
+  if (['command', 'readTrip', 'readIncident', 'resolveIncident'].includes(operation) && data.id !== params.id) return null;
   if (operation === 'command' && data.command !== body.type) return null;
   if (operation === 'readTrip' && data.driver_id !== actorId) return null;
   if (['sos', 'readSnapshot'].includes(operation) && data.tripId !== params.id) return null;
@@ -106,6 +106,8 @@ export function responseData(request, data, actorId) {
     { id: data.id, command: data.command, automaticEscalation: data.automaticEscalation } : null;
   if (operation === 'sos') return uuid(data.id) && data.tripId === params.id && data.status === 'active' && data.groupCapability === 'unavailable' ?
     { id: data.id.toLowerCase(), tripId: data.tripId, status: 'active', groupCapability: 'unavailable' } : null;
+  if (operation === 'resolveIncident') return data.id === params.id && data.status === 'resolved' ?
+    { id: data.id, status: 'resolved' } : null;
   if (operation === 'readTrip') {
     if (data.id !== params.id || data.driver_id !== actorId || !uuid(data.truck_id) ||
         !['active', 'arrived', 'cancelled'].includes(data.status) ||

@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { existsSync } from 'node:fs';
-import { cp, mkdir, mkdtemp } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -92,9 +92,7 @@ test('a private window can register a trip, raise SOS, and read the contact aler
     assert.ok(jobs.rows.some(row => row.role === 'family' && row.channel === 'sms' && row.status === 'unavailable'));
     const checks = await ctx.pool.query(`SELECT count(*)::int AS n FROM trip_events WHERE kind = 'checkin_ok'`);
     assert.equal(checks.rows[0].n, 1);
-    const artifacts = '/opt/cursor/artifacts/screenshots';
-    await mkdir(artifacts, { recursive: true });
-    await cp(join(shots, 'captures'), artifacts, { recursive: true });
+    console.log(`Phone journey captures: ${join(shots, 'captures')}`);
   } catch (error) {
     console.error(error);
     throw error;

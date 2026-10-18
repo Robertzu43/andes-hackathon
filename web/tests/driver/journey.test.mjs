@@ -55,7 +55,11 @@ function fixture(options = {}) {
     }
     if (operation === 'readTrip') return server.trip ? ok(structuredClone(server.trip)) : rejected(404, 'trip_not_found');
     if (operation === 'readSnapshot') return server.trip?.map_active ? ok(structuredClone(server.snapshot)) : rejected(403, 'map_inactive');
-    if (operation === 'readIncident') return ok({ ...server.incident, createdAt: '2026-10-17T12:05:00Z', resolvedAt: null });
+    if (operation === 'readIncident') return ok({ createdAt: '2026-10-17T12:05:00Z', resolvedAt: null, ...server.incident });
+    if (operation === 'resolveIncident') {
+      Object.assign(server.incident, { status: 'resolved', resolvedAt: '2026-10-17T12:10:00Z' });
+      return ok({ id: params.id, status: 'resolved' });
+    }
     throw new Error('No synthetic response for operation');
   };
   const config = {
@@ -627,4 +631,145 @@ test('R9: a command acknowledgement may report that the sweeper can still escala
   const first = await b.journey.sendCommand('checkin_ok');
   assert.equal(first.kind, 'ok'); assert.equal(first.data.automaticEscalation, true);
   assert.equal((await b.journey.sendCommand('checkin_ok')).kind, 'ok');
+});
+
+// Task 1: catches resolution sharing/overwriting SOS or reconstructing an uncertain intent.
+test('resolve has its own slot and replays the original uncertain intent', async () => {
+  const b = fixture(); await b.active(); await b.journey.requestHelp();
+  const originalSosSlot = b.journey.snapshot().operations.sos;
+  b.handlers.resolveIncident = () => ({ kind: 'unknown' });
+  assert.equal((await b.journey.resolveIncident()).kind, 'unknown');
+  const originalResolveRequest = b.journey.snapshot().operations.resolve.request;
+  assert.equal(originalResolveRequest.operation, 'resolveIncident');
+  assert.deepEqual(originalResolveRequest.params, { id: ids.incident });
+  assert.deepEqual(originalResolveRequest.body, {});
+  assert.notEqual(originalResolveRequest.idempotencyKey, originalSosSlot.request.idempotencyKey);
+  assert.equal((await b.journey.resolveIncident()).code, 'unresolved-submission');
+  assert.equal((await b.journey.retryUnknown('resolve')).code, 'explicit-retry-required');
+  b.server.incident = { id: ids.elsewhere, tripId: ids.draft, status: 'active', groupCapability: 'unavailable' };
+  await b.journey.refreshIncident(ids.elsewhere);
+  b.handlers.resolveIncident = request => ok({ id: request.params.id, status: 'resolved' });
+  assert.equal((await b.journey.retryUnknown('resolve', { confirmed: true })).kind, 'ok');
+  const retryRequest = b.calls.at(-1).request;
+  assert.deepEqual(retryRequest, originalResolveRequest);
+  assert.deepEqual(b.journey.snapshot().operations.sos, originalSosSlot);
+  assert.equal(b.journey.snapshot().incident.data.id, ids.elsewhere);
+  assert.equal(b.journey.snapshot().incident.data.status, 'active');
+});
+
+// RF1: catches absent owner/context gates and late callbacks restoring private facts.
+test('resolution needs an active same-trip incident; late responses lose authority', async () => {
+  const b = fixture();
+  assert.equal((await b.journey.resolveIncident()).kind, 'blocked');
+  await b.active();
+  assert.equal((await b.journey.resolveIncident()).kind, 'blocked');
+  b.server.incident = { id: ids.incident, tripId: ids.draft, status: 'resolved', groupCapability: 'unavailable' };
+  await b.journey.refreshIncident(ids.incident);
+  assert.equal((await b.journey.resolveIncident()).kind, 'blocked');
+  b.server.incident = { ...b.server.incident, tripId: ids.elsewhere, status: 'active' };
+  assert.equal((await b.journey.refreshIncident()).kind, 'unknown');
+  assert.equal((await b.journey.resolveIncident()).kind, 'blocked');
+  const blockedResolveCalls = b.calls.filter(c => c.request.operation === 'resolveIncident').length;
+  assert.equal(blockedResolveCalls, 0);
+  b.server.incident = null; await b.journey.requestHelp(); await b.journey.sendCommand('arrived');
+  const arrivalWithOpenIncident = b.journey.snapshot();
+  assert.equal(arrivalWithOpenIncident.incident.data.status, 'active');
+  const answer = deferred(); b.handlers.resolveIncident = () => answer.promise;
+  const pending = b.journey.resolveIncident(); await settle();
+  b.journey.setSession(ids.other);
+  assert.equal((await pending).kind, 'unknown');
+  assert.equal(b.calls.at(-1).signal.aborted, true);
+  answer.resolve(ok({ id: ids.incident, status: 'resolved' })); await settle();
+  const afterAccountChange = b.journey.snapshot();
+  assert.equal(afterAccountChange.incident.data, null);
+  assert.equal(afterAccountChange.status.data, null);
+  assert.deepEqual(afterAccountChange.operations, {});
+  assert.equal(b.timers.size, 0);
+});
+
+test('resolution coalesces simultaneous presses and only fresh reads establish resolution and its time', async () => {
+  const b = fixture(); await b.active(); await b.journey.requestHelp(); await b.journey.refreshIncident();
+  const answer = deferred(); b.handlers.resolveIncident = () => answer.promise;
+  const first = b.journey.resolveIncident(); const second = b.journey.resolveIncident();
+  assert.equal(first, second); await settle();
+  assert.equal(b.calls.filter(c => c.request.operation === 'resolveIncident').length, 1);
+  answer.resolve(ok({ id: ids.incident, status: 'resolved', resolvedAt: '2026-10-17T12:10:00Z' }));
+  assert.deepEqual(await first, ok({ id: ids.incident, status: 'resolved' }));
+  assert.equal(b.journey.snapshot().incident.data.status, 'active');
+  assert.equal(b.journey.snapshot().incident.data.resolvedAt, null);
+  assert.equal(b.journey.snapshot().incident.invalidated, true);
+  assert.equal(b.journey.snapshot().status.invalidated, true);
+  assert.equal(b.journey.snapshot().operations.resolve.sourceTime, null);
+  b.server.incident = { ...b.server.incident, status: 'resolved', resolvedAt: '2026-10-17T12:10:00Z' };
+  await b.journey.refreshIncident();
+  assert.equal(b.journey.snapshot().incident.data.status, 'resolved');
+  assert.equal(b.journey.snapshot().incident.data.resolvedAt, '2026-10-17T12:10:00Z');
+  assert.equal(b.journey.snapshot().incident.invalidated, false);
+});
+
+test('wrong or malformed resolution acknowledgements stay unknown and a later incident gets a new key', async () => {
+  for (const data of [{ id: ids.other, status: 'resolved' }, { id: ids.incident, status: 'active' }, { id: ids.incident }]) {
+    const b = fixture(); await b.active(); await b.journey.requestHelp();
+    b.handlers.resolveIncident = () => ok(data);
+    assert.equal((await b.journey.resolveIncident()).kind, 'unknown');
+    assert.equal(b.journey.snapshot().operations.resolve.state, 'unknown');
+    assert.equal(b.journey.snapshot().incident.data.status, 'active');
+    assert.equal(b.journey.snapshot().incident.invalidated, false);
+  }
+  const b = fixture(); await b.active(); await b.journey.requestHelp(); await b.journey.resolveIncident();
+  const originalKey = b.journey.snapshot().operations.resolve.request.idempotencyKey;
+  b.server.incident = { id: ids.elsewhere, tripId: ids.draft, status: 'active', groupCapability: 'unavailable' };
+  await b.journey.refreshIncident(ids.elsewhere);
+  assert.equal((await b.journey.resolveIncident()).kind, 'ok');
+  assert.equal(b.calls.at(-1).request.params.id, ids.elsewhere);
+  assert.notEqual(b.calls.at(-1).request.idempotencyKey, originalKey);
+});
+
+test('SOS still dispatches in moving and unknown modes while resolution requires explicit interaction', async () => {
+  const b = fixture(); await b.active();
+  for (const mode of ['moving', 'unknown']) {
+    b.journey.setInteractionMode(mode);
+    assert.equal((await b.journey.requestHelp()).kind, 'ok');
+    assert.equal((await b.journey.resolveIncident()).code, 'interaction-not-allowed');
+  }
+  assert.equal(b.calls.filter(c => c.request.operation === 'sos').length, 2);
+  assert.equal(b.calls.filter(c => c.request.operation === 'resolveIncident').length, 0);
+  b.journey.setInteractionMode('allowed-assistance'); b.handlers.resolveIncident = () => ({ kind: 'unknown' });
+  await b.journey.resolveIncident();
+  b.journey.setInteractionMode('moving');
+  assert.equal((await b.journey.retryUnknown('resolve', { confirmed: true })).code, 'interaction-not-allowed');
+  assert.equal((await b.journey.requestHelp()).kind, 'ok');
+  assert.equal(b.journey.snapshot().operations.resolve.state, 'unknown');
+});
+
+test('resolution timeout retires late success and retry rejection cannot erase the earlier unknown', async () => {
+  const b = fixture(); await b.active(); await b.journey.requestHelp();
+  const answer = deferred(); b.handlers.resolveIncident = () => answer.promise;
+  const pending = b.journey.resolveIncident(); await settle(); b.tick();
+  assert.equal((await pending).code, 'submission-timeout-unknown');
+  answer.resolve(ok({ id: ids.incident, status: 'resolved' })); await settle();
+  assert.equal(b.journey.snapshot().operations.resolve.state, 'unknown');
+  assert.equal(b.journey.snapshot().incident.invalidated, false);
+  const original = b.journey.snapshot().operations.resolve.request;
+  for (const result of [{ kind: 'not_sent', code: 'no_session' }, rejected(403, 'forbidden'), rejected(409, 'incident_resolved')]) {
+    b.handlers.resolveIncident = () => result;
+    assert.equal((await b.journey.retryUnknown('resolve', { confirmed: true })).code, 'prior-submission-unresolved');
+    assert.deepEqual(b.calls.at(-1).request, original);
+  }
+});
+
+test('reads started before a resolution acknowledgement cannot clear its invalidation', async () => {
+  const b = fixture(); await b.active(); await b.journey.requestHelp();
+  const oldIncident = deferred(); const oldStatus = deferred();
+  b.handlers.readIncident = () => oldIncident.promise; b.handlers.readStatus = () => oldStatus.promise;
+  const incidentRead = b.journey.refreshIncident(); const statusRead = b.journey.refreshStatus(); await settle();
+  assert.equal((await b.journey.resolveIncident()).kind, 'ok');
+  oldIncident.resolve(ok({ id: ids.incident, tripId: ids.draft, status: 'active', createdAt: '2026-10-17T12:00:00Z',
+    resolvedAt: null, groupCapability: 'unavailable' }));
+  oldStatus.resolve(ok({ trip: { status: 'active', paused: false, expectedArrivalAt: null }, check: null,
+    incident: { id: ids.incident, trigger: 'sos', checkReason: null, status: 'active', label: null, createdAt: '2026-10-17T12:00:00Z' }, deliveries: [] }));
+  assert.equal((await incidentRead).kind, 'unknown'); assert.equal((await statusRead).kind, 'unknown');
+  await settle();
+  assert.equal(b.journey.snapshot().incident.invalidated, true);
+  assert.equal(b.journey.snapshot().status.invalidated, true);
 });

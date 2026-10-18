@@ -35,7 +35,8 @@ test('published shared SDK decoder and transport retain real SOS/OK facts across
     if (path.endsWith('/sos') && holdSos) { sosCommitted.resolve(); await holdSos.promise; }
     return new Response(reply.body, { status: reply.statusCode, headers: { 'Content-Type': 'application/json' } });
   } });
-  const journey = createDriverJourney({ transport: createDriverTransport(api), keyFactory: randomUUID,
+  const transport = createDriverTransport(api);
+  const journey = createDriverJourney({ transport, keyFactory: randomUUID,
     decodeResponse: (request, data) => { decoded += 1; return decodeDriverResponse(request, data); } });
   const binding = bindJourneySession(session, api, actor => journey.setSession(actor));
   t.after(() => { binding.dispose(); journey.dispose(); session.clear(); });
@@ -65,15 +66,29 @@ test('published shared SDK decoder and transport retain real SOS/OK facts across
   const incidentId = journey.snapshot().incident.data.id;
   assert.equal((await journey.refreshIncident()).kind, 'ok');
   assert.equal((await f.req('POST', `/v1/incidents/${incidentId}/resolve`, {})).status, 200);
+  // Status selects the newest persisted incident by created_at; avoid a fixture-clock tie.
+  f.advance(1000);
   const again = await journey.requestHelp(); assert.equal(again.kind, 'ok'); assert.notEqual(again.data.id, incidentId);
   assert.equal(counts.get(`POST /v1/trips/${tripId}/sos`), 2);
   assert.equal(decoded >= 10, true, 'Real published shared SDK decoder was used');
   const status = await journey.refreshStatus();
-  assert.equal(status.kind, 'ok');
-  assert.equal(journey.snapshot().status.data.incident.trigger, 'sos');
-  // Same-clock UUIDs do not order incidents. Reload the SOS this call created before arrival.
-  assert.equal((await journey.refreshIncident(again.data.id)).kind, 'ok');
-  assert.equal(journey.snapshot().incident.data.status, 'active');
+  assert.deepEqual(status, { kind: 'ok', data: {
+    trip: { status: 'active', paused: false, expectedArrivalAt: null },
+    check: null,
+    incident: { id: again.data.id, trigger: 'sos', checkReason: null, status: 'active',
+      createdAt: '2026-10-17T12:00:01.000Z', label: null },
+    deliveries: [{ role: 'group', channel: 'group', status: 'unavailable', unavailableReason: 'group_support_unverified' }],
+    location: { freshness: 'unavailable', ageMs: null, capturedAt: null, accuracy: null },
+  } });
+  assert.equal(counts.get(`GET /v1/trips/${tripId}/status`), 1);
+  assert.equal(journey.snapshot().status.state, 'available');
+  assert.deepEqual(journey.snapshot().status.data, status.data);
+  assert.deepEqual(journey.snapshot().incident.data, { ...status.data.incident, tripId });
+  // Unknown descriptors still fail locally in the actual SDK transport, without HTTP.
+  const beforeUnsupported = new Map(counts);
+  assert.deepEqual(await transport({ operation: 'unsupportedOperation', params: { id: tripId } },
+    { signal: new AbortController().signal }), { kind: 'not_sent', code: 'unsupported_operation' });
+  assert.deepEqual(counts, beforeUnsupported);
   journey.setInteractionMode('stationary'); await journey.sendCommand('arrived');
   assert.equal(journey.snapshot().activation, null); assert.equal(journey.snapshot().incident.data.status, 'active');
   assert.equal((await f.ctx.pool.query('SELECT count(*) FROM outbox')).rows[0].count, '0');

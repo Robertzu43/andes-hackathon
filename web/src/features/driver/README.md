@@ -73,7 +73,7 @@ No local cadence, advancing freshness, location-based eligibility, delivery,
 wellbeing or help-arrival claim is inferred. PR53's projector is retired from
 production integration: the optional injected projection seam is retained only
 for compatibility; leave it unbound. Notifications share one detached immutable
-snapshot across at most16 listeners. At most5 write and4 read slots exist; no
+snapshot across at most16 listeners. At most6 write and4 read slots exist; no
 history, polling, automatic resend or unbounded buffer is introduced.
 
 ## Reproduction and evidence
@@ -130,3 +130,40 @@ unchanged. Current45 native checks, strict compilation,11 unchanged reviewer
 controls,6 base-backend journeys and1 published-status-backend journey pass.
 The exact current SDK helper/binding requires its owner's independent source
 pin before claiming the complete production composition.
+
+## SDK status and owner incident resolution (Plan B Task 1)
+
+`createDriverTransport` binds `readStatus` to `ApiClient.getTripStatus` and
+`resolveIncident` to `ApiClient.resolveIncident`; `decodeDriverResponse` consumes
+the existing shared `tripStatus` and `resolution` decoders. The canonical
+`readStatus` binding and command `automaticEscalation: boolean` contract remain
+intact.
+
+The explicit owner action `resolveIncident()` requires an authenticated session,
+ordinary stationary/allowed-assistance interaction and an active incident for
+this bound trip. It remains available after arrival: arrival never resolves an
+incident. SOS still bypasses the ordinary interaction gate through `requestHelp()`.
+
+Resolution owns the sixth write slot, `resolve`, independently of commands and
+SOS. Simultaneous identical calls share one wait. An unknown submission blocks
+a new intent; `retryUnknown('resolve',{confirmed:true})` replays the original
+incident ID, empty body and key even if newer incident facts have arrived.
+A later incident gets a distinct key. Retry refusals cannot disprove an earlier
+ambiguous commit. Session changes, disposal and fired timeouts retire late waits.
+
+Only a matching incident acknowledgement is accepted. It invalidates the incident
+and status facts and retires their older in-flight reads; it does not mark cached
+incident data resolved or invent `resolvedAt`. A subsequent explicit read supplies
+current incident state, and `refreshIncident()` supplies the server's resolution
+time. There are still only four read slots and no polling or automatic writes.
+
+Task 1 focused synthetic coverage:
+
+```sh
+source /Users/sebasbimbi/.nvm/nvm.sh && nvm use 24 && node --test web/tests/driver/journey.test.mjs web/tests/phone/driver-transport.test.mjs
+source /Users/sebasbimbi/.nvm/nvm.sh && nvm use 24 && node web/node_modules/typescript/bin/tsc --noEmit --strict --target ES2023 --module NodeNext --moduleResolution NodeNext --lib ES2023,DOM web/tests/driver/contracts.types.ts
+```
+
+Run with Node24–26. These checks exercise the real SDK through injected synthetic
+fetch responses; they provide no provider, physical-device or independent review
+evidence.

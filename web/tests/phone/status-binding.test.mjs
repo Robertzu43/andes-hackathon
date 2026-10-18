@@ -27,3 +27,17 @@ test('a check-in command may say the sweeper can still escalate', () => {
   assert.equal(decoded.automaticEscalation, true);
   assert.equal(decoded.command, 'checkin_ok');
 });
+
+// Prototype entries must never bypass SDK wire decoding.
+for (const operation of ['constructor', 'toString', 'unsupportedOperation']) {
+  test(`${operation} is unsupported by the decoder and never dispatches HTTP`, async () => {
+    assert.throws(() => decodeDriverResponse({ operation }, { undecoded: true }),
+      error => error.kind === 'unsupported' && error.code === 'unsupported_operation'
+        && error.outcome === 'not_applicable');
+    const transport = createDriverTransport(new Proxy({}, {
+      get() { assert.fail('unsupported operation reached the SDK'); },
+    }));
+    assert.deepEqual(await transport({ operation, params: { id } }, { signal: new AbortController().signal }),
+      { kind: 'not_sent', code: 'unsupported_operation' });
+  });
+}
