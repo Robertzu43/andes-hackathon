@@ -22,7 +22,7 @@ function sourceGuard(root, sha) {
   assert.equal(others.status, 0); assert.equal(others.stdout.trim(), '', 'Ignored runtime extras also invalidate source');
 }
 let runtime;
-const summary = {candidate, negativeBaseline: before, sourceVerified: false, wholeAppAccepted: false, runs: []};
+const summary = {candidate, negativeBaseline: before, disposition: 'fix', sourceVerified: false, wholeAppAccepted: false, runs: []};
 try {
   runtime = await disposableDatabase();
   const env = testEnvironment({TEST_DATABASE_URL: runtime.url});
@@ -36,7 +36,8 @@ try {
     const {mkdir} = await import('node:fs/promises');
     await mkdir(join(root, 'tests/app-integration'), {recursive: true});
     await mkdir(join(root, 'scripts/app-integration'), {recursive: true});
-    for (const path of ['tests/app-integration/pr83-runtime-review.mjs', 'scripts/app-integration/pr83-review-worker.mjs']) {
+    for (const path of ['tests/app-integration/pr83-runtime-review.mjs', 'scripts/app-integration/pr83-review-worker.mjs',
+      'tests/app-integration/pr83-runtime-findings.mjs', 'tests/app-integration/pr83-required-gates.mjs']) {
       await copyFile(join(repo, path), join(root, path));
     }
     await writeFile(join(root, 'tests/hardening.test.mjs'), blob(candidate, 'tests/hardening.test.mjs'));
@@ -45,6 +46,9 @@ try {
       ['build', ['node_modules/typescript/bin/tsc'], 0],
       ['author-hardening', ['--test', 'tests/hardening.test.mjs'], name === 'candidate' ? 0 : 1],
       ['independent-runtime', ['--test', 'tests/app-integration/pr83-runtime-review.mjs'], name === 'candidate' ? 0 : 1]];
+    if (name === 'candidate') checks.push(
+      ['runtime-residuals', ['--test', 'tests/app-integration/pr83-runtime-findings.mjs'], 1],
+      ['required-merge-gates', ['--test', 'tests/app-integration/pr83-required-gates.mjs'], 1]);
     for (const [check, args, expected] of checks) {
       const run = spawnSync(process.execPath, args, {cwd: root, env, encoding: 'utf8', timeout: 120000, maxBuffer: 2 * 1024 * 1024});
       await writeFile(join(proof, `${name}-${check}.log`), run.stdout + run.stderr, {mode: 0o600});
