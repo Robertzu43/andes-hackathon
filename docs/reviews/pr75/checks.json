@@ -60,5 +60,11 @@
       "checked": "truck transport mode documented; no country/coverage/provider selection accepted"
     }
   ],
-  "scope": "AI document review only; no runtime/policy/provider/device acceptance"
+  "scope": "AI document review only; no runtime/policy/provider/device acceptance",
+  "formalReview": {
+    "id": 5560737625,
+    "url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/75#pullrequestreview-5560737625",
+    "state": "COMMENTED",
+    "commit": "010181997a659351f577d1480d34dbb55694615d"
+  }
 }

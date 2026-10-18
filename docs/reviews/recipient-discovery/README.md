@@ -22,6 +22,7 @@ completed product journey.
 | Integration PR68 | 938a8dfcd5d35b39ae91171dd7fe7d538c2eb2bf | Integrates owner-scoped catalog reads, not recipient discovery |
 | Owner reads PR65 | 748d30c6e6c595fd1a2c2c648a045750de3dd9c8 | Profile, trucks, contacts, trips, bootstrap; contacts/trips filter driver_id=actor |
 | Owner reads PR65 follow-up | 3ea6e1b06e6dc3d3d01360f28ae9c61751657830 | Adds real server readAt to all five owner reads; recipient lists still absent |
+| Owner reads PR65 consistency follow-up | de9e455b6f7631aa80addfa19b1f38def68bb523 | All five reads use readTransaction/REPEATABLE READ READ ONLY; readAt still sampled before pool acquisition |
 
 PR74's issue discussion, reviews and inline comments were fetched with complete
 pagination: all empty at intake. These are unmerged source candidates, not a
@@ -57,6 +58,13 @@ still performs sequential statements in a read-committed transaction, not one
 repeatable-read snapshot. Preserve this documented timing/isolation limit when
 binding current owner catalogs; do not manufacture a new timestamp in the client.
 
+The further PR65/de9e455 source delta was then inspected: src/db.ts adds
+readTransaction with BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY, and all five
+owner routes call it. This establishes that source-level transaction change,
+not Q59 execution evidence or original-reviewer acceptance. readAt is still
+sampled in the handler before pool acquisition. Q41 was told to keep that older
+sampling point distinct from44's frozen inside-acquired-transaction choice.
+
 ## Minimal capabilities and owner-frozen route partition
 
 Q44 explicitly froze **GET /v1/contact/invitations** and
@@ -81,7 +89,9 @@ Q44 froze shared-trip ordering: authorized active-incident priority, then
 trip.created_at DESC, trip ID DESC and grant ID ASC. A hidden incident must never
 alter map-only ordering or hasMore. The new reads and planned PR65 consistency
 repair use read-only REPEATABLE READ, with ctx.clock sampled inside the acquired
-transaction; this is distinct from the existing3ea6e1b read-committed implementation.
+transaction. PR65/de9e455 now implements the RR helper for owner reads but retains
+the earlier handler-entry clock; recipient implementation and the agreed clock
+point still require their own code/review evidence.
 
 The two reads should carry a server-owned readAt for their own query result.
 Q44's frozen sampling point is inside the acquired transaction; older PR65/3ea6e1b

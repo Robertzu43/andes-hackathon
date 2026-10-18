@@ -236,6 +236,27 @@
         }
       ],
       "delta": "All five owner reads now have server route-entry readAt; read-committed bootstrap explicitly not atomic; no recipient discovery"
+    },
+    {
+      "pr": 65,
+      "sha": "de9e455b6f7631aa80addfa19b1f38def68bb523",
+      "tree": "28f423b9ef5392e4883bfd3b0324d081d098263b",
+      "role": "source-only consistency follow-up; original reviewer confirmation separate",
+      "files": [
+        {
+          "path": "src/db.ts",
+          "blob": "7f832e82230e57ba14737a4e6b1b0f63528a33e5"
+        },
+        {
+          "path": "src/client-read/routes.ts",
+          "blob": "5281286f959934d8df4e88826a274589469aa67b"
+        },
+        {
+          "path": "docs/contracts/client-read.md",
+          "blob": "765ddc05b186ca5b6a6deb1e6c43c3aaf54cfd82"
+        }
+      ],
+      "delta": "All five owner reads use REPEATABLE READ READ ONLY helper; readAt still before pool acquisition; no recipient implementation accepted"
     }
   ],
   "pr74Feedback": {
@@ -258,5 +279,5 @@
   },
   "ownership": "44 freezes interface;41 owner reads;45 typed adapter;51 contact UI;Robert status/sharing",
   "implementation": "none",
-  "refreshedAt": "2026-10-18T00:00:03.591Z"
+  "refreshedAt": "2026-10-18T00:09:30.052Z"
 }
