@@ -1759,8 +1759,8 @@ Destination SHA-256 hashes remain as delivery evidence. Nothing logs a number.
 | `DEMO_ALLOWED_COUNTRIES` | `PE` | Comma list of countries whose numbers may receive a code |
 | `DEMO_OTP_PER_NUMBER_HOURLY` | 3 | Codes per number per rolling hour |
 | `DEMO_OTP_PER_IP_HOURLY` | 5 | Codes per client IP per rolling hour |
-| `DEMO_SMS_DAILY_CAP` | required with live sends | Code SMS per rolling 24 h. Value: the spec SMS caps table (DECISION PENDING) |
-| `DEMO_ALERTS_PER_NUMBER_DAILY` | required with live sends | Alert attempts per destination per rolling 24 h. Same table |
+| `DEMO_SMS_DAILY_CAP` | required with live sends | 8 code SMS per rolling 24 h. Decided by Robert 2026-10-18 |
+| `DEMO_ALERTS_PER_NUMBER_DAILY` | required with live sends | 6 alert attempts per destination per rolling 24 h. Same decision |
 | `DEMO_PHONE_PEPPER` | required with live sends | HMAC key, 32 or more random characters, from the secret manager |
 
 ### Limits
@@ -1819,7 +1819,7 @@ Replace lines 42-46 (the `DEMO_LIVE_PHONE` block) with:
 # DEMO_OTP_PER_NUMBER_HOURLY=3
 # DEMO_OTP_PER_IP_HOURLY=5
 # Required with DEMO_MODE=true and ZAVU_LIVE_SEND=true (with demoLimits in ZAVU_QUALIFICATION_JSON, each at least 6).
-# SMS caps: the spec table, DECISION PENDING (Robert). Recommended default below.
+# Decided by Robert 2026-10-18.
 # DEMO_SMS_DAILY_CAP=8
 # DEMO_ALERTS_PER_NUMBER_DAILY=6
 # DEMO_PHONE_PEPPER= (32+ random characters from your secret manager)

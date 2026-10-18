@@ -248,12 +248,13 @@ En la URL de los jueces (AWS), los envíos reales quedan **activados con tope**.
 
 ### Topes de SMS
 
-**DECISION PENDING (Robert).** Una sola tabla. `scripts/demo-local.sh` y los límites de la calificación (`dailyLimit`, `channelDailyLimit`) copian esta fila.
+**Decided by Robert 2026-10-18.** Una sola tabla. `scripts/demo-local.sh` y la calificación usan estos números: 8 códigos/día y 6 alertas por número/día (`dailyLimit` 8, `channelDailyLimit` 6).
 
-| Tope | Default recomendado |
+| Tope | Valor |
 |---|---|
 | `DEMO_SMS_DAILY_CAP` | 8 códigos/día |
-| `DEMO_ALERTS_PER_NUMBER_DAILY`, `dailyLimit` y `channelDailyLimit` | 6 alertas por número/día |
+| `DEMO_ALERTS_PER_NUMBER_DAILY` | 6 alertas por número/día |
+| Calificación `dailyLimit` / `channelDailyLimit` | 8 / 6 |
 | Techo de Zavu (plan gratis, no verificado) | 25 SMS/día |
 
 Un ensayo manda dos olas a la familia, así que `demoLimits.perIncident` y `perSession` siguen en al menos 6.

@@ -27,10 +27,10 @@
 **GPS packet for Plan B.** `createTripPhoneObservations` (`src/phone-observations/trip-sharing.mjs`) defaults `reviewedContext` to null. `adapter.mjs` `allowed()` stays `unqualified` unless it gets an `andes.phone-observations.qualification/1` packet: `kind: physical-device-review`, `disposition: qualified`, evidence and context refs, the matching budget revision, and `streams.geolocation: true`. Plan C writes that packet from the physical-phone review and hands it to Plan B. GPS stays off until the packet exists; until then the location rows record «sin datos». The CI browser test is not that packet.
 
 **Robert provides or approves (record each answer and its time in chat):**
-1. His AWS profile and account. Both are already in `.env`: `AWS_PROFILE=default` and `ANDES_AWS_ACCOUNT=645868669589`. **DECISION PENDING (Robert): keep or remove account ID.**
+1. His AWS profile and account. Both are already in `.env`: `AWS_PROFILE=default` and `ANDES_AWS_ACCOUNT=645868669589`. **Decided by Robert 2026-10-18:** keep the account ID.
 2. Voice purchase is the appendix. Nothing here waits on it.
 3. Go-ahead for each AWS step marked `$` (Task 9).
-4. SMS caps: the single table in the spec («Topes de SMS»), **DECISION PENDING (Robert)**. `scripts/demo-local.sh` and the qualification `dailyLimit` / `channelDailyLimit` copy that table. Recommended default: `DEMO_SMS_DAILY_CAP=8` codes/day and 6 alerts per number/day, under Zavu's 25 SMS/day free plan.
+4. SMS caps: the single table in the spec («Topes de SMS»). **Decided by Robert 2026-10-18:** `DEMO_SMS_DAILY_CAP=8` codes/day and 6 alerts per number/day. `demo-local.sh` defaults and qualification `dailyLimit` / `channelDailyLimit` are 8/6, under Zavu's 25 SMS/day free plan.
 5. Two phones. The **contact** phone must have a number whose country is in `DEMO_ALLOWED_COUNTRIES` and that is **not** +1. US and Canadian numbers need 10DLC to receive SMS (`403 ten_dlc_required`).
 6. The person holding the contact phone knows it is a test and **will not call 105/190**.
 
@@ -126,7 +126,7 @@ fi
 grep -q '^AWS_REGION=' "$MAIN/.env" || echo 'AWS_REGION=us-east-1' >> "$MAIN/.env"
 ```
 
-Expected: `profile default is account 645868669589`. **DECISION PENDING (Robert): keep or remove account ID.** The `else` branch runs only if the values were missing. The account ID is Robert's explicit opt-in, so it is typed in, never derived from the profile. If the session expired, run `aws login` or `aws sso login` first.
+Expected: `profile default is account 645868669589`. **Decided by Robert 2026-10-18:** keep the account ID. The `else` branch runs only if the values were missing. The account ID is Robert's explicit opt-in, so it is typed in, never derived from the profile. If the session expired, run `aws login` or `aws sso login` first.
 
 ---
 
@@ -146,7 +146,7 @@ In the dashboard, record for the evidence file:
 
 Then work out how many SMS the $2 buys. At `402 insufficient_balance`, `zavu.ts:86` treats the reply as retryable: alerts retry three times and then end unsent.
 
-**Recommend that Robert runs «Verify»** (identity verification) in the dashboard. It raises the ceilings and does not cost money. If he does, record the new ceilings. Caps change only when he edits the spec SMS table.
+**Recommend that Robert runs «Verify»** (identity verification) in the dashboard. It raises the ceilings and does not cost money. If he does, record the new ceilings. The caps stay 8 codes/day and 6 alerts per number/day.
 
 The 25 a day are shared by both stages and every judge, while the app's caps apply per database. A full stage 1 run uses 3 SMS (1 code and 2 alerts) and a short stage 2 run uses 2 (1 code and 1 alert). That leaves about 20 for judges on the same UTC day. Zavu's `429 daily_limit_exceeded` is the backstop.
 
@@ -186,7 +186,7 @@ Notes on the values:
 - `live` is not in the file: `loadQualification` takes it from `ZAVU_LIVE_SEND` (`src/notifications/zavu.ts:48`).
 - `smsMode: "oneway"` is Plan A's option. It sends SMS as `sms_oneway`, which the sender already had before the number.
 - There is no `allowedDestinations`, because Plan A drops it in `DEMO_MODE`.
-- `demoLimits` 8/8 stays above the spec minimum of 6. SMS caps and `dailyLimit` / `channelDailyLimit` copy the spec table (DECISION PENDING). Recommended: 6, not 100/60.
+- `demoLimits` 8/8 stays above the spec minimum of 6. Qualification `dailyLimit` / `channelDailyLimit` are 8/6. **Decided by Robert 2026-10-18.**
 - The alert body is Spanish only (`src/notifications/wording.ts:15`). The `pt-BR` SMS prefix says so. No voice entries until the appendix.
 
 - [ ] **Step 1: Write the file** (SMS-only)
@@ -199,7 +199,7 @@ cat > "$MAIN/.env.qualification.json" <<JSON
   "senderId": "$ZAVU_SENDER_ID",
   "evidence": "Zavu project $ZAVU_PROJECT_ID, sender $ZAVU_SENDER_ID (Tándem Demo). 2026-10-18: GET /v1/me isTestMode=false; GET /v1/senders/$ZAVU_SENDER_ID channels include sms_oneway. SMS-only until the voice appendix.",
   "smsMode": "oneway",
-  "dailyLimit": 6,
+  "dailyLimit": 8,
   "channelDailyLimit": 6,
   "minuteLimit": 30,
   "emergencyReserve": 5,
@@ -216,7 +216,7 @@ cat > "$MAIN/.env.qualification.json" <<JSON
 JSON
 ```
 
-`dailyLimit` and `channelDailyLimit` copy the spec SMS caps table (recommended 6). `minuteLimit` 30 and `emergencyReserve` 5 are unchanged.
+`dailyLimit` 8 and `channelDailyLimit` 6 are the decided caps. `minuteLimit` 30 and `emergencyReserve` 5 are unchanged.
 
 - [ ] **Step 2: Validate it against the real loader**
 
@@ -276,7 +276,7 @@ ZAVU_QUALIFICATION_JSON=$(cat "$QUALIFICATION_FILE")
 export SQS_EMERGENCY_URL SQS_ORDINARY_URL ZAVU_QUALIFICATION_JSON
 export PGHOST=127.0.0.1 PGPORT=5432 PGDATABASE=andes PGUSER=andes_app PGPASSWORD="$LOCAL_APP_PASSWORD"
 export HOST=127.0.0.1 PORT=3000 TRUST_PROXY_HOPS=1 DEMO_MODE=true ZAVU_LIVE_SEND=${ZAVU_LIVE_SEND:-true}
-# Same demo values as infra/demo/deploy.sh `service` (spec §5). SMS caps copy the spec table (DECISION PENDING). Recommended: 8 codes/day, 6 alerts/number/day.
+# Same demo values as infra/demo/deploy.sh `service` (spec §5). Decided by Robert 2026-10-18: 8 codes/day, 6 alerts/number/day.
 export DEMO_ALLOWED_COUNTRIES=${DEMO_ALLOWED_COUNTRIES:-PE,BR,CL,CO,MX,AR} DEMO_OTP_PER_NUMBER_HOURLY=${DEMO_OTP_PER_NUMBER_HOURLY:-3}
 export DEMO_OTP_PER_IP_HOURLY=${DEMO_OTP_PER_IP_HOURLY:-5} DEMO_SMS_DAILY_CAP=${DEMO_SMS_DAILY_CAP:-8} DEMO_ALERTS_PER_NUMBER_DAILY=${DEMO_ALERTS_PER_NUMBER_DAILY:-6}
 export SILENCE_MS=120000 ASK_GRACE_MS=60000 ARRIVAL_GRACE_MS=120000 CHECK_SWEEP_MS=5000
@@ -737,7 +737,7 @@ Reglas: aquí no se anotan números de teléfono, códigos, tokens, el link del 
 | Backend | laptop: API y 3 workers, Postgres 18 en Docker, SQS real | ECS Express: 1 tarea, RDS `db.t4g.micro`, SQS |
 | `ZAVU_LIVE_SEND` | `true` | `true` |
 | Canales calificados | PE · `es` y `pt-BR` · SMS (one-way). Llamada: «No disponible» | igual |
-| Topes | tabla de SMS de la spec (DECISION PENDING). Recomendado: 8 códigos/día, 6 alertas/número/día | igual |
+| Topes | Decided by Robert 2026-10-18: 8 códigos/día, 6 alertas/número/día. Calificación 8/6 | igual |
 | Plan y saldo de Zavu antes / después (USD) | | |
 | Verificación de URL de mapa (`POST /v1/urls`) | | — |
 
@@ -974,7 +974,7 @@ Expected: `locked`.
 ZAVU_LIVE_SEND=true infra/demo/deploy.sh service
 ```
 
-Expected: `arn:aws:ecs:us-east-1:<account>:service/andes-demo/andes-demo` or similar. Pass `DEMO_SMS_DAILY_CAP` and `DEMO_ALERTS_PER_NUMBER_DAILY` on the same line only if Robert changed the spec SMS caps table.
+Expected: `arn:aws:ecs:us-east-1:<account>:service/andes-demo/andes-demo` or similar. Defaults are `DEMO_SMS_DAILY_CAP=8` and `DEMO_ALERTS_PER_NUMBER_DAILY=6`.
 
 - [ ] **Step 11: Get the URL and wait for health**
 
