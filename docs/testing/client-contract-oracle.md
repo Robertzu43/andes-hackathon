@@ -547,6 +547,55 @@ the original seven probes and ten scenario assertions remain unchanged. These
 failures prevent queue acceptance; product UI, actual backend integration,
 physical/provider behavior and full app acceptance remain separate.
 
+### Corrected freeze at 9bc7ff4
+
+Scoped independent disposition: **FIX** at
+`9bc7ff4864a09e84854ed3b3e9c06b432ebfc0c2`. The final pre-fetch retirement gate,
+durable original intent and held-success signout path are repaired. Fresh
+Node26.3.0 results: **53 author tests, all 7 unchanged race/protocol checks, all
+5 unchanged repair checks and all 10 original oracle scenarios pass**. The three
+original oracle files retain their SHA-256 hashes recorded in
+`client-contract-reviews/queue-9bc7ff4.probes.json`.
+
+`drivers/queue-9bc7ff4.mjs` only updates the trace binding: an unacknowledged
+`uploading` record is retained work, and the original key/body/owner/trip are read
+from actual reopened `stickyIntents` metadata and compared with the public queue
+accessor. The trace's `sessionId` is explicitly a reviewer scenario label; the
+candidate's authorization scope is owner/trip only. No persisted session field is
+invented, and original scenario assertions are unchanged.
+
+The same two final-record-read races were repeated against native browser
+IndexedDB using the existing unchanged browser fixture: **2 passed**. Both
+transitions finish before the held actual store result is released, and neither
+starts a new synthetic request. The stop case retains both scopes; revocation
+deletes only A and preserves B. Raw records and cleanup receipts are in
+`client-contract-reviews/queue-9bc7ff4-native-retirement.json`. Both owned databases,
+the background tab and loopback fixture service were removed afterward; no
+listener remained on57447. No screenshot or product UI acceptance is claimed.
+
+Two narrow follow-ups to the existing signout/privacy finding still fail:
+
+- **P1, late network rejection restores private location after signout.** Hold
+  the upload fetch, await `pipeline.signOut()`, then reject that fetch with a
+  network error. The unguarded catch calls `noteAmbiguousFailure`, which persists
+  a new `stickyIntents` entry after the wipe. Actual durable metadata again
+  contains the old owner/trip, exact captured coordinates, batch key and queue ID;
+  `unacknowledgedBatches` becomes1 although retained records remain0. Gate failure
+  handling as well as response handling, and prevent retired asynchronous work
+  from restoring metadata.
+- **P2, earlier consent revocation survives signout as plaintext identity.**
+  Enqueue A, await `revokeTrip(A)`, then await `signOut()`. The records are gone,
+  but `wipeUser` does not retire A's old `revokedScopes` entry, leaving its owner
+  and trip identifiers in durable storage. Preserve the required consent barrier
+  while satisfying the documented absence of owner/trip plaintext after signout.
+
+`queue-signout.probes.mjs` independently executes only those two existing privacy
+paths through public exports and the existing clone-isolated stores. Both are
+expected red on this freeze; actual before/after metadata is preserved in the
+combined artifact. These findings do not reopen the repaired pre-fetch gate or
+original intent tests. No author implementation was edited, and no provider,
+backend, device or whole-app qualification is implied.
+
 ## Actual client-to-backend bridge
 
 `api-backend.probes.mjs` connects the frozen client **78efad0** to actual backend

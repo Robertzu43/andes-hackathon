@@ -1,0 +1,217 @@
+{
+  "schema": "andes.reviewer-native-idb-retirement/1",
+  "claimedCandidateSha": "9bc7ff4864a09e84854ed3b3e9c06b432ebfc0c2",
+  "candidateIdentityVerifiedByRunner": false,
+  "wholeAppAccepted": false,
+  "checks": [
+    {
+      "passed": true,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.234 Safari/537.36",
+      "transition": "stop",
+      "requestsBeforeRetirementFinished": 0,
+      "newRequestsAfterRetirement": 0,
+      "scopeRevoked": false,
+      "state": {
+        "nativeIndexedDB": true,
+        "origin": "http://127.0.0.1:57447",
+        "dbName": "q47-review-9bc7ff4-20261017-stop",
+        "pageInstance": "1fd0bea8-db23-4a5b-8cb0-18653fafed2a",
+        "navigationStartedAt": 1792282679104.7,
+        "counts": {
+          "enqueued": 2,
+          "uploaded": 0,
+          "droppedOverflow": 0,
+          "droppedDuplicate": 0,
+          "droppedOutOfBounds": 0,
+          "rejectedValidation": 0,
+          "rejectedBounds": 0,
+          "rejectedMissing": 0,
+          "tripStoppedRejections": 0,
+          "conflictErrors": 0,
+          "receiptMismatches": 0,
+          "wipedByRevocation": 0,
+          "wipedBySignout": 0,
+          "failedRetained": 0,
+          "recoveredAfterInterruption": 0,
+          "pending": 2,
+          "uploading": 0,
+          "failed": 0,
+          "retained": 2
+        },
+        "records": [
+          {
+            "queueId": "q-1",
+            "seq": 1,
+            "state": "pending",
+            "tripId": "00000000-0000-4000-8000-000000000005",
+            "userId": "00000000-0000-4000-8000-000000000001",
+            "sample": {
+              "capturedAt": "2026-10-18T00:13:06.194Z",
+              "latitude": 0,
+              "longitude": 0,
+              "accuracy": 15
+            },
+            "capturedAtMs": 1792282386194,
+            "provenance": {
+              "eventId": "synthetic-browser:A",
+              "sessionId": "synthetic-browser-session",
+              "requestId": "synthetic-browser:A"
+            },
+            "enqueuedAtMs": 1792282686195,
+            "attempts": 0,
+            "lastError": "stopped"
+          },
+          {
+            "queueId": "q-2",
+            "seq": 2,
+            "state": "pending",
+            "tripId": "00000000-0000-4000-8000-000000000006",
+            "userId": "00000000-0000-4000-8000-000000000002",
+            "sample": {
+              "capturedAt": "2026-10-18T00:13:06.194Z",
+              "latitude": 0,
+              "longitude": 0,
+              "accuracy": 15
+            },
+            "capturedAtMs": 1792282386194,
+            "provenance": {
+              "eventId": "synthetic-browser:B",
+              "sessionId": "synthetic-browser-session",
+              "requestId": "synthetic-browser:B"
+            },
+            "enqueuedAtMs": 1792282686195,
+            "attempts": 0,
+            "lastError": null
+          }
+        ],
+        "meta": [
+          {
+            "id": "meta",
+            "seq": 2,
+            "counts": {
+              "enqueued": 2,
+              "uploaded": 0,
+              "droppedOverflow": 0,
+              "droppedDuplicate": 0,
+              "droppedOutOfBounds": 0,
+              "rejectedValidation": 0,
+              "rejectedBounds": 0,
+              "rejectedMissing": 0,
+              "tripStoppedRejections": 0,
+              "conflictErrors": 0,
+              "receiptMismatches": 0,
+              "wipedByRevocation": 0,
+              "wipedBySignout": 0,
+              "failedRetained": 0,
+              "recoveredAfterInterruption": 0
+            },
+            "revokedScopes": [],
+            "stickyIntents": {}
+          }
+        ],
+        "requests": [],
+        "observed": [
+          "two scopes committed to native IndexedDB"
+        ]
+      },
+      "cleanup": {
+        "deletedOwnedDatabase": "q47-review-9bc7ff4-20261017-stop"
+      }
+    },
+    {
+      "passed": true,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.234 Safari/537.36",
+      "transition": "revoke",
+      "requestsBeforeRetirementFinished": 0,
+      "newRequestsAfterRetirement": 0,
+      "scopeRevoked": true,
+      "state": {
+        "nativeIndexedDB": true,
+        "origin": "http://127.0.0.1:57447",
+        "dbName": "q47-review-9bc7ff4-20261017-revoke",
+        "pageInstance": "751a8e74-0710-40bb-b8a3-7d105dedfb17",
+        "navigationStartedAt": 1792282669353.8,
+        "counts": {
+          "enqueued": 2,
+          "uploaded": 0,
+          "droppedOverflow": 0,
+          "droppedDuplicate": 0,
+          "droppedOutOfBounds": 0,
+          "rejectedValidation": 0,
+          "rejectedBounds": 0,
+          "rejectedMissing": 0,
+          "tripStoppedRejections": 0,
+          "conflictErrors": 0,
+          "receiptMismatches": 0,
+          "wipedByRevocation": 1,
+          "wipedBySignout": 0,
+          "failedRetained": 0,
+          "recoveredAfterInterruption": 0,
+          "pending": 1,
+          "uploading": 0,
+          "failed": 0,
+          "retained": 1
+        },
+        "records": [
+          {
+            "queueId": "q-2",
+            "seq": 2,
+            "state": "pending",
+            "tripId": "00000000-0000-4000-8000-000000000006",
+            "userId": "00000000-0000-4000-8000-000000000002",
+            "sample": {
+              "capturedAt": "2026-10-18T00:12:59.052Z",
+              "latitude": 0,
+              "longitude": 0,
+              "accuracy": 15
+            },
+            "capturedAtMs": 1792282379052,
+            "provenance": {
+              "eventId": "synthetic-browser:B",
+              "sessionId": "synthetic-browser-session",
+              "requestId": "synthetic-browser:B"
+            },
+            "enqueuedAtMs": 1792282679055,
+            "attempts": 0,
+            "lastError": null
+          }
+        ],
+        "meta": [
+          {
+            "id": "meta",
+            "seq": 2,
+            "counts": {
+              "enqueued": 2,
+              "uploaded": 0,
+              "droppedOverflow": 0,
+              "droppedDuplicate": 0,
+              "droppedOutOfBounds": 0,
+              "rejectedValidation": 0,
+              "rejectedBounds": 0,
+              "rejectedMissing": 0,
+              "tripStoppedRejections": 0,
+              "conflictErrors": 0,
+              "receiptMismatches": 0,
+              "wipedByRevocation": 1,
+              "wipedBySignout": 0,
+              "failedRetained": 0,
+              "recoveredAfterInterruption": 0
+            },
+            "revokedScopes": [
+              "00000000-0000-4000-8000-000000000001 →00000000-0000-4000-8000-000000000005"
+            ],
+            "stickyIntents": {}
+          }
+        ],
+        "requests": [],
+        "observed": [
+          "two scopes committed to native IndexedDB"
+        ]
+      },
+      "cleanup": {
+        "deletedOwnedDatabase": "q47-review-9bc7ff4-20261017-revoke"
+      }
+    }
+  ],
+  "limitation": "Two existing native IndexedDB final-read retirement cases only; injected synthetic fetch never forwards to an API. No product UI, reload, device or provider acceptance."
+}
