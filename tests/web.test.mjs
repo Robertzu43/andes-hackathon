@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import {mkdtempSync, mkdirSync, rmSync, writeFileSync} from 'node:fs';
+import {existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fixture} from './helpers/runtime.mjs';
@@ -122,10 +122,11 @@ async function listen(t, hook, hops) {
   const port = await freePort();
   const env = {PATH: process.env.PATH, DEMO_MODE: 'true', HOST: '127.0.0.1', PORT: String(port), DATABASE_URL: process.env.TEST_DATABASE_URL};
   if (hops !== undefined) env.TRUST_PROXY_HOPS = hops;
-  const child = spawn(process.execPath, ['--import', hook, fileURLToPath(new URL('../dist/server.js', import.meta.url))], {env});
+  // Own process group: this server must not share signals with the suite or a sibling integration run.
+  const child = spawn(process.execPath, ['--import', hook, fileURLToPath(new URL('../dist/server.js', import.meta.url))], {env, detached: true, stdio: ['ignore', 'ignore', 'pipe']});
   let stderr = '';
   child.stderr.setEncoding('utf8'); child.stderr.on('data', chunk => { stderr += chunk; });
-  t.after(() => { child.kill('SIGTERM'); });
+  t.after(() => { try { process.kill(-child.pid, 'SIGTERM'); } catch { /* already exited */ } });
   const deadline = Date.now() + 15000;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) break;
@@ -140,9 +141,11 @@ async function listen(t, hook, hops) {
 
 test('an unset TRUST_PROXY_HOPS ignores a client-written X-Forwarded-For', async t => {
   const root = fileURLToPath(new URL('../web/dist', import.meta.url));
+  const index = join(root, 'index.html');
+  const previous = existsSync(index) ? readFileSync(index) : null;
   mkdirSync(root, {recursive: true});
-  writeFileSync(join(root, 'index.html'), '<!doctype html><title>SYNTHETIC app</title>');
-  t.after(() => rmSync(root, {recursive: true, force: true}));
+  writeFileSync(index, '<!doctype html><title>SYNTHETIC app</title>');
+  t.after(() => { if (previous === null) rmSync(index, {force: true}); else writeFileSync(index, previous); });
   const hook = proxyProbe(t);
   assert.equal((await listen(t, hook, undefined)).ip, '127.0.0.1', 'a direct client cannot choose request.ip');
   assert.equal((await listen(t, hook, '1')).ip, '198.51.100.7', 'one configured hop still trusts the proxy');
