@@ -1,0 +1,153 @@
+TAP version 13
+# Subtest: Q52 CS01 denied map preserves authorized SOS, recorded acknowledgement and response utility
+not ok 1 - Q52 CS01 denied map preserves authorized SOS, recorded acknowledgement and response utility
+  ---
+  duration_ms: 2.174416
+  type: 'test'
+  location: '/private/tmp/andes-q52-demo-acceptance-akv7gm69/contact-scope-review.test.mjs:16:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - 'active'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'active'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-demo-acceptance-akv7gm69/contact-scope-review.test.mjs:18:63)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: Q52 CS02 denied incident cannot discard separately authorized map
+not ok 2 - Q52 CS02 denied incident cannot discard separately authorized map
+  ---
+  duration_ms: 0.620667
+  type: 'test'
+  location: '/private/tmp/andes-q52-demo-acceptance-akv7gm69/contact-scope-review.test.mjs:21:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + null
+    - {
+    -   ageMs: 300000,
+    -   freshness: 'stale',
+    -   location: {
+    -     accuracy: 5,
+    -     capturedAt: '2026-10-17T12:00:00.000Z',
+    -     latitude: 0,
+    -     longitude: 0,
+    -     receivedAt: '2026-10-17T12:01:00.000Z'
+    -   },
+    -   readAt: '2026-10-17T12:05:00.000Z',
+    -   tripId: '77777777-7777-4777-8777-000000000003'
+    - }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    tripId: '77777777-7777-4777-8777-000000000003'
+    readAt: '2026-10-17T12:05:00.000Z'
+    freshness: 'stale'
+    ageMs: 300000
+    location:
+      capturedAt: '2026-10-17T12:00:00.000Z'
+      receivedAt: '2026-10-17T12:01:00.000Z'
+      latitude: 0
+      longitude: 0
+      accuracy: 5
+  actual: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-demo-acceptance-akv7gm69/contact-scope-review.test.mjs:22:153)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: Q52 CS03 map denial does not cancel a pending acknowledgement that commits
+not ok 3 - Q52 CS03 map denial does not cancel a pending acknowledgement that commits
+  ---
+  duration_ms: 0.206666
+  type: 'test'
+  location: '/private/tmp/andes-q52-demo-acceptance-akv7gm69/contact-scope-review.test.mjs:24:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'superseded'
+    - 'recorded'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'recorded'
+  actual: 'superseded'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-demo-acceptance-akv7gm69/contact-scope-review.test.mjs:27:9)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: Q52 CS04 another revoke press cannot replace an uncertain command; retry retains key
+not ok 4 - Q52 CS04 another revoke press cannot replace an uncertain command; retry retains key
+  ---
+  duration_ms: 0.213666
+  type: 'test'
+  location: '/private/tmp/andes-q52-demo-acceptance-akv7gm69/contact-scope-review.test.mjs:29:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///private/tmp/andes-q52-demo-acceptance-akv7gm69/contact-scope-review.test.mjs:31:43)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: Q52 CS05 refreshing unchanged incident retains this contact acknowledgement
+not ok 5 - Q52 CS05 refreshing unchanged incident retains this contact acknowledgement
+  ---
+  duration_ms: 0.126541
+  type: 'test'
+  location: '/private/tmp/andes-q52-demo-acceptance-akv7gm69/contact-scope-review.test.mjs:33:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/tmp/andes-q52-demo-acceptance-akv7gm69/contact-scope-review.test.mjs:34:123)
+    async Test.run (node:internal/test_runner/test:1313:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+  ...
+# Subtest: Q52 CC01 authentication failure still clears all private state and retry context
+ok 6 - Q52 CC01 authentication failure still clears all private state and retry context
+  ---
+  duration_ms: 0.150084
+  type: 'test'
+  ...
+# Subtest: Q52 CC02 replacement identity discards late acknowledgement and private cached facts
+ok 7 - Q52 CC02 replacement identity discards late acknowledgement and private cached facts
+  ---
+  duration_ms: 0.134042
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 2
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 74.335417

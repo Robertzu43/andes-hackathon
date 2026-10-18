@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: Q52 CS01 denied map preserves authorized SOS, recorded acknowledgement and response utility
+ok 1 - Q52 CS01 denied map preserves authorized SOS, recorded acknowledgement and response utility
+  ---
+  duration_ms: 1.559
+  type: 'test'
+  ...
+# Subtest: Q52 CS02 denied incident cannot discard separately authorized map
+ok 2 - Q52 CS02 denied incident cannot discard separately authorized map
+  ---
+  duration_ms: 0.97875
+  type: 'test'
+  ...
+# Subtest: Q52 CS03 map denial does not cancel a pending acknowledgement that commits
+ok 3 - Q52 CS03 map denial does not cancel a pending acknowledgement that commits
+  ---
+  duration_ms: 0.21325
+  type: 'test'
+  ...
+# Subtest: Q52 CS04 another revoke press cannot replace an uncertain command; retry retains key
+ok 4 - Q52 CS04 another revoke press cannot replace an uncertain command; retry retains key
+  ---
+  duration_ms: 0.374875
+  type: 'test'
+  ...
+# Subtest: Q52 CS05 refreshing unchanged incident retains this contact acknowledgement
+ok 5 - Q52 CS05 refreshing unchanged incident retains this contact acknowledgement
+  ---
+  duration_ms: 0.116708
+  type: 'test'
+  ...
+# Subtest: Q52 CC01 authentication failure still clears all private state and retry context
+ok 6 - Q52 CC01 authentication failure still clears all private state and retry context
+  ---
+  duration_ms: 0.142583
+  type: 'test'
+  ...
+# Subtest: Q52 CC02 replacement identity discards late acknowledgement and private cached facts
+ok 7 - Q52 CC02 replacement identity discards late acknowledgement and private cached facts
+  ---
+  duration_ms: 0.129334
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 73.832958

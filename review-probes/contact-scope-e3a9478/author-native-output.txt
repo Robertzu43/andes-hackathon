@@ -1,0 +1,37 @@
+✔ a contact route needs no invented driver identity and cannot acquire owner resolution (1.945708ms)
+✔ invitation is only pending after an API receipt and sends no participant notification (0.43225ms)
+✔ acceptance narrows scopes and is never an authorization for a protected cached view (0.187834ms)
+✔ wrong identity, self invitation and missing scope cannot issue a command (0.116042ms)
+✔ unverified phone conflict is rejected without manufacturing an acceptance (0.1385ms)
+✔ protected location keeps source, receipt, read instant and old age separately (0.109875ms)
+✔ absent location is explicitly unavailable, malformed and cross-trip snapshots never render (0.245667ms)
+✔ auth/consent denial clears all protected data and preserves error distinctions (0.718958ms)
+✔ role, identity and trip changes discard protected caches and late responses (0.257208ms)
+✔ a slower previous read cannot overwrite the newer protected snapshot (0.105708ms)
+✔ standing and trip revoke conceal data before the write and invalidate previous reads (0.368375ms)
+✔ a denied command invalidates an in-flight protected read before it can reveal data (0.094125ms)
+✔ ambiguous writes never auto-replay; explicit retry reuses the exact key and body (0.168834ms)
+✔ contact acknowledgement and contradictory reported actions never resolve the incident (0.136ms)
+✔ driver-only resolution requires a new read and invalidates pre-resolution protected reads (0.100041ms)
+✔ a late acknowledged write cannot add another identity’s receipt after role switch (0.065583ms)
+✔ uncertain revoke conceals data until explicit same-key retry confirms the receipt (0.092042ms)
+✔ a refused retry cannot erase the original unknown revoke outcome or reopen protected reads (0.316792ms)
+✔ a known first-attempt conflict remains rejected; an unknown action survives a later read denial (0.15325ms)
+✔ malformed command responses remain uncertain and never create reassuring receipts (0.150417ms)
+✔ gatekeeper R1: denied map reads preserve an independently authorized SOS and own receipt (0.107209ms)
+✔ gatekeeper R1b: incident denial preserves the independently authorized map (0.123209ms)
+✔ gatekeeper R2: a map denial does not abort or discard an in-flight committed acknowledgement (0.394542ms)
+✔ gatekeeper R5: refreshing the same incident preserves the contact own recorded receipts (0.1215ms)
+✔ gatekeeper R3: repeated revoke cannot replace an uncertain command or mint another key (0.198542ms)
+✔ gatekeeper R4: duplicate revoke preserves the first in-flight committed result (0.099042ms)
+✔ gatekeeper resolve: re-reading an uncertain resolution cannot replace its original retry key (0.24325ms)
+✔ contact can narrow either requested scope without broadening or accepting nothing (0.698084ms)
+✔ operational receipts never authorize research reuse, restore consent or promise cancellation of in-flight work (0.08925ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 29
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 83.129416

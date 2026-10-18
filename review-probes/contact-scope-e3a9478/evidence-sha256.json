@@ -1,0 +1,8 @@
+{
+  "README.md": "0ab2238906acfde81bf718ad94a242bce2f02fbcdc430801dddade7c92098016",
+  "author-native-output.txt": "cae5f97fdaaf124221e2532ccd9c8d808bc2d1f7e97da74a92df9826a9ac3cb3",
+  "baseline-cf32104.tap": "a10e0b02de2d95b04126ee742126d549dc91475230d5a15e0330a0182a2e35f8",
+  "candidate-e3a9478.tap": "c0273b55fa8b10a452a7626e7664bb1b05c82cc316083dc00da093f5e9b58157",
+  "probes.test.mjs": "e517cac5ad6256bc08ce0cb3e4e1b2757a038d9a85807997d209f8deccd250dc",
+  "source-manifest.json": "b04043d4fd5c8a543a6ea7ab0cf3c2ce78b96c1c57d13006bc9a8069a9f2c204"
+}
