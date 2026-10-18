@@ -46,7 +46,7 @@ async function setup({ fetchImpl = null } = {}) {
     timers: { setTimeout: () => 0, clearTimeout: () => {} },
   });
   const pipeline = createObservationPipeline({ queue, uploader, ownerSubject: 'user-1' });
-  return { queue, uploader, pipeline, calls };
+  return { queue, uploader, pipeline, calls, stores };
 }
 
 test('consented geolocation maps to the wire sample with the SOURCE timestamp preserved', async () => {
@@ -214,4 +214,32 @@ test('signOut wipes every record for the owner, revokes scopes, stops the pump a
   pipeline.sink(geoEvent({ eventId: 'session-2:1:1' }));
   await pipeline.drain();
   assert.equal((await queue.counts()).retained, 0, 'nothing re-enters after sign-out');
+});
+
+test('signOut during an in-flight receipt: no receipt fact, no counts, no owner plaintext in durable meta', async () => {
+  let resolveResponse;
+  let fetchCalled;
+  const called = new Promise((resolve) => { fetchCalled = resolve; });
+  const fetch = async () => {
+    fetchCalled();
+    return new Promise((resolve) => { resolveResponse = resolve; });
+  };
+  const { pipeline, queue, uploader, stores } = await setup({ fetchImpl: fetch });
+  pipeline.sink(geoEvent());
+  await pipeline.drain();
+  const flushing = pipeline.flush();
+  await called; // the POST is on the wire, response pending
+  const wiped = await pipeline.signOut();
+  assert.equal(wiped, 1);
+  resolveResponse({ status: 200, json: async () => ({ id: 'trip-1', received: 1 }) });
+  await flushing;
+  const counts = await queue.counts();
+  assert.equal(counts.uploaded, 0, 'a receipt released after sign-out confirms nothing');
+  assert.equal(counts.retained, 0);
+  assert.equal((await uploader.state()).lastReceipt, null, 'no receipt fact is recreated after sign-out');
+  const persisted = await stores.meta.get('meta');
+  assert.deepEqual(persisted.revokedScopes ?? [], [], 'session revocation is not persisted — no owner/trip plaintext survives sign-out');
+  const reopened = await openObservationQueue({ records: stores.records, meta: stores.meta, clock });
+  assert.equal((await reopened.counts()).retained, 0);
+  assert.equal(reopened.isScopeRevoked({ tripId: 'trip-1', userId: 'user-1' }), false, 'session revocation dies with the page');
 });

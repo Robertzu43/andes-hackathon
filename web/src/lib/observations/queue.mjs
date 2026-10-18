@@ -59,11 +59,17 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
     throw new RangeError('capacity must be a bounded positive integer');
   }
   const stored = await meta.get('meta');
-  const state = stored ?? { id: 'meta', seq: 0, counts: { ...INITIAL_COUNTS }, revokedScopes: [] };
+  const state = stored ?? { id: 'meta', seq: 0, counts: { ...INITIAL_COUNTS }, revokedScopes: [], stickyIntents: {} };
   // Counters added in later revisions default to 0 for existing databases.
   state.counts = { ...INITIAL_COUNTS, ...state.counts };
   state.revokedScopes ??= [];
+  state.stickyIntents ??= {};
+  // Session-only revocations (owner sign-out): same re-entry protection as a
+  // persisted revocation but deliberately NOT written to storage, so sign-out
+  // leaves no owner/trip plaintext behind.
+  const sessionRevoked = new Set();
   const persist = () => meta.put('meta', state);
+  const isRevoked = (scope) => sessionRevoked.has(scopeKey(scope)) || state.revokedScopes.includes(scopeKey(scope));
 
   const interrupted = (await records.getAll()).filter((record) => record.state === 'uploading');
   for (const record of interrupted) {
@@ -89,7 +95,7 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
   // never sent to the server.
   async function enqueue({ sample, provenance = {}, scope }) {
     if (!text(scope?.tripId) || !text(scope?.userId)) return { ok: false, reason: 'bad-scope' };
-    if (state.revokedScopes.includes(scopeKey(scope))) return { ok: false, reason: 'scope-revoked' };
+    if (isRevoked(scope)) return { ok: false, reason: 'scope-revoked' };
     const invalid = validateSample(sample);
     if (invalid) return { ok: false, reason: `bad-sample:${invalid}` };
     const capturedAtMs = Date.parse(sample.capturedAt);
@@ -247,26 +253,52 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
       state.revokedScopes.push(key);
       if (state.revokedScopes.length > QUEUE_LIMITS.revokedScopeRetention) state.revokedScopes.shift();
     }
+    delete state.stickyIntents[key];
     state.counts.wipedByRevocation += scoped.length;
     await persist();
     return scoped.length;
   }
 
   // Owner sign-out: every retained record for the subject is deleted and all
-  // of their scopes are revoked, so nothing uploadable survives the session
-  // and late events cannot re-enter. Distinct from wipeScope (one trip).
+  // of their scopes are revoked for this session, so nothing uploadable
+  // survives and late events cannot re-enter. Unlike wipeScope, the
+  // revocation is session-only: sign-out must not leave the owner's
+  // subject/trip plaintext sitting in durable meta. Distinct from wipeScope
+  // (one trip, persisted, consent state that must survive restart).
   async function wipeUser(userId) {
     if (!text(userId)) return 0;
     const mine = (await allRecords()).filter((r) => r.userId === userId);
     for (const record of mine) await records.delete(record.queueId);
-    for (const record of mine) {
-      const key = scopeKey(record);
-      if (!state.revokedScopes.includes(key)) state.revokedScopes.push(key);
+    for (const key of Object.keys(state.stickyIntents)) {
+      if (state.stickyIntents[key]?.userId === userId) delete state.stickyIntents[key];
     }
-    while (state.revokedScopes.length > QUEUE_LIMITS.revokedScopeRetention) state.revokedScopes.shift();
+    for (const record of mine) sessionRevoked.add(scopeKey(record));
     state.counts.wipedBySignout += mine.length;
     await persist();
     return mine.length;
+  }
+
+  // Durable ambiguous-upload intent. When a batch's outcome is unknown (the
+  // server may already hold it), the exact samples + idempotency key are
+  // persisted per scope, so a page reload / crash cannot lose the original
+  // intent and accidentally regrow or rekey the retry.
+  async function setStickyIntent(scope, intent) {
+    state.stickyIntents[scopeKey(scope)] = {
+      tripId: scope.tripId,
+      userId: scope.userId,
+      samples: intent.samples,
+      key: intent.key,
+      queueIds: intent.queueIds,
+    };
+    await persist();
+  }
+  const stickyIntent = (scope) => state.stickyIntents[scopeKey(scope)] ?? null;
+  const stickyScopes = () => Object.values(state.stickyIntents).map(({ tripId, userId }) => ({ tripId, userId }));
+  async function clearStickyIntent(scope) {
+    const key = scopeKey(scope);
+    if (!(key in state.stickyIntents)) return;
+    delete state.stickyIntents[key];
+    await persist();
   }
 
   async function counts() {
@@ -285,7 +317,7 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
     return {
       ...live,
       unsent: live.pending + live.uploading + live.failed,
-      revoked: state.revokedScopes.includes(scopeKey({ tripId, userId })),
+      revoked: isRevoked({ tripId, userId }),
     };
   }
 
@@ -293,8 +325,9 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
     enqueue, pendingScopes, takeBatch, confirmUploaded, releaseBatch,
     markFailed, failBatchPermanent, wipeScope, wipeUser, counts, scopeCounts,
     getRecords, noteAttempt,
+    setStickyIntent, stickyIntent, stickyScopes, clearStickyIntent,
     noteTripStopped: async (n) => { state.counts.tripStoppedRejections += n; await persist(); },
     noteReceiptMismatch: async (n) => { state.counts.receiptMismatches += n; await persist(); },
-    isScopeRevoked: (scope) => state.revokedScopes.includes(scopeKey(scope)),
+    isScopeRevoked: (scope) => isRevoked(scope),
   };
 }

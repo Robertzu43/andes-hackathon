@@ -80,8 +80,16 @@ frontend foundation exists. Concurrent-tab writers are out of scope here.
   the queue as `failed` for inspection (`failedRetained`). Nothing is silently
   discarded.
 - **Sign-out is deletion**: `wipeUser(userId)` deletes every retained record
-  for the subject, counts `wipedBySignout`, and revokes all of their scopes so
-  nothing of theirs can re-enter. Used by `pipeline.signOut()`.
+  for the subject, counts `wipedBySignout`, and revokes all of their scopes
+  **for the session only** — the revocation is held in memory, never
+  persisted, so sign-out leaves no owner/trip plaintext in durable meta.
+  (Per-trip consent revocation via `wipeScope` IS persisted: it must survive
+  restart to block re-entry.) Used by `pipeline.signOut()`.
+- **Ambiguous intent is durable**: `setStickyIntent(scope, {samples, key,
+  queueIds})` persists an unacknowledged batch's exact content + idempotency
+  key into queue meta; `stickyIntent` / `stickyScopes` / `clearStickyIntent`
+  expose it. A reload cannot lose the original intent, so a retry can never
+  regrow or rekey. Wipes clear the intent with the records.
 
 ## Upload bridge (`upload.mjs`)
 
@@ -105,25 +113,30 @@ Receipt handling — a batch is deleted only when the response **proves** it:
 
 - **2xx is not enough on its own.** The body must decode as JSON, `body.id`
   must equal the target trip id and `body.received` must equal the number of
-  samples sent. Anything else is a `receipt-mismatch`: nothing is deleted,
-  records return to `pending` without burning attempts, `receiptMismatches`
-  is counted, `lastError` is set and the pump halts for operator attention.
-  A blind 200 can never silently delete evidence.
-- **Ambiguous outcomes are sticky.** On a network error or 5xx the server may
-  already hold the batch, so the records stay `uploading` and the bridge
-  remembers the exact `(samples, idempotency key)` pair per scope. The next
-  flush retries that identical payload BEFORE any new batch is taken; newer
-  samples always follow as their own batch with their own key. A retry never
-  regrows, so a re-POST can never produce an `idempotency_conflict` and the
-  server's first-commit-wins rule resolves which copy landed. If the records
-  were wiped while sticky (revocation), the intent is abandoned and never
-  re-POSTed. Sticky retries consume attempts and can exhaust `maxAttempts`
-  into the retained `failed` state like any other failure.
-- **Retirement gate.** The token is resolved before the gate, so a paused
-  `getAccessToken` cannot hide retirement: after the token arrives the bridge
-  re-checks `stopped` and re-reads the batch records. If the uploader was
-  stopped or the scope wiped mid-flight, no request is ever sent and the
-  records return to `pending` (or are already gone).
+  samples sent. Anything else is a `receipt-mismatch` — and it is treated as
+  AMBIGUOUS (the server may have persisted the batch): nothing is deleted,
+  the exact intent is pinned durably, `receiptMismatches` is counted and the
+  pump halts for operator attention. The next flush replays the identical
+  payload under the identical key.
+- **Ambiguous outcomes are sticky AND durable.** On a network error, 5xx or
+  unverifiable receipt the server may already hold the batch, so the records
+  stay `uploading` and the exact `(samples, idempotency key, queueIds)` are
+  persisted per scope in queue meta (`setStickyIntent`). The next flush —
+  including the first flush after a page reload or crash — retries that
+  identical payload BEFORE any new batch is taken; newer samples always
+  follow as their own batch with their own key. A retry never regrows or
+  rekeys, so a re-POST can never produce an `idempotency_conflict`. If the
+  records were wiped while sticky, the intent is abandoned with them. Sticky
+  retries consume attempts and can exhaust `maxAttempts` into the retained
+  `failed` state like any other failure.
+- **Retirement gates, synchronous where it matters.** The token is resolved
+  first, then the batch records are re-read; a FINAL synchronous check of
+  `stopped` and `isScopeRevoked` sits after the last await, immediately
+  before `fetch` — nothing can interleave between the check and the request.
+  A second synchronous gate after the response arrives prevents ALL local
+  side effects (receipt write, deletion, counters) when stop/signOut/revoke
+  landed while the request was in flight: unconfirmed is never deleted, and
+  no receipt fact is recreated after sign-out.
 - `unacknowledgedBatches` in `state()` counts sticky batches awaiting a valid
   receipt.
 
@@ -192,12 +205,13 @@ Node 24.17 (app-supported runtime), no install, no server, no device:
 node --test web/tests/observations/*.test.mjs
 ```
 
-49 tests covering the queue (bounds, dedupe, overflow, FIFO, recovery,
+53 tests covering the queue (bounds, dedupe, overflow, FIFO, recovery,
 revocation, persistence across reopen, per-scope unsent exposure), the bridge
 (contract shape, batching, idempotent reconnect retry, every response class,
-owner scoping, stop, sticky ambiguous-batch retries, receipt validation,
-retirement gates for stop and revocation, network exhaustion) and the pipeline
+owner scoping, stop, sticky ambiguous-batch retries — including across a full
+queue+uploader restart —, receipt validation, final synchronous retirement
+gates before fetch and after response, network exhaustion) and the pipeline
 boundary (source-time preservation, redaction honored, no-route counts,
-lifecycle intent, synchronous sink contract, sign-out wipe). Real-browser
-IndexedDB storage tests are follow-up evidence after the shared frontend
-foundation lands.
+lifecycle intent, synchronous sink contract, sign-out wipe, sign-out privacy
+and in-flight receipt suppression). Real-browser IndexedDB storage tests are
+follow-up evidence after the shared frontend foundation lands.

@@ -318,16 +318,28 @@ test('a 2xx with the wrong trip id or wrong count is not a receipt', async () =>
     null, // malformed JSON
   ]) {
     const { uploader, queue, calls } = await setup({
-      fetchHandlers: [{ status: 200, body }],
+      fetchHandlers: [{ status: 200, body }, { status: 200, body: { id: 'trip-1', received: 1 } }],
     });
     await uploader.flush({ userId: 'user-1' });
-    const counts = await queue.counts();
+    let counts = await queue.counts();
     assert.equal(counts.uploaded, 0, `nothing confirmed for body ${JSON.stringify(body)}`);
     assert.equal(counts.receiptMismatches, 1);
-    assert.equal(counts.pending, 1, 'sample retained, not deleted on an unvalidated receipt');
-    const state = await uploader.state();
+    assert.equal(counts.pending, 0);
+    assert.equal(counts.uploading, 1, 'sample retained as sticky uploading, not deleted on an unvalidated receipt');
+    let state = await uploader.state();
     assert.equal(state.lastError, 'receipt-mismatch');
+    assert.equal(state.unacknowledgedBatches, 1, 'original intent pinned durably');
     assert.equal(calls.length, 1, 'no hot retry of a defective receipt');
+    // A later flush replays the IDENTICAL content under the IDENTICAL key —
+    // the intent is never regrown or rekeyed even after a defective 2xx.
+    await uploader.flush({ userId: 'user-1' });
+    assert.equal(calls.length, 2);
+    assert.equal(calls[1].init.headers['Idempotency-Key'], calls[0].init.headers['Idempotency-Key']);
+    assert.deepEqual(calls[1].body, calls[0].body);
+    counts = await queue.counts();
+    assert.equal(counts.uploaded, 1);
+    state = await uploader.state();
+    assert.equal(state.unacknowledgedBatches, 0);
   }
 });
 
@@ -343,6 +355,98 @@ test('a wiped sticky batch is never retried, even under its old key', async () =
   await uploader.flush({ userId: 'user-1' });
   assert.equal(calls.length, 1, 'no retry after revocation');
   assert.equal((await queue.counts()).retained, 0);
+});
+
+test('the sticky intent survives a full queue + uploader restart, content and key intact', async () => {
+  const timers = silentTimers();
+  const stores = createMemoryStores();
+  const queue1 = await openObservationQueue({ records: stores.records, meta: stores.meta, clock });
+  await queue1.enqueue({ sample: sampleAt(NOW - 2000), scope });
+  const first = fakeFetch([new TypeError('lost response')]);
+  const uploader1 = createLocationUploader({
+    queue: queue1, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: first.fetch, timers,
+  });
+  await uploader1.flush({ userId: 'user-1' });
+  assert.equal(first.calls.length, 1);
+  const originalKey = first.calls[0].init.headers['Idempotency-Key'];
+
+  // Simulate a page reload: brand-new queue + uploader on the same stores.
+  const queue2 = await openObservationQueue({ records: stores.records, meta: stores.meta, clock });
+  await queue2.enqueue({ sample: sampleAt(NOW - 1000), scope });
+  const second = fakeFetch([{ status: 200, body: { id: 'trip-1', received: 1 } }]);
+  const uploader2 = createLocationUploader({
+    queue: queue2, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: second.fetch, timers,
+  });
+  await uploader2.flush({ userId: 'user-1' });
+  assert.equal(second.calls.length, 2);
+  assert.equal(second.calls[0].init.headers['Idempotency-Key'], originalKey, 'restarted uploader replays the persisted intent key');
+  assert.equal(second.calls[0].body.observations.length, 1, 'the ambiguous batch is not regrown after restart');
+  assert.equal(second.calls[0].body.observations[0].capturedAt, sampleAt(NOW - 2000).capturedAt);
+  assert.equal(second.calls[1].body.observations.length, 1, 'the post-restart sample follows as its own batch');
+  assert.notEqual(second.calls[1].init.headers['Idempotency-Key'], originalKey);
+  assert.equal((await queue2.counts()).uploaded, 2);
+});
+
+test('revocation landing during the pre-flight store re-read still blocks the POST', async () => {
+  const timers = silentTimers();
+  const stores = createMemoryStores();
+  // Wrap records.get so it snapshots the current value, then parks until the
+  // test releases it — reproducing a wipe that lands mid re-read.
+  let releaseRead;
+  let readParked;
+  let armed = true;
+  const parked = new Promise((resolve) => { readParked = resolve; });
+  const recordsStore = {
+    ...stores.records,
+    get(key) {
+      if (!armed) return stores.records.get(key);
+      const snapshot = stores.records.get(key); // captures pre-wipe value now
+      return new Promise((resolve) => {
+        readParked();
+        releaseRead = () => { armed = false; snapshot.then(resolve); };
+      });
+    },
+  };
+  const queue = await openObservationQueue({ records: recordsStore, meta: stores.meta, clock });
+  await queue.enqueue({ sample: sampleAt(NOW - 1000), scope });
+  const { fetch, calls } = fakeFetch([{ status: 200, body: { id: 'trip-1', received: 1 } }]);
+  const uploader = createLocationUploader({
+    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: fetch, timers,
+  });
+  const flushing = uploader.flush({ userId: 'user-1' });
+  await parked; // the flush is parked inside the getRecords re-read
+  await queue.wipeScope(scope);
+  releaseRead();
+  await flushing;
+  assert.equal(calls.length, 0, 'the final synchronous gate blocks the retired POST');
+  assert.equal((await queue.counts()).retained, 0);
+});
+
+test('a valid receipt landing after stop() produces no local side effects', async () => {
+  const timers = silentTimers();
+  const stores = createMemoryStores();
+  const queue = await openObservationQueue({ records: stores.records, meta: stores.meta, clock });
+  await queue.enqueue({ sample: sampleAt(NOW - 1000), scope });
+  let resolveResponse;
+  let fetchCalled;
+  const called = new Promise((resolve) => { fetchCalled = resolve; });
+  const fetch = async () => {
+    fetchCalled();
+    return new Promise((resolve) => { resolveResponse = resolve; });
+  };
+  const uploader = createLocationUploader({
+    queue, baseUrl: 'https://api.example.com', getAccessToken: async () => 't', fetchImpl: fetch, timers,
+  });
+  const flushing = uploader.flush({ userId: 'user-1' });
+  await called;
+  uploader.stop();
+  resolveResponse({ status: 200, json: async () => ({ id: 'trip-1', received: 1 }) });
+  await flushing;
+  const counts = await queue.counts();
+  assert.equal(counts.uploaded, 0, 'nothing confirmed after retirement');
+  assert.equal(counts.retained, 1, 'the record is kept — unconfirmed is never deleted');
+  const state = await uploader.state();
+  assert.equal(state.lastReceipt, null, 'no receipt fact written after stop');
 });
 
 test('constructor guards', async () => {

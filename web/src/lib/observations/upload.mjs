@@ -75,11 +75,10 @@ export function createLocationUploader({
   let lastUserId = null;
 
   // Sticky retry intent per scope: once a request's outcome is ambiguous
-  // (network failure / 5xx), the identical content retries under the
-  // identical key until acknowledged. Records stay 'uploading' between
-  // flushes; a page restart recovers them to pending and the server's
-  // first-commit-wins rule per capture timestamp is the durable guard.
-  const sticky = new Map(); // skey -> { queueIds, samples, key }
+  // (network failure / 5xx / unverifiable receipt), the identical content
+  // retries under the identical key until acknowledged. The intent is
+  // persisted in the queue's durable meta (queue.setStickyIntent), so a page
+  // reload or crash cannot lose it and regrow/rekey the retry.
   const skeyOf = (scope) => `${scope.userId} ${scope.tripId}`;
 
   // Same batch content -> same key, so a reconnect retry replays the server's
@@ -104,16 +103,16 @@ export function createLocationUploader({
   // longer be preserved — the sticky key is discarded and the survivors
   // regroup under a new key next flush; the server's per-capture-timestamp
   // dedupe keeps that safe.
-  async function noteAmbiguousFailure(skey, records, samples, key, errorCode, userId) {
+  async function noteAmbiguousFailure(scope, records, samples, key, errorCode, userId) {
     const updated = await queue.noteAttempt(records.map((r) => r.queueId), errorCode);
     const exhausted = updated.filter((record) => record.attempts >= maxAttempts);
     if (exhausted.length > 0) {
       await queue.markFailed(exhausted, errorCode);
       const survivors = updated.filter((record) => record.attempts < maxAttempts);
       await queue.releaseBatch(survivors, errorCode, { countAttempt: false });
-      sticky.delete(skey);
+      await queue.clearStickyIntent(scope);
     } else {
-      sticky.set(skey, { tripId: records[0].tripId, userId: records[0].userId, queueIds: records.map((r) => r.queueId), samples, key });
+      await queue.setStickyIntent(scope, { queueIds: records.map((r) => r.queueId), samples, key });
     }
     consecutiveFailures += 1;
     scheduleRetry(userId);
@@ -121,21 +120,20 @@ export function createLocationUploader({
 
   async function uploadScope(scope, userId) {
     const scopeOutcome = { batches: 0, skipped: false };
-    const skey = skeyOf(scope);
     for (;;) {
       if (stopped || pumpState === 'auth-blocked' || scopeOutcome.batches >= maxBatchesPerFlush) return scopeOutcome;
 
       let records;
       let samples;
       let key;
-      const stuck = sticky.get(skey);
+      const stuck = queue.stickyIntent(scope);
       if (stuck) {
         records = await queue.getRecords(stuck.queueIds);
         if (records.length !== stuck.queueIds.length) {
           // Wiped (revocation / sign-out) while unacknowledged: never send
           // partial content under the old key. The intent is discarded;
           // takeBatch will find nothing for the wiped scope.
-          sticky.delete(skey);
+          await queue.clearStickyIntent(scope);
           continue;
         }
         ({ samples, key } = stuck);
@@ -153,28 +151,28 @@ export function createLocationUploader({
       } catch {
         token = null;
       }
-      // Retirement gate: the token may resolve after stop()/revokeTrip() ran
-      // while it was pending. A request that has not started yet MUST NOT
-      // start for a retired pump or a wiped scope.
-      if (stopped) {
-        await queue.releaseBatch(records, 'stopped', { countAttempt: false });
-        sticky.delete(skey);
-        return scopeOutcome;
-      }
       const present = await queue.getRecords(records.map((r) => r.queueId));
       if (present.length !== records.length) {
-        sticky.delete(skey);
+        await queue.clearStickyIntent(scope);
         continue;
       }
       if (typeof token !== 'string' || token.length === 0) {
         // No request was sent, so no intent is ambiguous; safe to regroup.
         await queue.releaseBatch(records, 'auth-unavailable', { countAttempt: false });
-        sticky.delete(skey);
+        await queue.clearStickyIntent(scope);
         pumpState = 'auth-blocked';
         lastError = 'auth-unavailable';
         return scopeOutcome;
       }
 
+      // FINAL retirement gate: synchronous, after the last await, immediately
+      // before the request fires. A paused getAccessToken or store read can
+      // hide stop()/revokeTrip()/signOut() — this is the last word. Nothing
+      // may await between this check and fetch.
+      if (stopped || queue.isScopeRevoked(scope)) {
+        await queue.releaseBatch(records, 'stopped', { countAttempt: false });
+        return scopeOutcome;
+      }
       const controller = new AbortController();
       const timeout = timers.setTimeout(() => controller.abort(), requestTimeoutMs);
       let response;
@@ -191,7 +189,7 @@ export function createLocationUploader({
         });
       } catch {
         lastError = 'network-error';
-        await noteAmbiguousFailure(skey, records, samples, key, 'network-error', userId);
+        await noteAmbiguousFailure(scope, records, samples, key, 'network-error', userId);
         return scopeOutcome;
       } finally {
         timers.clearTimeout(timeout);
@@ -199,28 +197,36 @@ export function createLocationUploader({
 
       if (response.status >= 200 && response.status < 300) {
         const body = await response.json().catch(() => null);
+        // Post-response retirement: a stop()/signOut()/revokeTrip() that ran
+        // while the request was in flight means NO local side effects — no
+        // receipt write, no deletion, no counters. Unconfirmed records are
+        // never deleted; the durable sticky intent survives for a later
+        // session to replay under the same key.
+        if (stopped || queue.isScopeRevoked(scope)) return scopeOutcome;
         if (body && body.id === scope.tripId && body.received === samples.length) {
           await queue.confirmUploaded(records);
-          sticky.delete(skey);
+          await queue.clearStickyIntent(scope);
           consecutiveFailures = 0;
           lastReceipt = { tripId: scope.tripId, received: body.received };
           continue;
         }
         // A 2xx that does not echo the requested trip and exact sample count
-        // is not a receipt. Nothing is deleted; the defect is counted and the
-        // pump halts for this scope instead of confirming a lie.
+        // is not a receipt — and it is AMBIGUOUS: the server may have
+        // persisted the batch. Nothing is deleted, the defect is counted,
+        // the original intent is pinned durably (never regrown/rekeyed) and
+        // the pump halts for this scope instead of confirming a lie.
+        await queue.setStickyIntent(scope, { queueIds: records.map((r) => r.queueId), samples, key });
         await queue.noteReceiptMismatch(records.length);
-        await queue.releaseBatch(records, 'receipt-mismatch', { countAttempt: false });
-        sticky.delete(skey);
         lastError = 'receipt-mismatch';
         return scopeOutcome;
       }
 
       const code = await bodyCode(response);
+      if (stopped || queue.isScopeRevoked(scope)) return scopeOutcome;
       lastError = code;
       if (response.status === 401 || response.status === 403) {
         await queue.releaseBatch(records, code, { countAttempt: false });
-        sticky.delete(skey);
+        await queue.clearStickyIntent(scope);
         pumpState = 'auth-blocked';
         return scopeOutcome;
       }
@@ -229,35 +235,35 @@ export function createLocationUploader({
         // reactivated. Records stay pending without burning retry budget;
         // this scope is skipped for the rest of the flush.
         await queue.releaseBatch(records, code, { countAttempt: false });
-        sticky.delete(skey);
+        await queue.clearStickyIntent(scope);
         await queue.noteTripStopped(records.length);
         scopeOutcome.skipped = true;
         return scopeOutcome;
       }
       if (response.status === 404) {
         await queue.failBatchPermanent(records, 'rejectedMissing');
-        sticky.delete(skey);
+        await queue.clearStickyIntent(scope);
         continue;
       }
       if (response.status === 400 && code === 'capture_time_out_of_bounds') {
         await queue.failBatchPermanent(records, 'rejectedBounds');
-        sticky.delete(skey);
+        await queue.clearStickyIntent(scope);
         continue;
       }
       if (response.status === 409 && code === 'idempotency_conflict') {
         // Same key, different content: deterministic keys make this a client
         // defect signal, not a retryable condition.
         await queue.failBatchPermanent(records, 'conflictErrors');
-        sticky.delete(skey);
+        await queue.clearStickyIntent(scope);
         continue;
       }
       if (response.status >= 400 && response.status < 500) {
         await queue.failBatchPermanent(records, 'rejectedValidation');
-        sticky.delete(skey);
+        await queue.clearStickyIntent(scope);
         continue;
       }
       // 5xx or anything unexpected: ambiguous, retry the identical intent.
-      await noteAmbiguousFailure(skey, records, samples, key, code, userId);
+      await noteAmbiguousFailure(scope, records, samples, key, code, userId);
       return scopeOutcome;
     }
   }
@@ -275,8 +281,8 @@ export function createLocationUploader({
       try {
         const scopes = await queue.pendingScopes();
         const byKey = new Map(scopes.map((scope) => [skeyOf(scope), scope]));
-        for (const [stuckKey, stuck] of sticky) {
-          if (!byKey.has(stuckKey)) byKey.set(stuckKey, { tripId: stuck.tripId, userId: stuck.userId });
+        for (const stuckScope of queue.stickyScopes()) {
+          if (!byKey.has(skeyOf(stuckScope))) byKey.set(skeyOf(stuckScope), stuckScope);
         }
         for (const scope of byKey.values()) {
           if (lastUserId && scope.userId !== lastUserId) continue;
@@ -313,7 +319,7 @@ export function createLocationUploader({
       consecutiveFailures,
       lastError,
       lastReceipt,
-      unacknowledgedBatches: sticky.size,
+      unacknowledgedBatches: queue.stickyScopes().length,
       counts: await queue.counts(),
     };
   }
