@@ -660,6 +660,35 @@ to9bc7ff4; they were not rerun or promoted to this freeze. The author's claimed
 54/10/5/7 passes are not evidence that these two privacy controls pass. No browser,
 feature or broad proof campaign was started.
 
+### Original privacy repair confirmation at ce5e257
+
+Scoped independent disposition: **ACCEPT the two privacy repairs** at exact
+`ce5e257340abac070e6fea5f47f84abc3fc59c0f`. The original
+`queue-signout.probes.mjs` remains byte-identical to8d62e52, with SHA-256
+`e626cb76c30e3dc7b50eacf11454d20e574574307deb67492ac492e1eb36f396`.
+Fresh Node26.3.0 execution against the verified archive gives **2 passed / 0
+failed**. The already recorded **0 passed / 2 failed** at9bc7ff4 and e0ba0ff
+remain unchanged. Current raw metadata is preserved in
+`client-contract-reviews/queue-ce5e257-privacy.json`.
+
+After awaited signout, a held fetch rejection now hits the retirement guard and
+settles no surviving records without pinning another intent. The observed queue
+and durable intent count remain0, and no old owner/trip/sample is restored.
+Revocation followed by signout leaves a hashed marker instead of plaintext
+owner/trip identifiers. Source review confirms that writes and lookups use the
+same deterministic hash; reopening preserves hashed entries and legacy plaintext
+entries are migrated and persisted before open resolves. Restart/migration were
+source-reviewed here, not newly executed tests.
+
+The four-file delta preserves public method shapes, scoped queue semantics and
+the wire endpoint/headers/body/key generation. The hash property relied on here
+is deterministic matching without raw identifiers in metadata; this acceptance
+does not establish cryptographic anonymity or unlinkability. Existing 7/10/5 and
+native IndexedDB evidence retain their earlier9bc7ff4 pin, and the author's new
+56-test result is not claimed as independently rerun. Only the two existing
+privacy controls were executed: no author edit, new harness, browser campaign,
+feature, backend/provider or whole-app acceptance. Q44 retains integration.
+
 ## Actual client-to-backend bridge
 
 `api-backend.probes.mjs` connects the frozen client **78efad0** to actual backend
