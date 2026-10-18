@@ -1,0 +1,29 @@
+{
+  "source": "9f87e2c08be8ac9e9324136fd0c4401ad8823bc6",
+  "results": [
+    {
+      "check": "author",
+      "exit": 0
+    },
+    {
+      "check": "followup",
+      "exit": 0
+    },
+    {
+      "check": "original",
+      "exit": 1
+    },
+    {
+      "check": "reproduction",
+      "exit": 1
+    },
+    {
+      "check": "v2",
+      "exit": 1
+    },
+    {
+      "check": "lifecycle",
+      "exit": 1
+    }
+  ]
+}

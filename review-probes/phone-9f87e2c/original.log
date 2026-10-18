@@ -1,0 +1,219 @@
+✔ P01 import/construction/idle stop are inert; start is explicit and passive (1.170125ms)
+✔ P02 all APIs exposed cannot unlock missing/mismatched/unsupported qualification (1.795792ms)
+✖ P03 positive GPS control retains source/receipt, safe options and useful quality (2.908916ms)
+✔ P04 denial/revocation retires watch and queued callbacks; denied initial monitor stays explicit (0.9225ms)
+✔ P05 unavailable/throwing platform and rejected permission query are attributed without secrets (0.736084ms)
+✖ P06 no automatic motion prompt; missing activation and unsupported permission route stay unavailable (0.469958ms)
+✔ P07 positive motion control needs explicit grant and retains unresolved DOM clock (0.344875ms)
+✔ P08 request IDs/options survive eviction; concurrent GPS request rejected; copies detached (0.218ms)
+✔ P09 replaced watch ignores previous success/error while replacement still works (0.165583ms)
+✔ P10 delayed old query/sample/motion answers cannot alter a replacement session (1.181958ms)
+✔ P11 local sink throw/stop is separate from sensor failure; reentrant acquisition blocked (0.822584ms)
+✔ P12 expiry boundary, stale, duplicate and reordered source timestamps stay explicit (0.25975ms)
+✔ P13 unknown/future/nonfinite source times and diverged clocks never imply fresh (0.424792ms)
+✔ P14 hidden page retires resources and cannot auto-resume or emit cached fix (0.18875ms)
+✖ P15 burst callbacks, outstanding requests, buffers, event/deadline caps and invalid budgets are bounded (0.997667ms)
+✔ P16 precise data absent by default/incomplete consent; explicit consent works and withdrawal suppresses late payload (0.471334ms)
+F1 actual {"result":{"ok":false,"reason":"obsolete-request"},"nativeCalls":0,"timersBeforeStop":1,"timersAfterStop":0}
+F2 actual {"result":{"ok":false,"reason":"session-stopped"},"state":"stopped","listeners":0}
+✔ P17 handling/drop/pothole/passenger fixtures remain observations with unknown independent outcomes (1.8725ms)
+✔ P18 provisional local boundary retains unknowns and distinct sessions/sequences (0.230584ms)
+✔ F1 P11 stopLocation from acquisition-request sink must prevent the native call and timeout (0.156625ms)
+✔ F2 P10/P15 expired motion permission answer must not attach a listener when deadline timer is delayed (0.137208ms)
+F3 actual {"before":"unknown","after":"granted","retry":{"ok":true,"requestId":"1:geo:2"},"nativeCalls":2}
+F4 actual {"requestId":"1:geo:1","watch":true,"options":{"enableHighAccuracy":true,"maximumAge":12345,"timeout":23456},"code":2}
+✖ F3 P04 delayed passive grant must not overwrite a newer explicit permission denial (0.70625ms)
+✖ F4 P08 failed location callback must retain original acquisition options after request-event eviction (0.250416ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 17
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 56.763667
+
+✖ failing tests:
+
+test at ../../../../Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs:102:1
+✖ P03 positive GPS control retains source/receipt, safe options and useful quality (2.908916ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   enableHighAccuracy: true,
+  -   enableHighAccuracy: false,
+      maximumAge: 0,
+      timeout: 10000
+    }
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs:110:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 },
+    expected: { enableHighAccuracy: false, maximumAge: 0, timeout: 10000 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs:134:1
+✖ P06 no automatic motion prompt; missing activation and unsupported permission route stay unavailable (0.469958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'unsupported-permission-route'
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs:139:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'unsupported-permission-route',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs:207:1
+✖ P15 burst callbacks, outstanding requests, buffers, event/deadline caps and invalid budgets are bounded (0.997667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   budgetRevision: 'engineering-only/4',
+  +   category: 'phone-observation',
+  +   clientReceiptTime: {
+  +     monoMs: 100,
+  +     wallMs: 1800000000000
+  +   },
+  +   country: {
+  +     provenance: 'unknown',
+  +     value: null
+  +   },
+  +   data: {
+  +     accuracyM: 8,
+  +     ageMs: 0,
+  +     coordinates: null,
+  +     freshness: 'within-provisional-budget',
+  +     locationSource: 'browser-geolocation-underlying-source-unknown',
+  +     options: {
+  +       enableHighAccuracy: true,
+  +       maximumAge: 0,
+  +       timeout: 10000
+  +     },
+  +     redaction: 'omitted',
+  +     requestId: '1:geo:1',
+  +     routeProgress: 'unknown',
+  +     sourceOrder: 'nondecreasing',
+  +     watch: false
+  +   },
+  +   eventId: 'review-session:1:3',
+  +   interpretation: 'observation-only',
+  +   permission: {
+  +     geolocation: {
+  +       browserState: 'granted',
+  +       source: 'position-callback',
+  +       state: 'granted'
+  +     },
+  +     motion: {
+  +       browserState: 'unknown',
+  +       source: 'not-queried',
+  +       state: 'unknown'
+  +     }
+  +   },
+  +   policyVersion: null,
+  +   provenance: {
+  +     boundary: 'provisional-client-only',
+  +     clock: 'device-unreconciled',
+  +     clockUncertain: false,
+  +     contextKey: 'review-visible',
+  +     mode: 'synthetic-test',
+  +     qualificationEvidence: 'review-only:synthetic',
+  +     serverLatency: 'unknown'
+  +   },
+  +   revision: 'frozen-cc4dc5d2',
+  +   schema: 'andes.phone-observations.provisional/1',
+  +   sequence: 3,
+  +   serverReceiptTime: null,
+  +   sessionId: 'review-session',
+  +   sessionSequence: 3,
+  +   sourceTime: {
+  +     basis: 'unix-epoch-ms',
+  +     provenance: 'position.timestamp',
+  +     value: 1800000000000
+  +   },
+  +   timeZone: {
+  +     provenance: 'unknown',
+  +     value: null
+  +   },
+  +   tripId: 'review-trip',
+  +   truckId: null,
+  +   type: 'geolocation',
+  +   utcOffsetMinutes: null,
+  +   visibility: 'visible'
+  + }
+  - undefined
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs:216:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { schema: 'andes.phone-observations.provisional/1', category: 'phone-observation', type: 'geolocation', eventId: 'review-session:1:3', sessionId: 'review-session', tripId: 'review-trip', revision: 'frozen-cc4dc5d2', truckId: null, country: { value: null, provenance: 'unknown' }, timeZone: { value: null, provenance: 'unknown' }, utcOffsetMinutes: null, sequence: 3, sessionSequence: 3, sourceTime: { value: 1800000000000, basis: 'unix-epoch-ms', provenance: 'position.timestamp' }, clientReceiptTime: { wallMs: 1800000000000, monoMs: 100 }, serverReceiptTime: null, policyVersion: null, budgetRevision: 'engineering-only/4', visibility: 'visible', permission: { geolocation: [Object], motion: [Object] }, provenance: { mode: 'synthetic-test', qualificationEvidence: 'review-only:synthetic', contextKey: 'review-visible', boundary: 'provisional-client-only', clock: 'device-unreconciled', clockUncertain: false, serverLatency: 'unknown' }, interpretation: 'observation-only', data: { requestId: '1:geo:1', watch: false, options: [Object], accuracyM: 8, ageMs: 0, freshness: 'within-provisional-budget', sourceOrder: 'nondecreasing', locationSource: 'browser-geolocation-underlying-source-unknown', coordinates: null, redaction: 'omitted', routeProgress: 'unknown' } },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs:272:1
+✖ F3 P04 delayed passive grant must not overwrite a newer explicit permission denial (0.70625ms)
+  AssertionError [ERR_ASSERTION]: older query must not reverse explicit denial
+  + actual - expected
+  
+  + 'granted'
+  - 'denied'
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs:280:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'granted',
+    expected: 'denied',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs:283:1
+✖ F4 P08 failed location callback must retain original acquisition options after request-event eviction (0.250416ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   enableHighAccuracy: true,
+  -   enableHighAccuracy: false,
+      maximumAge: 12345,
+      timeout: 23456
+    }
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-checkin-review/.codex/reviews/cc4dc5d2dcb1354e4a223fc02946ae7c42f1c961/probes.test.mjs:289:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { enableHighAccuracy: true, maximumAge: 12345, timeout: 23456 },
+    expected: { enableHighAccuracy: false, maximumAge: 12345, timeout: 23456 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

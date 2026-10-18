@@ -1,0 +1,52 @@
+[
+  {
+    "id": "F1",
+    "passed": true,
+    "actual": {
+      "nativeCalls": 0,
+      "timersAfterStop": 0
+    },
+    "expected": {
+      "nativeCalls": 0,
+      "timersAfterStop": 0
+    }
+  },
+  {
+    "id": "F2",
+    "passed": true,
+    "actual": {
+      "ok": false,
+      "listeners": 0
+    },
+    "expected": {
+      "ok": false,
+      "listeners": 0
+    }
+  },
+  {
+    "id": "F3",
+    "passed": false,
+    "actual": {
+      "permission": "granted",
+      "retry": true
+    },
+    "expected": {
+      "permission": "denied",
+      "retry": false
+    }
+  },
+  {
+    "id": "F4",
+    "passed": false,
+    "actual": {
+      "enableHighAccuracy": true,
+      "maximumAge": 12345,
+      "timeout": 23456
+    },
+    "expected": {
+      "enableHighAccuracy": false,
+      "maximumAge": 12345,
+      "timeout": 23456
+    }
+  }
+]
