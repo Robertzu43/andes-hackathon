@@ -243,3 +243,45 @@ test('signOut during an in-flight receipt: no receipt fact, no counts, no owner 
   assert.equal((await reopened.counts()).retained, 0);
   assert.equal(reopened.isScopeRevoked({ tripId: 'trip-1', userId: 'user-1' }), false, 'session revocation dies with the page');
 });
+
+test('signOut with an in-flight REJECTED request recreates no durable intent and no plaintext', async () => {
+  let rejectResponse;
+  let fetchCalled;
+  const called = new Promise((resolve) => { fetchCalled = resolve; });
+  const fetch = async () => {
+    fetchCalled();
+    return new Promise((_, reject) => { rejectResponse = reject; });
+  };
+  const { pipeline, queue, uploader, stores } = await setup({ fetchImpl: fetch });
+  pipeline.sink(geoEvent());
+  await pipeline.drain();
+  const flushing = pipeline.flush();
+  await called; // the POST is on the wire
+  const wiped = await pipeline.signOut();
+  assert.equal(wiped, 1);
+  rejectResponse(new TypeError('lost response')); // ambiguous rejection lands AFTER sign-out
+  await flushing;
+  const state = await uploader.state();
+  assert.equal(state.unacknowledgedBatches, 0, 'no sticky intent is recreated after sign-out');
+  assert.equal((await queue.counts()).retained, 0);
+  const intents = (await stores.meta.getAll()).filter((entry) => entry.intent);
+  assert.equal(intents.length, 0, 'no durable intent record survives sign-out');
+  const persisted = JSON.stringify(await stores.meta.getAll());
+  assert.equal(persisted.includes('user-1'), false, 'no owner plaintext in durable meta');
+  assert.equal(persisted.includes('trip-1'), false, 'no trip plaintext in durable meta');
+});
+
+test('revokeTrip then signOut leaves no owner/trip plaintext tombstone in durable meta', async () => {
+  const { pipeline, queue, stores } = await setup();
+  pipeline.sink(geoEvent());
+  await pipeline.drain();
+  await pipeline.revokeTrip('trip-1'); // per-trip consent withdrawal: persisted by design
+  assert.equal(queue.isScopeRevoked({ tripId: 'trip-1', userId: 'user-1' }), true);
+  await pipeline.signOut();
+  const persisted = JSON.stringify(await stores.meta.getAll());
+  assert.equal(persisted.includes('user-1'), false, 'revocation tombstone is not stored as owner plaintext');
+  assert.equal(persisted.includes('trip-1'), false, 'revocation tombstone is not stored as trip plaintext');
+  const reopened = await openObservationQueue({ records: stores.records, meta: stores.meta, clock });
+  assert.equal(reopened.isScopeRevoked({ tripId: 'trip-1', userId: 'user-1' }), true,
+    'consent revocation still survives restart — only the plaintext is gone');
+});

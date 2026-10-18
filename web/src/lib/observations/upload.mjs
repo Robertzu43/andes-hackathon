@@ -197,6 +197,15 @@ export function createLocationUploader({
         });
       } catch {
         lastError = 'network-error';
+        // Post-rejection retirement: a stop()/signOut()/revokeTrip() that ran
+        // while the request was in flight must not create new durable intent
+        // either — settle the records (a no-op after a wipe) and halt.
+        // Pinning a sticky intent here would re-persist owner/trip/sample
+        // plaintext that sign-out or revocation just erased.
+        if (stopped || queue.isScopeRevoked(scope)) {
+          await queue.releaseBatch(records, 'stopped', { countAttempt: false });
+          return scopeOutcome;
+        }
         await noteAmbiguousFailure(scope, records, samples, key, 'network-error', userId);
         return scopeOutcome;
       } finally {

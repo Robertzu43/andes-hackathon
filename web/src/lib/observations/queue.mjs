@@ -48,6 +48,20 @@ export function validateSample(sample) {
 
 const scopeKey = (scope) => `${scope.userId} →${scope.tripId}`;
 
+// Revocation tombstones are persisted as a one-way hash of the scope pair,
+// never as owner/trip plaintext: the consent marker must survive restart,
+// but a signed-out owner's identity must not sit in durable meta. FNV-1a
+// 64-bit, synchronous, deterministic across sessions; reversing it requires
+// already knowing both UUIDs, so the stored value reveals nothing.
+function scopeHash(key) {
+  let h = 0xcbf29ce484222325n;
+  for (const char of key) {
+    h ^= BigInt(char.codePointAt(0));
+    h = BigInt.asUintN(64, h * 0x100000001b3n);
+  }
+  return h.toString(16).padStart(16, '0');
+}
+
 // Opens the queue on injected stores. Any record left in 'uploading' by an
 // interrupted page is reset to 'pending' once at open: open happens before
 // any uploader exists, so 'uploading' at this point can only be a leftover.
@@ -68,7 +82,16 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
   // leaves no owner/trip plaintext behind.
   const sessionRevoked = new Set();
   const persist = () => meta.put('meta', state);
-  const isRevoked = (scope) => sessionRevoked.has(scopeKey(scope)) || state.revokedScopes.includes(scopeKey(scope));
+  // Legacy plaintext tombstones (pre-hash revisions) are migrated on open.
+  let migratedRevocations = false;
+  state.revokedScopes = state.revokedScopes.map((entry) => {
+    if (typeof entry === 'string' && entry.includes('→')) {
+      migratedRevocations = true;
+      return scopeHash(entry);
+    }
+    return entry;
+  });
+  const isRevoked = (scope) => sessionRevoked.has(scopeKey(scope)) || state.revokedScopes.includes(scopeHash(scopeKey(scope)));
 
   // Durable ambiguous-upload intents, one meta record per scope
   // (`intent:<userId> →<tripId>`). The `intent` field holds exactly the
@@ -114,6 +137,8 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
   }
   if (interrupted.length > 0) {
     state.counts.recoveredAfterInterruption += interrupted.length;
+    await persist();
+  } else if (migratedRevocations) {
     await persist();
   }
 
@@ -290,8 +315,9 @@ export async function openObservationQueue({ records, meta, clock = { nowMs: () 
     const scoped = (await allRecords()).filter((r) => r.tripId === tripId && r.userId === userId);
     for (const record of scoped) await records.delete(record.queueId);
     const key = scopeKey({ tripId, userId });
-    if (!state.revokedScopes.includes(key)) {
-      state.revokedScopes.push(key);
+    const hash = scopeHash(key);
+    if (!state.revokedScopes.includes(hash)) {
+      state.revokedScopes.push(hash);
       if (state.revokedScopes.length > QUEUE_LIMITS.revokedScopeRetention) state.revokedScopes.shift();
     }
     intents.delete(key);

@@ -69,9 +69,12 @@ frontend foundation exists. Concurrent-tab writers are out of scope here.
   page return to `pending` once, counted as `recoveredAfterInterruption`.
 - **Revocation**: `wipeScope({ tripId, userId })` deletes every retained record
   for the scope, counts `wipedByRevocation`, and remembers the scope as revoked
-  so late sink events cannot re-enter. Consent withdrawal is deletion, not a
-  "stop uploading but keep" mode. The host must separately call the adapter's
-  own `revokeConsent()` to stop capture.
+  so late sink events cannot re-enter. The persisted tombstone is a one-way
+  FNV-1a hash of the scope pair, never owner/trip plaintext — consent must
+  survive restart, but the identity does not need to sit in durable meta to
+  do that (reversing the hash requires already knowing both UUIDs). Consent
+  withdrawal is deletion, not a "stop uploading but keep" mode. The host must
+  separately call the adapter's own `revokeConsent()` to stop capture.
 - **Per-trip exposure**: `scopeCounts({ tripId, userId })` returns
   `{ pending, uploading, failed, unsent, revoked }` so a host can honestly
   render "N samples not yet sent" / "storage unavailable" / "queue wiped"
@@ -141,7 +144,10 @@ Receipt handling — a batch is deleted only when the response **proves** it:
   A second synchronous gate after the response arrives prevents ALL local
   side effects (receipt write, deletion, counters) when stop/signOut/revoke
   landed while the request was in flight: unconfirmed is never deleted, and
-  no receipt fact is recreated after sign-out.
+  no receipt fact is recreated after sign-out. The same gate sits in the
+  rejection path: an ambiguous network failure surfacing after retirement
+  settles the records without pinning a new sticky intent, so a post-sign-out
+  rejection cannot re-persist owner/trip/sample plaintext.
 - `unacknowledgedBatches` in `state()` counts sticky batches awaiting a valid
   receipt.
 
