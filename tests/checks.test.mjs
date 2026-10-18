@@ -314,3 +314,23 @@ test('resuming sharing closes the open sharing-stopped check, so a screen lock i
   await f.req('POST', `/v1/trips/${trip}/sharing`, {state: 'resumed', reason: 'user'});
   assert.deepEqual((await checksOf(f, trip)).at(-1), asking('silence'));
 });
+
+test('status shows the open check only to the driver and incident-scope contacts', async t => {
+  const f = await fixture(t);
+  const scoped = async (subject, scope) => {
+    const jwt = await f.token(subject); const id = (await f.req('GET', '/v1/me', undefined, jwt)).body.id;
+    const invitation = (await f.req('POST', '/v1/contacts', {contactId: id, phone: '+5511999990000', map: true, incident: true})).body.id;
+    assert.equal((await f.req('POST', `/v1/contacts/${invitation}/accept`, scope, jwt)).status, 200);
+    return {jwt, grant: invitation};
+  };
+  const mapOnly = await scoped('map-only', {map: true, incident: false});
+  const incidentOnly = await scoped('incident-only', {map: false, incident: true});
+  const trip = await f.trip([mapOnly.grant, incidentOnly.grant]);
+  f.advance(120001); await sweep(f);
+  const path = `/v1/trips/${trip}/status`;
+  const map = (await f.req('GET', path, undefined, mapOnly.jwt)).body;
+  assert.deepEqual({check: map.check, incident: map.incident, freshness: map.location.freshness}, {check: null, incident: null, freshness: 'unavailable'});
+  const incident = (await f.req('GET', path, undefined, incidentOnly.jwt)).body;
+  assert.deepEqual({check: incident.check?.reason, location: incident.location}, {check: 'silence', location: undefined});
+  assert.equal((await f.req('GET', path)).body.check.reason, 'silence');
+});

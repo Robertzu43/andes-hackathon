@@ -24,8 +24,10 @@ export function checkRoutes(app: FastifyInstance, ctx: Context) {
       WHERE tg.trip_id=$1 AND tg.revoked_at IS NULL AND cg.contact_id=$2 AND cg.accepted_at IS NOT NULL AND cg.revoked_at IS NULL`, [trip.id, request.actor.id])).rows[0];
     if (!driver && !grant) problem(403, 'forbidden');
     const now = ctx.clock();
-    const check = (await client.query("SELECT reason,ask_until FROM security_checks WHERE trip_id=$1 AND status='asking'", [trip.id])).rows[0];
-    const incident = driver || grant.incident_accepted ? (await client.query('SELECT id,trigger,check_reason,status,created_at FROM incidents WHERE trip_id=$1 ORDER BY created_at DESC,id DESC LIMIT 1', [trip.id])).rows[0] : undefined;
+    // The check and incident are incident-scope data; map-only contacts get location alone.
+    const incidentScope = driver || grant.incident_accepted;
+    const check = incidentScope ? (await client.query("SELECT reason,ask_until FROM security_checks WHERE trip_id=$1 AND status='asking'", [trip.id])).rows[0] : undefined;
+    const incident = incidentScope ? (await client.query('SELECT id,trigger,check_reason,status,created_at FROM incidents WHERE trip_id=$1 ORDER BY created_at DESC,id DESC LIMIT 1', [trip.id])).rows[0] : undefined;
     // Only the current alert wave: after an SOS upgrade, its SOS alerts replace the missed-check ones on screen.
     const deliveries = incident ? (await client.query(`SELECT COALESCE(cg.role,'group') AS role,j.channel,j.status,j.unavailable_reason FROM jobs j
       LEFT JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 AND j.trigger=$2 ORDER BY role,j.channel`, [incident.id, incident.trigger])).rows : [];
