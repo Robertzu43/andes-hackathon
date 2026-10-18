@@ -130,9 +130,13 @@ test('one failing trip does not stop the sweep for the others', async t => {
   const f = await fixture(t); const broken = await f.trip(); const healthy = await f.trip();
   await f.ctx.pool.query(`CREATE FUNCTION fail_check() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.trip_id = '${broken}' THEN RAISE EXCEPTION 'synthetic failure'; END IF; RETURN NEW; END $$`);
   await f.ctx.pool.query('CREATE TRIGGER fail_check BEFORE INSERT ON security_checks FOR EACH ROW EXECUTE FUNCTION fail_check()');
-  f.advance(120001); await sweep(f);
+  f.advance(120001);
+  const logged = []; const write = process.stderr.write;
+  process.stderr.write = chunk => { logged.push(String(chunk)); return true; };
+  try { await sweep(f); } finally { process.stderr.write = write; }
   assert.deepEqual(await checksOf(f, broken), []);
   assert.deepEqual(await checksOf(f, healthy), [asking('silence')]);
+  assert.deepEqual(logged, [`Security check failed for trip ${broken} (P0001)\n`], 'opaque trip ID and SQLSTATE only, never the error text');
 });
 
 test('sharing stopped opens a check at once; resume clears it; both are audited', async t => {

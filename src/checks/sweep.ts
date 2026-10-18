@@ -63,6 +63,10 @@ export async function checkOnce(ctx: Context, support: ChannelSupport[], config:
   for (const tripId of new Set([...expired, ...opening])) {
     // Read the clock under the trip lock: a stale pre-wait time would shorten the grace window or open an expired check.
     try { await withTripTransaction(ctx, tripId, (client, trip) => sweepTrip(client, trip, ctx.clock(), config, support)); }
-    catch { process.stderr.write('Security check failed for one trip\n'); }
+    catch (error) {
+      // Opaque trip UUID plus a code (SQLSTATE or API code) only: error text can carry data.
+      const code = (error as { code?: unknown })?.code;
+      process.stderr.write(`Security check failed for trip ${tripId} (${typeof code === 'string' && /^\w{1,40}$/.test(code) ? code : 'unclassified'})\n`);
+    }
   }
 }
