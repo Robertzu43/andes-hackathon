@@ -295,3 +295,53 @@ test('malformed command responses remain uncertain and never create reassuring r
   const state = journey.getState(); state.incident.data.status = 'resolved';
   assert.equal(journey.getState().incident.data.status, 'active');
 });
+
+test('gatekeeper R1: denied map reads preserve an independently authorized SOS and own receipt', async () => {
+  let denied = false;
+  const { journey } = setup('contact', { getTripSnapshot: () => {
+    if (denied) throw httpError(403);
+    return point();
+  } });
+  await journey.loadLocation(); await journey.loadIncident(ids.incident); await journey.acknowledge();
+  denied = true; await journey.loadLocation();
+  assert.equal(journey.getState().location.status, 'denied');
+  assert.equal(journey.getState().incident.data?.status, 'active');
+  assert.equal(journey.getState().receipts[0]?.recorded, 'acknowledged');
+  assert.equal(await journey.reportAction('SYNTHETIC: responding to the still-authorized incident'), 'recorded');
+});
+
+test('gatekeeper R1b: incident denial preserves the independently authorized map', async () => {
+  for (const status of [403, 404]) {
+    const { journey } = setup('contact', { getIncident: () => { throw httpError(status); } });
+    await journey.loadLocation(); await journey.loadIncident(ids.incident);
+    assert.deepEqual(journey.getState().location.data, point());
+    assert.equal(journey.getState().incident.status, 'denied');
+    assert.deepEqual(journey.getState().receipts, []);
+  }
+});
+
+test('gatekeeper R2: a map denial does not abort or discard an in-flight committed acknowledgement', async () => {
+  const committed = deferred();
+  const { journey, calls } = setup('contact', { acknowledgeIncident: () => committed.promise,
+    getTripSnapshot: () => { throw httpError(403); } });
+  await journey.loadIncident(ids.incident);
+  const pending = journey.acknowledge();
+  await journey.loadLocation();
+  const signal = calls.find(call => call.method === 'acknowledgeIncident').args[1].signal;
+  committed.resolve({ id: ids.incident, status: 'active', recorded: 'acknowledged' });
+  assert.equal(await pending, 'recorded');
+  assert.equal(signal.aborted, false);
+  assert.equal(journey.getState().operation.status, 'recorded');
+  assert.equal(journey.getState().receipts[0]?.recorded, 'acknowledged');
+});
+
+test('gatekeeper R5: refreshing the same incident preserves the contact own recorded receipts', async () => {
+  const refresh = deferred(); let reads = 0;
+  const { journey } = setup('contact', { getIncident: () => ++reads === 1 ? incident() : refresh.promise });
+  await journey.loadIncident(ids.incident); await journey.acknowledge();
+  const pending = journey.loadIncident(ids.incident);
+  const during = journey.getState().receipts;
+  refresh.resolve(incident()); await pending;
+  assert.equal(during[0]?.recorded, 'acknowledged');
+  assert.deepEqual(journey.getState().receipts, during);
+});

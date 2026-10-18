@@ -63,8 +63,7 @@ export function createContactView(host: ContactHost, view: 'driver' | 'contact',
       const failure = classify(error);
       // Owner catalog denial also retires earlier receipts, not just its rows.
       if (failure === 'forbidden' || failure === 'missing') {
-        const actor = journey.getState().session;
-        journey.setSession(actor);
+        journey.concealProtectedFacts();
       }
       publish({ catalog: { status: 'error', data: null, failure } });
     } finally { if (read === controller) read = null; }

@@ -122,3 +122,30 @@ test('catalog errors stay errors rather than empty success after a stop and rest
     assert.equal(view.getSnapshot().journey.session, null); assert.equal(view.getSnapshot().catalog.data, null);
   } finally { view.stop(); f.cleanup(); }
 });
+
+test('gatekeeper R4: catalog denial preserves an uncertain invitation and its unchanged retry', async () => {
+  for (const status of [403, 404]) {
+    let denied = false; let attempts = 0;
+    const f = fixture(call => {
+      if (call.path === '/v1/contacts' && call.method === 'GET' && denied) return json({ code: 'denied' }, status);
+      if (call.path === '/v1/contacts' && call.method === 'POST') {
+        if (++attempts === 1) throw new TypeError('SYNTHETIC: reply lost after possible commit');
+        return json({ id: ids.grant, status: 'pending' });
+      }
+    });
+    const view = createContactView(f.host, 'driver');
+    try { view.start(); await f.host.gateway.begin(); await until(() => view.getSnapshot().catalog.data);
+      await view.invite({ contactId: ids.other, phone: '+5511000000000', map: true, incident: false });
+      assert.equal(view.getSnapshot().journey.operation.status, 'uncertain');
+      denied = true; await view.loadContacts();
+      assert.equal(view.getSnapshot().catalog.status, 'error');
+      assert.equal(view.getSnapshot().catalog.data, null);
+      assert.equal(view.getSnapshot().journey.operation.status, 'uncertain');
+      await view.retry();
+      assert.equal(view.getSnapshot().journey.operation.status, 'recorded');
+      const writes = f.calls.filter(call => call.path === '/v1/contacts' && call.method === 'POST');
+      assert.equal(writes.length, 2);
+      assert.equal(writes[0].key, writes[1].key); assert.equal(writes[0].body, writes[1].body);
+    } finally { view.stop(); f.cleanup(); }
+  }
+});

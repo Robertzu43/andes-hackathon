@@ -83,8 +83,15 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
     incident: unread(), receipts: [], tripRevoked: false, operation: idle() };
   let epoch = 0;
   const requests = new Set<AbortController>();
+  const readRequests = new Set<AbortController>();
   const reads = { location: 0, incident: 0 };
   let retry: (() => Promise<'recorded' | 'superseded' | 'rejected' | 'uncertain'>) | null = null;
+  function conceal() {
+    reads.location++; reads.incident++;
+    for (const request of readRequests) { request.abort(); requests.delete(request); }
+    readRequests.clear();
+    state.location = unread(); state.incident = unread(); state.receipts = [];
+  }
   function invalidate(preserveUncertain = false) {
     const uncertain = preserveUncertain && state.operation.status === 'uncertain'
       ? { operation: state.operation, retry } : null;
@@ -92,7 +99,7 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
     for (const request of requests) request.abort();
     requests.clear();
     retry = null;
-    state.location = unread(); state.incident = unread(); state.receipts = [];
+    conceal();
     state.operation = uncertain?.operation ?? idle();
     if (uncertain) retry = uncertain.retry;
   }
@@ -153,8 +160,8 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
     }
     const started = epoch; const sequence = ++reads[slot];
     const controller = new AbortController(); requests.add(controller);
+    readRequests.add(controller);
     state[slot] = { status: 'loading', data: null };
-    if (slot === 'incident') state.receipts = [];
     try {
       const raw = await request({ signal: controller.signal });
       if (started !== epoch || sequence !== reads[slot]) return 'superseded' as const;
@@ -165,13 +172,15 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
     } catch (error) {
       if (started !== epoch || sequence !== reads[slot]) return 'superseded' as const;
       const reason = failure(error);
-      if (reason === 'authentication' || reason === 'forbidden' || reason === 'missing') {
-        invalidate(true);
-        if (reason === 'authentication') { state.session = null; state.trip = null; state.invitation = null; retry = null; }
+      if (reason === 'authentication') {
+        invalidate();
+        state.session = null; state.trip = null; state.invitation = null;
+      } else if (slot === 'incident' && (reason === 'forbidden' || reason === 'missing')) {
+        state.receipts = [];
       }
       state[slot] = { status: ['authentication', 'forbidden', 'missing'].includes(reason!) ? 'denied' : 'unknown', data: null };
       return 'unavailable' as const;
-    } finally { requests.delete(controller); }
+    } finally { requests.delete(controller); readRequests.delete(controller); }
   }
   return {
     getState() {
@@ -179,6 +188,8 @@ export function createContactJourney(api: ContactApi, keyFactory: () => string =
         standingReceipt: state.invitation?.status ?? 'unknown', tripRevoked: state.tripRevoked,
       }) });
     },
+    /** Conceal denied catalog facts without cancelling or forgetting a command outcome. */
+    concealProtectedFacts: conceal,
     setSession(value: Session | null) {
       const next = value ? { actorId: uuid(value.actorId), view: value.view } : null;
       if (next && !['driver', 'contact'].includes(next.view)) throw new TypeError('Unknown view');
