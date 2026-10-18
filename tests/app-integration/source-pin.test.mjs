@@ -18,9 +18,11 @@ test('source gate rejects ignored runnable migrations and the real export create
     assert.equal(copied.status, 0, 'Private Git clone must be available');
     assert.equal(git('checkout', '--detach', '--quiet', 'HEAD').status, 0);
     // Exercise the current working-tree guard, including an uncommitted fix.
-    for (const name of ['source-pin.mjs', 'receipts.mjs']) {
-      cpSync(resolve(repo, 'scripts/app-integration', name), join(clone, 'scripts/app-integration', name));
+    for (const path of ['scripts/app-integration/source-pin.mjs', 'scripts/app-integration/receipts.mjs', 'evidence/app-acceptance/oracle.mjs']) {
+      cpSync(resolve(repo, path), join(clone, path));
     }
+    // Test the guard, not whether HEAD's backend still matches the pin: use the pinned backend source.
+    assert.equal(git('checkout', BACKEND_SHA, '--', 'src', 'db', 'package.json', 'package-lock.json', 'tsconfig.json').status, 0);
     const module = pathToFileURL(join(clone, 'scripts/app-integration/source-pin.mjs')).href;
     const program = `import {verifiedBackendSource} from ${JSON.stringify(module)}; try {console.log(verifiedBackendSource());} catch {process.exitCode=1;}`;
     const check = () => spawnSync(process.execPath, ['--input-type=module', '-e', program], {cwd: clone, encoding: 'utf8', timeout: 5000});

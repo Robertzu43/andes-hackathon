@@ -2,10 +2,10 @@
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
+import {BACKEND_SHA} from '../../evidence/app-acceptance/oracle.mjs';
 
-export const BACKEND_SHA = '5591c9b55fe7f4505e36ccee96d27aa913e0debf';
-// Q48 independently accepted this source-reviewed integrated-backend checker.
-export const ORACLE_SHA = '7a7d28cbd711cfd6a1a86ec6d8a94ab6e044d366';
+// One binding: the in-tree checker owns the reviewed backend revision.
+export {BACKEND_SHA};
 export const CASE_LENGTHS = {'setup': 4, 'explicit-confirm': 2, 'duplicate-confirm': 3,
   'stale-snapshot': 2, 'unavailable-snapshot': 1, 'revocation': 3, 'sos-acceptance': 2,
   'acknowledgement-action': 2, 'arrival-preserves-sos': 4, 'owner-resolution': 2,

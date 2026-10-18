@@ -27,15 +27,16 @@ test('absent cases are pending; no response is never counted as success', () => 
   const r = evaluate(data); assert.equal(r.disposition, 'inconclusive');
   assert.ok(r.cases.every(c => c.status === 'pending'));
 });
-test('only the reviewed559 backend binding is current; legacy receipts stay rejected', () => {
-  assert.equal(BACKEND_SHA, '5591c9b55fe7f4505e36ccee96d27aa913e0debf');
+test('only the reviewed main backend binding is current; legacy receipts stay rejected', () => {
+  assert.equal(BACKEND_SHA, '02f3647462a4db57ae1ce81f1023fc83d3d06a46');
   const data = syntheticControl();
   assert.equal(data.backendSha, BACKEND_SHA);
-  data.backendSha = 'ebc8fb1d36f441ef012ca585201cefabf61383d6';
-  const old = evaluate(data);
-  assert.equal(old.disposition, 'fix');
-  assert.ok(old.errors.includes('backend revision differs; rebind and review oracle before reuse'));
-  assert.equal(old.wholeAppAccepted, false);
+  for (const legacy of ['ebc8fb1d36f441ef012ca585201cefabf61383d6', '5591c9b55fe7f4505e36ccee96d27aa913e0debf']) {
+    const old = evaluate({ ...data, backendSha: legacy });
+    assert.equal(old.disposition, 'fix');
+    assert.ok(old.errors.includes('backend revision differs; rebind and review oracle before reuse'));
+    assert.equal(old.wholeAppAccepted, false);
+  }
 });
 
 const adverse = [
