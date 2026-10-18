@@ -5,6 +5,7 @@ export interface SessionCredentials {
   issuer: string;
   subject: string;
   accessToken: string;
+  /** Epoch milliseconds, like Date.now(). An OIDC `exp` claim is in seconds: multiply it by 1000. */
   expiresAt: number;
 }
 export type SessionSnapshot = { status: 'anonymous' | 'expired' }

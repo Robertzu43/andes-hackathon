@@ -21,7 +21,10 @@ export function contactRoutes(app: FastifyInstance, ctx: Context) {
     if (!grant) problem(404, 'grant_not_found'); if (grant.contact_id !== request.actor.id) problem(403, 'forbidden');
     return idempotent(ctx, client, request, async () => {
       const body = request.body as { map: boolean; incident: boolean };
-      if (!request.actor.phoneVerified || request.actor.phone !== grant.phone) problem(409, 'verified_phone_mismatch');
+      // The identity row is the verified binding dispatch uses (demo tokens carry no phone). A token phone claim can only refuse, as before.
+      const bound = (await client.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [request.actor.id])).rows[0];
+      const claim = request.actor;
+      if (!bound?.phone_verified || bound.phone !== grant.phone || (claim.phone !== null && (!claim.phoneVerified || claim.phone !== grant.phone))) problem(409, 'verified_phone_mismatch');
       if ((!body.map && !body.incident) || (body.map && !grant.map_requested) || (body.incident && !grant.incident_requested)) problem(400, 'invalid_consent_scope');
       if (grant.revoked_at) problem(409, 'consent_revoked');
       if (grant.accepted_at) problem(409, 'already_accepted');

@@ -2,6 +2,7 @@ import type pg from 'pg';
 export type Channel = 'sms' | 'whatsapp' | 'voice';
 export type CheckReason = 'arrival_overdue' | 'silence' | 'sharing_stopped';
 export interface ChannelSupport { channel: Channel; country: string; locale: string }
+/** phone/phoneVerified are this token's claim (null when absent, as in demo tokens); the identities row holds the verified binding. */
 export interface Actor { id: string; phone: string | null; phoneVerified: boolean }
 export interface Trip extends pg.QueryResultRow {
   id: string; driver_id: string; truck_id: string; country: string; locale: string;

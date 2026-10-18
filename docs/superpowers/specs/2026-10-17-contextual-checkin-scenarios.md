@@ -43,4 +43,8 @@ The Security SOS flow remains independent of ordinary check-in suppression. Chec
 
 ## Next product decision
 
+The [published-contract gap reconciliation](2026-10-17-contextual-checkin-contract-gaps.md)
+maps these cases to the current backend, proposed bounded declarations and two
+independent clocks. It is review input for Robert; no runtime policy is activated.
+
 How should drivers declare and end operational stops, and what happens if declaration/resumption is forgotten? Large stop/resume buttons match the latest interaction direction; exact labels, stop reasons, intent confirmation and resumption semantics remain to be agreed. Automatic POI-based pausing is not assumed.

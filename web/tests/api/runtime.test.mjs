@@ -49,6 +49,22 @@ test('status preserves latest active SOS after arrival and source facts without 
   assert.equal('phone' in result.deliveries[0], false); assert.equal('recipientId' in result.incident, false);
 });
 
+test('status keeps the incident label as the backend enum or null and rejects unknown labels', async () => {
+  for (const label of ['robo', 'intento_robo', 'falsa_alarma', 'sin_senal', 'otro', null]) {
+    const raw = status(); raw.incident.label = label;
+    const { api } = setup(async () => Response.json(raw));
+    assert.equal((await api.getTripStatus(trip)).incident.label, label);
+  }
+  for (const label of ['ROBO', 'theft', '', 1]) {
+    const raw = status(); raw.incident.label = label;
+    const { api } = setup(async () => Response.json(raw));
+    await assert.rejects(api.getTripStatus(trip), invalid);
+  }
+  // An older backend without labels must not hide an active SOS; the field stays absent, not invented.
+  const { api } = setup(async () => Response.json(status()));
+  assert.equal('label' in (await api.getTripStatus(trip)).incident, false);
+});
+
 test('status location freshness must agree with its age at the server 120000ms bound', async () => {
   for (const [freshness, ageMs, ok] of [['fresh', 3_600_000, false], ['stale', 1_000, false],
     ['fresh', 120_000, true], ['stale', 120_001, true]]) {
