@@ -142,6 +142,22 @@ test('migration is repeat-safe and transaction failures release clients without 
   assert.throws(() => createApp({ ctx: f.ctx, auth: { issuer: 'x', audience: 'x', jwksUrl: 'http://unsafe.test/jwks' } }), /HTTPS/);
 });
 
+// Two branches each added a 006-* migration; schema_migrations keys the full file name, so both must apply exactly once, in order.
+test('a fresh database applies every migration once in file-name order, including both 006 files', async t => {
+  const f = await fixture(t); const { migrate } = await import('../dist/db.js');
+  const { readdirSync } = await import('node:fs');
+  const files = readdirSync(new URL('../db/migrations/', import.meta.url)).filter(name => /^\d{3}-[a-z-]+\.sql$/.test(name)).sort().map(name => name.slice(0, -4));
+  assert.ok(files.includes('006-dispatch-retry') && files.includes('006-insights-provenance'));
+  const applied = async () => (await f.ctx.pool.query('SELECT version FROM schema_migrations ORDER BY version')).rows.map(row => row.version);
+  assert.deepEqual(await applied(), files);
+  await migrate(f.ctx.pool);
+  assert.deepEqual(await applied(), files, 'a second run applies nothing');
+  const columns = (await f.ctx.pool.query(`SELECT table_name||'.'||column_name AS c FROM information_schema.columns WHERE table_schema=current_schema()
+    AND (table_name,column_name) IN (('jobs','retry_count'),('identities','synthetic'),('jobs','trigger'),('identities','last_seen_at')) ORDER BY 1`)).rows.map(row => row.c);
+  assert.deepEqual(columns, ['identities.last_seen_at', 'identities.synthetic', 'jobs.retry_count', 'jobs.trigger']);
+  assert.equal((await f.ctx.pool.query("SELECT count(*)::int n FROM pg_constraint WHERE conname='dispatch_attempts_job_version_key' AND connamespace=current_schema()::regnamespace")).rows[0].n, 1);
+});
+
 // Resolving an SOS must not close an otherwise active trip or silently disable its map.
 test('driver incident resolution preserves active trip and authorized attempts', async t => {
   const f = await fixture(t); const grant = await f.grant(); const trip = await f.trip([grant]);
