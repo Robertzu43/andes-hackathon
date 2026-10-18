@@ -75,6 +75,14 @@ try {
     const post = await b.evaluate(`window.__CONTACT_FIXTURE__.calls.find(c => c.method === 'POST' && c.path === '/v1/contacts').body`);
     assert.equal(JSON.parse(post).role, 'colleague');
   });
+  for (const [screen, locale, heading] of [['contacts', 'es', 'Familia · Contacto 0004'], ['privacy', 'pt-BR', 'Família · Contato 0004']]) {
+    await check(`${locale} ${screen}: rows show role and alias, never a phone`, async () => {
+      await open(screen, locale, 'normal');
+      await b.wait(`!!document.querySelector('.andes-contact-list h3')`);
+      assert.equal(await b.evaluate(`document.querySelector('.andes-contact-list h3').textContent`), heading);
+      assert.doesNotMatch(await b.evaluate(`document.querySelector('.andes-contact-list').innerText`), /\+?[1-9]\d{6,14}/);
+    });
+  }
   await check('no runtime exceptions', async () => assert.deepEqual(b.runtime, []));
 } finally { await b.close(); }
 for (const r of results) console.log(`${r.pass ? 'PASS' : 'FAIL'} ${r.name}${r.message ? ` — ${r.message}` : ''}`);

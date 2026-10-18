@@ -19,7 +19,7 @@ const fixture = {
   identity: screen === 'trip' || screen === 'invitation' ? id.contact : id.driver,
   revoked: false, attempts: 0,
 };
-const row = () => ({ id: id.grant, contactId: id.contact, phone: '+5511000000000', map: { requested: true, accepted: true },
+const row = () => ({ id: id.grant, contactId: id.contact, role: 'family', map: { requested: true, accepted: true },
   incident: { requested: true, accepted: true }, status: fixture.revoked ? 'revoked' : 'accepted',
   acceptedAt: '2026-10-17T12:00:00.000Z', revokedAt: fixture.revoked ? '2026-10-17T12:01:00.000Z' : null,
   revokedBy: fixture.revoked ? 'driver' : null });

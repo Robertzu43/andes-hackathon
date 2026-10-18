@@ -56,7 +56,8 @@ function Revoke({ title, hint, onConfirm, busy, disabled = false }: { title: str
 function scopeNames(row: ContactSummary, field: 'requested' | 'accepted', t: Translate) {
   return [row.map[field] ? t('map') : '', row.incident[field] ? t('incident') : ''].filter(Boolean).join(' · ') || t('none');
 }
-function Catalog({ store, snapshot }: { store: ContactView; snapshot: Snapshot }) {
+/** Exported for the render test in tests/contacts/catalog.test.mjs. */
+export function Catalog({ store, snapshot }: { store: ContactView; snapshot: Snapshot }) {
   const t = useMessages(contactMessages); const catalog = snapshot.catalog;
   const revokeBlocked = ['pending', 'uncertain'].includes(snapshot.journey.operation.status);
   if (catalog.status === 'loading') return <AsyncState state="loading" />;
@@ -66,7 +67,9 @@ function Catalog({ store, snapshot }: { store: ContactView; snapshot: Snapshot }
   if (catalog.data.contacts.length === 0) return <EmptyState title={t('emptyContacts')}><p>{t('emptyContactsBody')}</p></EmptyState>;
   return <>{catalog.data.hasMore && <p className="andes-hint" role="status">{t('truncated')}</p>}
     <ul className="andes-contact-list">{catalog.data.contacts.map(row => <li key={row.id}>
-      <div className="andes-contact-heading"><h3>{row.phone}</h3><span>{t(row.status)}</span></div>
+      {/* #65 catalogs are phone-free: role plus a short alias from the grant ID, which identifies no person. */}
+      <div className="andes-contact-heading"><h3>{`${t(row.role)} · ${t('contactAlias')} ${row.id.slice(-4).toUpperCase()}`}</h3>
+        <span>{t(row.status)}</span></div>
       <dl className="andes-fact-list"><FactRow label={t('requested')}>{scopeNames(row, 'requested', t)}</FactRow>
         <FactRow label={t('acceptedScopes')}>{scopeNames(row, 'accepted', t)}</FactRow>
         {row.acceptedAt && <FactRow label={t('acceptedAt')} timestamp={row.acceptedAt} source={t('sourceServer')}>{t('accepted')}</FactRow>}

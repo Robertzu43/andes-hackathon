@@ -6,7 +6,7 @@ import { createContactView } from '../../src/features/contacts/view-store.ts';
 import { ids, point, incident, deferred, tripStatus } from './fixtures.mjs';
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-const row = () => ({ id: ids.grant, contactId: ids.contact, phone: '+5511000000000', status: 'accepted',
+const row = () => ({ id: ids.grant, contactId: ids.contact, role: 'family', status: 'accepted',
   map: { requested: true, accepted: true }, incident: { requested: true, accepted: true },
   acceptedAt: '2026-10-17T12:00:00.000Z', revokedAt: null, revokedBy: null });
 async function until(predicate) {
