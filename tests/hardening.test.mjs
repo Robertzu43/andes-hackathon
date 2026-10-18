@@ -54,6 +54,11 @@ test('a token without a verified phone never downgrades the stored phone or canc
   assert.ok(await d.authorizeJob(f.ctx, await d.claimJob(f.ctx, jobs[0], 'phone'), provider()));
   await f.req('GET', '/v1/me', undefined, await f.token('contact', {phone_number: '+15555550111'}));
   assert.equal((await f.ctx.pool.query('SELECT phone FROM identities WHERE id=$1', [f.contactIdentity.id])).rows[0].phone, '+15555550111');
+  // Outside demo sign-in an unchanged identity is never rewritten, so requests take no identity row lock or write.
+  const version = async () => (await f.ctx.pool.query('SELECT xmin::text AS v, last_seen_at FROM identities WHERE id=$1', [f.contactIdentity.id])).rows[0];
+  const before = await version(); f.advance(60000);
+  assert.equal((await f.req('GET', '/v1/me', undefined, await f.token('contact', {phone_number: '+15555550111'}))).status, 200);
+  assert.deepEqual(await version(), before);
 });
 
 test('rate-limit and auth/payment rejections retry within a bounded persisted budget; permanent ones stay terminal', async t => {
