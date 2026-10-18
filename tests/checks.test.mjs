@@ -178,10 +178,10 @@ test('status drives both screens without phone numbers and follows grant scopes'
   assert.equal((await f.req('GET', path, undefined, family.jwt)).status, 403);
 });
 
-test('alert wording names the truck, keeps the incident ID and never invents location', async () => {
+test('alert wording names the truck and never invents location; SMS carries no URL and calls read no ID', async () => {
   const {alertSummary} = await import('../dist/notifications/wording.js');
   const now = new Date('2026-10-17T12:05:00Z');
-  const base = {truck: 'ABC-123', country: 'PE', timeZone: 'America/Lima', now, signalAt: null,
+  const base = {truck: 'ABC-123', country: 'PE', timeZone: 'America/Lima', now, signalAt: null, channel: 'whatsapp',
     location: {latitude: -12.1, longitude: -77.03, accuracy: 18.4, captured_at: new Date('2026-10-17T12:02:00Z')}};
   const env = {EMERGENCY_NUMBERS: '{"PE":"105"}', CONTACT_APP_URL: 'https://andes.example'};
   assert.equal(alertSummary({...base, incident: {id: 'i-1', trigger: 'sos', check_reason: null}}, env),
@@ -192,9 +192,70 @@ test('alert wording names the truck, keeps the incident ID and never invents loc
   assert.match(alertSummary({...base, incident: {id: 'i-4', trigger: 'missed_check', check_reason: 'sharing_stopped'}}, {}), /dejó de compartir su ubicación/);
   assert.match(alertSummary({...base, location: {...base.location, captured_at: new Date('2026-10-17T10:00:00Z')}, incident: {id: 'i-5', trigger: 'sos', check_reason: null}}, {}), /hace 2 h 5 min/);
   assert.match(alertSummary({...base, truck: 'ABC\n123\t'.padEnd(80, 'x'), incident: {id: 'i-6', trigger: 'sos', check_reason: null}}, {}), /camión ABC 123 x{32} pidió/);
-  const spoken = alertSummary({...base, voice: true, incident: {id: 'i-7', trigger: 'sos', check_reason: null}}, env);
-  assert.doesNotMatch(spoken, /https?:/);
-  assert.match(spoken, /Incidente i-7\. Última ubicación a las 07:02, hace 3 min, precisión de 18 metros\. Llámalo\./);
+  // SMS: every alert link is unique, so Zavu cannot pre-verify it; coordinates are plain text.
+  const texted = alertSummary({...base, channel: 'sms', incident: {id: 'i-8', trigger: 'sos', check_reason: null}}, env);
+  assert.equal(texted, 'ALERTA: el conductor del camión ABC-123 pidió ayuda (posible robo). Incidente i-8. Última ubicación a las 07:02 (hace 3 min, ±18 m): -12.1, -77.03. Llámalo. Si no responde, llama al 105.');
+  assert.doesNotMatch(texted, /http|www\.|\.com/);
+  assert.doesNotMatch(alertSummary({...base, channel: 'sms', incident: {id: 'i-9', trigger: 'missed_check', check_reason: 'silence'}}, env), /http/);
+  // Voice never reads a URL or an incident ID aloud.
+  const uuid = '0d3c2a9e-1b7f-4c55-9a51-3f1e2d4c5b6a';
+  const spoken = alertSummary({...base, channel: 'voice', incident: {id: uuid, trigger: 'sos', check_reason: null}}, env);
+  assert.equal(spoken, 'ALERTA: el conductor del camión ABC-123 pidió ayuda (posible robo). Última ubicación a las 07:02, hace 3 min, precisión de 18 metros. Llámalo. Si no responde, llama al 105.');
+  assert.equal(alertSummary({...base, channel: 'voice', location: null, signalAt: new Date('2026-10-17T11:58:00Z'), incident: {id: uuid, trigger: 'missed_check', check_reason: 'silence'}}, {}),
+    'el conductor del camión ABC-123 no confirmó su estado (sin señal desde 06:58). Última ubicación no disponible. No sabemos qué pasó. Llámalo.');
+});
+
+test('alert wording removes truck-label links from SMS and voice before truncation', async t => {
+  const {alertSummary} = await import('../dist/notifications/wording.js');
+  const base = {country: 'PE', timeZone: 'America/Lima', now: new Date('2026-10-17T12:05:00Z'), signalAt: null,
+    location: null, incident: {id: 'i-1', trigger: 'sos', check_reason: null}};
+  const labels = [
+    {truck: 'ABC-123 https://tracker.example/path', want: 'ABC-123'},
+    {truck: 'ABC-123 HTTP://tracker.example/path', want: 'ABC-123'},
+    {truck: 'ABC-123 www.tracker.example/path', want: 'ABC-123'},
+    {truck: 'ABC-123 tracker.example/path', want: 'ABC-123'},
+    {truck: 'ABC-123 //tracker.example/path', want: 'ABC-123'},
+    {truck: `ABC-123 https://${'x'.repeat(50)}.example/path`, want: 'ABC-123'},
+    {truck: `https://tracker.example/${'x'.repeat(80)} ABC-123`, want: 'ABC-123'},
+    {truck: 'Camión 2.5 / PE-1', want: 'Camión 2.5 / PE-1'},
+    {truck: 'HTTP-123 COM-456', want: 'HTTP-123 COM-456'},
+    {truck: 'ABC.PE-123', want: 'ABC.PE-123'},
+    {truck: 'ABC\n123\t', want: 'ABC 123'},
+  ];
+  for (const channel of ['sms', 'voice']) for (const {truck, want} of labels) await t.test(`${channel}: ${JSON.stringify(truck)}`, () => {
+    const summary = alertSummary({...base, truck, channel}, {CONTACT_APP_URL: 'https://andes.example'});
+    assert.ok(summary.startsWith(`ALERTA: el conductor del camión ${want} pidió ayuda (posible robo).`), summary);
+    assert.doesNotMatch(summary, /https?:\/\/|www\.|tracker\.example/i);
+    assert.match(summary, /Última ubicación no disponible\. Llámalo\.$/);
+  });
+});
+
+test('voice removes truck-label UUIDs before truncation while SMS and WhatsApp retain identifiers', async t => {
+  const {alertSummary} = await import('../dist/notifications/wording.js');
+  const uuid = '0d3c2a9e-1b7f-4c55-9a51-3f1e2d4c5b6a';
+  const base = {country: 'PE', timeZone: 'America/Lima', now: new Date('2026-10-17T12:05:00Z'), signalAt: null,
+    location: null, incident: {id: uuid, trigger: 'missed_check', check_reason: 'sharing_stopped'}};
+  const labels = [
+    {truck: `ABC-123 ${uuid}`, want: 'ABC-123'},
+    {truck: `ABC-123 ${uuid.toUpperCase()}`, want: 'ABC-123'},
+    {truck: `${uuid} ABC-123`, want: 'ABC-123'},
+    {truck: `Unidad_${uuid}`, want: 'Unidad_'},
+  ];
+  for (const {truck, want} of labels) await t.test(`voice: ${truck}`, () => {
+    const summary = alertSummary({...base, truck, channel: 'voice'}, {});
+    assert.equal(summary, `el conductor del camión ${want} no confirmó su estado (dejó de compartir su ubicación). Última ubicación no disponible. No sabemos qué pasó. Llámalo.`);
+    assert.doesNotMatch(summary, /Incidente|[0-9a-f]{8}-[0-9a-f]{4}-/i);
+  });
+  for (const channel of ['sms', 'whatsapp']) await t.test(`${channel} keeps UUIDs`, () => {
+    const summary = alertSummary({...base, truck: uuid, channel}, {});
+    assert.ok(summary.startsWith(`el conductor del camión ${uuid} no confirmó su estado`), summary);
+    assert.ok(summary.includes(`Incidente ${uuid}.`), summary);
+  });
+  await t.test('WhatsApp keeps label URLs and the incident link', () => {
+    const summary = alertSummary({...base, truck: 'ABC https://t.example', channel: 'whatsapp'}, {CONTACT_APP_URL: 'https://andes.example'});
+    assert.ok(summary.startsWith('el conductor del camión ABC https://t.example no confirmó su estado'), summary);
+    assert.ok(summary.endsWith(`Ver: https://andes.example/incidents/${uuid}`), summary);
+  });
 });
 
 test('the control worker runs the sweeper only when check timings are configured', async t => {
