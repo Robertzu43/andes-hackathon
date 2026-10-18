@@ -1,0 +1,51 @@
+{
+  "pr": 52,
+  "review": "https://github.com/Bimbi-Dev/andes-hackathon/pull/52#pullrequestreview-5560875615",
+  "baselineCommit": "091252042581490313437c9035c5165c76828221",
+  "candidateCommit": "b5a9eb5465513bdbcc392c0a80b51467ca8a2964",
+  "candidateSourceTree": "ae66e1d97282302c3ebddfafa42f83eb13daf313",
+  "candidateTestTree": "dc695d51ad95205001bb82d74387f80255bed5da",
+  "runtime": "node v24.17.0",
+  "candidateRunRoot": "/private/tmp/andes-q57-pr52-append",
+  "baselineInput": "git show baseline:tests/phone-observations/adapter.test.mjs + regressions.append.mjs.txt",
+  "baselineInputSha256": "cb391960963865a73843d45e7b366c05a1700d1ff487855600b4827d16782ac5",
+  "focusedPattern": "DEMO52",
+  "focusedBefore": {
+    "pass": 0,
+    "fail": 11
+  },
+  "focusedAfter": {
+    "pass": 11,
+    "fail": 0
+  },
+  "exactAuthorRecorder": {
+    "pass": 124,
+    "fail": 0
+  },
+  "unchangedPortableProbes": {
+    "pass": 44,
+    "fail": 1
+  },
+  "unchangedLifecycleV2": {
+    "pass": 16,
+    "fail": 0
+  },
+  "preservedRed": "Q52 R05 asserts global drain blocked after completed wipe; superseded by latest review. Pending/failed wipe still blocks; current trip capture/resume/flush stay blocked.",
+  "harnessLabelCaveat": "Lifecycle JSON retains its hardcoded historical candidate label; actual root and source trees are bound here. Harness bytes were not changed.",
+  "uiEvidence": "Adapter library only; no UI/route/style/control changes. Does not claim integrated app or physical device proof.",
+  "filesSha256": {
+    "before-091.tap": "f0e20566b50c89512c669833ebe7ec771b2f66b218c4cae24208ea3b9147bec9",
+    "regressions.append.mjs.txt": "4b3a8f970192a6b95fb9cdd647001dd6c0e3334260f039fb165b778109502591",
+    "exact-lifecycle.json": "b83cddd3e7daf75d448c0481f4a6421e054b88d35bcb9b5966cb9b94850565b2",
+    "exact-independent.tap": "b37590135a954e9a159a8ccb39350dfbf49b33766d2fac7dcc6f27ec050f3125",
+    "after-focused.tap": "204f6c26edd1e532f5a3fa5551c796022db34702668e616de9107318415832d7",
+    "exact-author.tap": "f81806d1ba9195f4e8520b8e488527c9ac7f888385dd1bdf57d33e12ec719995"
+  },
+  "probeSha256": {
+    "review-probes/robert-pr52-followup.test.mjs": "2c434db41bd941219056f88fc05b5f93598f790b4536376e5e78486e3ef2f9ee",
+    "/tmp/andes-q57-review-2769/review-probes/phone-9f87e2c/phone-contract-v3.test.mjs": "ebc8962f4f618a31e672b2e7d47476be43565331a355077f8ac869d82a1cc78e",
+    "/tmp/andes-q57-review-2769/review-probes/phone-9f87e2c/phone-9f87-independent.test.mjs": "a9356d5aa93deb7d2aaaae1a8cfbf7d8b54260f85a876e39f2e8c5a58a1778e4",
+    "/tmp/andes-q57-review-2769/review-probes/phone-9f87e2c/phone-lifecycle-v2.mjs": "7b600879b0dfa74df2a7eee454e4d8d9dc0b9cb2c54fd004857b214f16d763ed",
+    "/tmp/andes-q57-demo52-probes/phone-independent-091.test.mjs": "e9f9c7edfacbe97041171eb52a2a201964582e00710973381f7e804d7088a13c"
+  }
+}

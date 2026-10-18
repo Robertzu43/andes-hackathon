@@ -1,0 +1,226 @@
+✖ DEMO52 stale after-error query cannot cancel a newer gesture GPS request (4.2145ms)
+✖ DEMO52 resume preserves denied or revoked GPS without saved location intent (1.248291ms)
+✖ DEMO52 unsupported wake-lock polling preserves GPS history and session budget (15.133916ms)
+✖ DEMO52 explicit stop after suspension sends one final nonresumable intent update (1.0505ms)
+✖ DEMO52 failed trip start cannot leave resumable capture after wake request suspension (0.844666ms)
+✖ DEMO52 resumed location result settles after a synchronous sink stop (0.305583ms)
+✖ DEMO52 synchronous watch cancellation cannot report successful acquisition (0.18725ms)
+✖ DEMO52 wake lock has no GPS gesture or OS permission gate (1.465417ms)
+✖ DEMO52 suspended consent withdrawal publishes terminal nonresumable state (0.309709ms)
+✖ DEMO52 global drain resumes for other trips only after this trip wipe succeeds (0.517042ms)
+✖ DEMO52 trip factory needs no unused template sessionId (0.106791ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 0
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 72.581167
+
+✖ failing tests:
+
+test at tests/phone-observations/adapter.test.mjs:1215:1
+✖ DEMO52 stale after-error query cannot cancel a newer gesture GPS request (4.2145ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/tests/phone-observations/adapter.test.mjs:1227:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:1233:1
+✖ DEMO52 resume preserves denied or revoked GPS without saved location intent (1.248291ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'permission-denied-or-revoked'
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/tests/phone-observations/adapter.test.mjs:1239:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'permission-denied-or-revoked',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:1245:1
+✖ DEMO52 unsupported wake-lock polling preserves GPS history and session budget (15.133916ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(snap.events.some(e => e.type === 'geolocation'))
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/tests/phone-observations/adapter.test.mjs:1250:47)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:1256:1
+✖ DEMO52 explicit stop after suspension sends one final nonresumable intent update (1.0505ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   reason: 'pagehide',
+  +   resumable: true,
+  -   reason: 'explicit-stop',
+  -   resumable: false,
+      sharingState: 'stopped'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/tests/phone-observations/adapter.test.mjs:1266:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { reason: 'pagehide', sharingState: 'stopped', resumable: true },
+    expected: { reason: 'explicit-stop', sharingState: 'stopped', resumable: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:1272:1
+✖ DEMO52 failed trip start cannot leave resumable capture after wake request suspension (0.844666ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/tests/phone-observations/adapter.test.mjs:1280:10)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:1284:1
+✖ DEMO52 resumed location result settles after a synchronous sink stop (0.305583ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/tests/phone-observations/adapter.test.mjs:1292:42)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:1296:1
+✖ DEMO52 synchronous watch cancellation cannot report successful acquisition (0.18725ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/tests/phone-observations/adapter.test.mjs:1302:36)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:1305:1
+✖ DEMO52 wake lock has no GPS gesture or OS permission gate (1.465417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/tests/phone-observations/adapter.test.mjs:1313:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:1318:1
+✖ DEMO52 suspended consent withdrawal publishes terminal nonresumable state (0.309709ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'pagehide'
+  - 'consent-revoked'
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/tests/phone-observations/adapter.test.mjs:1321:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'pagehide',
+    expected: 'consent-revoked',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:1327:1
+✖ DEMO52 global drain resumes for other trips only after this trip wipe succeeds (0.517042ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/tests/phone-observations/adapter.test.mjs:1331:38)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/phone-observations/adapter.test.mjs:1336:1
+✖ DEMO52 trip factory needs no unused template sessionId (0.106791ms)
+  TypeError: A bounded tripId, sessionId and revision are required
+      at createTripPhoneObservations (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/src/phone-observations/trip-sharing.mjs:11:11)
+      at TestContext.<anonymous> (file:///Users/sebasbimbi/.codus/workspaces/andes-review-phone/tests/phone-observations/adapter.test.mjs:1338:22)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
