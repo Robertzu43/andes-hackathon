@@ -166,6 +166,12 @@ test('migration numbers are unique and strictly increasing, and each file applie
   assert.deepEqual(await applied(), files, 'the old stem is recognized and the SQL is not applied again');
   await f.ctx.pool.query('UPDATE schema_migrations SET version=$1, hash=$2 WHERE version=$3', [legacy, 'not-the-file-hash', current]);
   await assert.rejects(migrate(f.ctx.pool), /Applied migration changed/);
+  // Both stems recorded means the rename already happened once and a second copy was applied. Do not pick one.
+  const { createHash } = await import('node:crypto'); const { readFileSync } = await import('node:fs');
+  const fileHash = createHash('sha256').update(readFileSync(new URL(`../db/migrations/${current}.sql`, import.meta.url))).digest('hex');
+  await f.ctx.pool.query('DELETE FROM schema_migrations WHERE version=$1 OR version=$2', [legacy, current]);
+  await f.ctx.pool.query('INSERT INTO schema_migrations(version, hash) VALUES ($1,$3),($2,$3)', [legacy, current, fileHash]);
+  await assert.rejects(migrate(f.ctx.pool), /Applied migration changed/);
 });
 
 // Resolving an SOS must not close an otherwise active trip or silently disable its map.
