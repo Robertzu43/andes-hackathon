@@ -32,7 +32,7 @@ export function checkRoutes(app: FastifyInstance, ctx: Context) {
     // The check and incident are incident-scope data; map-only contacts get location alone.
     const incidentScope = driver || grant.incident_accepted;
     const check = incidentScope ? (await client.query("SELECT reason,ask_until FROM security_checks WHERE trip_id=$1 AND status='asking'", [trip.id])).rows[0] : undefined;
-    const incident = incidentScope ? (await client.query('SELECT id,trigger,check_reason,status,created_at FROM incidents WHERE trip_id=$1 ORDER BY created_at DESC,id DESC LIMIT 1', [trip.id])).rows[0] : undefined;
+    const incident = incidentScope ? (await client.query('SELECT id,trigger,check_reason,status,label,created_at FROM incidents WHERE trip_id=$1 ORDER BY created_at DESC,id DESC LIMIT 1', [trip.id])).rows[0] : undefined;
     // Only the current alert wave: after an SOS upgrade, its SOS alerts replace the missed-check ones on screen.
     const deliveries = incident ? (await client.query(`SELECT COALESCE(cg.role,'group') AS role,j.channel,j.status,j.unavailable_reason FROM jobs j
       LEFT JOIN contact_grants cg ON cg.id=j.grant_id WHERE j.incident_id=$1 AND j.trigger=$2 ORDER BY role,j.channel`, [incident.id, incident.trigger])).rows : [];
@@ -44,7 +44,7 @@ export function checkRoutes(app: FastifyInstance, ctx: Context) {
     return {
       trip: { status: trip.status, paused: trip.paused, expectedArrivalAt: trip.expected_arrival_at?.toISOString() ?? null },
       check: check ? { status: 'asking', reason: check.reason, askUntil: check.ask_until.toISOString() } : null,
-      incident: incident ? { id: incident.id, trigger: incident.trigger, checkReason: incident.check_reason, status: incident.status, createdAt: incident.created_at.toISOString() } : null,
+      incident: incident ? { id: incident.id, trigger: incident.trigger, checkReason: incident.check_reason, status: incident.status, label: incident.label, createdAt: incident.created_at.toISOString() } : null,
       deliveries: deliveries.map(d => ({ role: d.role, channel: d.channel, status: d.status, unavailableReason: d.unavailable_reason })),
       location
     };
