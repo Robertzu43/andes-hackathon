@@ -329,3 +329,17 @@ test('a cell with two people stays suppressed however often they report; three p
   assert.deepEqual((await hotspots(f)).body.cells.map(c => [c.lat, c.robo, c.intentoRobo, c.total, c.synthetic]), [[-13.075, 2, 1, 3, 3], [-12.325, 3, 0, 3, 0]]);
 });
 
+// Counting people must not empty the demo map: the seed spreads its reports over many synthetic people, all labelled demo data.
+test('the seeded demo database publishes hotspots from flagged synthetic people', async t => {
+  const f = await fixture(t); f.advance(Date.now() - f.ctx.clock().getTime()); // the seed dates its reports from the real clock
+  const { spawnSync } = await import('node:child_process'); const { fileURLToPath } = await import('node:url');
+  const seed = () => spawnSync(process.execPath, [fileURLToPath(new URL('../scripts/seed-demo.mjs', import.meta.url))], { encoding: 'utf8', env: { PATH: process.env.PATH, SEED_DEMO: '1', DATABASE_URL: f.ctx.pool.options.connectionString } });
+  seed(); const run = seed(); // re-seeding replaces the earlier rows
+  assert.equal(run.status, 0, run.stderr);
+  const rows = (await f.ctx.pool.query('SELECT count(*)::int AS n, count(DISTINCT reporter_id)::int AS people, bool_and(i.synthetic AND r.synthetic) AS flagged FROM reports r JOIN identities i ON i.id = r.reporter_id')).rows[0];
+  assert.deepEqual([rows.n, rows.people >= 12, rows.flagged], [Number(run.stdout.match(/Seeded (\d+)/)[1]), true, true]);
+  const map = (await hotspots(f)).body;
+  assert.equal(map.includesSynthetic, true);
+  assert.deepEqual(map.cells.filter(c => c.band === 'noche').map(c => [c.lat, c.lon]), [[-12.325, -76.775], [-12.525, -76.725], [-13.075, -76.375]]); // Lurín, Chilca, Cañete
+  assert.ok(map.cells.every(c => c.synthetic === c.total && c.total >= map.minCount));
+});

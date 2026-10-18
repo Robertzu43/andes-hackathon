@@ -138,7 +138,7 @@ Both mutations use `idempotent()` (Idempotency-Key header). Query parameters arr
 
 ### Seed (`scripts/seed-demo.mjs`)
 
-About 40 `synthetic=true` reports from a `seed/demo` identity, clustered along the Panamericana Sur south of Lima (Lurín, Chilca, Cañete), mostly at night. Any page that shows hotspots must say `incluye datos de demostración` when `includesSynthetic` is true.
+About 40 `synthetic=true` reports spread over 16 synthetic `seed/demo-<n>` identities (insights count people), clustered along the Panamericana Sur south of Lima (Lurín, Chilca, Cañete), mostly at night. Any page that shows hotspots must say `incluye datos de demostración` when `includesSynthetic` is true.
 
 ### Tests (`tests/insights.test.mjs`, real PostgreSQL)
 
