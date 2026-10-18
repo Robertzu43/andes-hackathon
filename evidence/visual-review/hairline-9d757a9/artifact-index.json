@@ -1,0 +1,63 @@
+{
+  "candidate": "9d757a909268ebf4c9b45068fa4954fed873ddc8",
+  "artifacts": [
+    {
+      "path": "batch-repro.mjs",
+      "sha256": "9007f3fd056e66ebd4c8f6825ebec52b7a0efb48639069e9917166ee8748536a",
+      "bytes": 1812
+    },
+    {
+      "path": "lifecycle.mjs",
+      "sha256": "5c6f58e87e54fa194b531e94887d78135886c81e96120f9fc0d3a6b000a38533",
+      "bytes": 2907
+    },
+    {
+      "path": "raw/batched-io-result.json",
+      "sha256": "5ffdfab1c193fa0b709aac451da7a61ea853550a842d54813f9b832c9ffd6d63",
+      "bytes": 304
+    },
+    {
+      "path": "raw/builder-git-fingerprint.json",
+      "sha256": "30143a05392b86c6a813a9afa122c186672938f70a88aaeb81a0539212b0927d",
+      "bytes": 355
+    },
+    {
+      "path": "raw/builder-manifest-validation.txt",
+      "sha256": "9ec3b1d524c03a8725b0c9b76a0ab1a1b6d0dfe3abbe2409f7d80bb04ffae64d",
+      "bytes": 133
+    },
+    {
+      "path": "raw/builder-ui-evidence-manifest.pending.json",
+      "sha256": "a57f3616d97bd543a53271ddc92ecb6a2dbabc8ea363c1f3a2cae85cc30ad9bd",
+      "bytes": 73368
+    },
+    {
+      "path": "raw/lifecycle.json",
+      "sha256": "5af929ced415e72633e5de5c138b6589e7ce7ee1f2cd8d60dd320e5060ac250c",
+      "bytes": 3566
+    },
+    {
+      "path": "raw/native-mobile-still.png",
+      "sha256": "e961d0b17a86fce883cb1ea206b6184cf65bd77b2273695b08950b196760108c",
+      "bytes": 51070,
+      "pngWidth": 346,
+      "pngHeight": 752
+    },
+    {
+      "path": "raw/visibility-batches.json",
+      "sha256": "adbc1f48554e3e6db94fb95a6893141f567a08a628cd5e877a3d4f1bd4fd286b",
+      "bytes": 1441
+    },
+    {
+      "path": "review-server.mjs",
+      "sha256": "36bf6bfb8578e711021734f567b7e80068e2e360d4ccdb38fbb9bb434e4a7ca8",
+      "bytes": 1658
+    },
+    {
+      "path": "source-binding.json",
+      "sha256": "32f07c7613a725faa3945941ebabea179951d621a3a73cc6f16720f9048f26eb",
+      "bytes": 3701
+    }
+  ],
+  "notFormalUIEvidenceManifest": true
+}

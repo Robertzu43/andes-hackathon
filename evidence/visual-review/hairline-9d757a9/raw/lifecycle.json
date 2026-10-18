@@ -1,0 +1,124 @@
+{
+  "candidate": "9d757a909268ebf4c9b45068fa4954fed873ddc8",
+  "trustedTouchPan": {
+    "before": 0,
+    "after": 129,
+    "delta": 129
+  },
+  "simulatedHidden": {
+    "before": {
+      "schemaVersion": 1,
+      "observedAt": "2026-10-18T00:05:40.131Z",
+      "scope": ".andes-phone",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "layoutViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "visualViewport": {
+        "width": 390,
+        "height": 844,
+        "scale": 1
+      },
+      "geometryMeasurable": true,
+      "lang": "es",
+      "reducedMotion": false,
+      "visibility": "visible",
+      "pageOverflowPx": 0,
+      "scopeBox": {
+        "x": 24,
+        "y": 101,
+        "width": 342,
+        "height": 337.59,
+        "top": 101,
+        "right": 366,
+        "bottom": 438.59,
+        "left": 24
+      },
+      "scopeRendered": true,
+      "scopeInViewport": true,
+      "scopeOverflowPx": 0,
+      "controls": [],
+      "primary": null,
+      "primaryMissing": false,
+      "runningAnimations": [],
+      "frames": {
+        "callbacks": 43,
+        "callbackMs": 11.2,
+        "pending": 0
+      },
+      "mutations": 7,
+      "limitations": [
+        "RAF counters are page-wide and only include calls made after installation; pre-bound schedulers can escape them",
+        "Zero callbacks/mutations does not prove zero CPU, timers, listeners, memory leaks or GPU work",
+        "Name hints and focus CSS require accessibility-tree and visual inspection; hit points are samples",
+        "CSS clipping, content truth, source provenance and keyboard/touch outcomes require independent review"
+      ]
+    },
+    "after": {
+      "schemaVersion": 1,
+      "observedAt": "2026-10-18T00:05:40.934Z",
+      "scope": ".andes-phone",
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "layoutViewport": {
+        "width": 390,
+        "height": 844
+      },
+      "visualViewport": {
+        "width": 390,
+        "height": 844,
+        "scale": 1
+      },
+      "geometryMeasurable": true,
+      "lang": "es",
+      "reducedMotion": false,
+      "visibility": "visible",
+      "pageOverflowPx": 0,
+      "scopeBox": {
+        "x": 24,
+        "y": 101,
+        "width": 342,
+        "height": 337.59,
+        "top": 101,
+        "right": 366,
+        "bottom": 438.59,
+        "left": 24
+      },
+      "scopeRendered": true,
+      "scopeInViewport": true,
+      "scopeOverflowPx": 0,
+      "controls": [],
+      "primary": null,
+      "primaryMissing": false,
+      "runningAnimations": [],
+      "frames": {
+        "callbacks": 43,
+        "callbackMs": 11.2,
+        "pending": 0
+      },
+      "mutations": 7,
+      "limitations": [
+        "RAF counters are page-wide and only include calls made after installation; pre-bound schedulers can escape them",
+        "Zero callbacks/mutations does not prove zero CPU, timers, listeners, memory leaks or GPU work",
+        "Name hints and focus CSS require accessibility-tree and visual inspection; hit points are samples",
+        "CSS clipping, content truth, source provenance and keyboard/touch outcomes require independent review"
+      ]
+    },
+    "delta": {
+      "elapsedMs": 801,
+      "callbacks": 0,
+      "callbackMs": 0,
+      "mutations": 0
+    }
+  },
+  "hiddenRestored": true,
+  "limits": "Visibility event is controlled/synthetic; headless tab switching and minimizing kept document.visibilityState visible. No physical iPhone or native hidden-tab qualification."
+}

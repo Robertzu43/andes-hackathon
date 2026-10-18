@@ -1,0 +1,266 @@
+{
+  "candidate": "8c54a17793bb6133d462cfa2598bcefe72c79590",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "5e13294a29799b96c218aa58d02a1b6b21d8e0f8538ddee63bfd67cbf83f93b4",
+      "bytes": 3193
+    },
+    {
+      "path": "binding-lifecycle.mjs",
+      "sha256": "0ac2b172f46a7f663b7dab073d74b4ede91c8b8ab7d845d68080c7357a160851",
+      "bytes": 10177
+    },
+    {
+      "path": "independent.mjs",
+      "sha256": "b06c0d6f7657f1519582aff810fb2b1684af476275e51d49e88b1190bfe4c962",
+      "bytes": 6892
+    },
+    {
+      "path": "raw/axe-es-phone.json.gz",
+      "sha256": "e651def0a0b4f03e78b53f23b0faec5ae13b7334e5da8661c36b2e2dbdb5e5d5",
+      "bytes": 9396
+    },
+    {
+      "path": "raw/axe-es-relay.json.gz",
+      "sha256": "d96195727619aa55ac0617c9d48ebde6d95b77a72dd08af925136bcdc29ec22f",
+      "bytes": 12361
+    },
+    {
+      "path": "raw/axe-pt-BR-phone.json.gz",
+      "sha256": "426b8e165d8aee4b9169cc27dd227ba1f47eb60d59b9c7c789a1b96e0a217e6d",
+      "bytes": 9477
+    },
+    {
+      "path": "raw/axe-pt-BR-relay.json.gz",
+      "sha256": "248a66129fe1969810b1da5e83e81a3c27efbf400054566ee393534c57ca17fa",
+      "bytes": 12369
+    },
+    {
+      "path": "raw/binding/es-phone-detail-4x.png",
+      "sha256": "da0480ea57f10e02dc8aed424a2f989ae9db7e793400ca36ef419741a1be8b62",
+      "bytes": 25900,
+      "pngWidth": 1232,
+      "pngHeight": 984
+    },
+    {
+      "path": "raw/binding/es-phone-reduced.png",
+      "sha256": "fd886e1896efce6b31a65014b06ca66350d85c5f5cdaeb83ae308fcd81c84afe",
+      "bytes": 103182,
+      "pngWidth": 390,
+      "pngHeight": 1719
+    },
+    {
+      "path": "raw/binding/es-phone-static-keyboard.png",
+      "sha256": "6e2a764fbb965c37a44c81266163f2251cd2f6a28dfd933d8773d9257e474291",
+      "bytes": 105757,
+      "pngWidth": 390,
+      "pngHeight": 1776
+    },
+    {
+      "path": "raw/binding/es-relay-detail-4x.png",
+      "sha256": "5be388c0759dec91ab8a7993269f2223d91c9edeb51d74df14cff9a1ddb4819c",
+      "bytes": 47005,
+      "pngWidth": 1144,
+      "pngHeight": 640
+    },
+    {
+      "path": "raw/binding/es-relay-reduced.png",
+      "sha256": "880f8b957666f86ac5e52ed5be43d9752220d2a0807b86e141a6473ea2b2577b",
+      "bytes": 200495,
+      "pngWidth": 390,
+      "pngHeight": 2760
+    },
+    {
+      "path": "raw/binding/es-relay-static-keyboard.png",
+      "sha256": "7cc5aaf11baba24250033bb2aa5ab92e0c21a05ab5bced3017e75cf8c9d4b8e4",
+      "bytes": 202522,
+      "pngWidth": 390,
+      "pngHeight": 2817
+    },
+    {
+      "path": "raw/binding/pt-BR-phone-detail-4x.png",
+      "sha256": "da0480ea57f10e02dc8aed424a2f989ae9db7e793400ca36ef419741a1be8b62",
+      "bytes": 25900,
+      "pngWidth": 1232,
+      "pngHeight": 984
+    },
+    {
+      "path": "raw/binding/pt-BR-phone-reduced.png",
+      "sha256": "1a11c57df428069231ad11730c8bc2fe640787710834cab1d642b6d222dda5b1",
+      "bytes": 110941,
+      "pngWidth": 390,
+      "pngHeight": 1719
+    },
+    {
+      "path": "raw/binding/pt-BR-phone-static-keyboard.png",
+      "sha256": "e2a2983cac2e7afd41cf8cfe2d091798b4b0107eb1441a6c945d1413524ffbd4",
+      "bytes": 113583,
+      "pngWidth": 390,
+      "pngHeight": 1776
+    },
+    {
+      "path": "raw/binding/pt-BR-relay-detail-4x.png",
+      "sha256": "28ab8c1e0675599fbdf5f57a83111af8d9501a66d0cf46b478f1245576c1b1e4",
+      "bytes": 47046,
+      "pngWidth": 1144,
+      "pngHeight": 640
+    },
+    {
+      "path": "raw/binding/pt-BR-relay-reduced.png",
+      "sha256": "495c80f614f15a9997658492b58161894f1519f1386985f8ee1d481a0e8074f8",
+      "bytes": 209390,
+      "pngWidth": 390,
+      "pngHeight": 2765
+    },
+    {
+      "path": "raw/binding/pt-BR-relay-static-keyboard.png",
+      "sha256": "49356ee426fc230c3e5d9695ca2805ca965a56ad9626c772f23f12acb6fc4915",
+      "bytes": 211421,
+      "pngWidth": 390,
+      "pngHeight": 2822
+    },
+    {
+      "path": "raw/binding/report.json",
+      "sha256": "dca781454c2fd0d7c39ec82fd7155e4e8257aa4dd13d7b095fac5262474c7332",
+      "bytes": 7701
+    },
+    {
+      "path": "raw/build.log.gz",
+      "sha256": "f7c48c3ba3ef46a9a6646a6ef96722e4282d24120dc6e5dff22a9c7ccc8bb3b3",
+      "bytes": 498
+    },
+    {
+      "path": "raw/builder-support/capture-manifest.json",
+      "sha256": "c20b506c1e7f0c1e54d3a7d8535974ba1495666c23a42a9d2a19a01bd4da9677",
+      "bytes": 8028
+    },
+    {
+      "path": "raw/builder-support/phone-contact-sheet.png",
+      "sha256": "56d48e7946875c6386f2ae03f262a89aec1c6c9b161b959ca8f516cda64e58be",
+      "bytes": 857595,
+      "pngWidth": 1200,
+      "pngHeight": 4337
+    },
+    {
+      "path": "raw/builder-support/relay-contact-sheet.png",
+      "sha256": "41dba9ea44055fc0c4ca0443a9d9f11fbc3ee229a9b3c67370240735e221a4c8",
+      "bytes": 1488558,
+      "pngWidth": 1200,
+      "pngHeight": 6763
+    },
+    {
+      "path": "raw/builder-support/report.json",
+      "sha256": "94a21a0af80320476d81466cbd8e43c274f380b0521d21d1c0d01354fc3f88d1",
+      "bytes": 21705
+    },
+    {
+      "path": "raw/diagnostics/css-lab-serialization-assertion.json",
+      "sha256": "c57783e57d0d8e1c620efc4a3b2be5ce932c0326fc9c65d8f2e63110df56fb65",
+      "bytes": 292
+    },
+    {
+      "path": "raw/diagnostics/embedded-click-did-not-toggle.png",
+      "sha256": "b7f21dc63717ac34ca9721ac51f78c5a8290f3d342ab7c7c58e1508b8afc6638",
+      "bytes": 49438,
+      "pngWidth": 346,
+      "pngHeight": 752
+    },
+    {
+      "path": "raw/diagnostics/embedded-space-did-not-toggle.png",
+      "sha256": "b7f21dc63717ac34ca9721ac51f78c5a8290f3d342ab7c7c58e1508b8afc6638",
+      "bytes": 49438,
+      "pngWidth": 346,
+      "pngHeight": 752
+    },
+    {
+      "path": "raw/es-phone-360-sections.png",
+      "sha256": "d24667ef29e3c1ed7a01d9e4770fbbf0b4fe1d04fc56597f6c80db2778db05d2",
+      "bytes": 104785,
+      "pngWidth": 360,
+      "pngHeight": 1782
+    },
+    {
+      "path": "raw/es-relay-360-sections.png",
+      "sha256": "204885f4a5dcbd63ec95075537efa2721605ce2012e13becbe7f17e2ca870273",
+      "bytes": 201064,
+      "pngWidth": 360,
+      "pngHeight": 2804
+    },
+    {
+      "path": "raw/failure-primary.png",
+      "sha256": "f21999bfe6205795652c476e86fe87c626131477aa55edfca4851595f4080cfb",
+      "bytes": 116631,
+      "pngWidth": 390,
+      "pngHeight": 1522
+    },
+    {
+      "path": "raw/independent-results.json",
+      "sha256": "c0a578c779edc3f7cea94daa7de0d602e7fa068f086cba55a38b6c973cf7ee04",
+      "bytes": 5694
+    },
+    {
+      "path": "raw/native-hidden-pt-BR-caption.png",
+      "sha256": "1d4b7776c1bc78860e299ca5d4c025b1aa7cfd32721b74794d7ca7e4def63ef3",
+      "bytes": 60550,
+      "pngWidth": 346,
+      "pngHeight": 752
+    },
+    {
+      "path": "raw/native-pt-BR-closed.png",
+      "sha256": "b7f21dc63717ac34ca9721ac51f78c5a8290f3d342ab7c7c58e1508b8afc6638",
+      "bytes": 49438,
+      "pngWidth": 346,
+      "pngHeight": 752
+    },
+    {
+      "path": "raw/pt-BR-phone-360-sections.png",
+      "sha256": "9416b4c64e90c10d6728b1bbd0ce9f3f957ec47c5000f34ef3138e9a56b8d7c8",
+      "bytes": 111846,
+      "pngWidth": 360,
+      "pngHeight": 1807
+    },
+    {
+      "path": "raw/pt-BR-relay-360-sections.png",
+      "sha256": "e3107f9ce487e8b36e47ad39643513ceb1f3e34bdadf7a73af40d137d56fca02",
+      "bytes": 210983,
+      "pngWidth": 360,
+      "pngHeight": 2834
+    },
+    {
+      "path": "raw/source-checks.json",
+      "sha256": "5e005ca4cd37beba87340fd8bddce46b624eb2631c7602404e4cd07c971685f2",
+      "bytes": 6011
+    },
+    {
+      "path": "raw/wrapper/failure-primary-action.png",
+      "sha256": "0e4a9d79a24587d8430c77c5d702a7a986e39ac9f916c7c3ddd7f79332ad87f7",
+      "bytes": 112129,
+      "pngWidth": 390,
+      "pngHeight": 1448
+    },
+    {
+      "path": "raw/wrapper/pt-BR-reduced-motion.png",
+      "sha256": "069148b4317bb8ac76486d308acc0bdc19e5fa18ef2a339fdb6d4a9a1020856b",
+      "bytes": 108972,
+      "pngWidth": 390,
+      "pngHeight": 1568
+    },
+    {
+      "path": "raw/wrapper/report.json",
+      "sha256": "5c7d3dd0b25da081ae8c390147f687919f56a6b1de5df75cad9ea3158624d9b2",
+      "bytes": 2409
+    },
+    {
+      "path": "source-binding.json",
+      "sha256": "2612143485ce89f4fe64a51f4039741951efa16f7c7e7ae6cb19ef986c7352b6",
+      "bytes": 4658
+    },
+    {
+      "path": "wrapper-lifecycle.mjs",
+      "sha256": "7d653dca30e70b70a746304eff294513818754337bb68e7e9d7b0af603730ddb",
+      "bytes": 9480
+    }
+  ],
+  "notFormalUIEvidenceManifest": true
+}

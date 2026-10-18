@@ -1,0 +1,29 @@
+{
+  "candidate": "feb009167e3ae064d4480dc87d65c3b5b7fdbfcd",
+  "provenance": "Original component56 missing-IO probe, with returned-handle/static observations added; identical abort, visibility and old-button actions",
+  "rows": [
+    {
+      "locale": "es",
+      "error": null,
+      "visibilityCallbacksAfterExternalAbort": 0,
+      "before": null,
+      "after": null,
+      "returnedInstance": true,
+      "staticExamples": 4,
+      "controlsHidden": true,
+      "staticVisible": true
+    },
+    {
+      "locale": "pt-BR",
+      "error": null,
+      "visibilityCallbacksAfterExternalAbort": 0,
+      "before": null,
+      "after": null,
+      "returnedInstance": true,
+      "staticExamples": 4,
+      "controlsHidden": true,
+      "staticVisible": true
+    }
+  ],
+  "ok": true
+}

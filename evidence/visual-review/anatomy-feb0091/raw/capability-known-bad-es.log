@@ -1,0 +1,2 @@
+eval: {"kind":"missing-io","locale":"es","thrown":"IntersectionObserver is not a constructor","handle":false,"initialStatic":false,"staticExamples":4,"activeAfterSetup":7,"activeAfterAbort":7,"outerAfterSetup":0,"outerAfterAbort":0,"changedByOldButton":true,"poseMatchesSelection":false,"documentCallbacks":1,"frames":0,"requestedFrames":0,"cancelledFrames":0,"created":0,"disconnected":0}
+console: clean

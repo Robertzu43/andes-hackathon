@@ -1,0 +1,68 @@
+{
+  "kind": "controlled-browser-observer-batches",
+  "sourceSha256": "098ba67a207415881ffa10b85948e9b4bb78b5953203edf2c59f74a0b1a7abe0",
+  "results": [
+    {
+      "entries": [
+        true,
+        false
+      ],
+      "expected": false,
+      "name": "visible then offscreen stops the engine",
+      "error": null,
+      "mounted": false,
+      "pass": true
+    },
+    {
+      "entries": [
+        false,
+        true
+      ],
+      "expected": true,
+      "name": "offscreen then visible mounts the engine",
+      "error": null,
+      "mounted": true,
+      "pass": true
+    },
+    {
+      "entries": [],
+      "expected": true,
+      "name": "empty batch preserves the prior observation",
+      "error": null,
+      "mounted": true,
+      "pass": true
+    },
+    {
+      "entries": [
+        false,
+        "foreign-visible"
+      ],
+      "expected": false,
+      "name": "foreign target cannot override offscreen",
+      "error": null,
+      "mounted": false,
+      "pass": true
+    },
+    {
+      "entries": [
+        "foreign-offscreen",
+        true
+      ],
+      "expected": true,
+      "name": "matching latest entry is selected",
+      "error": null,
+      "mounted": true,
+      "pass": true
+    },
+    {
+      "entries": [
+        "foreign-offscreen"
+      ],
+      "expected": true,
+      "name": "foreign-only batch preserves the prior observation",
+      "error": null,
+      "mounted": true,
+      "pass": true
+    }
+  ]
+}

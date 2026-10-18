@@ -1,0 +1,232 @@
+{
+  "commit": "8c54a17793bb6133d462cfa2598bcefe72c79590",
+  "foundation": "6f8dc52a566d3880cf1f10bbfd5282a888725ca1",
+  "figures": {
+    "phone": {
+      "revision": "9d757a909268ebf4c9b45068fa4954fed873ddc8",
+      "path": "web/src/visuals/hairline"
+    },
+    "relay": {
+      "revision": "feb009167e3ae064d4480dc87d65c3b5b7fdbfcd",
+      "path": "web/src/visuals/anatomy"
+    }
+  },
+  "files": [
+    {
+      "file": "es-phone-1440x900-closed.png",
+      "sha256": "bc98c0fc255cd04a81be8ff943624f2e94b740da22cf97cc71ad0b3c161921ac"
+    },
+    {
+      "file": "es-phone-1440x900-open.png",
+      "sha256": "dd3411a0624a2de983989e719851779b8ecf98c031214f911b7fddbbdc0b6d12"
+    },
+    {
+      "file": "es-phone-1920x1080-closed.png",
+      "sha256": "651ba0bc72d6f30bb5e7f506fc593aa5bda2d49831f8cb0aa04e5efaa2e46d0b"
+    },
+    {
+      "file": "es-phone-1920x1080-open.png",
+      "sha256": "2103a37bf88beefa92165fb195a3a6e75f97df07de335e8e301f0f4333116131"
+    },
+    {
+      "file": "es-phone-360x800-closed.png",
+      "sha256": "41acb12f7890ca17950e8ac090d85ba4765c0f2c87c4da798abbe8e296c22415"
+    },
+    {
+      "file": "es-phone-360x800-open.png",
+      "sha256": "d24667ef29e3c1ed7a01d9e4770fbbf0b4fe1d04fc56597f6c80db2778db05d2"
+    },
+    {
+      "file": "es-phone-390x844-closed.png",
+      "sha256": "d5264cecba7b731de67594ee7053ce0a6e40210f44b734c75ec47871d32651fd"
+    },
+    {
+      "file": "es-phone-390x844-open.png",
+      "sha256": "853c10c80ed9abe0f349bfe8793ec8da1629d47775cbbe8bd2cb1e4e22216e01"
+    },
+    {
+      "file": "es-phone-430x932-closed.png",
+      "sha256": "8ce14d47d3a2c2067d47288a956cda7c488b3a3acbfb2d73227da7e214a5a71a"
+    },
+    {
+      "file": "es-phone-430x932-open.png",
+      "sha256": "c914d38253805887f27aafb03fce8e1270f0e6d1d8ef119db7a8852c85f85d7b"
+    },
+    {
+      "file": "es-phone-detail-4x.png",
+      "sha256": "da0480ea57f10e02dc8aed424a2f989ae9db7e793400ca36ef419741a1be8b62"
+    },
+    {
+      "file": "es-phone-reduced.png",
+      "sha256": "fd886e1896efce6b31a65014b06ca66350d85c5f5cdaeb83ae308fcd81c84afe"
+    },
+    {
+      "file": "es-phone-static-keyboard.png",
+      "sha256": "411886b6f13b125cbb0dad30232805f2ff7ba78902ced8c49b2f0e8a38aea5f4"
+    },
+    {
+      "file": "es-relay-1440x900-closed.png",
+      "sha256": "bc98c0fc255cd04a81be8ff943624f2e94b740da22cf97cc71ad0b3c161921ac"
+    },
+    {
+      "file": "es-relay-1440x900-open.png",
+      "sha256": "12d0b7c26a9b2efc20c70cec9ad671b0808ae3dccae5313a5d91dfa4fa22c08b"
+    },
+    {
+      "file": "es-relay-1920x1080-closed.png",
+      "sha256": "651ba0bc72d6f30bb5e7f506fc593aa5bda2d49831f8cb0aa04e5efaa2e46d0b"
+    },
+    {
+      "file": "es-relay-1920x1080-open.png",
+      "sha256": "7979380827bae4c05b91cc77990c83ee97717165a6155948c0e16b0fdc04fbfc"
+    },
+    {
+      "file": "es-relay-360x800-closed.png",
+      "sha256": "41acb12f7890ca17950e8ac090d85ba4765c0f2c87c4da798abbe8e296c22415"
+    },
+    {
+      "file": "es-relay-360x800-open.png",
+      "sha256": "3f05b74c8297ab217a90519abbfc89a15d27c104700e3fd89ed8d4c91b954e82"
+    },
+    {
+      "file": "es-relay-390x844-closed.png",
+      "sha256": "d5264cecba7b731de67594ee7053ce0a6e40210f44b734c75ec47871d32651fd"
+    },
+    {
+      "file": "es-relay-390x844-open.png",
+      "sha256": "d344ec3684781131a62a02e748e77ba35758b5f0e0745511e3377ac8c01857f7"
+    },
+    {
+      "file": "es-relay-430x932-closed.png",
+      "sha256": "8ce14d47d3a2c2067d47288a956cda7c488b3a3acbfb2d73227da7e214a5a71a"
+    },
+    {
+      "file": "es-relay-430x932-open.png",
+      "sha256": "5bb55f33bd69ca1924fa4e9cea21daf0957b4bfb44aff31d6de534a9caf9bf76"
+    },
+    {
+      "file": "es-relay-detail-4x.png",
+      "sha256": "8a7798326d9d6733b541822a2739c370f0bdc12cdbf824be6d9336274f818af3"
+    },
+    {
+      "file": "es-relay-reduced.png",
+      "sha256": "f9fda2a3a5afeec0658c8f0475aeb83ef5d885361e24bdb9ec59449317388773"
+    },
+    {
+      "file": "es-relay-static-keyboard.png",
+      "sha256": "7cc5aaf11baba24250033bb2aa5ab92e0c21a05ab5bced3017e75cf8c9d4b8e4"
+    },
+    {
+      "file": "phone-contact-sheet.png",
+      "sha256": "56d48e7946875c6386f2ae03f262a89aec1c6c9b161b959ca8f516cda64e58be"
+    },
+    {
+      "file": "pt-BR-phone-1440x900-closed.png",
+      "sha256": "59f788d08eaa5d40c8d100cc0ede20caca2ffaefdbc6848e29a3accaea42733e"
+    },
+    {
+      "file": "pt-BR-phone-1440x900-open.png",
+      "sha256": "5cc28e37387f0809d6031cebbec6f492d9e20259938e822606e6aa311c0de8db"
+    },
+    {
+      "file": "pt-BR-phone-1920x1080-closed.png",
+      "sha256": "fc4ab4cad306bb8c5b505ef6236ced3c6fe20d8c589e3e30185e44ad6d2fcd2f"
+    },
+    {
+      "file": "pt-BR-phone-1920x1080-open.png",
+      "sha256": "78bf76c87ccef26b96d1f81d1d4f6536113559e4239dd9116510bfe42d2e17a0"
+    },
+    {
+      "file": "pt-BR-phone-360x800-closed.png",
+      "sha256": "6559d1776f7037567637994a86e1490ff9bd4a3b477ce4d0e30d313173025983"
+    },
+    {
+      "file": "pt-BR-phone-360x800-open.png",
+      "sha256": "9416b4c64e90c10d6728b1bbd0ce9f3f957ec47c5000f34ef3138e9a56b8d7c8"
+    },
+    {
+      "file": "pt-BR-phone-390x844-closed.png",
+      "sha256": "893769e6ab4d039254c55a6551c7fa5130df913a4c9767ee2317c716aa643b52"
+    },
+    {
+      "file": "pt-BR-phone-390x844-open.png",
+      "sha256": "ff744adbb956c635f864db64fb7229d8a39ca42014a8d8c66cc30ef0bcc9b7f8"
+    },
+    {
+      "file": "pt-BR-phone-430x932-closed.png",
+      "sha256": "49055394af27de4432d58f3bdd0329c8d749b61553bf31d23f1bc747f39c0ead"
+    },
+    {
+      "file": "pt-BR-phone-430x932-open.png",
+      "sha256": "2968b80fa2c73780cd254f64d623bfec6ecae2c6d7f26c3c551a764fc7fa873e"
+    },
+    {
+      "file": "pt-BR-phone-detail-4x.png",
+      "sha256": "da0480ea57f10e02dc8aed424a2f989ae9db7e793400ca36ef419741a1be8b62"
+    },
+    {
+      "file": "pt-BR-phone-reduced.png",
+      "sha256": "8919395d2a5b6d652a3396e9342e97fa1294c6f1731dc40076e61434a99ae842"
+    },
+    {
+      "file": "pt-BR-phone-static-keyboard.png",
+      "sha256": "0908af1a005c5e2384c69863694c2bb6ffc0e1496cb5e76160d23cdf1041e920"
+    },
+    {
+      "file": "pt-BR-relay-1440x900-closed.png",
+      "sha256": "59f788d08eaa5d40c8d100cc0ede20caca2ffaefdbc6848e29a3accaea42733e"
+    },
+    {
+      "file": "pt-BR-relay-1440x900-open.png",
+      "sha256": "ca916c83ba42f36da52dad198a6dc1c7663dd0943b6f8e3c2ee10c7a3e7a4186"
+    },
+    {
+      "file": "pt-BR-relay-1920x1080-closed.png",
+      "sha256": "fc4ab4cad306bb8c5b505ef6236ced3c6fe20d8c589e3e30185e44ad6d2fcd2f"
+    },
+    {
+      "file": "pt-BR-relay-1920x1080-open.png",
+      "sha256": "95bc12f2f035fe1768b0cc02c77cac6e5bc831f43448a5c307b73b48187217e3"
+    },
+    {
+      "file": "pt-BR-relay-360x800-closed.png",
+      "sha256": "6559d1776f7037567637994a86e1490ff9bd4a3b477ce4d0e30d313173025983"
+    },
+    {
+      "file": "pt-BR-relay-360x800-open.png",
+      "sha256": "a65650424a7b05ae30feb1f10e01e4de9bf2b9dd41da17cf221b3bf1da4cc3f2"
+    },
+    {
+      "file": "pt-BR-relay-390x844-closed.png",
+      "sha256": "893769e6ab4d039254c55a6551c7fa5130df913a4c9767ee2317c716aa643b52"
+    },
+    {
+      "file": "pt-BR-relay-390x844-open.png",
+      "sha256": "cdfe96435f2981022a04664188efe6af4e6b01ffc1848bdeeef0852de7e80db3"
+    },
+    {
+      "file": "pt-BR-relay-430x932-closed.png",
+      "sha256": "49055394af27de4432d58f3bdd0329c8d749b61553bf31d23f1bc747f39c0ead"
+    },
+    {
+      "file": "pt-BR-relay-430x932-open.png",
+      "sha256": "9a5d549a0d61665e1eac99065fea202397c6a64eff86a168000ec4337e12a95b"
+    },
+    {
+      "file": "pt-BR-relay-detail-4x.png",
+      "sha256": "28ab8c1e0675599fbdf5f57a83111af8d9501a66d0cf46b478f1245576c1b1e4"
+    },
+    {
+      "file": "pt-BR-relay-reduced.png",
+      "sha256": "1bbb220ca5d728abaf64a9fc4cf92ecbfb7ac3df98cd06c4eabca4b4f26a2ac0"
+    },
+    {
+      "file": "pt-BR-relay-static-keyboard.png",
+      "sha256": "49356ee426fc230c3e5d9695ca2805ca965a56ad9626c772f23f12acb6fc4915"
+    },
+    {
+      "file": "relay-contact-sheet.png",
+      "sha256": "41dba9ea44055fc0c4ca0443a9d9f11fbc3ee229a9b3c67370240735e221a4c8"
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "candidate": "8c54a17793bb6133d462cfa2598bcefe72c79590",
+  "foundation": "6f8dc52a566d3880cf1f10bbfd5282a888725ca1",
+  "scope": "Independent changed binding checks in the actual FoundationRoot fixture; unconfigured/demo session; no feature/API acceptance",
+  "rows": [
+    {
+      "locale": "es",
+      "kind": "phone",
+      "width": 360,
+      "height": 800,
+      "primary": {
+        "inFold": true,
+        "unobscured": true,
+        "height": 56
+      },
+      "overflow": 0,
+      "shellCount": 1,
+      "languageCount": 1,
+      "caption": "El teléfono puede dejar de aportar datos. Su silencio no confirma una emergencia ni que estés bien.\n      Los permisos pueden denegarse o revocarse.Otra app o la pantalla bloqueada pueden interrumpir la captura en el navegador.La última ubicación disponible puede ser antigua. Revisa su origen y su hora.\n      Usa esta explicación solo cuando estés detenido.",
+      "color": "lab(18.5423 -8.33719 -8.3663)",
+      "background": "lab(99.2329 -0.341922 -0.122237)",
+      "colorRGBA": [
+        23,
+        49,
+        57,
+        255
+      ],
+      "backgroundRGBA": [
+        252,
+        253,
+        253,
+        255
+      ],
+      "motion": "still",
+      "engineRequested": false,
+      "axeViolations": [],
+      "parentRerenderRetainsArt": true,
+      "localeRemountAtRest": "pt-BR",
+      "removeRemount": true,
+      "disclosureDisposes": true
+    },
+    {
+      "locale": "es",
+      "kind": "relay",
+      "width": 360,
+      "height": 800,
+      "primary": {
+        "inFold": true,
+        "unobscured": true,
+        "height": 56
+      },
+      "overflow": 0,
+      "shellCount": 1,
+      "languageCount": 1,
+      "caption": "El registro de una solicitud, su entrega y la respuesta de un contacto son hechos distintos. Ninguno confirma que la ayuda haya llegado.\n      Una solicitud pendiente en el teléfono aún puede no estar registrada en el servidor.La aceptación del servidor no confirma la entrega al contacto.La respuesta de un contacto se muestra por separado. No confirma asistencia.\n      Usa esta explicación solo cuando estés detenido.",
+      "color": "lab(18.5423 -8.33719 -8.3663)",
+      "background": "lab(99.2329 -0.341922 -0.122237)",
+      "colorRGBA": [
+        23,
+        49,
+        57,
+        255
+      ],
+      "backgroundRGBA": [
+        252,
+        253,
+        253,
+        255
+      ],
+      "motion": "still",
+      "engineRequested": false,
+      "axeViolations": [],
+      "parentRerenderRetainsArt": true,
+      "localeRemountAtRest": "pt-BR",
+      "removeRemount": true,
+      "disclosureDisposes": true
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "phone",
+      "width": 360,
+      "height": 800,
+      "primary": {
+        "inFold": true,
+        "unobscured": true,
+        "height": 56
+      },
+      "overflow": 0,
+      "shellCount": 1,
+      "languageCount": 1,
+      "caption": "O telefone pode deixar de fornecer dados. Seu silêncio não confirma uma emergência nem que você esteja bem.\n      As permissões podem ser negadas ou revogadas.Outro app ou a tela bloqueada podem interromper a captura no navegador.A última localização disponível pode ser antiga. Confira sua origem e seu horário.\n      Use esta explicação apenas quando estiver parado.",
+      "color": "lab(18.5423 -8.33719 -8.3663)",
+      "background": "lab(99.2329 -0.341922 -0.122237)",
+      "colorRGBA": [
+        23,
+        49,
+        57,
+        255
+      ],
+      "backgroundRGBA": [
+        252,
+        253,
+        253,
+        255
+      ],
+      "motion": "still",
+      "engineRequested": false,
+      "axeViolations": [],
+      "parentRerenderRetainsArt": true,
+      "localeRemountAtRest": "es",
+      "removeRemount": true,
+      "disclosureDisposes": true
+    },
+    {
+      "locale": "pt-BR",
+      "kind": "relay",
+      "width": 360,
+      "height": 800,
+      "primary": {
+        "inFold": true,
+        "unobscured": true,
+        "height": 56
+      },
+      "overflow": 0,
+      "shellCount": 1,
+      "languageCount": 1,
+      "caption": "O registro de uma solicitação, sua entrega e a resposta de um contato são fatos distintos. Nenhum confirma que a ajuda tenha chegado.\n      Uma solicitação pendente no telefone ainda pode não estar registrada no servidor.A aceitação pelo servidor não confirma a entrega ao contato.A resposta de um contato aparece separadamente. Não confirma assistência.\n      Use esta explicação apenas quando estiver parado.",
+      "color": "lab(18.5423 -8.33719 -8.3663)",
+      "background": "lab(99.2329 -0.341922 -0.122237)",
+      "colorRGBA": [
+        23,
+        49,
+        57,
+        255
+      ],
+      "backgroundRGBA": [
+        252,
+        253,
+        253,
+        255
+      ],
+      "motion": "still",
+      "engineRequested": false,
+      "axeViolations": [],
+      "parentRerenderRetainsArt": true,
+      "localeRemountAtRest": "es",
+      "removeRemount": true,
+      "disclosureDisposes": true
+    }
+  ],
+  "errors": [],
+  "fallback": {
+    "caption": "\n      O registro de uma solicitação, sua entrega e a resposta de um contato são fatos distintos. Nenhum confirma que a ajuda tenha chegado.\n      Uma solicitação pendente no telefone ainda pode não estar registrada no servidor.A aceitação pelo servidor não confirma a entrega ao contato.A resposta de um contato aparece separadamente. Não confirma assistência.\n      Use esta explicação apenas quando estiver parado.\n    ",
+    "status": "Não foi possível mostrar a ilustração. Você pode continuar lendo ou tentar novamente.",
+    "retry": "Tentar ilustração novamente",
+    "visible": true
+  },
+  "ok": true
+}

@@ -1,0 +1,1586 @@
+{
+  "schemaVersion": "1.0.0",
+  "receiptId": "andes53-phone-9d757a9-review",
+  "createdAt": "2026-10-17T23:47:55.953491+00:00",
+  "designContract": {
+    "schemaVersion": "1.0.0",
+    "contractId": "andes-operate-v1-hairline53-review",
+    "createdAt": "2026-10-17T22:50:54.409515+00:00",
+    "surface": {
+      "type": "web",
+      "name": "ANDES optional parked-use Phone illustration",
+      "mode": "operate",
+      "subject": "Freight trip and trusted-contact coordination",
+      "audience": "LATAM freight owner-operators with one or two trucks and accepted contacts; es and pt-BR",
+      "job": "Show the existing Phone with useful still geometry and optional interaction; keep caption/control access independent and stop the engine when the latest matching observation is offscreen",
+      "productTruth": [
+        "/Users/sebasbimbi/.codus/brains/brain-mvcjumeu593/andes-app-build/foundation/PRODUCT.md",
+        "/Users/sebasbimbi/.codus/brains/brain-mvcjumeu593/andes-app-build/foundation/docs/design/visual-addendum.md",
+        "lane-53.md; reviewers55/56 P2 latest-observation finding"
+      ]
+    },
+    "scope": {
+      "kind": "changed-surface",
+      "modules": [
+        "hairline-phone"
+      ],
+      "affectedSharedSurfaces": [],
+      "excluded": [
+        "complete driver/contact app routes",
+        "backend transport and permissions",
+        "physical phone qualification",
+        "public website or deployment",
+        "component49 package/router/token mutations",
+        "component55 host implementation"
+      ]
+    },
+    "direction": {
+      "incumbentDisposition": "extend",
+      "territory": "Radio check conversation record",
+      "rationale": "Narrow lifecycle repair of approved Phone and shared token consumption; retain exact approved light palette, type, rest silhouette and interaction contract",
+      "signature": "Named driver/contact/source update with explicit event time, adjacent to four separate fact rows and a stable permitted-action area; no fake chat capability",
+      "palette": [
+        "canvas #F2F6F6",
+        "surface #FCFDFD",
+        "ink #173139",
+        "muted #4D6268",
+        "primary #166675",
+        "onPrimary #F9FCFC",
+        "warning #805312",
+        "danger #A93232",
+        "border #CAD6D8"
+      ],
+      "typography": [
+        "One platform system-ui sans, regular/medium/semibold/bold; actual system rendering inspected at all target widths",
+        "Task labels16px+, supporting text14px+, headings24/30px, tabular times; product familiarity and fast local rendering override marketing display defaults"
+      ],
+      "layout": "Mobile first single-task flow with clear labels, thumb-sized actions and persistent trip identity; wider layouts use bounded content and a supporting fact column. No nested card grids, decorative left rails or map dominating unknown facts. Shared blueprints specify every route.",
+      "motion": "150\u2013200ms state transitions only, visible-first, no page-load choreography; reduced-motion disables nonessential transitions",
+      "density": "Low density for driver actions, compact labelled event rows for facts, generous separation between tasks; high-priority state stays in first390x844viewport",
+      "copyVoice": "Plain Spanish and Brazilian Portuguese, sentence case, named action verbs, source-attributed reports, explicit unknown and recovery. Camiones/Caminh\u00f5es, no jargon or implied emergency guarantee.",
+      "accessibility": [
+        "Text contrast>=4.5:1 and boundary/focus>=3:1 measured at runtime",
+        "44px minimum touch targets with56px primary driver actions; no screen input required while moving to prevent escalation",
+        "Keyboard/focus restoration, semantic labels/live status, no colour-only meaning",
+        "Spanish/pt-BR expanded text, no horizontal overflow at360px; reduced motion",
+        "No route/participant/coordinate data in share metadata; generic noindex task pages"
+      ],
+      "antiDefaults": [
+        "No fake live map/green safety status",
+        "No generated testimonials, credibility badges or invented delivery",
+        "No decorative stripes, gradients, identical icon tiles or nested cards",
+        "No bot/composer/typing affordances without backend capability",
+        "No countdown owned solely by browser; unknown source age remains explicit"
+      ]
+    },
+    "sources": [
+      {
+        "id": "user-updated:impeccable",
+        "kind": "project",
+        "revision": "sha256:1e458a10d63318f89462c8d39bd48254ff39982f6628c1e45fe127d269cf043c",
+        "role": "craft and product register",
+        "reason": "Actual locally updated skill governs accessible product workflows; source-status verified",
+        "reference": "/Users/sebasbimbi/.claude/skills/impeccable"
+      },
+      {
+        "id": "user-updated:anthropic-frontend-design",
+        "kind": "project",
+        "revision": "sha256:404fa218d2bceee72b50221c08cd30987242420d81f9528582e4cbaa2210b7f1",
+        "role": "subject-grounded originality",
+        "reason": "New UI needs a concrete trip/contact identity; product task constraints override expressive marketing suggestions",
+        "reference": "/Users/sebasbimbi/.claude/skills/frontend-design"
+      },
+      {
+        "id": "project:andes-product",
+        "kind": "project",
+        "revision": "sha256:e0e3cd59050a3818550a6d5c5124dbb59f38f48e1fe058a676299eb69af94ef6",
+        "role": "verified workflow and API truth",
+        "reason": "Actual backend APIs and user brief determine actions and honest unavailable states",
+        "reference": "PRODUCT.md"
+      }
+    ],
+    "implementation": {
+      "componentSystem": "One49-owned React/TypeScript/Vite web foundation with source-owned accessible controls, shared tokens/localisation and same-origin /v1 transport; supported versions pinned after package checks",
+      "shadcnRole": "not-used",
+      "constraints": [
+        "web/package and shared UI belong49; root backend/CI belongs44; no duplicate dependency files",
+        "41 additive read routes,45 transport,42 observation queue,50 driver,51 contact/privacy; typed interfaces reconcile through actual contracts",
+        "Use existing /snapshot and forthcoming verified /status; do not wire provisional PR53 projection before Robert comments are resolved",
+        "No pretend login: real externally issuedOIDC or explicitly synthetic local test session only",
+        "Required utility metadata/noindex, generic share assets, graceful404; no external analytics",
+        "Every module needs rendered state/control/viewport evidence and independent acceptance before software completion",
+        "Review scope is component53 owned module/bridge and standalone synthetic harness only; no whole-app acceptance"
+      ]
+    },
+    "acceptance": [
+      {
+        "id": "H01",
+        "statement": "No engine at rest; a readable static Phone and localized caption survive optional chunk failure and no JavaScript",
+        "source": "Approved visual addendum and lane53"
+      },
+      {
+        "id": "H02",
+        "statement": "The latest matching observer entry determines the engine: [visible,offscreen] unmounts and [offscreen,visible] mounts; empty and unrelated-target batches preserve prior visibility without throwing",
+        "source": "Independent55/56 review of d8eea894 P2 finding"
+      },
+      {
+        "id": "H03",
+        "statement": "Native separation range works with keyboard/touch in still/reduced contexts; explicit motion has no autoplay and offscreen/hidden/reduced/unmount release resources",
+        "source": "Approved Hairline motion/rest policy"
+      },
+      {
+        "id": "H04",
+        "statement": "Use committed49 --ink/--surface/--primary tokens; es/pt-BR and all five declared widths remain readable with no overflow",
+        "source": "Foundation3283fe675ebeee04bb2be8a62f42ab5c475b4b0e and lane53"
+      },
+      {
+        "id": "H05",
+        "statement": "Independent56 reviews exact revision and raw evidence; simulated lifecycle and touch browser checks never imply physical phone qualification",
+        "source": "Team ownership and visual evidence contract"
+      }
+    ]
+  },
+  "git": {
+    "head": "9d757a909268ebf4c9b45068fa4954fed873ddc8",
+    "diffHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "untrackedHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "fingerprint": "d7e6398bfa5cde850d08aaab4ee99f99a3ffd123c443ca5686fde9acea7e3896",
+    "capturedAt": "2026-10-17T23:47:31.719Z"
+  },
+  "modules": [
+    {
+      "id": "hairline-phone",
+      "label": "Optional Phone module, mounting bridge and owned synthetic harness",
+      "route": "http://127.0.0.1:3053/ (owned fixture; no new app route)",
+      "scopeReason": "Every53-owned changed module plus adapter/preview controls; no whole-app claim",
+      "sections": [
+        {
+          "id": "heading-language",
+          "label": "Task title, identity, demo label and language choice"
+        },
+        {
+          "id": "phone-caption",
+          "label": "Phone and always-available explanatory caption"
+        },
+        {
+          "id": "controls",
+          "label": "Named motion and separation controls"
+        }
+      ],
+      "controls": [
+        {
+          "id": "language",
+          "label": "Idioma",
+          "kind": "native select",
+          "actions": [
+            "choose"
+          ],
+          "risk": "safe"
+        },
+        {
+          "id": "motion",
+          "label": "Explicit illustration motion",
+          "kind": "button",
+          "actions": [
+            "enable",
+            "stop"
+          ],
+          "risk": "safe"
+        },
+        {
+          "id": "separation",
+          "label": "Separaci\u00f3n / Separa\u00e7\u00e3o",
+          "kind": "native range",
+          "actions": [
+            "compact",
+            "open"
+          ],
+          "risk": "safe"
+        },
+        {
+          "id": "artwork",
+          "label": "Optional pointer/touch exploration",
+          "kind": "pointer surface",
+          "actions": [
+            "touch"
+          ],
+          "risk": "safe"
+        },
+        {
+          "id": "bridge",
+          "label": "Imperative visual host bridge",
+          "kind": "fixture API",
+          "actions": [
+            "mount",
+            "set-motion",
+            "abort",
+            "destroy"
+          ],
+          "risk": "safe"
+        }
+      ],
+      "states": [
+        {
+          "id": "rest",
+          "label": "Still default",
+          "material": true,
+          "setup": "Open preview with no explicit motion choice"
+        },
+        {
+          "id": "compact",
+          "label": "Compact still; keyboard focus",
+          "material": true,
+          "setup": "Focus the range and press Home"
+        },
+        {
+          "id": "open",
+          "label": "Open still; keyboard focus",
+          "material": true,
+          "setup": "Focus the range and press End"
+        },
+        {
+          "id": "interactive",
+          "label": "Explicit optional interaction",
+          "material": true,
+          "setup": "Enable motion and point at the Phone; no autoplay"
+        },
+        {
+          "id": "reduced",
+          "label": "Reduced-motion still",
+          "material": true,
+          "setup": "Runtime reduced-motion preference; useful range remains"
+        },
+        {
+          "id": "chunk-failed",
+          "label": "Optional engine unavailable",
+          "material": true,
+          "setup": "Block the optional PhoneCanvas chunk in a clean browser context"
+        },
+        {
+          "id": "no-js",
+          "label": "Bilingual no-JavaScript fallback",
+          "material": true,
+          "setup": "Disable page JavaScript; static image and bilingual HTML remain"
+        },
+        {
+          "id": "offscreen",
+          "label": "offscreen",
+          "material": false,
+          "setup": "Move the entire Phone outside the viewport; numeric engine teardown proof, no visible artwork to capture"
+        },
+        {
+          "id": "document-hidden",
+          "label": "document-hidden",
+          "material": false,
+          "setup": "Controlled document.hidden event: synthetic browser lifecycle proof only"
+        },
+        {
+          "id": "observer-batches",
+          "label": "observer-batches",
+          "material": false,
+          "setup": "Inject both ordered batches, empty and foreign records into the real adapter callback"
+        },
+        {
+          "id": "bridge-destroy",
+          "label": "bridge-destroy",
+          "material": false,
+          "setup": "Abort/repeat destroy; keep parent captions intact"
+        }
+      ],
+      "viewports": [
+        {
+          "id": "es-390x844",
+          "label": "390x844, browser locale es",
+          "context": "mobile"
+        },
+        {
+          "id": "pt-BR-390x844",
+          "label": "390x844, browser locale pt-BR",
+          "context": "mobile"
+        },
+        {
+          "id": "es-1440x900",
+          "label": "1440x900, browser locale es",
+          "context": "desktop"
+        },
+        {
+          "id": "pt-BR-1440x900",
+          "label": "1440x900, browser locale pt-BR",
+          "context": "desktop"
+        },
+        {
+          "id": "es-1920x1080",
+          "label": "1920x1080, browser locale es",
+          "context": "desktop"
+        },
+        {
+          "id": "pt-BR-1920x1080",
+          "label": "1920x1080, browser locale pt-BR",
+          "context": "desktop"
+        },
+        {
+          "id": "es-360x800",
+          "label": "360x800, browser locale es",
+          "context": "mobile"
+        },
+        {
+          "id": "pt-BR-360x800",
+          "label": "360x800, browser locale pt-BR",
+          "context": "mobile"
+        },
+        {
+          "id": "es-430x932",
+          "label": "430x932, browser locale es",
+          "context": "mobile"
+        },
+        {
+          "id": "pt-BR-430x932",
+          "label": "430x932, browser locale pt-BR",
+          "context": "mobile"
+        }
+      ],
+      "dependencies": [
+        "shared49-package-and-tokens",
+        "hairline-upstream",
+        "host55-contract"
+      ]
+    }
+  ],
+  "evidence": {
+    "screenshots": [
+      {
+        "id": "shot-1",
+        "moduleId": "hairline-phone",
+        "sectionId": "heading-language",
+        "stateId": "rest",
+        "viewportId": "es-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-390x844.png",
+        "observation": "rest at 390x844 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.054252+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-2",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "rest",
+        "viewportId": "es-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-390x844.png",
+        "observation": "rest at 390x844 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.054252+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-3",
+        "moduleId": "hairline-phone",
+        "sectionId": "controls",
+        "stateId": "rest",
+        "viewportId": "es-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-390x844.png",
+        "observation": "rest at 390x844 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.054252+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-4",
+        "moduleId": "hairline-phone",
+        "sectionId": "heading-language",
+        "stateId": "rest",
+        "viewportId": "pt-BR-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-390x844.png",
+        "observation": "rest at 390x844 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.283527+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-5",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "rest",
+        "viewportId": "pt-BR-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-390x844.png",
+        "observation": "rest at 390x844 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.283527+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-6",
+        "moduleId": "hairline-phone",
+        "sectionId": "controls",
+        "stateId": "rest",
+        "viewportId": "pt-BR-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-390x844.png",
+        "observation": "rest at 390x844 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.283527+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-7",
+        "moduleId": "hairline-phone",
+        "sectionId": "heading-language",
+        "stateId": "rest",
+        "viewportId": "es-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-1440x900.png",
+        "observation": "rest at 1440x900 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.527053+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-8",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "rest",
+        "viewportId": "es-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-1440x900.png",
+        "observation": "rest at 1440x900 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.527053+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-9",
+        "moduleId": "hairline-phone",
+        "sectionId": "controls",
+        "stateId": "rest",
+        "viewportId": "es-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-1440x900.png",
+        "observation": "rest at 1440x900 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.527053+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-10",
+        "moduleId": "hairline-phone",
+        "sectionId": "heading-language",
+        "stateId": "rest",
+        "viewportId": "pt-BR-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-1440x900.png",
+        "observation": "rest at 1440x900 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.756691+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-11",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "rest",
+        "viewportId": "pt-BR-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-1440x900.png",
+        "observation": "rest at 1440x900 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.756691+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-12",
+        "moduleId": "hairline-phone",
+        "sectionId": "controls",
+        "stateId": "rest",
+        "viewportId": "pt-BR-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-1440x900.png",
+        "observation": "rest at 1440x900 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.756691+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-13",
+        "moduleId": "hairline-phone",
+        "sectionId": "heading-language",
+        "stateId": "rest",
+        "viewportId": "es-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-1920x1080.png",
+        "observation": "rest at 1920x1080 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.999045+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-14",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "rest",
+        "viewportId": "es-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-1920x1080.png",
+        "observation": "rest at 1920x1080 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.999045+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-15",
+        "moduleId": "hairline-phone",
+        "sectionId": "controls",
+        "stateId": "rest",
+        "viewportId": "es-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-1920x1080.png",
+        "observation": "rest at 1920x1080 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:23.999045+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-16",
+        "moduleId": "hairline-phone",
+        "sectionId": "heading-language",
+        "stateId": "rest",
+        "viewportId": "pt-BR-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-1920x1080.png",
+        "observation": "rest at 1920x1080 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.225683+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-17",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "rest",
+        "viewportId": "pt-BR-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-1920x1080.png",
+        "observation": "rest at 1920x1080 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.225683+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-18",
+        "moduleId": "hairline-phone",
+        "sectionId": "controls",
+        "stateId": "rest",
+        "viewportId": "pt-BR-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-1920x1080.png",
+        "observation": "rest at 1920x1080 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.225683+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-19",
+        "moduleId": "hairline-phone",
+        "sectionId": "heading-language",
+        "stateId": "rest",
+        "viewportId": "es-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-360x800.png",
+        "observation": "rest at 360x800 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.450324+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-20",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "rest",
+        "viewportId": "es-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-360x800.png",
+        "observation": "rest at 360x800 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.450324+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-21",
+        "moduleId": "hairline-phone",
+        "sectionId": "controls",
+        "stateId": "rest",
+        "viewportId": "es-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-360x800.png",
+        "observation": "rest at 360x800 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.450324+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-22",
+        "moduleId": "hairline-phone",
+        "sectionId": "heading-language",
+        "stateId": "rest",
+        "viewportId": "pt-BR-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-360x800.png",
+        "observation": "rest at 360x800 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.688456+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-23",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "rest",
+        "viewportId": "pt-BR-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-360x800.png",
+        "observation": "rest at 360x800 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.688456+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-24",
+        "moduleId": "hairline-phone",
+        "sectionId": "controls",
+        "stateId": "rest",
+        "viewportId": "pt-BR-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-360x800.png",
+        "observation": "rest at 360x800 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.688456+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-25",
+        "moduleId": "hairline-phone",
+        "sectionId": "heading-language",
+        "stateId": "rest",
+        "viewportId": "es-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-430x932.png",
+        "observation": "rest at 430x932 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.917046+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-26",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "rest",
+        "viewportId": "es-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-430x932.png",
+        "observation": "rest at 430x932 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.917046+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-27",
+        "moduleId": "hairline-phone",
+        "sectionId": "controls",
+        "stateId": "rest",
+        "viewportId": "es-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/rest-es-430x932.png",
+        "observation": "rest at 430x932 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:24.917046+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-28",
+        "moduleId": "hairline-phone",
+        "sectionId": "heading-language",
+        "stateId": "rest",
+        "viewportId": "pt-BR-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-430x932.png",
+        "observation": "rest at 430x932 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:25.149877+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-29",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "rest",
+        "viewportId": "pt-BR-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-430x932.png",
+        "observation": "rest at 430x932 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:25.149877+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-30",
+        "moduleId": "hairline-phone",
+        "sectionId": "controls",
+        "stateId": "rest",
+        "viewportId": "pt-BR-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/rest-pt-BR-430x932.png",
+        "observation": "rest at 430x932 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:41:25.149877+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-31",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "compact",
+        "viewportId": "es-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/compact-es-390x844.png",
+        "observation": "compact at 390x844 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:42.607748+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-32",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "open",
+        "viewportId": "es-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/open-es-390x844.png",
+        "observation": "open at 390x844 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:42.820471+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-33",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "interactive",
+        "viewportId": "es-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/interactive-es-390x844.png",
+        "observation": "interactive at 390x844 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:45.377233+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-34",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "reduced",
+        "viewportId": "es-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/reduced-es-390x844.png",
+        "observation": "reduced at 390x844 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:45.586598+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-35",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "compact",
+        "viewportId": "pt-BR-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/compact-pt-BR-390x844.png",
+        "observation": "compact at 390x844 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:45.853190+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-36",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "open",
+        "viewportId": "pt-BR-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/open-pt-BR-390x844.png",
+        "observation": "open at 390x844 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:46.069808+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-37",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "interactive",
+        "viewportId": "pt-BR-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/interactive-pt-BR-390x844.png",
+        "observation": "interactive at 390x844 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:48.604129+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-38",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "reduced",
+        "viewportId": "pt-BR-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/reduced-pt-BR-390x844.png",
+        "observation": "reduced at 390x844 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:48.819998+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-39",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "compact",
+        "viewportId": "es-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/compact-es-1440x900.png",
+        "observation": "compact at 1440x900 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:49.092515+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-40",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "open",
+        "viewportId": "es-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/open-es-1440x900.png",
+        "observation": "open at 1440x900 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:49.325873+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-41",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "interactive",
+        "viewportId": "es-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/interactive-es-1440x900.png",
+        "observation": "interactive at 1440x900 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:51.874934+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-42",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "reduced",
+        "viewportId": "es-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/reduced-es-1440x900.png",
+        "observation": "reduced at 1440x900 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:52.090215+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-43",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "compact",
+        "viewportId": "pt-BR-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/compact-pt-BR-1440x900.png",
+        "observation": "compact at 1440x900 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:52.341206+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-44",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "open",
+        "viewportId": "pt-BR-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/open-pt-BR-1440x900.png",
+        "observation": "open at 1440x900 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:52.541470+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-45",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "interactive",
+        "viewportId": "pt-BR-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/interactive-pt-BR-1440x900.png",
+        "observation": "interactive at 1440x900 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:55.076029+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-46",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "reduced",
+        "viewportId": "pt-BR-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/reduced-pt-BR-1440x900.png",
+        "observation": "reduced at 1440x900 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:55.291314+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-47",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "compact",
+        "viewportId": "es-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/compact-es-1920x1080.png",
+        "observation": "compact at 1920x1080 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:55.697768+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-48",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "open",
+        "viewportId": "es-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/open-es-1920x1080.png",
+        "observation": "open at 1920x1080 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:55.913083+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-49",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "interactive",
+        "viewportId": "es-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/interactive-es-1920x1080.png",
+        "observation": "interactive at 1920x1080 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:58.448249+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-50",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "reduced",
+        "viewportId": "es-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/reduced-es-1920x1080.png",
+        "observation": "reduced at 1920x1080 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:58.665823+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-51",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "compact",
+        "viewportId": "pt-BR-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/compact-pt-BR-1920x1080.png",
+        "observation": "compact at 1920x1080 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:59.028588+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-52",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "open",
+        "viewportId": "pt-BR-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/open-pt-BR-1920x1080.png",
+        "observation": "open at 1920x1080 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:42:59.246147+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-53",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "interactive",
+        "viewportId": "pt-BR-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/interactive-pt-BR-1920x1080.png",
+        "observation": "interactive at 1920x1080 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:01.789993+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-54",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "reduced",
+        "viewportId": "pt-BR-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/reduced-pt-BR-1920x1080.png",
+        "observation": "reduced at 1920x1080 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:02.024113+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-55",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "compact",
+        "viewportId": "es-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/compact-es-360x800.png",
+        "observation": "compact at 360x800 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:02.337842+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-56",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "open",
+        "viewportId": "es-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/open-es-360x800.png",
+        "observation": "open at 360x800 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:02.611171+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-57",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "interactive",
+        "viewportId": "es-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/interactive-es-360x800.png",
+        "observation": "interactive at 360x800 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:05.272794+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-58",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "reduced",
+        "viewportId": "es-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/reduced-es-360x800.png",
+        "observation": "reduced at 360x800 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:05.503443+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-59",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "compact",
+        "viewportId": "pt-BR-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/compact-pt-BR-360x800.png",
+        "observation": "compact at 360x800 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:05.786247+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-60",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "open",
+        "viewportId": "pt-BR-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/open-pt-BR-360x800.png",
+        "observation": "open at 360x800 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:06.006064+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-61",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "interactive",
+        "viewportId": "pt-BR-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/interactive-pt-BR-360x800.png",
+        "observation": "interactive at 360x800 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:08.577372+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-62",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "reduced",
+        "viewportId": "pt-BR-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/reduced-pt-BR-360x800.png",
+        "observation": "reduced at 360x800 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:08.797817+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-63",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "compact",
+        "viewportId": "es-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/compact-es-430x932.png",
+        "observation": "compact at 430x932 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:09.127750+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-64",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "open",
+        "viewportId": "es-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/open-es-430x932.png",
+        "observation": "open at 430x932 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:09.354878+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-65",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "interactive",
+        "viewportId": "es-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/interactive-es-430x932.png",
+        "observation": "interactive at 430x932 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:11.886017+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-66",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "reduced",
+        "viewportId": "es-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/reduced-es-430x932.png",
+        "observation": "reduced at 430x932 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:12.112829+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-67",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "compact",
+        "viewportId": "pt-BR-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/compact-pt-BR-430x932.png",
+        "observation": "compact at 430x932 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:12.419966+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-68",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "open",
+        "viewportId": "pt-BR-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/open-pt-BR-430x932.png",
+        "observation": "open at 430x932 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:12.638226+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-69",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "interactive",
+        "viewportId": "pt-BR-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/interactive-pt-BR-430x932.png",
+        "observation": "interactive at 430x932 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:15.170679+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-70",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "reduced",
+        "viewportId": "pt-BR-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/reduced-pt-BR-430x932.png",
+        "observation": "reduced at 430x932 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:15.386211+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-71",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "chunk-failed",
+        "viewportId": "es-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/chunk-failed-es-390x844.png",
+        "observation": "chunk-failed at 390x844 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:16.139798+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-72",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "chunk-failed",
+        "viewportId": "pt-BR-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/chunk-failed-pt-BR-390x844.png",
+        "observation": "chunk-failed at 390x844 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:16.342925+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-73",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "no-js",
+        "viewportId": "es-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/no-js-es-390x844.png",
+        "observation": "no-js at 390x844 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:16.616430+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-74",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "no-js",
+        "viewportId": "pt-BR-390x844",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/no-js-pt-BR-390x844.png",
+        "observation": "no-js at 390x844 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:16.785299+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-75",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "chunk-failed",
+        "viewportId": "es-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/chunk-failed-es-1440x900.png",
+        "observation": "chunk-failed at 1440x900 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:17.011498+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-76",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "chunk-failed",
+        "viewportId": "pt-BR-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/chunk-failed-pt-BR-1440x900.png",
+        "observation": "chunk-failed at 1440x900 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:17.211495+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-77",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "no-js",
+        "viewportId": "es-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/no-js-es-1440x900.png",
+        "observation": "no-js at 1440x900 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:17.387706+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-78",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "no-js",
+        "viewportId": "pt-BR-1440x900",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/no-js-pt-BR-1440x900.png",
+        "observation": "no-js at 1440x900 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:17.625894+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-79",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "chunk-failed",
+        "viewportId": "es-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/chunk-failed-es-1920x1080.png",
+        "observation": "chunk-failed at 1920x1080 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:17.884869+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-80",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "chunk-failed",
+        "viewportId": "pt-BR-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/chunk-failed-pt-BR-1920x1080.png",
+        "observation": "chunk-failed at 1920x1080 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:18.099599+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-81",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "no-js",
+        "viewportId": "es-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/no-js-es-1920x1080.png",
+        "observation": "no-js at 1920x1080 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:18.342114+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-82",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "no-js",
+        "viewportId": "pt-BR-1920x1080",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/no-js-pt-BR-1920x1080.png",
+        "observation": "no-js at 1920x1080 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:18.699243+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-83",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "chunk-failed",
+        "viewportId": "es-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/chunk-failed-es-360x800.png",
+        "observation": "chunk-failed at 360x800 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:18.924008+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-84",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "chunk-failed",
+        "viewportId": "pt-BR-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/chunk-failed-pt-BR-360x800.png",
+        "observation": "chunk-failed at 360x800 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:19.123104+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-85",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "no-js",
+        "viewportId": "es-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/no-js-es-360x800.png",
+        "observation": "no-js at 360x800 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:19.322537+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-86",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "no-js",
+        "viewportId": "pt-BR-360x800",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/no-js-pt-BR-360x800.png",
+        "observation": "no-js at 360x800 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:19.519065+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-87",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "chunk-failed",
+        "viewportId": "es-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/chunk-failed-es-430x932.png",
+        "observation": "chunk-failed at 430x932 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:19.739572+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-88",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "chunk-failed",
+        "viewportId": "pt-BR-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/chunk-failed-pt-BR-430x932.png",
+        "observation": "chunk-failed at 430x932 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:19.957255+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-89",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "no-js",
+        "viewportId": "es-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/no-js-es-430x932.png",
+        "observation": "no-js at 430x932 with es: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:20.203044+00:00",
+        "status": "pass"
+      },
+      {
+        "id": "shot-90",
+        "moduleId": "hairline-phone",
+        "sectionId": "phone-caption",
+        "stateId": "no-js",
+        "viewportId": "pt-BR-430x932",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/no-js-pt-BR-430x932.png",
+        "observation": "no-js at 430x932 with pt-BR: Phone stays in its frame, readable text, controls retained where applicable; no-JS intentionally has static bilingual HTML and no controls",
+        "capturedAt": "2026-10-17T23:43:20.480403+00:00",
+        "status": "pass"
+      }
+    ],
+    "interactions": [
+      {
+        "id": "action-1",
+        "moduleId": "hairline-phone",
+        "controlId": "language",
+        "action": "choose",
+        "method": "reversible",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Native select changes rendered text/document language in both locales and all five widths",
+        "status": "pass"
+      },
+      {
+        "id": "action-2",
+        "moduleId": "hairline-phone",
+        "controlId": "motion",
+        "action": "enable",
+        "method": "keyboard",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Focused explicit enable button responds to Enter and mounts the optional SVG",
+        "status": "pass"
+      },
+      {
+        "id": "action-3",
+        "moduleId": "hairline-phone",
+        "controlId": "motion",
+        "action": "stop",
+        "method": "click",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Stop button removes the engine; reload starts still",
+        "status": "pass"
+      },
+      {
+        "id": "action-4",
+        "moduleId": "hairline-phone",
+        "controlId": "separation",
+        "action": "compact",
+        "method": "keyboard",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Home selects the useful compact rest image with no engine",
+        "status": "pass"
+      },
+      {
+        "id": "action-5",
+        "moduleId": "hairline-phone",
+        "controlId": "separation",
+        "action": "open",
+        "method": "keyboard",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "End selects the useful open rest image; also works under reduced motion",
+        "status": "pass"
+      },
+      {
+        "id": "action-6",
+        "moduleId": "hairline-phone",
+        "controlId": "artwork",
+        "action": "touch",
+        "method": "click",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Browser-emulated tap changes upstream paths and preserves pan-y; not physical iPhone proof",
+        "status": "pass"
+      },
+      {
+        "id": "action-7",
+        "moduleId": "hairline-phone",
+        "controlId": "bridge",
+        "action": "mount",
+        "method": "sandbox",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Public bridge fixture uses actual React root, localized range, motion changes and abort/repeated destroy; parent caption survives",
+        "status": "pass"
+      },
+      {
+        "id": "action-8",
+        "moduleId": "hairline-phone",
+        "controlId": "bridge",
+        "action": "set-motion",
+        "method": "sandbox",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Public bridge fixture uses actual React root, localized range, motion changes and abort/repeated destroy; parent caption survives",
+        "status": "pass"
+      },
+      {
+        "id": "action-9",
+        "moduleId": "hairline-phone",
+        "controlId": "bridge",
+        "action": "abort",
+        "method": "sandbox",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Public bridge fixture uses actual React root, localized range, motion changes and abort/repeated destroy; parent caption survives",
+        "status": "pass"
+      },
+      {
+        "id": "action-10",
+        "moduleId": "hairline-phone",
+        "controlId": "bridge",
+        "action": "destroy",
+        "method": "sandbox",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Public bridge fixture uses actual React root, localized range, motion changes and abort/repeated destroy; parent caption survives",
+        "status": "pass"
+      }
+    ],
+    "checks": [
+      {
+        "id": "check-contract",
+        "moduleId": "hairline-phone",
+        "kind": "contract",
+        "artifact": "/tmp/andes53-evidence-r2/design-contract.json",
+        "observation": "Scoped review contract validated; exact approved product direction retained, whole-app modules excluded",
+        "status": "pass"
+      },
+      {
+        "id": "check-runtime",
+        "moduleId": "hairline-phone",
+        "kind": "runtime",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Fourteen grouped browser checks pass; six observation-order cases also pass in green/visibility-batches.json",
+        "status": "pass"
+      },
+      {
+        "id": "check-console",
+        "moduleId": "hairline-phone",
+        "kind": "console",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "No primary page errors; expected blocked-chunk failure isolated in a separate context",
+        "status": "pass"
+      },
+      {
+        "id": "check-network-or-ipc",
+        "moduleId": "hairline-phone",
+        "kind": "network-or-ipc",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "No primary failed responses or external requests; default still requests no animation engine",
+        "status": "pass"
+      },
+      {
+        "id": "check-overflow",
+        "moduleId": "hairline-phone",
+        "kind": "overflow",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/records.json",
+        "observation": "All five widths and both locales have no horizontal overflow in the scripted material states; static fallback captures fit their widths",
+        "status": "pass"
+      },
+      {
+        "id": "check-accessibility",
+        "moduleId": "hairline-phone",
+        "kind": "accessibility",
+        "artifact": "/tmp/andes53-evidence-r2/axe-es.json",
+        "observation": "Zero WCAG2.1 A/AA violations in both locale reports; native named controls, keyboard/touch coverage and useful reduced-motion stills",
+        "status": "pass"
+      },
+      {
+        "id": "check-copy",
+        "moduleId": "hairline-phone",
+        "kind": "copy",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Plain translated descriptions remain outside SVG; no raw onRead, safety/delivery facts or diagnostic labels",
+        "status": "pass"
+      },
+      {
+        "id": "check-design-consistency",
+        "moduleId": "hairline-phone",
+        "kind": "design-consistency",
+        "artifact": "/tmp/andes53-evidence-r2/matrix/records.json",
+        "observation": "All 60 supplemental images inspected on five sheets; actual shared OKLCH values reported; source Phone geometry/stroke hierarchy retained",
+        "status": "pass"
+      },
+      {
+        "id": "check-slop-detector",
+        "moduleId": "hairline-phone",
+        "kind": "slop-detector",
+        "artifact": "/tmp/andes53-evidence-r2/slop-rendered.json",
+        "observation": "Zero rendered findings at five widths using unchanged bundled detector external-browser API; rendered side-tab negative control triggered, source findings empty",
+        "status": "pass"
+      },
+      {
+        "id": "check-persistence",
+        "moduleId": "hairline-phone",
+        "kind": "persistence",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "Stop/reload returns to still; animation preference is never silently persisted; no backend persistence is part of this module",
+        "status": "pass"
+      },
+      {
+        "id": "check-edge-cases",
+        "moduleId": "hairline-phone",
+        "kind": "edge-cases",
+        "artifact": "/tmp/andes53-evidence-r2/green/visibility-batches.json",
+        "observation": "All six ordered/empty/foreign observation cases pass; original failure reproduced in red/visibility-batches.json; optional-chunk/no-JS/abort cases also pass Independent56 confirmed exact-head P2 closure and independently replayed all six edge cases; see review-p2-closure.json. Final binding/disposition remains pending.",
+        "status": "pass"
+      }
+    ],
+    "dependencies": [
+      {
+        "id": "dependency-shared49-package-and-tokens",
+        "moduleId": "hairline-phone",
+        "target": "shared49-package-and-tokens",
+        "artifact": "/tmp/andes53-evidence-r2/foundation/package.json",
+        "observation": "Frozen3283fe6 package/lock exact versions match tools, shared CSS tokens consumed; unchanged dependencies in follow-up6f8dc52. No shared source edits",
+        "status": "pass"
+      },
+      {
+        "id": "dependency-hairline-upstream",
+        "moduleId": "hairline-phone",
+        "target": "hairline-upstream",
+        "artifact": "/tmp/andes53-evidence-r2/build.txt",
+        "observation": "Official MIT Phone0.5.1 React export; no engine edits, optional49.28kBgzip chunk; rest images generated from the same upstream",
+        "status": "pass"
+      },
+      {
+        "id": "dependency-host55-contract",
+        "moduleId": "hairline-phone",
+        "target": "host55-contract",
+        "artifact": "/tmp/andes53-evidence-r2/browser-results.json",
+        "observation": "The53-owned mountVisual interface matches the agreed55 contract and passes abort/destroy/sibling tests;55 app route integration is excluded",
+        "status": "pass"
+      },
+      {
+        "id": "dependency-host55-strict-types",
+        "moduleId": "hairline-phone",
+        "target": "host55-contract",
+        "artifact": "/tmp/andes53-evidence-r2/type-only-binding.json",
+        "observation": "Strict lazy callback reproduced TS7016 before index.d.mts and passes after; all14 original runtime files and7 production outputs byte-identical to01edc7b. No unrelated capture replay after type-only change.",
+        "status": "pass"
+      }
+    ]
+  },
+  "review": {
+    "builderId": "component53-codex-primary",
+    "testerId": "component56-independent-primary",
+    "independence": {
+      "kind": "isolated-context",
+      "reason": "User requires normal Sol6.1 xhigh primary sessions, no Claude/aux coding agents;56 independently repeats evidence in its own worktree/browser"
+    },
+    "verdict": "pending",
+    "healingIterations": 1,
+    "openIssues": [
+      "Independent56 final exact-head binding and formal UI-proof disposition pending; P2 closed on9d757a9"
+    ],
+    "sensitivityProof": {
+      "mutation": "Remove the only heading-language section capture for the first viewport from a disposable manifest copy",
+      "result": "validator-rejected"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "candidate": "8c54a17793bb6133d462cfa2598bcefe72c79590",
+  "foundation": "6f8dc52a566d3880cf1f10bbfd5282a888725ca1",
+  "scope": "Independent changed binding checks in the actual FoundationRoot fixture; unconfigured/demo session; no feature/API acceptance",
+  "rows": [],
+  "errors": []
+}

@@ -1,0 +1,129 @@
+{
+  "candidate": "8c54a17793bb6133d462cfa2598bcefe72c79590",
+  "sourceByteMatchesCommit": true,
+  "sourceFingerprint": "17c4c928928a4ff30729e5bd4ae8862431c213ab26344a6cd0a38ad8bc391dd2",
+  "verifiedAt": "2026-10-18T00:10:56.184446+00:00",
+  "source": [
+    {
+      "path": "docs/visuals/integration.md",
+      "sha256": "5ef291ea6d094105d86dd20e0748241bc0288a3f744937a7a77b93953004ccbf",
+      "bytes": 14760
+    },
+    {
+      "path": "web/src/visuals/integration/OptionalVisual.tsx",
+      "sha256": "5df5c965debd0cccfd57d1dc492c3189f5f53615428e7b798b79cbd2a0d9aec8",
+      "bytes": 1504
+    },
+    {
+      "path": "web/src/visuals/integration/contract.ts",
+      "sha256": "5f06dd880fce5a0f310fc10053d26eb175fa97dda57c93fe5ff380f10eaf75c5",
+      "bytes": 1455
+    },
+    {
+      "path": "web/src/visuals/integration/copy.ts",
+      "sha256": "41de5b69b09c3bb54d6e3b3ed18aff38ca2cc0f8ffa1f60737078c96082c03cc",
+      "bytes": 3538
+    },
+    {
+      "path": "web/src/visuals/integration/host.ts",
+      "sha256": "007fbeb67c5104d0320478cd68ad77efd241edd9de362b16f2cce2ad461558fd",
+      "bytes": 7239
+    },
+    {
+      "path": "web/src/visuals/integration/index.ts",
+      "sha256": "d930552ab2c8e15477e7114d4dc2dc0c7bd50062f63d029f1734ab644884474e",
+      "bytes": 279
+    },
+    {
+      "path": "web/src/visuals/integration/react.ts",
+      "sha256": "5c792c1534c1238e7d65da8c5fc7928cea9101bbeabc1eda3c46dadd45a39bc4",
+      "bytes": 120
+    },
+    {
+      "path": "web/src/visuals/integration/shell.ts",
+      "sha256": "deb22c5c488f8f0684d1168300ddc8683416f54a3b66d5dcb61848d1cecde8d3",
+      "bytes": 1551
+    },
+    {
+      "path": "web/src/visuals/integration/visual.css",
+      "sha256": "2646de4966758a16c1e7cc6f03c31e6aa51d28fe8a2c202905746fda6c742a8e",
+      "bytes": 1791
+    },
+    {
+      "path": "web/tests/visuals/integration/browser-check.mjs",
+      "sha256": "3404a6f0c1ed374b1931a0975ca007eb4f84f12fd3c8976510b577c499b2bf69",
+      "bytes": 11891
+    },
+    {
+      "path": "web/tests/visuals/integration/figure-sources.mjs",
+      "sha256": "206610dd81a19b76985c20675ae5f3d511602e3a704a9810ba944951e6d61190",
+      "bytes": 250
+    },
+    {
+      "path": "web/tests/visuals/integration/figures-check.mjs",
+      "sha256": "90e7142f978d83ddeb3746f1c27c9dd2b18d57d9d3bf9c0a3622309a1772a054",
+      "bytes": 12092
+    },
+    {
+      "path": "web/tests/visuals/integration/fixture-module.ts",
+      "sha256": "2ae086b63ef12b2435767a1419815ddfdda207643767281e367a25adebe0c837",
+      "bytes": 2085
+    },
+    {
+      "path": "web/tests/visuals/integration/fixture-page.ts",
+      "sha256": "a081300f316452ad7da43e03928b0ceb96699b1ac6f73805c5db800ff34ceda9",
+      "bytes": 1055
+    },
+    {
+      "path": "web/tests/visuals/integration/fixture-server.mjs",
+      "sha256": "519bb270992fb83d34fb7be6b276291f5571a05ffa7410f65f91c04e8afdd8f1",
+      "bytes": 3885
+    },
+    {
+      "path": "web/tests/visuals/integration/foundation-check.mjs",
+      "sha256": "39b5961a3140ce3e772ef15edb0a9ecf0fad4ada92d56298102395af774c1ab5",
+      "bytes": 11668
+    },
+    {
+      "path": "web/tests/visuals/integration/foundation-page.tsx",
+      "sha256": "235849aa773288a3eae569920cea3a3a7524fdfb63874f6fe5b617339f52ee16",
+      "bytes": 4099
+    },
+    {
+      "path": "web/tests/visuals/integration/foundation.html",
+      "sha256": "03c9f17d3e039c8cc078e150eda83cfcb62697e68fd7c2b08dfe781fe4b10df5",
+      "bytes": 634
+    },
+    {
+      "path": "web/tests/visuals/integration/lifecycle-tests.ts",
+      "sha256": "239eb65eca22312c5e5526d8755c341f9c1c03d26427d6cc8191ecf1dc9541c2",
+      "bytes": 11459
+    },
+    {
+      "path": "web/tests/visuals/integration/prepare-figures.mjs",
+      "sha256": "258bdc1a48957a01abda9d03c327ce030a20d56a5aacf4a687f456c3c62b7880",
+      "bytes": 1689
+    },
+    {
+      "path": "web/tests/visuals/integration/reviewed-figures.d.ts",
+      "sha256": "b5fa5a7ef198f7021068d28b9fe86036add80e7b86b66a040d8bce53311aa0f1",
+      "bytes": 308
+    },
+    {
+      "path": "web/tests/visuals/integration/serve-foundation.mjs",
+      "sha256": "676859feda618a50583beccfec553d6e97702a5f083d9dc7e98736333e9b350f",
+      "bytes": 2402
+    },
+    {
+      "path": "web/tests/visuals/integration/shell.test.mjs",
+      "sha256": "9cf501652cae54943ecd78b844a64bc9e0adfdabe8071dc28e16e70a3783f487",
+      "bytes": 1506
+    },
+    {
+      "path": "web/tests/visuals/integration/tsconfig.json",
+      "sha256": "7f8f9626b26a9d7b7d2e5b0f5edcbb49b67f4ae91dea06757dc8a504183345bc",
+      "bytes": 162
+    }
+  ],
+  "scope": "Content-addressed source/evidence index; not the shared UI Evidence Manifest or a complete UI-proof receipt"
+}

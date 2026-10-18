@@ -1,0 +1,139 @@
+{
+  "candidate": "feb009167e3ae064d4480dc87d65c3b5b7fdbfcd",
+  "sourceByteMatchesCommit": true,
+  "sourceFingerprint": "5a0c0fc7643c07dcaf3aabf27fd9c9f78bbf171e1d3891c218420cf7a55697a4",
+  "verifiedAt": "2026-10-18T00:10:55.758585+00:00",
+  "source": [
+    {
+      "path": "docs/visuals/anatomy.md",
+      "sha256": "c00af5f03ccb0a9f3a00f8c0ff31847b4037e6cdef3344dd83d4f02b2cef402c",
+      "bytes": 10170
+    },
+    {
+      "path": "web/src/visuals/anatomy/AnatomyRelay.tsx",
+      "sha256": "52766426c10ef2c9c2e6c916882ac32e5c89c7e5280c4d9c5cb11758496af8ce",
+      "bytes": 954
+    },
+    {
+      "path": "web/src/visuals/anatomy/art.mjs",
+      "sha256": "9222bfd67cd17041f463fb033d332455db6d26d4cd657a77149a4ab0c6d15b25",
+      "bytes": 145311
+    },
+    {
+      "path": "web/src/visuals/anatomy/geometry.mjs",
+      "sha256": "2d666057eee460a8147e3df0153376a0067e04af333e1ac7b8c3e73ce2c77756",
+      "bytes": 6283
+    },
+    {
+      "path": "web/src/visuals/anatomy/index.d.mts",
+      "sha256": "66a081fe3e1e6bd3637cef0665c7be7e1d7d508dc8b7f6438162b1f038555b3a",
+      "bytes": 342
+    },
+    {
+      "path": "web/src/visuals/anatomy/index.mjs",
+      "sha256": "2196cde177b0bdcb76880777d1485ce6dcb4ad874a7e1787222cb5eb855e120f",
+      "bytes": 6406
+    },
+    {
+      "path": "web/src/visuals/anatomy/model.mjs",
+      "sha256": "1dd9c4f8ec4fee780b2ecec72d6f2504ffb2573cc2cfa94fc748e00e01ad039a",
+      "bytes": 4725
+    },
+    {
+      "path": "web/src/visuals/anatomy/render.mjs",
+      "sha256": "e99f05c510e7dc20a35da797fbf7e5c4491d7b7a7124aadf5eec14633f05364b",
+      "bytes": 2402
+    },
+    {
+      "path": "web/src/visuals/anatomy/styles.mjs",
+      "sha256": "0fb01ff8286a3f9f1afc0fd271a065306e7779fe19cb437fb96d2e98390a2dcb",
+      "bytes": 4031
+    },
+    {
+      "path": "web/src/visuals/anatomy/vendor/LICENSE",
+      "sha256": "87c078ab9d90a3044f359e6b563d4e6afea7aa060897cf4f21618687b3856796",
+      "bytes": 1061
+    },
+    {
+      "path": "web/src/visuals/anatomy/vendor/audit.mjs",
+      "sha256": "74e605b5d549c1f31c8a1104db7560057105cf86809bf6ced00e4ac79194c8e2",
+      "bytes": 92618
+    },
+    {
+      "path": "web/src/visuals/anatomy/vendor/iso-kit.mjs",
+      "sha256": "6d3ecc725d30c3b0346da309cf61dfa5a65017c23620bbd4093009d4fb104018",
+      "bytes": 35175
+    },
+    {
+      "path": "web/src/visuals/anatomy/vendor/lathe.mjs",
+      "sha256": "a4e7e974b1a37e603ad2b76363b6f9815cc101dfff0ad277a5d4e8f1dc56fccb",
+      "bytes": 48028
+    },
+    {
+      "path": "web/src/visuals/anatomy/vendor/tube.mjs",
+      "sha256": "bcb3cc360f6d83e6a5753f4c464b4587ab7965028b05a5d58e285abce58667c9",
+      "bytes": 14230
+    },
+    {
+      "path": "web/tests/visuals/anatomy/browser.mjs",
+      "sha256": "4a56d016bbf7e349eee3093658a3872ed2f3eda6993df1556ff96b632bd4f16b",
+      "bytes": 5655
+    },
+    {
+      "path": "web/tests/visuals/anatomy/build.mjs",
+      "sha256": "794ae3e6c76fdcb5e06075e7158063679447a4747dedc304bdae20c216da9c03",
+      "bytes": 2106
+    },
+    {
+      "path": "web/tests/visuals/anatomy/capabilities.mjs",
+      "sha256": "cadde394e6310d6f6c5bf43214fdad62aeb444e5b6ad86dfb829955f8b0f9a18",
+      "bytes": 7689
+    },
+    {
+      "path": "web/tests/visuals/anatomy/legibility.mjs",
+      "sha256": "7b32eb822798f8e8a200f0c397c9fdddc403c6874db536616abccf0c5cfa7377",
+      "bytes": 1869
+    },
+    {
+      "path": "web/tests/visuals/anatomy/lifecycle.mjs",
+      "sha256": "66be4793a98a2fc14c601d1e6cb434ac933670929676bd585d8305341b584a2d",
+      "bytes": 8758
+    },
+    {
+      "path": "web/tests/visuals/anatomy/model.test.mjs",
+      "sha256": "b28fab18b7257f222c0d8a96ce34ea67ad922f99b50e4c191f588e3d76bc00c3",
+      "bytes": 2454
+    },
+    {
+      "path": "web/tests/visuals/anatomy/preview-es.html",
+      "sha256": "3f99e2c05ef6d3fe6012ac10b78dfecc715c00b0b23e8aa88186b51298e44ec0",
+      "bytes": 144397
+    },
+    {
+      "path": "web/tests/visuals/anatomy/preview-pt-BR.html",
+      "sha256": "093898c739a84726e5ac19d240e6db5303f33aa6c794cb038b3b6a483e3ad857",
+      "bytes": 144343
+    },
+    {
+      "path": "web/tests/visuals/anatomy/preview-static-es.html",
+      "sha256": "7b915ef31da8ff9e11e4c6a785a8b3c3d270e2417d76b5af9d0d29ef30e25d99",
+      "bytes": 144207
+    },
+    {
+      "path": "web/tests/visuals/anatomy/preview-static-pt-BR.html",
+      "sha256": "e21609b0d7e99a6d97461e0b659f631f439f387f94d6d6def8bae37f3848156f",
+      "bytes": 144150
+    },
+    {
+      "path": "web/tests/visuals/anatomy/serve.mjs",
+      "sha256": "18ce1f18e65e66ba9d6fa4db58e52c86fccda8a31750fdf89a3802a7966c7560",
+      "bytes": 1295
+    },
+    {
+      "path": "web/tests/visuals/anatomy/typecheck.mjs",
+      "sha256": "e0eb239d077a61e56543f64a955b353a84d498e6785668a771b16e5cd7fc9996",
+      "bytes": 1238
+    }
+  ],
+  "scope": "Content-addressed source/evidence index; not the shared UI Evidence Manifest or a complete UI-proof receipt"
+}

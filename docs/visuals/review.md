@@ -1,16 +1,18 @@
 # Independent visual review
 
-Component 56; 2026-10-17. Status: **two artwork changes requested; standalone
-hosting adapter technical review passed**.
+Component 56; 2026-10-17. Status: **both original P2 findings closed; corrected
+artwork and exact Foundation binding passed scoped technical review**.
 
 Primary session configuration verified in both local Codex config and the
 active session's latest `turn_context`: `gpt-6.1-sol`, reasoning `xhigh`.
 No auxiliary coding agents. Provider-side model identity is not independently
 attested beyond the actual configured session metadata.
 
-Base inspected: `800205a4be2c94833234c852760b2eb09c6ed079`. It contains the
-backend prerequisite, not a rendered frontend foundation. The exact standalone
-reviews below do not grant whole-app acceptance or complete integrated UI proof.
+The initial prerequisite was `800205a4be2c94833234c852760b2eb09c6ed079`.
+The current review also runs the actual FoundationRoot, shared router, locale
+and tokens from `6f8dc52a566d3880cf1f10bbfd5282a888725ca1`, through the exact
+component55 fixture. Its session is explicitly unconfigured/demo. These
+reviews do not grant whole-app acceptance or complete integrated UI proof.
 
 Read the exact Brain packet's TEAM.md, PRODUCT.md, DIRECTION.md,
 design-contract.json, CONTENT-BIBLE.md, IMAGE-MANIFEST.md and visual-addendum.md.
@@ -23,27 +25,121 @@ UI proof. Confidence mode Off; Testing 5/10; Security 5/10.
 The approved visual direction extends the light radio-check information
 hierarchy. No redesign, new routes or independent package/router/token system.
 Optional illustrations belong below useful setup/help content. Primary driver
-actions remain visible at 390×844. Brand assets are still marked not produced
-in the supplied manifest; foundation owner 49 must deliver actual evidence.
+actions remain visible at 390×844. The prerequisite's asset manifest marked
+brand assets not produced; the current fixture renders49's actual identity.
+Whole-app brand completeness remains within52's acceptance scope.
 
 ## Review inventory and responsibility
 
 | Candidate | Owner | Required exact handoff | Independent decision |
 |---|---|---|---|
-| Hairline Phone | 53 | PR69, `d8eea894d90af249ec2d81689f629fabc5c476f0` | Changes requested: P2 batched visibility |
-| Anatomy relay | 54 | PR72, `186fd4eb4688961de183af9283154b14da933ce9` | Changes requested: P2 failed-init cleanup |
-| Hosting adapter | 55 | PR70, `646daafc75ee16dd0a90ef7322ed4e9ba1045af8` | Standalone adapter technical PASS |
+| Hairline Phone | 53 | PR69, `9d757a909268ebf4c9b45068fa4954fed873ddc8` | Scoped technical PASS; original batch P2 closed |
+| Anatomy relay | 54 | PR72, `feb009167e3ae064d4480dc87d65c3b5b7fdbfcd` | Scoped technical PASS; original cleanup P2 closed |
+| Foundation binding | 55 | PR70, `8c54a17793bb6133d462cfa2598bcefe72c79590` | Scoped technical PASS with both exact artwork dependencies |
 | Integrated app | 49 / 52 | Exact assembled SHA, affected routes/controls and UI manifest | 52 owns full-app acceptance |
 
 Requested foundation handoff from49, candidates from53/54/55 and coordinated
 with52. Sole merge integrator remains44; reviewer comments require resolution
 and original reviewer confirmation before merge. No self-merge here.
 
-Direct inbox handoffs:53 confirmed its approved upstream Phone work at3053
-and will send an immutable candidate;54 reported an in-progress synthetic
-preview at3054, four example stages and pending exact SHA. Its own geometry
-and model checks are builder reports, not independent acceptance. No review
-of uncommitted54 source was requested; await its committed handoff.
+All three current candidates arrived through immutable inbox handoffs.
+The original findings and evidence remain below as historical results; the
+closure section supersedes their open verdicts. Builder captures are labelled
+separately from independently repeated checks.
+
+## Corrected candidates and Foundation binding
+
+Hairline9d757a9 retains the approved drawing and fixes the latest matching
+IntersectionObserver entry. The original56 probe was replayed with only its
+candidate/output binding changed: `[true,false]` now unmounts the engine and
+`[false,true]` mounts it. Six authored edge cases were also independently
+executed: both orders, empty batch, mixed targets and foreign-only batch all
+passed. The preserved trusted touch pan moved129px; a controlled hidden-state
+800ms sample recorded zero callbacks/mutations. That sample is synthetic;
+native visibility was separately exercised in the real integration below.
+The mobile still capture has zero overflow and correct shared ink/surface.
+The final `.d.mts` declaration passes strict lazy-import fixture typing.
+
+Anatomyfeb0091 fixes capability gating and partial initialization ownership.
+The original missing-IO → mount → caller abort → visibility event → old-button
+probe was repeated in es/pt-BR. Both now return an inert handle without throwing,
+retain all four static explanations, and produce zero callbacks or selection
+changes after abort. The authored capability harness was independently replayed
+against unchanged candidate runtime on3056: the original186fd4eb control still
+leaks seven listeners and one document callback; all16 corrected cases pass.
+Missing APIs, throwing media/listener/constructor/observe, synchronous abort
+and healthy setup leave zero listeners/callbacks/frames after abort. Each
+observe-throw case queues one frame, cancels one and disconnects the observer.
+The original geometry/model/CSS are unchanged; their prior broad review is
+retained without repeating its capture campaign.
+
+Integration8c54a17 adds a React wrapper around the already reviewed host, plus
+an actual FoundationRoot fixture that imports the two exact final modules.
+Independent byte comparison verified all26 shared foundation/package/public
+files against6f8dc52 and all28 archived artwork files against their commits.
+The seven original host runtime files are unchanged from646daafc. The isolated
+checkout is clean; locked npm install under Node24.17.0, production build,
+foundation typecheck, strict fixture/artwork typecheck and five shell tests pass.
+
+Independent browser work was limited to the changed wrapper and bindings:
+
+- Seven wrapper groups passed: parent rerender retention, real locale remount
+  at rest, native hidden-tab pause without restart, reduced-motion static
+  keyboard action, StrictMode/disclosure/remove cleanup, shared-router cleanup
+  and failed import with a working primary action.
+- Four real-figure groups, es/pt-BR × Phone/relay, passed native keyboard/touch,
+  explicit motion, actual Chrome hidden-tab pause, reduced-motion stillness
+  and shared-route teardown. Captures include still states and4× mechanism detail.
+- Four independent360×800 binding cases found zero WCAG2A/AA/2.1AA axe violations,
+  zero overflow, one shell/locale provider, and a visible, unobscured56px primary
+  action. Parent state changes retained actual art; locale changes discarded
+  it and remounted translated art at rest; remove/remount and disclosure cleanup
+  passed. The real failure case retained Portuguese facts and recovery text.
+- Closed disclosure requested no artwork; opening still did not request the
+  Phone engine. No app console errors or failed requests were observed in the
+  lifecycle groups. Runtime colors were measured as sRGB pixels, not assumed
+  from the browser's `lab(...)` computed-style serialization.
+
+Read-only inspection of55's54 hash-verified captures supplements these bounded
+checks at all five required sizes. Both contact sheets, full360px relay state
+and independent4× figure crops were inspected. This is explicitly builder
+matrix evidence, not54 newly independent captures. No duplicate full-foundation
+campaign was run. The long relay explanation remains optional and below the
+primary action; its delivery/help rows remain unconfirmed even in acknowledgement.
+
+Production gzip bytes measured with Node gzipSync: Phone engine48,931;
+Phone bridge1,459 plusCSS466 and defaultSVG4,098; relay26,690. The production
+fixture's initial JS is88,745, which includes its local demonstration controls
+and cannot be reported as an actual feature-route delta.
+
+The React integration fixture's no-JS response is an explicit bilingual notice
+that this fixture needs JavaScript. Its static adapter fallback was reviewed
+separately at646daafc and is unchanged. This is not evidence that actual feature
+routes provide complete facts/actions with JavaScript disabled.
+
+Evidence: [Hairline closure](../../evidence/visual-review/hairline-9d757a9/),
+[Anatomy closure](../../evidence/visual-review/anatomy-feb0091/),
+[Foundation binding](../../evidence/visual-review/integration-8c54a17/).
+Their source/artifact indexes are content-addressed receipts, not a replacement
+schema for the shared UI Evidence Manifest. The exact schema1.0.0 Hairline builder
+manifest validates on its clean9d757a9 checkout with only its two deliberate
+pending-review errors (verdict/open issues). Its fields were not self-signed or
+changed to manufacture complete proof. Component52 still owns the assembled
+application's shared-manifest validation and whole-app acceptance;44 owns merges.
+
+No open P0/P1/P2 product finding remains in these scoped technical reviews.
+No physical iPhone, human comprehension, backend CI, live alert/delivery, full-app
+acceptance, complete formal UI-proof receipt or merge is claimed. The two old
+P2 findings below are preserved for audit and are closed only on the exact heads
+listed above. Earlier scores describe the original revisions.
+
+Reviewer diagnostics are retained separately: the embedded pane was actually
+hidden and correctly kept optional art unloaded while showing the text caption;
+its injected Space/click did not consistently toggle native details. Trusted
+input and native visibility claims come from isolated Chrome/CDP. An initial
+reviewer RGB-string assertion rejected an equivalent `lab(...)` value; pixel
+measurement confirmed the exact shared colors. No candidate change was made
+to accommodate these harness behaviors.
 
 ## Checks from the brief
 
@@ -106,7 +202,7 @@ claimed. Five-viewport, pt-BR, no-JS and reduced-motion **candidate** evidence
 was pending at this instrument checkpoint. The exact candidate results below
 supersede it; full-app coverage and production bundle costs remain separate.
 
-## Exact candidate review results
+## Original candidate review results (superseded by closures above)
 
 All three frozen sources were inspected and run on this lane's isolated
 loopback3056 in turn, with Node24.17.0 and no backend, account, environment
@@ -194,7 +290,7 @@ neither artwork implementation. Real53/54 bindings, real49 foundation routes,
 global locale, tokens, production chunks and whole-app/no-JS behavior require
 their own integrated evidence with52.
 
-## Technical audit scores and proof limits
+## Original technical audit scores and proof limits
 
 | Axis (0–4) | Hairline | Anatomy | Adapter | Evidence/limit |
 |---|---:|---:|---:|---|

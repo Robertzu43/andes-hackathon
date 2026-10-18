@@ -1,0 +1,104 @@
+{
+  "candidate": "9d757a909268ebf4c9b45068fa4954fed873ddc8",
+  "sourceByteMatchesCommit": true,
+  "sourceFingerprint": "fdb0ebb9414fa0866978e3cdb2f1ec5a19234501d9c7fabcec585ae71097388d",
+  "verifiedAt": "2026-10-18T00:10:55.363449+00:00",
+  "source": [
+    {
+      "path": "docs/visuals/hairline.md",
+      "sha256": "ed72d073e31ed5a9f570901f8a9489b366d0f0ffb121b3bece4f1712880d0375",
+      "bytes": 10613
+    },
+    {
+      "path": "web/src/visuals/hairline/LICENSE.hairline",
+      "sha256": "948d56f0bc8c383c04c453136dcfb78407f97de65ff8bb4fabff2b79ddd17f59",
+      "bytes": 1070
+    },
+    {
+      "path": "web/src/visuals/hairline/PhoneCanvas.tsx",
+      "sha256": "6e7171e9a5a8c146096a596c3a114de032df71b566ad1a87af8895dde8d7a53e",
+      "bytes": 374
+    },
+    {
+      "path": "web/src/visuals/hairline/PhoneIllustration.tsx",
+      "sha256": "098ba67a207415881ffa10b85948e9b4bb78b5953203edf2c59f74a0b1a7abe0",
+      "bytes": 3216
+    },
+    {
+      "path": "web/src/visuals/hairline/index.d.mts",
+      "sha256": "f2998db966d4908cf745e170f3bf1945dd25f1648db51f2209356771bfe5b94e",
+      "bytes": 45
+    },
+    {
+      "path": "web/src/visuals/hairline/index.mjs",
+      "sha256": "f2998db966d4908cf745e170f3bf1945dd25f1648db51f2209356771bfe5b94e",
+      "bytes": 45
+    },
+    {
+      "path": "web/src/visuals/hairline/index.ts",
+      "sha256": "78fb12617a1217c276c9a7cc786325b6adffaaa3964f9568c18b33701e994a8d",
+      "bytes": 86
+    },
+    {
+      "path": "web/src/visuals/hairline/mountVisual.tsx",
+      "sha256": "e1a5d55278d23d8aaf8f0d2720a585a1f3427dad813fb1ed403b802333263f21",
+      "bytes": 1890
+    },
+    {
+      "path": "web/src/visuals/hairline/phone-rest-compact.svg",
+      "sha256": "ff1da3d0f5d6d150f76ae440338e1ab02573f1c1c1d60915708544abd2761f50",
+      "bytes": 16826
+    },
+    {
+      "path": "web/src/visuals/hairline/phone-rest-open.svg",
+      "sha256": "ad4dec4d86de9cbc3bffe0ea0dc6760e7fdab6e8c2df5a7846ae8994c100301b",
+      "bytes": 16800
+    },
+    {
+      "path": "web/src/visuals/hairline/phone-rest.svg",
+      "sha256": "5ed913cc1321bda00e52ae5aa37e0f6abea17e9603faca412c07f87ee366bb78",
+      "bytes": 16815
+    },
+    {
+      "path": "web/src/visuals/hairline/phone.css",
+      "sha256": "f4633911843faafc1b22b7f5493ca69460f244045a40d010ef11c0ed97f2d19a",
+      "bytes": 1326
+    },
+    {
+      "path": "web/src/visuals/hairline/preview/index.html",
+      "sha256": "734fa85e16df4805a59f36d92f0852a3989924ba301a9913e1798f6117984351",
+      "bytes": 1263
+    },
+    {
+      "path": "web/src/visuals/hairline/preview/main.tsx",
+      "sha256": "b44e018805ba15b21a369f06c49f9cf297abd76b1840a86e0badd952ab31fc7d",
+      "bytes": 4103
+    },
+    {
+      "path": "web/src/visuals/hairline/preview/preview.css",
+      "sha256": "723c2aebedf89e433906a85732356a9b02a0991603e0d6a3949f8a21e0d311a8",
+      "bytes": 1964
+    },
+    {
+      "path": "web/src/visuals/hairline/preview/serve.mjs",
+      "sha256": "8b1bc08e67ac1d3252fba994186442a94c6a9c8341d823045106a594d101dd9d",
+      "bytes": 1829
+    },
+    {
+      "path": "web/tests/visuals/hairline/browser.mjs",
+      "sha256": "e2a744d5e9e8bd778821accda6aa9beddb42082b9961ebe04b9bbd8115db1383",
+      "bytes": 12162
+    },
+    {
+      "path": "web/tests/visuals/hairline/capture-rest.mjs",
+      "sha256": "95159d08818152ed727e7df6207508df30d951b4e2a2b391e8856e3d9231059c",
+      "bytes": 2496
+    },
+    {
+      "path": "web/tests/visuals/hairline/visibility-batches.mjs",
+      "sha256": "31f2d8a43cf9b95052f282104d6c08f2b75576a1066504a4234a7e0732b9192b",
+      "bytes": 3637
+    }
+  ],
+  "scope": "Content-addressed source/evidence index; not the shared UI Evidence Manifest or a complete UI-proof receipt"
+}

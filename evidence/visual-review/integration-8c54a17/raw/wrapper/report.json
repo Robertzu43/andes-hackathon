@@ -1,0 +1,77 @@
+{
+  "commit": "8c54a17793bb6133d462cfa2598bcefe72c79590",
+  "sourceState": "",
+  "foundation": "6f8dc52a566d3880cf1f10bbfd5282a888725ca1",
+  "base": "http://127.0.0.1:3056",
+  "rows": [],
+  "behavior": [
+    "Unrelated primary-action state updates retain the mounted artwork",
+    "The actual foundation language switch disposes the old module and remounts translated text at rest",
+    "Native browser tab visibility stops frames and returning does not restart motion",
+    "Reduced motion retains a meaningful static keyboard action with the real shared locale",
+    "StrictMode, disclosure close/reopen and explicit remove/remount leave one working host",
+    "Existing shared-router navigation aborts the module; return starts with the optional explanation closed",
+    "An optional import failure preserves caption and the shared primary action"
+  ],
+  "limitations": [
+    "Uses the real shared shell/router/locale with a synthetic visual module, not finished Hairline or Anatomy",
+    "No real session, API, trip, alert, delivery, physical-device or human comprehension acceptance",
+    "Production fixture chunks differ from an actual feature-owned application route bundle"
+  ],
+  "production": {
+    "dynamicEntry": "assets/fixture-module-CsVHy4qw.js",
+    "files": [
+      {
+        "file": "PhoneCanvas-DMXZHSi_.js",
+        "bytes": 121941,
+        "gzipBytes": 48931
+      },
+      {
+        "file": "anatomy-t2nuBJgr.js",
+        "bytes": 154384,
+        "gzipBytes": 26690
+      },
+      {
+        "file": "fixture-module-CsVHy4qw.js",
+        "bytes": 1286,
+        "gzipBytes": 704
+      },
+      {
+        "file": "foundation-D9B2XrS6.js",
+        "bytes": 281119,
+        "gzipBytes": 88745
+      },
+      {
+        "file": "foundation-rF5mGmUv.css",
+        "bytes": 9481,
+        "gzipBytes": 2743
+      },
+      {
+        "file": "hairline-CFGEqxzZ.css",
+        "bytes": 1053,
+        "gzipBytes": 466
+      },
+      {
+        "file": "hairline-CeFTyPnA.js",
+        "bytes": 3005,
+        "gzipBytes": 1459
+      },
+      {
+        "file": "phone-rest-BoUmCTMP.svg",
+        "bytes": 16815,
+        "gzipBytes": 4098
+      },
+      {
+        "file": "phone-rest-compact-C36A7kDF.svg",
+        "bytes": 16826,
+        "gzipBytes": 4052
+      },
+      {
+        "file": "phone-rest-open-ba8B7_Us.svg",
+        "bytes": 16800,
+        "gzipBytes": 4064
+      }
+    ]
+  },
+  "ok": true
+}

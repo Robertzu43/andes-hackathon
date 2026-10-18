@@ -1,0 +1,209 @@
+{
+  "commit": "8c54a17793bb6133d462cfa2598bcefe72c79590",
+  "sourceState": "",
+  "foundation": "6f8dc52a566d3880cf1f10bbfd5282a888725ca1",
+  "figures": {
+    "phone": {
+      "revision": "9d757a909268ebf4c9b45068fa4954fed873ddc8",
+      "path": "web/src/visuals/hairline"
+    },
+    "relay": {
+      "revision": "feb009167e3ae064d4480dc87d65c3b5b7fdbfcd",
+      "path": "web/src/visuals/anatomy"
+    }
+  },
+  "base": "http://127.0.0.1:3056",
+  "rows": [],
+  "behavior": [
+    "es/phone: native keyboard/touch, explicit motion, native tab pause, reduced-motion stillness and shared-route teardown",
+    "es/relay: native keyboard/touch, explicit motion, native tab pause, reduced-motion stillness and shared-route teardown",
+    "pt-BR/phone: native keyboard/touch, explicit motion, native tab pause, reduced-motion stillness and shared-route teardown",
+    "pt-BR/relay: native keyboard/touch, explicit motion, native tab pause, reduced-motion stillness and shared-route teardown"
+  ],
+  "limitations": [
+    "Actual figure sources and shared foundation in an isolated unconfigured/demo fixture",
+    "No real driver/contact feature, API, trip, alert, delivery or physical-device acceptance",
+    "Independent component56 replay of the four changed binding/lifecycle groups; the author matrix is excluded"
+  ],
+  "production": [
+    {
+      "file": "PhoneCanvas-DMXZHSi_.js",
+      "bytes": 121941,
+      "gzipBytes": 48931
+    },
+    {
+      "file": "anatomy-t2nuBJgr.js",
+      "bytes": 154384,
+      "gzipBytes": 26690
+    },
+    {
+      "file": "fixture-module-CsVHy4qw.js",
+      "bytes": 1286,
+      "gzipBytes": 704
+    },
+    {
+      "file": "foundation-D9B2XrS6.js",
+      "bytes": 281119,
+      "gzipBytes": 88745
+    },
+    {
+      "file": "foundation-rF5mGmUv.css",
+      "bytes": 9481,
+      "gzipBytes": 2743
+    },
+    {
+      "file": "hairline-CFGEqxzZ.css",
+      "bytes": 1053,
+      "gzipBytes": 466
+    },
+    {
+      "file": "hairline-CeFTyPnA.js",
+      "bytes": 3005,
+      "gzipBytes": 1459
+    },
+    {
+      "file": "phone-rest-BoUmCTMP.svg",
+      "bytes": 16815,
+      "gzipBytes": 4098
+    },
+    {
+      "file": "phone-rest-compact-C36A7kDF.svg",
+      "bytes": 16826,
+      "gzipBytes": 4052
+    },
+    {
+      "file": "phone-rest-open-ba8B7_Us.svg",
+      "bytes": 16800,
+      "gzipBytes": 4064
+    }
+  ],
+  "dependencyManifest": {
+    "phone": {
+      "revision": "9d757a909268ebf4c9b45068fa4954fed873ddc8",
+      "path": "web/src/visuals/hairline",
+      "directory": "/private/tmp/andes56-8c54a17-git/.codus/visual-fixtures/phone-9d757a909268ebf4c9b45068fa4954fed873ddc8/web/src/visuals/hairline",
+      "files": [
+        {
+          "path": "web/src/visuals/hairline/LICENSE.hairline",
+          "sha256": "948d56f0bc8c383c04c453136dcfb78407f97de65ff8bb4fabff2b79ddd17f59"
+        },
+        {
+          "path": "web/src/visuals/hairline/PhoneCanvas.tsx",
+          "sha256": "6e7171e9a5a8c146096a596c3a114de032df71b566ad1a87af8895dde8d7a53e"
+        },
+        {
+          "path": "web/src/visuals/hairline/PhoneIllustration.tsx",
+          "sha256": "098ba67a207415881ffa10b85948e9b4bb78b5953203edf2c59f74a0b1a7abe0"
+        },
+        {
+          "path": "web/src/visuals/hairline/index.d.mts",
+          "sha256": "f2998db966d4908cf745e170f3bf1945dd25f1648db51f2209356771bfe5b94e"
+        },
+        {
+          "path": "web/src/visuals/hairline/index.mjs",
+          "sha256": "f2998db966d4908cf745e170f3bf1945dd25f1648db51f2209356771bfe5b94e"
+        },
+        {
+          "path": "web/src/visuals/hairline/index.ts",
+          "sha256": "78fb12617a1217c276c9a7cc786325b6adffaaa3964f9568c18b33701e994a8d"
+        },
+        {
+          "path": "web/src/visuals/hairline/mountVisual.tsx",
+          "sha256": "e1a5d55278d23d8aaf8f0d2720a585a1f3427dad813fb1ed403b802333263f21"
+        },
+        {
+          "path": "web/src/visuals/hairline/phone-rest-compact.svg",
+          "sha256": "ff1da3d0f5d6d150f76ae440338e1ab02573f1c1c1d60915708544abd2761f50"
+        },
+        {
+          "path": "web/src/visuals/hairline/phone-rest-open.svg",
+          "sha256": "ad4dec4d86de9cbc3bffe0ea0dc6760e7fdab6e8c2df5a7846ae8994c100301b"
+        },
+        {
+          "path": "web/src/visuals/hairline/phone-rest.svg",
+          "sha256": "5ed913cc1321bda00e52ae5aa37e0f6abea17e9603faca412c07f87ee366bb78"
+        },
+        {
+          "path": "web/src/visuals/hairline/phone.css",
+          "sha256": "f4633911843faafc1b22b7f5493ca69460f244045a40d010ef11c0ed97f2d19a"
+        },
+        {
+          "path": "web/src/visuals/hairline/preview/index.html",
+          "sha256": "734fa85e16df4805a59f36d92f0852a3989924ba301a9913e1798f6117984351"
+        },
+        {
+          "path": "web/src/visuals/hairline/preview/main.tsx",
+          "sha256": "b44e018805ba15b21a369f06c49f9cf297abd76b1840a86e0badd952ab31fc7d"
+        },
+        {
+          "path": "web/src/visuals/hairline/preview/preview.css",
+          "sha256": "723c2aebedf89e433906a85732356a9b02a0991603e0d6a3949f8a21e0d311a8"
+        },
+        {
+          "path": "web/src/visuals/hairline/preview/serve.mjs",
+          "sha256": "8b1bc08e67ac1d3252fba994186442a94c6a9c8341d823045106a594d101dd9d"
+        }
+      ]
+    },
+    "relay": {
+      "revision": "feb009167e3ae064d4480dc87d65c3b5b7fdbfcd",
+      "path": "web/src/visuals/anatomy",
+      "directory": "/private/tmp/andes56-8c54a17-git/.codus/visual-fixtures/relay-feb009167e3ae064d4480dc87d65c3b5b7fdbfcd/web/src/visuals/anatomy",
+      "files": [
+        {
+          "path": "web/src/visuals/anatomy/AnatomyRelay.tsx",
+          "sha256": "52766426c10ef2c9c2e6c916882ac32e5c89c7e5280c4d9c5cb11758496af8ce"
+        },
+        {
+          "path": "web/src/visuals/anatomy/art.mjs",
+          "sha256": "9222bfd67cd17041f463fb033d332455db6d26d4cd657a77149a4ab0c6d15b25"
+        },
+        {
+          "path": "web/src/visuals/anatomy/geometry.mjs",
+          "sha256": "2d666057eee460a8147e3df0153376a0067e04af333e1ac7b8c3e73ce2c77756"
+        },
+        {
+          "path": "web/src/visuals/anatomy/index.d.mts",
+          "sha256": "66a081fe3e1e6bd3637cef0665c7be7e1d7d508dc8b7f6438162b1f038555b3a"
+        },
+        {
+          "path": "web/src/visuals/anatomy/index.mjs",
+          "sha256": "2196cde177b0bdcb76880777d1485ce6dcb4ad874a7e1787222cb5eb855e120f"
+        },
+        {
+          "path": "web/src/visuals/anatomy/model.mjs",
+          "sha256": "1dd9c4f8ec4fee780b2ecec72d6f2504ffb2573cc2cfa94fc748e00e01ad039a"
+        },
+        {
+          "path": "web/src/visuals/anatomy/render.mjs",
+          "sha256": "e99f05c510e7dc20a35da797fbf7e5c4491d7b7a7124aadf5eec14633f05364b"
+        },
+        {
+          "path": "web/src/visuals/anatomy/styles.mjs",
+          "sha256": "0fb01ff8286a3f9f1afc0fd271a065306e7779fe19cb437fb96d2e98390a2dcb"
+        },
+        {
+          "path": "web/src/visuals/anatomy/vendor/LICENSE",
+          "sha256": "87c078ab9d90a3044f359e6b563d4e6afea7aa060897cf4f21618687b3856796"
+        },
+        {
+          "path": "web/src/visuals/anatomy/vendor/audit.mjs",
+          "sha256": "74e605b5d549c1f31c8a1104db7560057105cf86809bf6ced00e4ac79194c8e2"
+        },
+        {
+          "path": "web/src/visuals/anatomy/vendor/iso-kit.mjs",
+          "sha256": "6d3ecc725d30c3b0346da309cf61dfa5a65017c23620bbd4093009d4fb104018"
+        },
+        {
+          "path": "web/src/visuals/anatomy/vendor/lathe.mjs",
+          "sha256": "a4e7e974b1a37e603ad2b76363b6f9815cc101dfff0ad277a5d4e8f1dc56fccb"
+        },
+        {
+          "path": "web/src/visuals/anatomy/vendor/tube.mjs",
+          "sha256": "bcb3cc360f6d83e6a5753f4c464b4587ab7965028b05a5d58e285abce58667c9"
+        }
+      ]
+    }
+  },
+  "ok": true
+}
