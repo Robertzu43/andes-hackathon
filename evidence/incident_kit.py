@@ -469,9 +469,8 @@ def check_occurrence(event: dict, reporter: dict | None, cited: list[dict], repo
                                 "can only record a stop")
     elif event_type in REST_REPORTS and not any(s["evidence_basis"] == "attributed_account" for s in cited):
         report.error(where, f"{event_type} needs a participant account; independent location records only show a stop")
-    if reporter and occurrence in {"self_reported", "reported_second_hand", "suspected"}:
-        if any(s["kind"] in {"whatsapp_export", "sms"} and is_own_account(s, event["reported_by"]) for s in cited):
-            report.warn(where, "verify message authorship against reported_by in the original during independent trace review")
+    if any(s["kind"] in {"whatsapp_export", "sms"} and s["evidence_basis"] == "attributed_account" for s in cited):
+        report.warn(where, "verify message authorship and participant attribution in the original during independent trace review")
     if occurrence == "recorded":
         if not any(source["timestamped_record"] == "yes" for source in cited):
             report.error(where, "occurrence recorded needs a cited timestamped record")

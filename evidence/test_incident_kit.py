@@ -39,10 +39,12 @@ class SyntheticCohortTest(unittest.TestCase):
         self.assertEqual(report.errors, [])
         expected = ["pair SYN-B: has no ordinary-trip case"]
         expected += [
-            f"timeline.csv line {line} ({event}): verify message authorship against reported_by "
+            f"timeline.csv line {line} ({event}): verify message authorship and participant attribution "
             "in the original during independent trace review"
-            for line, event in ((4, "SYN-A-W-E03"), (18, "SYN-A-W-E16"),
-                                (24, "SYN-A-O-E05"), (31, "SYN-B-W-E07"))
+            for line, event in ((3, "SYN-A-W-E02"), (4, "SYN-A-W-E03"), (16, "SYN-A-W-E14"),
+                                (18, "SYN-A-W-E16"), (23, "SYN-A-O-E04"), (24, "SYN-A-O-E05"),
+                                (27, "SYN-B-W-E03"), (29, "SYN-B-W-E05"), (30, "SYN-B-W-E06"),
+                                (31, "SYN-B-W-E07"))
         ]
         if not kit.ZONES:
             expected.insert(0, "time zones: no time-zone database found, so zone names and offsets were not checked")
@@ -820,6 +822,22 @@ class RuleTest(unittest.TestCase):
     def test_message_accounts_flag_authorship_for_trace_review(self):
         _, report = kit.check(self.folder)
         self.assertTrue(any("message authorship" in w for w in report.warnings), report.warnings)
+
+    def test_corroborated_message_account_flags_authorship_for_trace_review(self):
+        self.add_source("SYN-A-W-S9", kind="independent_record", provided_by="SYN-A-D",
+                        evidence_basis="independent_observation")
+        self.edit("timeline", "SYN-A-W-E03", event_type="rest_start", occurrence="corroborated",
+                  source_ids="SYN-A-W-S9;SYN-A-W-S3", basis_source_id="SYN-A-W-S9",
+                  basis_note="SYNTHETIC independent tracker stop", time_basis="unknown",
+                  observed_time="", observed_source_id="")
+        for reporter in ("SYN-A-D", "record"):
+            with self.subTest(reporter=reporter):
+                self.edit("timeline", "SYN-A-W-E03", reported_by=reporter)
+                result, report = kit.export(self.folder)
+                self.assertIsNotNone(result)
+                self.assertEqual(report.errors, [])
+                self.assertTrue(any("SYN-A-W-E03" in warning and "message authorship" in warning
+                                    for warning in report.warnings), report.warnings)
 
     def test_cell_error_does_not_hide_other_rows_provenance_errors(self):
         self.edit("participants", "SYN-B-C", preferred_language="bad!")
