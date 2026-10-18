@@ -6,9 +6,16 @@ function invalid(): never { throw new Error('Unexpected API response'); }
 const text: Decoder<string> = value => typeof value === 'string' ? value : invalid();
 const bool: Decoder<boolean> = value => typeof value === 'boolean' ? value : invalid();
 const uuid: Decoder<string> = value => isUuid(value) ? value : invalid();
-const date: Decoder<string> = value => typeof value === 'string'
-  && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])$/.test(value)
-  && Number.isFinite(Date.parse(value)) ? value : invalid();
+const instant = /^(\d{4})-(\d{2})-(\d{2})T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.\d+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])$/;
+// Date.parse rolls impossible days forward (02-30 -> 03-02); require the calendar day to round-trip.
+const realDay = (m: RegExpExecArray) => {
+  const day = new Date(Date.UTC(+m[1]!, +m[2]! - 1, +m[3]!));
+  return day.getUTCFullYear() === +m[1]! && day.getUTCMonth() === +m[2]! - 1 && day.getUTCDate() === +m[3]!;
+};
+const date: Decoder<string> = value => {
+  const m = typeof value === 'string' ? instant.exec(value) : null;
+  return m && realDay(m) && Number.isFinite(Date.parse(m[0])) ? m[0] : invalid();
+};
 /** Normalize only explicit zoned instants; never infer a browser or route time zone. */
 export function normalizeDate(value: unknown): string {
   if (typeof value !== 'string') invalid();
