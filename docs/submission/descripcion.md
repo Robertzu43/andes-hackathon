@@ -43,7 +43,7 @@ El aviso al grupo de WhatsApp de choferes está diseñado como un trabajo aparte
 - **También en `main`:** el cliente tipado de la API, el controlador del recorrido del conductor, las pantallas del contacto y de privacidad, y el adaptador de GPS con su cola de subida (sin conectar a ninguna pantalla).
 - **En construcción:** la app web de producción es todavía un cascarón. Las pantallas del conductor y el recorrido guiado se están construyendo.
 - **No desplegado:** el script de la demo reducida en AWS existe, pero no se ha ejecutado.
-- **Entrega real por Zavu (SMS, WhatsApp, llamada):** sin confirmar; los envíos están apagados por defecto y la demo muestra cada canal como «no habilitado». [[PENDIENTE: confirmar la entrega real antes de entregar]]
+- **Entrega real por Zavu (SMS, WhatsApp, llamada):** sin confirmar; los envíos están apagados por defecto, así que cada trabajo de envío queda en estado `unavailable` y la pantalla del contacto lo muestra como «No disponible». [[PENDIENTE: confirmar la entrega real antes de entregar]]
 - **No implementado:** dictar el viaje por voz y extraer los datos de un texto libre. Hoy el conductor llena los campos.
 - **Idea, no producto:** que aseguradoras, gremios o autoridades usen el mapa; un modelo de riesgo. Hoy el consejo es una regla de conteo.
 
