@@ -1,4 +1,4 @@
-// Run in the composition produced by compose-ui.mjs; dependencies must exist, never silently skip.
+// Uses the typed client from web/src/lib/api; dependencies must exist, never silently skip.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createApiClient, createSessionGateway, MemorySession } from '../../src/lib/api/index.ts';

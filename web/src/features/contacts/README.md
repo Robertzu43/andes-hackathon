@@ -53,13 +53,13 @@ operation/receipt state and its retry closure; it does not reconcile or cancel t
 server outcome. The UI says leaving does not cancel the request and claims no
 cross-route or persisted operation history. No optional visual is required.
 
-### Reproduce the composed UI
+### Reproduce the UI
+
+The typed client (#59, #81) and the foundation are on main, so no composition step
+is needed.
 
 ```sh
-node web/tests/contacts/compose-ui.mjs
-# Use its printed target; the script archives immutable dependencies and copies
-# only this lane's source/tests. It records feature HEAD and any working changes.
-cd <target>/web
+cd web
 npm ci --ignore-scripts --no-audit --no-fund
 npm run build
 node node_modules/typescript/bin/tsc -p tests/contacts/ui-tsconfig.json
@@ -355,12 +355,10 @@ hide the separately authorized incident or map, and a map 403 does not hide an
 incident that status found. Status has no "last driver response" field, so that row
 was removed. Invitations can set `role` (`family` by default, or `colleague`).
 
-The view uses the typed client from #59/#81 (`web/src/lib/api`), which is not on
-main yet. `compose-ui.mjs` overlays #81's client on this branch. In that tree,
-`view.integration.mjs` runs with node, and `status.browser.mjs` runs against the
-Vite dev fixture (`node web/tests/contacts/status.browser.mjs http://127.0.0.1:PORT`,
-using `web/tests/foundation/cdp.mjs`). #81's status decoder drops `label` today, so
-the label reaches the page only once that client keeps it. The journey keeps it when
-it is present.
+`status.browser.mjs` checks this against the Vite dev fixture
+(`node web/tests/contacts/status.browser.mjs http://127.0.0.1:PORT`, using
+`web/tests/foundation/cdp.mjs`). The client's status decoder on main drops `label`
+today, so the label reaches the page only once that decoder keeps it. The journey
+keeps it when it is present.
 
 Refs #15, #35, #14. No issue completion is implied.
