@@ -18,6 +18,15 @@ for (const file of ['controller.mjs', 'validation.mjs']) {
   }));
 }
 const { createDriverJourney } = await import(pathToFileURL(join(archive, 'controller.mjs')));
+// Keep the original oracle above and reproduce explicit reactivation with the current controller.
+for (const file of ['controller.mjs', 'validation.mjs']) {
+  const target = join(archive, 'current', file); mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, execFileSync('git', ['show',
+    `20c08faad67fddbe27eebac7585c63b3366f31a8:web/src/features/driver/${file}`], {
+    cwd: fileURLToPath(new URL('../../../', import.meta.url)),
+  }));
+}
+const { createDriverJourney: createCurrentDriverJourney } = await import(pathToFileURL(join(archive, 'current/controller.mjs')));
 const actor = '11111111-1111-4111-8111-111111111111';
 const trip = '22222222-2222-4222-8222-222222222222';
 const incident = '33333333-3333-4333-8333-333333333333';
@@ -71,6 +80,71 @@ test('same-account refresh preserves accepted SOS receipts and a 200 body still 
       assert.equal(journey.snapshot().incident.data, null);
       assert.equal(journey.snapshot().tripId, null);
     } finally { release(sos()); binding.dispose(); journey.dispose(); f.session.clear(); }
+  });
+});
+
+test('explicit same-account reactivation verifies first and preserves current-controller SOS state', async t => {
+  for (const held of [false, true]) await t.test(held ? 'committed response pending' : 'already accepted', async () => {
+    let releaseSos, reachedSos, releaseIdentity, reachedIdentity;
+    const sosBody = new Promise(resolve => { releaseSos = resolve; });
+    const sosReading = new Promise(resolve => { reachedSos = resolve; });
+    const identityBody = new Promise(resolve => { releaseIdentity = resolve; });
+    const identityReading = new Promise(resolve => { reachedIdentity = resolve; });
+    let verifyAgain = false, identityCalls = 0, sosCalls = 0;
+    let serverActor = actor;
+    const f = setup(async url => {
+      if (url.pathname === '/v1/me') {
+        identityCalls++;
+        const response = Response.json({ id: serverActor });
+        if (verifyAgain) response.json = async () => { reachedIdentity(); await identityBody; return { id: serverActor }; };
+        return response;
+      }
+      if (url.pathname.endsWith('/sos')) {
+        sosCalls++;
+        const response = Response.json(sos());
+        if (held) response.json = async () => { reachedSos(); return sosBody; };
+        return response;
+      }
+      return Response.json({ id: trip, driver_id: actor, truck_id: actor, origin: 'Synthetic origin',
+        destination: 'Synthetic destination', country: 'BR', locale: 'pt-BR', time_zone: 'America/Sao_Paulo',
+        status: 'active', map_active: true, checkins_active: true, paused: false, version: 1,
+        created_at: '2026-10-17T12:00:00.000Z', closed_at: null });
+    });
+    const journey = createCurrentDriverJourney({ transport: f.transport, keyFactory: () => 'original-sos-intent' });
+    const actors = [];
+    const binding = bindJourneySession(f.session, f.api, id => { actors.push(id); journey.setSession(id); });
+    const pending = [];
+    try {
+      await binding.activate(); journey.setInteractionMode('stationary');
+      assert.equal((await journey.openTrip(trip)).kind, 'ok');
+      const help = journey.requestHelp(); pending.push(help);
+      if (held) await sosReading; else assert.equal((await help).kind, 'ok');
+      f.session.setCredentials(credentials('synthetic.refreshed'));
+      verifyAgain = true;
+      const first = binding.activate(); first.catch(() => {}); pending.push(first);
+      const second = binding.activate(); second.catch(() => {}); pending.push(second);
+      await identityReading;
+      assert.equal(journey.snapshot().tripId, trip, 'Verification must not clear the existing trip');
+      assert.equal(journey.snapshot().operations.sos?.state, held ? 'pending' : 'accepted');
+      assert.equal(identityCalls, 2, 'Concurrent same-credential reactivation shares one verification');
+      releaseIdentity(); await Promise.all([first, second]);
+      assert.deepEqual(actors, [null, actor], 'A verified unchanged actor must not republish a reset');
+      releaseSos(sos()); assert.equal((await help).kind, 'ok');
+      assert.equal(journey.snapshot().incident.data?.id, incident);
+      assert.equal(journey.snapshot().operations.sos?.state, 'accepted');
+      assert.equal(sosCalls, 1, 'Revalidation must not replay the SOS');
+      // A genuinely changed server actor still retires all old protected facts.
+      serverActor = '44444444-4444-4444-8444-444444444444';
+      await binding.activate();
+      assert.deepEqual(actors, [null, actor, null, serverActor]);
+      assert.equal(journey.snapshot().tripId, null);
+      assert.equal(journey.snapshot().incident.data, null);
+      f.session.clear(); assert.equal(journey.snapshot().auth.actorId, null);
+    } finally {
+      releaseIdentity(); releaseSos(sos());
+      await Promise.allSettled(pending);
+      binding.dispose(); journey.dispose(); f.session.clear();
+    }
   });
 });
 

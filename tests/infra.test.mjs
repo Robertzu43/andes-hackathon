@@ -72,7 +72,7 @@ test('exact process wiring, bootstrap/live gates and conservative rolling capaci
 test('image contains migration SQL/CA and CI runs real PostgreSQL tests without live credentials',()=>{
   const docker=text('Dockerfile');
   assert.match(docker,/FROM node:24-bookworm-slim/g);assert.match(docker,/COPY db \.\/db/);
-  assert.match(docker,/scripts\/bootstrap\.mjs/);assert.match(docker,/COPY infra\/rds-global-bundle\.pem/);assert.match(docker,/USER node/);
+  assert.match(docker,/scripts\/bootstrap\.mjs/);assert.match(docker,/COPY infra\/rds-global-bundle\.pem/);assert.match(docker,/USER node/);assert.match(docker,/COPY public \.\/public/);
   assert.match(text('.dockerignore'),/!infra\/rds-global-bundle\.pem/);
   const ci=text('.github/workflows/ci.yml');
   for(const command of ['npm ci','npm run typecheck','npm test','npm run demo','cfn-lint==1.57.2','docker build'])assert.ok(ci.includes(command));

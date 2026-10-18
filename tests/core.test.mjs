@@ -28,7 +28,7 @@ test('contacts accept their own explicit scopes with a trusted verified phone be
   assert.equal((await f.req('POST', `/v1/contacts/${grant}/accept`, { map: true, incident: true })).status, 403);
   const unverified = await f.token('contact', { phone_number_verified: false });
   assert.equal((await f.req('POST', `/v1/contacts/${grant}/accept`, { map: true, incident: true }, unverified)).status, 409);
-  const wrongPhone = await f.token('contact', { phone_number: '+5511999991111' });
+  const wrongPhone = await f.token('contact', { phone_number: '+15555550111' });
   assert.equal((await f.req('POST', `/v1/contacts/${grant}/accept`, { map: true, incident: true }, wrongPhone)).status, 409);
   const d = await f.draft();
   assert.equal((await f.req('POST', `/v1/trip-drafts/${d.body.id}/confirm`, { confirmed: true, contactGrantIds: [grant] })).status, 409);
@@ -116,7 +116,7 @@ test('trip and incident closure are independent; contact receipt/action are attr
 // Omitting fail-closed defaults, scope checks or boundary validation would create unqualified jobs/read access.
 test('unqualified channels stay unavailable and accepted incident scope never grants map access', async t => {
   const f = await fixture(t, { channelSupport: [] });
-  const invitation = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+5511999990000', map: false, incident: true });
+  const invitation = await f.req('POST', '/v1/contacts', { contactId: f.contactIdentity.id, phone: '+15555550100', map: false, incident: true });
   assert.equal((await f.req('POST', `/v1/contacts/${invitation.body.id}/accept`, { map: true, incident: true }, f.contact)).status, 400);
   assert.equal((await f.req('POST', `/v1/contacts/${invitation.body.id}/accept`, { map: false, incident: true }, f.contact)).status, 200);
   const trip = await f.trip([invitation.body.id]);
@@ -140,6 +140,22 @@ test('migration is repeat-safe and transaction failures release clients without 
   const { createApp } = await import('../dist/api/app.js');
   assert.throws(() => createApp({ ctx: f.ctx, auth: {} }), /Trusted OIDC/);
   assert.throws(() => createApp({ ctx: f.ctx, auth: { issuer: 'x', audience: 'x', jwksUrl: 'http://unsafe.test/jwks' } }), /HTTPS/);
+});
+
+// Two branches each added a 006-* migration; schema_migrations keys the full file name, so both must apply exactly once, in order.
+test('a fresh database applies every migration once in file-name order, including both 006 files', async t => {
+  const f = await fixture(t); const { migrate } = await import('../dist/db.js');
+  const { readdirSync } = await import('node:fs');
+  const files = readdirSync(new URL('../db/migrations/', import.meta.url)).filter(name => /^\d{3}-[a-z-]+\.sql$/.test(name)).sort().map(name => name.slice(0, -4));
+  assert.ok(files.includes('006-dispatch-retry') && files.includes('006-insights-provenance'));
+  const applied = async () => (await f.ctx.pool.query('SELECT version FROM schema_migrations ORDER BY version')).rows.map(row => row.version);
+  assert.deepEqual(await applied(), files);
+  await migrate(f.ctx.pool);
+  assert.deepEqual(await applied(), files, 'a second run applies nothing');
+  const columns = (await f.ctx.pool.query(`SELECT table_name||'.'||column_name AS c FROM information_schema.columns WHERE table_schema=current_schema()
+    AND (table_name,column_name) IN (('jobs','retry_count'),('identities','synthetic'),('jobs','trigger'),('identities','last_seen_at')) ORDER BY 1`)).rows.map(row => row.c);
+  assert.deepEqual(columns, ['identities.last_seen_at', 'identities.synthetic', 'jobs.retry_count', 'jobs.trigger']);
+  assert.equal((await f.ctx.pool.query("SELECT count(*)::int n FROM pg_constraint WHERE conname='dispatch_attempts_job_version_key' AND connamespace=current_schema()::regnamespace")).rows[0].n, 1);
 });
 
 // Resolving an SOS must not close an otherwise active trip or silently disable its map.
@@ -201,7 +217,7 @@ test('mixed-case grant UUID confirmations take one canonical lock order and reje
   const grantA = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'; const grantB = 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
   const initialA = await f.grant(); await f.ctx.pool.query('UPDATE contact_grants SET id=$1 WHERE id=$2', [grantA, initialA]);
   const contact2 = await f.token('contact-2'); const identity2 = (await f.req('GET', '/v1/me', undefined, contact2)).body.id;
-  const invitedB = await f.req('POST', '/v1/contacts', { contactId: identity2, phone: '+5511999990000', map: true, incident: true });
+  const invitedB = await f.req('POST', '/v1/contacts', { contactId: identity2, phone: '+15555550100', map: true, incident: true });
   assert.equal((await f.req('POST', `/v1/contacts/${invitedB.body.id}/accept`, { map: true, incident: true }, contact2)).status, 200);
   await f.ctx.pool.query('UPDATE contact_grants SET id=$1 WHERE id=$2', [grantB, invitedB.body.id]);
   const draft1 = await f.draft(); const draft2 = await f.draft();
