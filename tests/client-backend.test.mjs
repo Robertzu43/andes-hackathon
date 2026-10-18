@@ -1,11 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
 import { fixture } from './helpers/runtime.mjs';
-import { createApiClient, MemorySession, ApiError } from '../web/src/lib/api/index.ts';
+import { createApiClient, createIdempotencyKey, MemorySession, ApiError } from '../web/src/lib/api/index.ts';
 
-const intent = () => ({ idempotencyKey: randomUUID() });
-const rejected = (kind, status) => error => error instanceof ApiError && error.kind === kind && error.status === status;
+const intent = () => ({ idempotencyKey: createIdempotencyKey() });
+// Exact server code and write outcome, so a different rejection with the same status cannot pass.
+const rejected = (kind, status, code, outcome) => error => {
+  assert.ok(error instanceof ApiError, error);
+  assert.deepEqual({ kind: error.kind, status: error.status, code: error.code, outcome: error.outcome }, { kind, status, code, outcome });
+  return true;
+};
 
 async function clients(t) {
   const f = await fixture(t);
@@ -33,10 +37,10 @@ test('typed client decodes real persisted drafts/trips and preserves explicit id
   const truck = await driver.api.createTruck({ label: 'SYNTHETIC same intent' }, key);
   assert.deepEqual(await driver.api.createTruck({ label: 'SYNTHETIC same intent' }, key), truck);
   assert.equal((await f.ctx.pool.query('SELECT count(*)::int AS n FROM trucks')).rows[0].n, 1);
-  await assert.rejects(driver.api.createTruck({ label: 'SYNTHETIC changed content' }, key), rejected('conflict', 409));
+  await assert.rejects(driver.api.createTruck({ label: 'SYNTHETIC changed content' }, key), rejected('conflict', 409, 'idempotency_conflict', 'rejected'));
   const draft = await driver.api.createDraft({ text: 'SYNTHETIC incomplete draft', fields: { truckId: truck.id } }, intent());
   assert.ok(draft.missingFields.includes('origin'));
-  await assert.rejects(driver.api.confirmTrip(draft.id, { confirmed: true, contactGrantIds: [] }, intent()), rejected('conflict', 409));
+  await assert.rejects(driver.api.confirmTrip(draft.id, { confirmed: true, contactGrantIds: [] }, intent()), rejected('conflict', 409, 'draft_incomplete', 'rejected'));
   const trip = await driver.api.confirmTrip(draft.id, { confirmed: true, contactGrantIds: [], fields: {
     origin: 'A', destination: 'B', country: 'BR', locale: 'pt-BR', timeZone: 'America/Sao_Paulo',
   } }, intent());
@@ -44,16 +48,17 @@ test('typed client decodes real persisted drafts/trips and preserves explicit id
   assert.equal(row.driver_id, f.me.id);
   assert.equal(row.time_zone, 'America/Sao_Paulo');
   assert.equal(row.status, 'active');
-  await assert.rejects(stranger.api.getTrip(trip.id), rejected('forbidden', 403));
+  await assert.rejects(stranger.api.getTrip(trip.id), rejected('forbidden', 403, 'forbidden', 'not_applicable'));
   driver.session.setCredentials({ issuer: 'https://synthetic.test', subject: 'invalid',
     accessToken: 'synthetic.invalid.signature', expiresAt: Date.now() + 60_000 });
-  await assert.rejects(driver.api.getIdentity(), rejected('unauthenticated', 401));
+  // The client ends the session before reading a 401 body, so its code is the kind, never a stale server detail.
+  await assert.rejects(driver.api.getIdentity(), rejected('unauthenticated', 401, 'unauthenticated', 'not_applicable'));
   assert.equal(driver.session.snapshot().status, 'anonymous');
 });
 
 test('typed snapshot decoding preserves source age and observes real backend consent revocation', async t => {
   const { f, driver, contact } = await clients(t);
-  const invitation = await driver.api.inviteContact({ contactId: f.contactIdentity.id, phone: '+5511999990000', map: true, incident: true }, intent());
+  const invitation = await driver.api.inviteContact({ contactId: f.contactIdentity.id, phone: '+15555550100', map: true, incident: true }, intent());
   assert.equal((await contact.api.acceptContact(invitation.id, { map: true, incident: true }, intent())).status, 'accepted');
   const trip = await confirmed(driver.api, [invitation.id]);
   const empty = await contact.api.getSnapshot(trip.id);
@@ -72,7 +77,7 @@ test('typed snapshot decoding preserves source age and observes real backend con
   assert.deepEqual(stale.location, fresh.location);
   assert.notEqual(stale.readAt, fresh.readAt);
   await driver.api.revokeTripContact(trip.id, invitation.id, intent());
-  await assert.rejects(contact.api.getSnapshot(trip.id), rejected('forbidden', 403));
+  await assert.rejects(contact.api.getSnapshot(trip.id), rejected('forbidden', 403, 'forbidden', 'not_applicable'));
   assert.equal(contact.session.snapshot().status, 'authenticated');
 });
 
@@ -87,7 +92,8 @@ test('typed incident receipts stay separate from reported action, arrival and ex
   assert.equal((await contact.api.reportAction(incident.id, 'SYNTHETIC reported call', intent())).recorded, 'action');
   assert.equal((await driver.api.commandTrip(trip.id, 'arrived', intent())).automaticEscalation, false);
   assert.equal((await contact.api.getIncident(incident.id)).status, 'active');
-  await assert.rejects(contact.api.getSnapshot(trip.id), rejected('forbidden', 403));
+  // Arrival ends map sharing; the incident stays readable until explicit resolution.
+  await assert.rejects(contact.api.getSnapshot(trip.id), rejected('forbidden', 403, 'map_inactive', 'not_applicable'));
   assert.equal((await driver.api.resolveIncident(incident.id, intent())).status, 'resolved');
   assert.equal((await driver.api.getIncident(incident.id)).status, 'resolved');
 });
