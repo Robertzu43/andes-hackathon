@@ -1,6 +1,11 @@
 .tandem-flow { display: grid; gap: 1rem; max-width: 28rem; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 .tandem-flow .andes-button, .tandem-flow .andes-text-link { width: 100%; }
-.tandem-sos .andes-button { min-height: 5rem; font-size: 1.35rem; }
+/* The deck's SOS block: the whole red card is the button, with a white SOS key and the lead sentence. */
+.tandem-sos .andes-button { display: grid; justify-items: start; gap: 1rem; min-height: 5rem; padding: 1.25rem 1.25rem 1.5rem; border-radius: 1rem; text-align: start; }
+.tandem-sos-key { padding: .375rem 1.25rem; border-radius: .75rem; background: var(--surface); color: var(--danger); font-size: 2.75rem; font-weight: 800; line-height: 1; letter-spacing: .01em; }
+.tandem-sos-lead { font-size: 1.25rem; font-weight: 700; line-height: 1.25; letter-spacing: -.01em; text-wrap: balance; }
+.tandem-sos .andes-button[aria-busy='true'] { border: 2px dashed var(--surface); opacity: .85; }
+.tandem-sos .andes-button:focus-visible { outline-color: var(--ink); }
 .tandem-stop { display: flex; align-items: center; gap: .75rem; min-height: 3rem; font-weight: 650; }
 .tandem-stop input { width: 1.5rem; height: 1.5rem; flex: none; }
 .tandem-note { margin: 0 0 1rem; }

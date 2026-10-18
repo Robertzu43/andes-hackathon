@@ -20,7 +20,7 @@ test('home offers demo start without minting, and the phone routes are mounted',
   const html = renderHome(runtime);
   assert.match(html, /data-action="start-demo"/);
   assert.match(html, /Empezar/);
-  assert.match(html, /no envía SMS/);
+  assert.match(html, /número autorizado para la prueba/);
   assert.equal(begins, 0);
   const routes = phoneRoutes(runtime);
   for (const id of ['home', 'trucks', 'tripNew', 'activeTrip', 'checkIn', 'alerts', 'summary', 'contacts', 'privacy', 'invitation', 'contactTrip']) {

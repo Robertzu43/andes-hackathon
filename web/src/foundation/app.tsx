@@ -38,11 +38,21 @@ function NavigationFocus() {
   }, [pathname]);
   return null;
 }
-export function Brand({ compact = false }: { compact?: boolean }) {
-  return <span className={`andes-brand${compact ? ' andes-brand--compact' : ''}`}>
-    <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M25 12H12v40h13M39 12h13v40H39" /></svg>
-    <span>ANDES</span>
-  </span>;
+// Tándem T-mark and outlined Manrope wordmark: docs/design/assets/tandem-logo-ink.svg, rounded to 0.1 units.
+const logoPaths = [
+  'M12 8H44V88H28V28H8V12Q8 8 12 8Z',
+  'M52 8H84Q88 8 88 12V28H68V88H52Z',
+  'M135.5 78V34.3H118.7V26.2H161V34.3H144.2V78Z',
+  'M185.3 33.5H178.7L184.2 20.2H190.8ZM176.5 79.1Q172.3 79.1 169.3 77.5Q166.4 75.9 164.9 73.2Q163.4 70.5 163.4 67.3Q163.4 64.5 164.4 62.3Q165.3 60.1 167.3 58.4Q169.2 56.8 172.3 55.7Q174.7 54.9 177.8 54.3Q180.9 53.7 184.6 53.2Q188.3 52.7 192.4 52.1L189.2 53.8Q189.3 49.8 187.5 47.9Q185.6 46 181.3 46Q178.6 46 176.2 47.2Q173.7 48.4 172.8 51.4L164.8 48.9Q166.3 44 170.3 41Q174.4 38 181.3 38Q186.5 38 190.4 39.7Q194.3 41.4 196.3 45.3Q197.3 47.3 197.5 49.5Q197.7 51.6 197.7 54.1V78H190.1V69.6L191.4 71Q188.8 75.1 185.2 77.1Q181.7 79.1 176.5 79.1ZM178.2 72.2Q181.2 72.2 183.2 71.1Q185.3 70.1 186.6 68.6Q187.8 67.1 188.2 65.7Q188.9 64.1 189 61.9Q189.1 59.8 189.1 58.4L191.8 59.2Q187.8 59.9 185 60.3Q182.2 60.8 180.2 61.2Q178.2 61.6 176.7 62.1Q175.2 62.7 174.1 63.4Q173.1 64.1 172.5 65Q172 66 172 67.2Q172 68.7 172.7 69.8Q173.4 70.9 174.8 71.5Q176.2 72.2 178.2 72.2Z',
+  'M232.9 78V59.3Q232.9 57.5 232.6 55.2Q232.4 53 231.4 50.9Q230.5 48.9 228.7 47.5Q226.9 46.2 223.8 46.2Q222.1 46.2 220.5 46.7Q218.9 47.3 217.6 48.6Q216.3 49.9 215.5 52.2Q214.7 54.5 214.7 58L209.6 55.8Q209.6 50.9 211.5 46.8Q213.4 42.8 217.1 40.4Q220.9 38 226.4 38Q230.7 38 233.5 39.4Q236.3 40.9 237.9 43.1Q239.6 45.4 240.4 47.9Q241.2 50.4 241.4 52.7Q241.7 54.9 241.7 56.3V78ZM205.9 78V39.1H213.6V51.2H214.7V78Z',
+  'M265.5 79.1Q260.1 79.1 256.1 76.4Q252.2 73.7 250 69Q247.8 64.4 247.8 58.5Q247.8 52.6 250 48Q252.2 43.4 256.3 40.7Q260.3 38 265.8 38Q271.4 38 275.1 40.7Q278.9 43.4 280.8 48.1Q282.8 52.7 282.8 58.5Q282.8 64.4 280.8 69Q278.9 73.7 275 76.4Q271.2 79.1 265.5 79.1ZM266.8 71.3Q270.3 71.3 272.5 69.7Q274.6 68.1 275.6 65.2Q276.6 62.3 276.6 58.5Q276.6 54.8 275.6 51.9Q274.6 49 272.5 47.4Q270.4 45.8 267.1 45.8Q263.6 45.8 261.4 47.5Q259.1 49.2 258 52.1Q256.9 55 256.9 58.5Q256.9 62.1 258 65Q259.1 67.9 261.3 69.6Q263.4 71.3 266.8 71.3ZM276.6 78V50.7H275.5V26.2H284.2V78Z',
+  'M310.9 79.1Q305 79.1 300.5 76.5Q296.1 74 293.6 69.4Q291.1 64.9 291.1 59Q291.1 52.6 293.5 47.9Q296 43.2 300.3 40.6Q304.7 38 310.4 38Q316.5 38 320.7 40.9Q324.9 43.7 327 48.8Q329 54 328.5 61H319.9V57.8Q319.9 51.5 317.7 48.5Q315.5 45.6 310.8 45.6Q305.5 45.6 302.9 48.9Q300.3 52.2 300.3 58.6Q300.3 64.5 302.9 67.7Q305.5 71 310.4 71Q313.6 71 315.9 69.5Q318.3 68.1 319.5 65.4L328.1 68Q325.9 73.3 321.2 76.2Q316.5 79.1 310.9 79.1ZM297.5 61V54.4H324.3V61Z',
+  'M382.2 78 382.2 54.4Q382.2 50.4 380.2 48.1Q378.2 45.9 374.8 45.9Q372.7 45.9 371.1 46.8Q369.4 47.8 368.5 49.7Q367.5 51.5 367.5 54.1L363.6 51.8Q363.6 47.7 365.5 44.7Q367.3 41.6 370.5 39.9Q373.6 38.2 377.5 38.2Q384 38.2 387.4 42Q390.9 45.9 390.9 52.2L390.8 78ZM335.4 78V39.1H343.1V51.2H344.1V78ZM358.8 78 358.8 54.5Q358.8 50.4 356.9 48.2Q354.9 45.9 351.5 45.9Q348.2 45.9 346.2 48.1Q344.1 50.4 344.1 54.1L340.3 51.5Q340.3 47.7 342.2 44.7Q344 41.7 347.2 39.9Q350.4 38.2 354.4 38.2Q358.7 38.2 361.6 40Q364.6 41.9 366 45Q367.5 48.2 367.5 52.2L367.5 78Z',
+];
+export function Brand() {
+  return <svg className="andes-brand" viewBox="0 0 402 104" aria-hidden="true" focusable="false">
+    {logoPaths.map(d => <path key={d} d={d} />)}
+  </svg>;
 }
 export function AppShell({ children, session }: { children: ReactNode; session?: SessionGateway }) {
   const { t } = useI18n();
@@ -50,7 +60,7 @@ export function AppShell({ children, session }: { children: ReactNode; session?:
   const contacts = useMatch('/contacts/*'); const contact = useMatch('/contact/*');
   return <div className="andes-app"><a className="andes-skip" href="#main-content">{t('skip')}</a>
     <header className="andes-header"><div className="andes-header-top">
-      <Link to="/" aria-label="ANDES"><Brand /></Link><LanguageSwitch />
+      <Link to="/" aria-label="Tándem"><Brand /></Link><LanguageSwitch />
     </div><nav className="andes-nav" aria-label={t('navigation')}>
       <Link to="/" aria-current={home || trip ? 'page' : undefined}>{t('home')}</Link>
       <Link to="/trucks" aria-current={trucks ? 'page' : undefined}>{t('trucks')}</Link>
@@ -68,7 +78,7 @@ function RouteFrame({ definition, Component }: { definition: (typeof routeDefini
   const valid = validRouteParams(params);
   const title = valid ? definition.title : 'notFound';
   useEffect(() => {
-    document.title = `${t(title)} | ANDES`;
+    document.title = `${t(title)} | Tándem`;
   }, [location.pathname, title, t]);
   if (!valid) return <NotFound />;
   if (Component) return <Component params={params as Record<string, string>} />;
@@ -103,12 +113,12 @@ export function SessionAccess({ gateway }: { gateway?: SessionGateway }) {
 }
 function NotFound() {
   const { t } = useI18n();
-  useEffect(() => { document.title = `${t('notFound')} | ANDES`; }, [t]);
+  useEffect(() => { document.title = `${t('notFound')} | Tándem`; }, [t]);
   return <><PageIdentity title={t('notFound')} /><p className="andes-prose">{t('notFoundBody')}</p><HomeLink /></>;
 }
 function RouteRecovery({ onRetry }: { onRetry: () => void }) {
   const { t } = useI18n();
-  useEffect(() => { document.title = `${t('viewError')} | ANDES`; }, [t]);
+  useEffect(() => { document.title = `${t('viewError')} | Tándem`; }, [t]);
   return <section data-route-recovery><PageIdentity title={t('viewError')} /><p>{t('viewRecovery')}</p>
     <div className="andes-actions"><PrimaryAction onClick={onRetry}>{t('retry')}</PrimaryAction><HomeLink /></div></section>;
 }
@@ -125,7 +135,7 @@ export function FoundationApp({ routes = {}, session, criticalActions }: Foundat
 function SessionRoute({ session }: { session?: SessionGateway }) {
   const { locale } = useI18n(); const location = useLocation();
   useEffect(() => {
-    document.title = `${message(locale, 'session')} | ANDES`;
+    document.title = `${message(locale, 'session')} | Tándem`;
   }, [locale, location.pathname]);
   return <SessionAccess gateway={session} />;
 }

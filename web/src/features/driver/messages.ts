@@ -2,7 +2,7 @@ import type { Locale } from '../../foundation/index.ts';
 
 const es = {
   welcomeTitle: 'Tu viaje',
-  welcomeBody: 'Tándem va contigo en la ruta, sin una central. Entras sin código. Esta demostración registra la alerta, pero no envía SMS, WhatsApp ni llamadas.',
+  welcomeBody: 'Tándem va contigo en la ruta, sin una central. Entras sin código. Esta demostración usa datos de ejemplo; los avisos reales solo llegan al número autorizado para la prueba.',
   start: 'Empezar',
   sessionExpired: 'La sesión venció. Vuelve a abrirla para continuar.',
   tripMismatch: 'Esta ventana está vinculada a otro viaje. Abre ese viaje para usar sus controles.',
@@ -37,6 +37,7 @@ const es = {
   alertsTitle: 'Estado de la alerta',
   summaryTitle: 'Resumen del viaje',
   sos: 'SOS',
+  sosLead: '¿En peligro? Un toque al botón SOS y Tándem avisa al instante a tu gente.',
   sosHint: 'Un toque registra el pedido de ayuda. No pide otra confirmación.',
   ok: 'Estoy bien',
   okHint: 'Responde un control abierto. No cancela un pedido de ayuda.',
@@ -66,7 +67,7 @@ const es = {
 type Messages = { [K in keyof typeof es]: string };
 const pt: Messages = {
   welcomeTitle: 'Sua viagem',
-  welcomeBody: 'A Tándem vai com você na rota, sem uma central. Você entra sem código. Esta demonstração registra o alerta, mas não envia SMS, WhatsApp nem ligações.',
+  welcomeBody: 'A Tándem vai com você na rota, sem uma central. Você entra sem código. Esta demonstração usa dados de exemplo; os avisos reais só chegam ao número autorizado para o teste.',
   start: 'Começar',
   sessionExpired: 'A sessão expirou. Abra novamente para continuar.',
   tripMismatch: 'Esta janela está vinculada a outra viagem. Abra essa viagem para usar os controles.',
@@ -101,6 +102,7 @@ const pt: Messages = {
   alertsTitle: 'Estado do alerta',
   summaryTitle: 'Resumo da viagem',
   sos: 'SOS',
+  sosLead: 'Em perigo? Um toque no botão SOS e a Tándem avisa sua gente na hora.',
   sosHint: 'Um toque registra o pedido de ajuda. Não pede outra confirmação.',
   ok: 'Estou bem',
   okHint: 'Responde a um controle aberto. Não cancela um pedido de ajuda.',

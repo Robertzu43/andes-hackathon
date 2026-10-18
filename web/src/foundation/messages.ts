@@ -4,7 +4,7 @@ export const isLocale = (value: unknown): value is Locale => locales.includes(va
 
 const es = {
   skip: 'Ir al contenido', language: 'Idioma', navigation: 'Navegación principal',
-  home: 'Tu viaje', trucks: 'Camiones', contacts: 'Contactos', trucksTitle: 'Mis camiones', contactsTitle: 'Mis contactos', session: 'Entrar a ANDES',
+  home: 'Tu viaje', trucks: 'Camiones', contacts: 'Contactos', trucksTitle: 'Mis camiones', contactsTitle: 'Mis contactos', session: 'Entrar a Tándem',
   tripNew: 'Preparar viaje', activeTrip: 'Viaje', checkIn: 'Tu respuesta',
   alerts: 'Estado de la alerta', contactTrip: 'Viaje compartido', invitation: 'Invitación de contacto',
   summary: 'Resumen del viaje', privacy: 'Privacidad', access: 'Acceso', testMode: 'Modo de prueba',
@@ -14,7 +14,7 @@ const es = {
   signedOut: 'Conecta tu cuenta para ver únicamente la información que tienes permiso de consultar.',
   authenticated: 'Tu cuenta está conectada.', expired: 'Tu acceso ha caducado. Conecta tu cuenta de nuevo.',
   accessError: 'No pudimos conectar tu cuenta. Inténtalo de nuevo.',
-  demo: 'Demostración', demoNotice: 'Datos de ejemplo. Esta demostración no envía avisos.',
+  demo: 'Demostración', demoNotice: 'Datos de ejemplo. Los avisos reales solo llegan al número autorizado para la prueba.',
   demoUnavailable: 'No hay una demostración conectada en esta sesión.',
   demoAvailable: 'Puedes recorrer esta demostración con datos de ejemplo.',
   unavailableTitle: 'Esta vista aún no está disponible',
@@ -26,12 +26,12 @@ const es = {
   viewError: 'No pudimos mostrar esta vista', viewRecovery: 'Puedes intentar abrirla de nuevo o elegir otra opción en la navegación.',
   retry: 'Intentar de nuevo', pending: 'Pendiente', error: 'No se pudo completar',
   permission: 'Permiso', permitted: 'Permitido', notPermitted: 'Sin permiso',
-  footer: 'ANDES · GOAT', return: 'Volver',
+  footer: 'Tándem · Equipo GOAT', return: 'Volver',
 };
 export type MessageKey = keyof typeof es;
 const pt: Record<MessageKey, string> = {
   skip: 'Ir para o conteúdo', language: 'Idioma', navigation: 'Navegação principal',
-  home: 'Sua viagem', trucks: 'Caminhões', contacts: 'Contatos', trucksTitle: 'Meus caminhões', contactsTitle: 'Meus contatos', session: 'Entrar no ANDES',
+  home: 'Sua viagem', trucks: 'Caminhões', contacts: 'Contatos', trucksTitle: 'Meus caminhões', contactsTitle: 'Meus contatos', session: 'Entrar na Tándem',
   tripNew: 'Preparar viagem', activeTrip: 'Viagem', checkIn: 'Sua resposta',
   alerts: 'Estado do alerta', contactTrip: 'Viagem compartilhada', invitation: 'Convite de contato',
   summary: 'Resumo da viagem', privacy: 'Privacidade', access: 'Acesso', testMode: 'Modo de teste',
@@ -41,7 +41,7 @@ const pt: Record<MessageKey, string> = {
   signedOut: 'Conecte sua conta para ver apenas as informações que você tem permissão para consultar.',
   authenticated: 'Sua conta está conectada.', expired: 'Seu acesso expirou. Conecte sua conta novamente.',
   accessError: 'Não foi possível conectar sua conta. Tente novamente.',
-  demo: 'Demonstração', demoNotice: 'Dados de exemplo. Esta demonstração não envia avisos.',
+  demo: 'Demonstração', demoNotice: 'Dados de exemplo. Os avisos reais só chegam ao número autorizado para o teste.',
   demoUnavailable: 'Não há uma demonstração conectada nesta sessão.',
   demoAvailable: 'Você pode explorar esta demonstração com dados de exemplo.',
   unavailableTitle: 'Esta tela ainda não está disponível',
@@ -53,7 +53,7 @@ const pt: Record<MessageKey, string> = {
   viewError: 'Não foi possível mostrar esta tela', viewRecovery: 'Você pode tentar abri-la novamente ou escolher outra opção na navegação.',
   retry: 'Tentar novamente', pending: 'Pendente', error: 'Não foi possível concluir',
   permission: 'Permissão', permitted: 'Permitido', notPermitted: 'Sem permissão',
-  footer: 'ANDES · GOAT', return: 'Voltar',
+  footer: 'Tándem · Equipe GOAT', return: 'Voltar',
 };
 export const messages: Record<Locale, Readonly<Record<MessageKey, string>>> = { es, 'pt-BR': pt };
 export function message(locale: Locale, key: MessageKey): string { return messages[locale][key]; }
