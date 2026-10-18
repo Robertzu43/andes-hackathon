@@ -119,7 +119,7 @@ export async function startBrowserFixture(dependencyRoot) {
     const apiOrigin = `http://127.0.0.1:${ready.port}`;
     async function credentials() {
       const expires = Math.floor(Date.now() / 1000) + 600;
-      const accessToken = await new SignJWT({phone_number: '+551155550246', phone_number_verified: true})
+      const accessToken = await new SignJWT({phone_number: '+15555550146', phone_number_verified: true})
         .setProtectedHeader({alg: 'RS256'}).setIssuer('https://andes-integration.invalid').setAudience('andes-q46')
         .setSubject('synthetic-browser-driver').setIssuedAt().setExpirationTime(expires).sign(privateKey);
       return {issuer: 'https://andes-integration.invalid', subject: 'synthetic-browser-driver', accessToken, expiresAt: expires * 1000};
