@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import type pg from 'pg';
 import { transaction, withTripTransaction, type Context } from '../db.js';
-import type { Channel, Job, Trip } from '../contracts.js';
+import { canonicalLocale, type Channel, type Job, type Trip } from '../contracts.js';
 import type { CallbackEvent, Outcome, Payload, Provider } from './zavu.js';
 import { alertSummary } from './wording.js';
 export type WorkClass = 'emergency' | 'ordinary';
@@ -75,7 +75,8 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     if (!eligible || (job.expires_at && job.expires_at <= now) || (job.class === 'emergency' ? !incident || incident.status !== 'active' || incident.driver_id !== trip.driver_id : trip.status !== 'active' || !trip.checkins_active || trip.paused)) {
       await invalidate(client, job, now, 'authorization_no_longer_valid'); return null;
     }
-    if (!q.live || !q.entries.some(e => e.channel === job.channel && e.country === trip.country && e.locale === trip.locale)) {
+    const locale = canonicalLocale(trip.locale);
+    if (!q.live || !q.entries.some(e => e.channel === job.channel && e.country === trip.country && e.locale === locale)) {
       await client.query("UPDATE jobs SET status='unavailable',unavailable_reason='country_channel_locale_unqualified' WHERE id=$1", [job.id]); return null;
     }
     if (q.allowedDestinations && !q.allowedDestinations.includes(grant.phone)) {
@@ -112,7 +113,7 @@ export async function authorizeJob(ctx: Context, claim: Claim | null, provider: 
     const truck = (await client.query('SELECT label FROM trucks WHERE id=$1', [trip.truck_id])).rows[0]!.label as string;
     const check = incident?.trigger === 'missed_check' ? (await client.query('SELECT signal_at FROM security_checks WHERE incident_id=$1 ORDER BY created_at LIMIT 1', [incident.id])).rows[0] : null;
     const summary = alertSummary({ truck, country: trip.country, timeZone: trip.time_zone, now, signalAt: check?.signal_at ?? null, incident: incident ?? null, location: location ?? null, voice: job.channel === 'voice' });
-    const payload = provider.payload({ attemptId: id, to: grant.phone, channel: job.channel, country: trip.country, locale: trip.locale, summary });
+    const payload = provider.payload({ attemptId: id, to: grant.phone, channel: job.channel, country: trip.country, locale, summary });
     const attempt = (await client.query(`INSERT INTO dispatch_attempts(id,job_id,job_version,owner,claim_token,project_id,sender_id,channel,state,payload,payload_hash,destination_hash,authorized_at,next_reconcile_at,evidence_expires_at)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'authorized',$9,$10,$11,$12,$13,$14) RETURNING *`, [id, job.id, job.version, claim.owner, claim.token, q.accountId, q.senderId, job.channel, payload, hash(JSON.stringify(payload)), hash(grant.phone), now, after(now, 30000), after(now, 86400000)])).rows[0] as Attempt;
     await client.query('INSERT INTO quota_reservations VALUES($1,$2,$3,$4,$5)', [id, q.accountId, job.channel, job.class, now]);

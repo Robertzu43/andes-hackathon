@@ -19,5 +19,7 @@ export interface Outbox extends pg.QueryResultRow {
   published_at: Date | null; lease_owner: string | null; lease_until: Date | null; next_publish_at: Date;
 }
 export interface DraftFields { truckId?: string; origin?: string; destination?: string; country?: string; locale?: string; timeZone?: string; expectedArrivalAt?: string }
+/** Qualification entries are canonical; trips stored before canonical storage may not be ('pt-br'), so compare canonically. */
+export function canonicalLocale(tag: string): string { try { return Intl.getCanonicalLocales(tag)[0] ?? tag; } catch { return tag; } }
 export function problem(statusCode: number, code: string): never { throw Object.assign(new Error(code), { statusCode, code }); }
 export function owner(trip: Trip, actor: Actor) { if (trip.driver_id !== actor.id) problem(403, 'forbidden'); }
