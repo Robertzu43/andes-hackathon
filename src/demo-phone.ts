@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { problem } from './contracts.js';
 import { transaction, type Context } from './db.js';
 import { object } from './api/schemas.js';
+import { DEMO_ISSUER } from './demo.js';
 import { textPayload, type Outcome, type Provider } from './notifications/zavu.js';
 
 // Calling-code prefixes, not numbering plans: +1 covers the entire NANP, including Canada and the Caribbean.
@@ -113,5 +114,49 @@ export function demoPhoneRoutes(app: FastifyInstance, ctx: Context, config: Demo
     });
     if (failed) problem({ invalid_code: 400, code_expired: 410, too_many_attempts: 429 }[failed], failed);
     return { verified: true };
+  });
+}
+
+/** Control runs this every ten minutes in demo mode. Retain only hashes/budget facts after 24 h idle. */
+export async function purgeDemoWorlds(ctx: Context): Promise<void> {
+  await transaction(ctx.pool, async client => {
+    // Same first lock as start/verify: no OTP write can cross the scrub or revive a deleted challenge.
+    await client.query("SELECT pg_advisory_xact_lock(hashtextextended('demo_phone_start',0))");
+    const worlds = (await client.query(`SELECT split_part(subject,':',1) AS world FROM identities WHERE issuer=$1
+      GROUP BY 1 HAVING max(last_seen_at)<$2`, [DEMO_ISSUER, new Date(ctx.clock().getTime() - DAY)])).rows.map(row => row.world as string);
+    if (!worlds.length) return;
+    const candidates = (await client.query(`SELECT id FROM identities WHERE issuer=$1 AND split_part(subject,':',1)=ANY($2)`,
+      [DEMO_ISSUER, worlds])).rows.map(row => row.id as string);
+    // Revocation locks grant -> trips. Keep that order; stable grant keys permit SOS's FK KEY SHARE.
+    await client.query(`SELECT id FROM contact_grants WHERE driver_id=ANY($1) OR contact_id=ANY($1)
+      ORDER BY id FOR NO KEY UPDATE`, [candidates]);
+    // Authorization holds trip -> job -> account until its payload commits. Finish it before scrubbing.
+    await client.query(`SELECT t.id FROM trips t WHERE t.driver_id=ANY($1)
+      OR EXISTS(SELECT 1 FROM jobs j WHERE j.trip_id=t.id AND j.recipient_id=ANY($1))
+      OR EXISTS(SELECT 1 FROM trip_grants tg JOIN contact_grants g ON g.id=tg.grant_id
+        WHERE tg.trip_id=t.id AND (g.driver_id=ANY($1) OR g.contact_id=ANY($1)))
+      ORDER BY t.id FOR UPDATE`, [candidates]);
+    // Auth commits presence before its route transaction. Lock every persona before a fresh statement:
+    // an upsert committed ahead of us wins; an upsert queued behind us sees the already-scrubbed binding.
+    await client.query(`SELECT id FROM identities WHERE issuer=$1 AND split_part(subject,':',1)=ANY($2)
+      ORDER BY id FOR NO KEY UPDATE`, [DEMO_ISSUER, worlds]);
+    const cutoff = new Date(ctx.clock().getTime() - DAY);
+    const ids = (await client.query(`WITH idle AS (
+        SELECT split_part(subject,':',1) AS world FROM identities WHERE issuer=$1 AND split_part(subject,':',1)=ANY($2)
+        GROUP BY 1 HAVING max(last_seen_at)<$3
+      ) SELECT i.id FROM identities i JOIN idle ON split_part(i.subject,':',1)=idle.world WHERE i.issuer=$1
+        AND NOT EXISTS(SELECT 1 FROM demo_phone_challenges c JOIN identities owner ON owner.id=c.identity_id
+          WHERE owner.issuer=$1 AND split_part(owner.subject,':',1)=idle.world AND c.created_at>$3)`,
+      [DEMO_ISSUER, worlds, cutoff])).rows.map(row => row.id as string);
+    // A start can timestamp its challenge after its auth presence. Defer the whole world until that
+    // usage leaves the existing rolling 24 h cap; deleting it earlier would replenish the OTP budget.
+    if (!ids.length) return;
+    await client.query('DELETE FROM demo_phone_challenges WHERE identity_id=ANY($1)', [ids]);
+    await client.query('DELETE FROM demo_phone_verifications WHERE identity_id=ANY($1)', [ids]);
+    await client.query('UPDATE identities SET phone=NULL,phone_verified=false WHERE id=ANY($1) AND (phone IS NOT NULL OR phone_verified)', [ids]);
+    // trip_grants/jobs reference these rows: anonymize without cascading away delivery evidence.
+    await client.query("UPDATE contact_grants SET phone='' WHERE (driver_id=ANY($1) OR contact_id=ANY($1)) AND phone<>''", [ids]);
+    await client.query(`UPDATE dispatch_attempts a SET payload=NULL FROM jobs j
+      WHERE j.id=a.job_id AND j.recipient_id=ANY($1) AND a.payload IS NOT NULL`, [ids]);
   });
 }

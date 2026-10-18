@@ -783,3 +783,305 @@ test('delivery consume passes the startup demo policy through runJob to authoriz
   assert.ok((await familyJobs(w.f, incident)).every(job => job.status === 'accepted'));
   assert.deepEqual(await reservations(w.f), {attempts: 3, quota: 3, requests: 3});
 });
+
+const purgeDay = 86400000;
+async function purgeFunction() {
+  const {purgeDemoWorlds} = await import('../dist/demo-phone.js');
+  assert.equal(typeof purgeDemoWorlds, 'function', 'idle demo worlds need an executable purge');
+  return purgeDemoWorlds;
+}
+function worldIds(world) { return [world.driver.id, world.family.id, world.colleague.id]; }
+async function holdingNumber(w, number) {
+  const tables = (await w.f.ctx.pool.query("SELECT table_name FROM information_schema.tables WHERE table_schema=current_schema() AND table_type='BASE TABLE' ORDER BY 1")).rows;
+  const found = [];
+  for (const {table_name: name} of tables) {
+    const quoted = name.replaceAll('"', '""');
+    if ((await w.f.ctx.pool.query(`SELECT 1 FROM "${quoted}" t WHERE t::text LIKE $1 LIMIT 1`, [`%${number.slice(1)}%`])).rowCount) found.push(name);
+  }
+  return found;
+}
+async function phoneWorldSnapshot(w, a) {
+  const ids = worldIds(a.world);
+  return (await w.f.ctx.pool.query(`SELECT jsonb_build_object(
+    'identities',(SELECT jsonb_agg(to_jsonb(i) ORDER BY id) FROM identities i WHERE id=ANY($1)),
+    'grants',(SELECT jsonb_agg(to_jsonb(g) ORDER BY id) FROM contact_grants g WHERE driver_id=ANY($1) OR contact_id=ANY($1)),
+    'challenges',(SELECT jsonb_agg(to_jsonb(c) ORDER BY issuance_order) FROM demo_phone_challenges c WHERE identity_id=ANY($1)),
+    'marks',(SELECT jsonb_agg(to_jsonb(v) ORDER BY identity_id) FROM demo_phone_verifications v WHERE identity_id=ANY($1)),
+    'attempts',(SELECT jsonb_agg(to_jsonb(a) ORDER BY a.id) FROM dispatch_attempts a JOIN jobs j ON j.id=a.job_id WHERE j.trip_id=$2)) AS snapshot`,
+  [ids, a.trip])).rows[0].snapshot;
+}
+// Race fixtures age only presence/OTP usage: queued jobs and unspent codes remain live at the fixture clock.
+async function agePhoneWorld(w, world) {
+  const old = new Date(w.f.ctx.clock().getTime() - purgeDay - 1);
+  await w.f.ctx.pool.query('UPDATE identities SET last_seen_at=$2 WHERE id=ANY($1)', [worldIds(world), old]);
+  await w.f.ctx.pool.query('UPDATE demo_phone_challenges SET created_at=$2 WHERE identity_id=ANY($1)', [worldIds(world), old]);
+}
+async function assertPurged(w, a, number = phone) {
+  assert.deepEqual(await holdingNumber(w, number), [], 'no base table retains the idle number');
+  const ids = worldIds(a.world);
+  assert.equal((await w.f.ctx.pool.query('SELECT count(*)::int n FROM identities WHERE id=ANY($1) AND (phone IS NOT NULL OR phone_verified)', [ids])).rows[0].n, 0);
+  assert.equal((await w.f.ctx.pool.query("SELECT count(*)::int n FROM contact_grants WHERE (driver_id=ANY($1) OR contact_id=ANY($1)) AND phone<>''", [ids])).rows[0].n, 0);
+  for (const table of ['demo_phone_challenges', 'demo_phone_verifications']) {
+    assert.equal((await w.f.ctx.pool.query(`SELECT count(*)::int n FROM ${table} WHERE identity_id=ANY($1)`, [ids])).rows[0].n, 0, table);
+  }
+}
+
+test('purge removes every idle demo number while preserving active and non-demo worlds and authorization evidence', async t => {
+  const w = await demoWorld(t); const idle = await verifiedWorld(w, phone);
+  await authorizeAll(w, idle.jobs);
+  const production = await verifiedWorld(w, '+15555550144'); await authorizeAll(w, production.jobs);
+  // A production issuer sharing the exact same subject prefix must never join the demo purge.
+  await w.f.ctx.pool.query(`UPDATE identities SET issuer='https://synthetic.test',synthetic=false,
+    subject=(SELECT split_part(subject,':',1) FROM identities WHERE id=$2)||':'||split_part(subject,':',2)
+    WHERE id=ANY($1)`, [worldIds(production.world), idle.world.driver.id]);
+  w.f.advance(3600000);
+  const active = await verifiedWorld(w, other); await authorizeAll(w, active.jobs);
+  const activeBefore = await phoneWorldSnapshot(w, active), productionBefore = await phoneWorldSnapshot(w, production);
+  const evidence = (await w.f.ctx.pool.query("SELECT to_jsonb(a)-'payload' AS facts FROM dispatch_attempts a ORDER BY id")).rows;
+  const counts = await reservations(w.f);
+  assert.deepEqual(await holdingNumber(w, phone), ['contact_grants', 'demo_phone_verifications', 'dispatch_attempts', 'identities'], 'positive control scans all real base tables');
+  w.f.advance(23 * 3600000 + 1);
+  const purge = await purgeFunction(); await purge(w.f.ctx);
+  await assertPurged(w, idle);
+  assert.equal((await w.f.ctx.pool.query('SELECT count(*)::int n FROM trips WHERE id=$1', [idle.trip])).rows[0].n, 1, 'FK parents remain');
+  assert.equal((await w.f.ctx.pool.query('SELECT count(*)::int n FROM trip_grants WHERE trip_id=$1', [idle.trip])).rows[0].n, 2);
+  assert.deepEqual((await w.f.ctx.pool.query("SELECT to_jsonb(a)-'payload' AS facts FROM dispatch_attempts a ORDER BY id")).rows, evidence, 'hashes, authorization times and other budget facts survive');
+  assert.deepEqual(await reservations(w.f), counts);
+  assert.deepEqual(await phoneWorldSnapshot(w, active), activeBefore);
+  assert.deepEqual(await phoneWorldSnapshot(w, production), productionBefore);
+  const once = await phoneWorldSnapshot(w, idle);
+  await purge(w.f.ctx);
+  assert.deepEqual(await phoneWorldSnapshot(w, idle), once, 'repeated purge is idempotent');
+  assert.deepEqual(await phoneWorldSnapshot(w, active), activeBefore);
+  assert.deepEqual(await phoneWorldSnapshot(w, production), productionBefore);
+});
+
+test('purge requires strictly more than 24 hours since the latest persona presence', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); const purge = await purgeFunction();
+  w.f.advance(purgeDay);
+  const before = await phoneWorldSnapshot(w, a);
+  await purge(w.f.ctx); assert.deepEqual(await phoneWorldSnapshot(w, a), before, 'exactly 24 h is retained');
+  w.f.advance(1); await purge(w.f.ctx); await assertPurged(w, a);
+});
+
+test('purge defers a world when an OTP starts after its auth presence and still counts toward the daily cap', async t => {
+  const w = await demoWorld(t, {smsDailyCap: 1}); const world = await w.session();
+  const invite = await w.f.req('POST', '/v1/contacts', {contactId: world.family.id, phone, map: true, incident: true}, world.driver.token);
+  assert.equal(invite.status, 200);
+  const holder = await w.f.ctx.pool.connect(); let start;
+  try {
+    await holder.query('BEGIN');
+    await holder.query('SELECT id FROM identities WHERE id=$1 FOR NO KEY UPDATE', [world.family.id]);
+    start = w.call('start', {phone}, world.family.token);
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%INSERT INTO identities%', 1);
+    w.f.advance(10);
+  } finally { await holder.query('ROLLBACK'); holder.release(); if (start) await start; }
+  assert.equal((await start).status, 202);
+  const row = (await w.f.ctx.pool.query('SELECT i.last_seen_at,c.created_at FROM identities i JOIN demo_phone_challenges c ON c.identity_id=i.id WHERE i.id=$1', [world.family.id])).rows[0];
+  assert.equal(row.created_at - row.last_seen_at, 10, 'real auth and route timestamps straddle the wait');
+  w.f.advance(purgeDay - 9); // presence is 24 h + 1 ms old, OTP usage is 24 h - 9 ms old
+  const purge = await purgeFunction(); await purge(w.f.ctx);
+  assert.equal(await challenges(w.f), 1, 'do not erase in-window usage');
+  assert.equal((await w.f.ctx.pool.query('SELECT phone FROM contact_grants WHERE id=$1', [invite.body.id])).rows[0].phone, phone);
+  const fresh = await w.session();
+  assert.deepEqual(await w.call('start', {phone: other}, fresh.family.token), {status: 429, body: {code: 'demo_budget_exhausted'}});
+  w.f.advance(9); await purge(w.f.ctx);
+  assert.equal(await challenges(w.f), 0, 'the exact OTP 24 h boundary is outside the existing cap');
+  assert.deepEqual(await holdingNumber(w, phone), []);
+  assert.equal((await w.call('start', {phone: other}, fresh.family.token)).status, 202);
+});
+
+test('purge rechecks actual authenticated presence committed while waiting for the trip', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); await agePhoneWorld(w, a.world);
+  const purge = await purgeFunction(); const holder = await w.f.ctx.pool.connect(); const requests = [];
+  try {
+    await holder.query('BEGIN'); await holder.query('SELECT id FROM trips WHERE id=$1 FOR UPDATE', [a.trip]);
+    requests.push(purge(w.f.ctx));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%FOR UPDATE%', 1);
+    requests.push(w.f.req('GET', `/v1/trips/${a.trip}`, undefined, a.world.driver.token));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%FOR UPDATE%', 2);
+    assert.deepEqual((await w.f.ctx.pool.query('SELECT last_seen_at FROM identities WHERE id=$1', [a.world.driver.id])).rows[0].last_seen_at, w.f.ctx.clock(), 'auth commits presence before the route trip lock');
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  await requests[0];
+  assert.equal((await requests[1]).status, 200);
+  assert.deepEqual(await holdingNumber(w, phone), ['contact_grants', 'demo_phone_verifications', 'identities']);
+  assert.equal(await challenges(w.f), 1);
+});
+
+test('purge rechecks a presence upsert ahead of it in the identity row lock queue', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); await agePhoneWorld(w, a.world);
+  const purge = await purgeFunction(); const holder = await w.f.ctx.pool.connect(); const requests = [];
+  try {
+    await holder.query('BEGIN'); await holder.query('SELECT id FROM identities WHERE id=$1 FOR NO KEY UPDATE', [a.world.driver.id]);
+    requests.push(w.f.req('GET', '/v1/me', undefined, a.world.driver.token));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%INSERT INTO identities%', 1);
+    requests.push(purge(w.f.ctx));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%FOR NO KEY UPDATE%', 1);
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  assert.equal((await requests[0]).status, 200); await requests[1];
+  assert.deepEqual(await holdingNumber(w, phone), ['contact_grants', 'demo_phone_verifications', 'identities']);
+  assert.equal(await challenges(w.f), 1);
+});
+
+test('purge waits for in-flight OTP verification then preserves its active world', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone);
+  assert.equal((await w.call('start', {phone: other}, a.world.family.token)).status, 202);
+  await agePhoneWorld(w, a.world);
+  const purge = await purgeFunction(); const holder = await w.f.ctx.pool.connect(); const requests = [];
+  try {
+    await holder.query('BEGIN'); await holder.query('SELECT id FROM demo_phone_challenges FOR UPDATE');
+    requests.push(w.call('verify', {phone: other, code}, a.world.family.token));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%FOR UPDATE%', 1);
+    requests.push(purge(w.f.ctx));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%pg_advisory_xact_lock%', 1);
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  assert.deepEqual(await requests[0], {status: 200, body: {verified: true}}); await requests[1];
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT phone,phone_verified FROM identities WHERE id=$1', [a.world.family.id])).rows, [{phone: other, phone_verified: true}]);
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT phone FROM demo_phone_verifications WHERE identity_id=$1', [a.world.family.id])).rows, [{phone: other}]);
+  assert.equal(await challenges(w.f), 2);
+});
+
+test('verification whose auth waits behind purge cannot revive the deleted challenge or binding', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone);
+  assert.equal((await w.call('start', {phone: other}, a.world.family.token)).status, 202);
+  await agePhoneWorld(w, a.world);
+  const purge = await purgeFunction(); const holder = await w.f.ctx.pool.connect(); const requests = [];
+  try {
+    await holder.query('BEGIN'); await holder.query('SELECT id FROM identities WHERE id=$1 FOR NO KEY UPDATE', [a.world.family.id]);
+    requests.push(purge(w.f.ctx));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%FOR NO KEY UPDATE%', 1);
+    requests.push(w.call('verify', {phone: other, code}, a.world.family.token));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%INSERT INTO identities%', 1);
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  await requests[0];
+  assert.deepEqual(await requests[1], {status: 400, body: {code: 'invalid_code'}});
+  await assertPurged(w, a); assert.deepEqual(await holdingNumber(w, other), []);
+});
+
+test('purge follows an authorization past its final checks and scrubs the committed frozen payload', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); await agePhoneWorld(w, a.world);
+  const purge = await purgeFunction(); const d = await runtime();
+  const claim = await d.claimJob(w.f.ctx, a.jobs.find(j => j.role === 'family'), 'before-purge'); assert.ok(claim);
+  const holder = await w.f.ctx.pool.connect(); const requests = [];
+  try {
+    await holder.query('BEGIN'); await holder.query('LOCK TABLE dispatch_attempts IN SHARE MODE');
+    requests.push(d.authorizeJob(w.f.ctx, claim, alertProvider(), demoPolicy));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%INSERT INTO dispatch_attempts%', 1);
+    requests.push(purge(w.f.ctx));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%FOR UPDATE%', 1);
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  const attempt = await requests[0]; assert.ok(attempt); assert.equal(attempt.payload.to, phone); await requests[1];
+  await assertPurged(w, a);
+  assert.deepEqual((await w.f.ctx.pool.query('SELECT payload,destination_hash,authorized_at FROM dispatch_attempts WHERE id=$1', [attempt.id])).rows,
+    [{payload: null, destination_hash: attempt.destination_hash, authorized_at: attempt.authorized_at}]);
+  assert.deepEqual(await reservations(w.f), {attempts: 1, quota: 1, requests: 1});
+});
+
+test('authorization waiting behind purge cannot build or persist another phone payload', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); await agePhoneWorld(w, a.world);
+  const purge = await purgeFunction(); const d = await runtime();
+  const claim = await d.claimJob(w.f.ctx, a.jobs.find(j => j.role === 'family'), 'after-purge'); assert.ok(claim);
+  const p = alertProvider(), build = p.payload; let payloads = 0;
+  p.payload = input => { payloads++; return build(input); };
+  const holder = await w.f.ctx.pool.connect(); const requests = [];
+  try {
+    await holder.query('BEGIN'); await holder.query('SELECT id FROM identities WHERE id=$1 FOR NO KEY UPDATE', [a.world.family.id]);
+    requests.push(purge(w.f.ctx));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%FOR NO KEY UPDATE%', 1);
+    requests.push(d.authorizeJob(w.f.ctx, claim, p, demoPolicy));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%FOR UPDATE%', 1);
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  await requests[0]; assert.equal(await requests[1], null); assert.equal(payloads, 0);
+  await assertPurged(w, a);
+  assert.deepEqual(await reservations(w.f), {attempts: 0, quota: 0, requests: 0});
+});
+
+test('purge retains in-window per-number alert cap evidence after clearing plaintext', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); const d = await runtime();
+  const policy = {enabled: true, alertsPerNumberDaily: 1};
+  await authorizeAll(w, a.jobs.filter(j => j.role === 'family').slice(0, 1), alertProvider(), policy);
+  await agePhoneWorld(w, a.world);
+  const purge = await purgeFunction(); await purge(w.f.ctx); await assertPurged(w, a);
+  const b = await verifiedWorld(w, phone);
+  const job = b.jobs.find(j => j.role === 'family');
+  assert.equal(await d.authorizeJob(w.f.ctx, await d.claimJob(w.f.ctx, job, 'budget-after-purge'), alertProvider(), policy), null);
+  assert.equal((await w.f.ctx.pool.query('SELECT unavailable_reason FROM jobs WHERE id=$1', [job.id])).rows[0].unavailable_reason, 'demo_budget_exhausted');
+  assert.deepEqual(await reservations(w.f), {attempts: 1, quota: 1, requests: 1});
+});
+
+test('control purges only with an explicitly enabled demo policy, including without a provider', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); await agePhoneWorld(w, a.world);
+  const {control} = await import('../dist/worker.js');
+  const before = await phoneWorldSnapshot(w, a);
+  for (const policy of [undefined, {enabled: false, alertsPerNumberDaily: 6}, {alertsPerNumberDaily: 6}]) {
+    const abort = new AbortController(); const running = control(w.f.ctx, {async publish() {}}, null, abort.signal, null, policy);
+    try { await new Promise(resolve => setTimeout(resolve, 50)); }
+    finally { abort.abort(); await running; }
+    assert.deepEqual(await phoneWorldSnapshot(w, a), before, 'production/disabled/missing policy leaves phone data intact');
+  }
+  const abort = new AbortController(); const running = control(w.f.ctx, {async publish() {}}, null, abort.signal, null, demoPolicy);
+  try {
+    for (let i = 0; i < 100; i++) {
+      if (!(await w.f.ctx.pool.query('SELECT phone FROM identities WHERE id=$1', [a.world.family.id])).rows[0].phone) break;
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+  } finally { abort.abort(); await running; }
+  await assertPurged(w, a);
+});
+
+test('purge serializes with an in-flight OTP start without deleting the newly active challenge', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); await agePhoneWorld(w, a.world);
+  const purge = await purgeFunction(); const holder = await w.f.ctx.pool.connect(); const requests = [];
+  try {
+    await holder.query('BEGIN'); await holder.query('LOCK TABLE demo_phone_challenges IN SHARE MODE');
+    requests.push(w.call('start', {phone: other}, a.world.family.token));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%INSERT INTO demo_phone_challenges%', 1);
+    requests.push(purge(w.f.ctx));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%pg_advisory_xact_lock%', 1);
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  assert.equal((await requests[0]).status, 202); await requests[1];
+  assert.equal(await challenges(w.f), 2);
+  assert.deepEqual(await holdingNumber(w, phone), ['contact_grants', 'demo_phone_verifications', 'identities']);
+});
+
+test('purge respects the grant-before-trip order of an actual contact revocation', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); const purge = await purgeFunction();
+  const holder = await w.f.ctx.pool.connect(); const requests = [], key = 'purge-revoke-barrier';
+  try {
+    await holder.query('BEGIN');
+    const scope = `POST /v1/contacts/:id/revoke ${JSON.stringify({id: a.grant})}`;
+    await holder.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [`${a.world.driver.id}:${scope}:${key}`]);
+    requests.push(w.f.req('POST', `/v1/contacts/${a.grant}/revoke`, {}, a.world.driver.token, key));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%pg_advisory_xact_lock%', 1);
+    await agePhoneWorld(w, a.world); // candidate discovery follows the already committed auth upsert
+    requests.push(purge(w.f.ctx));
+    await waitForBlockedQueries(w.f.ctx.telemetryPool, '%contact_grants%FOR NO KEY UPDATE%', 1);
+  } finally { await holder.query('ROLLBACK'); holder.release(); await Promise.allSettled(requests); }
+  assert.equal((await requests[0]).status, 200, 'revocation must not deadlock against purge'); await requests[1];
+  await assertPurged(w, a);
+  assert.equal((await w.f.ctx.pool.query('SELECT revoked_at FROM contact_grants WHERE id=$1', [a.grant])).rows[0].revoked_at.toISOString(), w.f.ctx.clock().toISOString());
+});
+
+test('control schedules the next purge for ten minutes and cancels its timer on abort', async t => {
+  const w = await demoWorld(t); const a = await verifiedWorld(w, phone); await agePhoneWorld(w, a.world);
+  const {control} = await import('../dist/worker.js'); const {createHook} = await import('node:async_hooks');
+  const abort = new AbortController(), scheduled = [], destroyed = new Set();
+  // Observe real timer scheduling; globally mocking timers would also replace pg's connection/idle timers.
+  const hook = createHook({
+    init(id, type, _trigger, resource) { if (type === 'Timeout' && resource._idleTimeout === 600000) scheduled.push(id); },
+    destroy(id) { destroyed.add(id); },
+  });
+  hook.enable();
+  const running = control(w.f.ctx, {async publish() {}}, null, abort.signal, null, demoPolicy);
+  try {
+    const deadline = Date.now() + 3000;
+    while (!scheduled.length && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 10));
+    assert.equal(scheduled.length, 1, 'immediate purge schedules one follow-up at 600000 ms');
+    await assertPurged(w, a);
+  } finally {
+    abort.abort(); await running;
+    await new Promise(setImmediate); await new Promise(setImmediate);
+    hook.disable();
+  }
+  assert.ok(destroyed.has(scheduled[0]), 'shutdown cancels the pending ten-minute timeout');
+});
