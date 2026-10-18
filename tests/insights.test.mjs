@@ -11,7 +11,12 @@ async function sosAt(f, latitude, longitude, jwt = f.driver) {
   return sos.body.id;
 }
 const report = (f, kind, latitude, longitude, occurredAt, jwt = f.driver) => f.req('POST', '/v1/reports', { kind, latitude, longitude, occurredAt }, jwt);
-const seeded = (f, kind, latitude, longitude, at) => f.ctx.pool.query('INSERT INTO reports VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$5,true)', [f.me.id, kind, latitude, longitude, at]);
+// Each seeded row comes from its own synthetic person, as scripts/seed-demo.mjs spreads them, unless `who` names one.
+async function seeded(f, kind, latitude, longitude, at, who) {
+  who ??= (await f.ctx.pool.query("INSERT INTO identities(id,issuer,subject,synthetic) VALUES(gen_random_uuid(),'seed',gen_random_uuid()::text,true) RETURNING id")).rows[0].id;
+  await f.ctx.pool.query('INSERT INTO reports VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$5,true)', [who, kind, latitude, longitude, at]);
+  return who;
+}
 const nextHour = f => f.advance(3600000); // public cells are recomputed once per hour
 async function hotspots(f, query = '') { const r = await f.app.inject({ method: 'GET', url: `/v1/insights/hotspots${query}` }); return { status: r.statusCode, body: r.json() }; }
 
@@ -126,18 +131,18 @@ test('only the driver labels incidents and only robbery labels enter hotspots', 
 test('advice needs distinct contributors in the current band, flags demo data and needs a signed driver', async t => {
   const f = await fixture(t); const day = '2026-10-10T17:00:00Z'; // 12:00 in Lima: same band as the fixture clock
   const advice = query => f.req('GET', `/v1/insights/advice${query}`);
-  const text = (counts) => `Reportes en esta zona de día (últimos 90 días): ${counts}. Si puedes, detente en un lugar concurrido y seguro.`;
+  const text = (what) => `3 personas reportaron ${what} en esta zona de día (últimos 90 días). Si puedes, detente en un lugar concurrido y seguro.`;
   for (const jwt of [f.driver, f.stranger]) await report(f, 'robo', -12.525, -76.725, day, jwt);
   for (const jwt of [f.driver, f.stranger, f.contact]) await report(f, 'robo', -12.525, -76.725, '2026-10-11T04:00:00Z', jwt); // 23:00 in Lima
   assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'none' });
   await report(f, 'intento_robo', -12.525, -76.725, day, f.contact);
   nextHour(f);
-  assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'caution', count: 3, robo: 2, intentoRobo: 1, includesSynthetic: false, band: 'dia', text: text('2 de robo y 1 de intento de robo') });
-  assert.match((await advice('?lat=-12.47&lon=-76.68&locale=pt-BR')).body.text, /^Relatos nesta região durante o dia \(últimos 90 dias\): 2 de roubo e 1 de tentativa de roubo\./);
+  assert.deepEqual((await advice('?lat=-12.47&lon=-76.68')).body, { level: 'caution', count: 3, robo: 2, intentoRobo: 1, includesSynthetic: false, band: 'dia', text: text('robos o intentos de robo') });
+  assert.match((await advice('?lat=-12.47&lon=-76.68&locale=pt-BR')).body.text, /^3 pessoas relataram roubos ou tentativas de roubo nesta região durante o dia \(últimos 90 dias\)\. Se puder,/);
   assert.deepEqual((await advice('?lat=-12.37&lon=-76.68')).body, { level: 'none' });
   for (let i = 0; i < 3; i++) await seeded(f, 'robo', -13.075, -76.375, day);
   nextHour(f);
-  assert.deepEqual((await advice('?lat=-13.075&lon=-76.375')).body, { level: 'caution', count: 3, robo: 3, intentoRobo: 0, includesSynthetic: true, band: 'dia', text: `${text('3 de robo')} Incluye datos de demostración.` });
+  assert.deepEqual((await advice('?lat=-13.075&lon=-76.375')).body, { level: 'caution', count: 3, robo: 3, intentoRobo: 0, includesSynthetic: true, band: 'dia', text: `${text('robos')} Incluye datos de demostración.` });
   assert.match((await advice('?lat=-13.075&lon=-76.375&locale=pt-BR')).body.text, /Inclui dados de demonstração\.$/);
   assert.equal((await advice('?lat=-12.046373100000001&lon=-77.042754')).status, 200);
   assert.equal((await advice('?lat=95&lon=0')).status, 400);
@@ -153,10 +158,10 @@ test('attempts are never counted or worded as robberies in hotspots or advice', 
   assert.deepEqual((await hotspots(f)).body.cells.map(c => `${c.lat}:${c.robo}/${c.intentoRobo}/${c.total}`).sort(), ['-12.525:0/3/3', '-13.075:1/2/3']);
   const advice = async (lat, locale) => (await f.req('GET', `/v1/insights/advice?lat=${lat}&lon=-76.725&locale=${locale}`)).body;
   const es = ' Si puedes, detente en un lugar concurrido y seguro.', pt = ' Se puder, pare em um local movimentado e seguro.';
-  assert.deepEqual(await advice(-12.525, 'es'), { level: 'caution', count: 3, robo: 0, intentoRobo: 3, includesSynthetic: false, band: 'dia', text: `Reportes en esta zona de día (últimos 90 días): 3 de intento de robo.${es}` });
-  assert.equal((await advice(-12.525, 'pt-BR')).text, `Relatos nesta região durante o dia (últimos 90 dias): 3 de tentativa de roubo.${pt}`);
-  assert.equal((await advice(-13.075, 'es')).text, `Reportes en esta zona de día (últimos 90 días): 1 de robo y 2 de intento de robo.${es}`);
-  assert.equal((await advice(-13.075, 'pt-BR')).text, `Relatos nesta região durante o dia (últimos 90 dias): 1 de roubo e 2 de tentativa de roubo.${pt}`);
+  assert.deepEqual(await advice(-12.525, 'es'), { level: 'caution', count: 3, robo: 0, intentoRobo: 3, includesSynthetic: false, band: 'dia', text: `3 personas reportaron intentos de robo en esta zona de día (últimos 90 días).${es}` });
+  assert.equal((await advice(-12.525, 'pt-BR')).text, `3 pessoas relataram tentativas de roubo nesta região durante o dia (últimos 90 dias).${pt}`);
+  assert.equal((await advice(-13.075, 'es')).text, `3 personas reportaron robos o intentos de robo en esta zona de día (últimos 90 días).${es}`);
+  assert.equal((await advice(-13.075, 'pt-BR')).text, `3 pessoas relataram roubos ou tentativas de roubo nesta região durante o dia (últimos 90 dias).${pt}`);
   assert.match((await f.app.inject({ method: 'GET', url: '/mapa' })).body, /<h1 id="title">Robos e intentos de robo en carretera<\/h1>/);
 });
 
@@ -165,6 +170,7 @@ test('public map page is served without auth and reads only the public hotspots 
   const f = await fixture(t); const page = await f.app.inject({ method: 'GET', url: '/mapa' });
   assert.equal(page.statusCode, 200); assert.match(page.headers['content-type'], /^text\/html/);
   assert.match(page.body, /\/v1\/insights\/hotspots/); assert.match(page.body, /Incluye datos de demostración/);
+  assert.match(page.body, /<th class="num">Personas<\/th>/); // the counts are people, so the page must not call them reports
   assert.doesNotMatch(page.body, /\/v1\/(trips|incidents|reports|insights\/advice)/);
 });
 
@@ -183,16 +189,18 @@ test('advice only sums published cells, so it cannot locate or time a hidden rep
   f.advance(31 * 60000);
   assert.equal((await advice(-13.075, -76.375)).count, 3);
   for (const locale of ['es-PE', 'es-419', 'pt-br']) assert.equal((await f.req('GET', `/v1/insights/advice?lat=-13.075&lon=-76.375&locale=${locale}`)).status, 200, locale);
-  assert.match((await f.req('GET', '/v1/insights/advice?lat=-13.075&lon=-76.375&locale=es-PE')).body.text, /: 3 de robo\./);
-  assert.match((await f.req('GET', '/v1/insights/advice?lat=-13.075&lon=-76.375&locale=pt-br')).body.text, /: 3 de roubo\./);
+  assert.match((await f.req('GET', '/v1/insights/advice?lat=-13.075&lon=-76.375&locale=es-PE')).body.text, /^3 personas reportaron robos en esta zona de día /);
+  assert.match((await f.req('GET', '/v1/insights/advice?lat=-13.075&lon=-76.375&locale=pt-br')).body.text, /^3 pessoas relataram roubos nesta região durante o dia /);
 });
 
 // Demo personas are free to mint, so in demo mode every report is demo data and every view must say so.
 test('demo sign-in stores reports as synthetic and flags every published cell as demo data', async t => {
   const { demoIssuer } = await import('../dist/demo.js'); const demo = await demoIssuer({});
   const f = await fixture(t, { auth: demo.auth, demo }); const night = '2026-10-16T04:30:00Z';
-  const driver = (await f.app.inject({ method: 'POST', url: '/v1/demo/session', payload: {} })).json().driver.token;
-  for (let i = 0; i < 3; i++) assert.equal((await report(f, 'robo', -12.325, -76.775, night, driver)).status, 200);
+  for (let i = 0; i < 3; i++) { // three demo drivers: the map counts people
+    const driver = (await f.app.inject({ method: 'POST', url: '/v1/demo/session', payload: {} })).json().driver.token;
+    assert.equal((await report(f, 'robo', -12.325, -76.775, night, driver)).status, 200);
+  }
   assert.equal((await f.ctx.pool.query('SELECT count(*)::int AS n FROM reports WHERE synthetic')).rows[0].n, 3);
   const map = (await hotspots(f)).body;
   assert.equal(map.includesSynthetic, true); assert.deepEqual(map.cells.map(c => [c.total, c.synthetic]), [[3, 3]]);
@@ -292,3 +300,32 @@ test('a failed aggregation is retried by the next caller, not cached for the hou
   assert.equal((await hotspots(f)).status, 500);
   assert.equal((await hotspots(f)).status, 200, 'same hour, fresh attempt');
 });
+
+// Robert: published numbers are people, not reports. One account filing again and again must not make a zone look worse.
+test('hotspots and advice count distinct people for robo, intentoRobo and total', async t => {
+  const f = await fixture(t); const day = '2026-10-10T17:00:00Z'; // 12:00 in Lima: same band as the fixture clock
+  const fourth = await f.token('fourth');
+  for (const kind of ['robo', 'robo', 'intento_robo']) assert.equal((await report(f, kind, -12.525, -76.725, day)).status, 200);
+  assert.equal((await report(f, 'robo', -12.525, -76.725, day, f.stranger)).status, 200);
+  assert.equal((await report(f, 'intento_robo', -12.525, -76.725, day, f.contact)).status, 200);
+  for (const jwt of [f.driver, f.driver, f.stranger, fourth]) assert.equal((await report(f, 'robo', -12.525, -76.675, day, jwt)).status, 200);
+  assert.deepEqual((await hotspots(f)).body.cells.map(c => `${c.lon}:${c.robo}/${c.intentoRobo}/${c.total}`).sort(), ['-76.675:3/0/3', '-76.725:2/2/3']);
+  // Advice spans both cells: the driver and the stranger reported in each, and still count once.
+  const advice = (await f.req('GET', '/v1/insights/advice?lat=-12.525&lon=-76.675')).body;
+  assert.deepEqual([advice.count, advice.robo, advice.intentoRobo], [4, 3, 2]);
+  assert.match(advice.text, /^4 personas reportaron robos o intentos de robo /);
+});
+
+// The minimum is a minimum of people: two people filing many reports between them must not publish a zone.
+test('a cell with two people stays suppressed however often they report; three people publish it', async t => {
+  const f = await fixture(t); const night = '2026-10-16T04:30:00Z';
+  for (const jwt of [f.driver, f.stranger]) for (let i = 0; i < 5; i++) assert.equal((await report(f, 'robo', -12.325, -76.775, night, jwt)).status, 200);
+  const pair = [await seeded(f, 'robo', -13.075, -76.375, night), await seeded(f, 'robo', -13.075, -76.375, night)];
+  for (const who of [...pair, ...pair]) await seeded(f, 'robo', -13.075, -76.375, night, who);
+  assert.deepEqual((await hotspots(f)).body.cells, []);
+  assert.equal((await report(f, 'robo', -12.325, -76.775, night, f.contact)).status, 200);
+  await seeded(f, 'intento_robo', -13.075, -76.375, night);
+  nextHour(f);
+  assert.deepEqual((await hotspots(f)).body.cells.map(c => [c.lat, c.robo, c.intentoRobo, c.total, c.synthetic]), [[-13.075, 2, 1, 3, 3], [-12.325, 3, 0, 3, 0]]);
+});
+

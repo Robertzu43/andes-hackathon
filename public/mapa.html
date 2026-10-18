@@ -103,13 +103,13 @@
   </fieldset>
 
   <div class="scale">
-    <p class="scale-title">Reportes por zona</p>
+    <p class="scale-title">Personas por zona</p>
     <ol id="scale"></ol>
   </div>
 
   <div class="warning" id="demo" role="note">
     <span class="diamond" aria-hidden="true"></span>
-    <p><strong>Incluye datos de demostración</strong>Parte de estos reportes son de prueba. Cada zona indica cuántos.</p>
+    <p><strong>Incluye datos de demostración</strong>Parte de estas personas son de prueba. Cada zona indica cuántas.</p>
   </div>
 
   <p class="status" id="status" aria-live="polite" tabindex="-1">Cargando reportes…</p>
@@ -117,7 +117,7 @@
   <details id="table">
     <summary>Ver los datos en tabla</summary>
     <table>
-      <thead><tr><th>Zona (centro)</th><th class="num">Reportes</th><th class="num">Robos</th><th class="num">Intentos</th><th class="num">Demo</th></tr></thead>
+      <thead><tr><th>Zona (centro)</th><th class="num">Personas</th><th class="num">Robo</th><th class="num">Intento</th><th class="num">Demo</th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
   </details>
@@ -153,8 +153,10 @@
   const limaHour = iso => new Intl.DateTimeFormat('es-PE', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'America/Lima' }).format(new Date(Math.floor(Date.parse(iso) / 3600000) * 3600000));
 
   function describe(c) {
-    const parts = [`${plural(c.total, 'reporte', 'reportes')} en esta zona: ${plural(c.robo, 'robo', 'robos')} y ${plural(c.intentoRobo, 'intento', 'intentos')}.`];
-    if (c.synthetic) parts.push(`${c.synthetic === 1 ? 'Uno es' : `${c.synthetic} son`} de demostración.`);
+    // Counts are distinct people (a published zone has at least minCount of them); one person can report both kinds.
+    const kinds = [c.robo && `${c.robo} un robo`, c.intentoRobo && `${c.intentoRobo} un intento de robo`].filter(Boolean).join(' y ');
+    const parts = [`${c.total} personas reportaron en esta zona: ${kinds}.`];
+    if (c.synthetic) parts.push(`${c.synthetic === 1 ? 'Una es' : `${c.synthetic} son`} de demostración.`);
     return parts.join(' ');
   }
 
