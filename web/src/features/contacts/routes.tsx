@@ -215,7 +215,7 @@ function TripPage({ host, tripId }: { host: ContactHost; tripId: string }) {
           ? <ul className="andes-contact-deliveries">{status.deliveries.map((row, index) => <li key={index}>
             {t(row.role)} · {t(`channel_${row.channel}`)}: {t(`delivery_${row.status}`)}</li>)}</ul>
           : t(status ? 'deliveriesNoneVisible' : 'unknown')}</FactRow>
-      </dl></section></aside></div>
+      </dl><p className="andes-hint" data-delivery-honesty>{t('deliveryHonesty')}</p></section></aside></div>
     <section className="andes-section andes-secondary-section"><h2>{t('permissions')}</h2>
       {knownGrant ? <Revoke title={t('revokeTrip')} hint={t('revokeTripHint')} busy={snapshot.journey.operation.status === 'pending'}
         disabled={locked} onConfirm={store.revokeTrip} />

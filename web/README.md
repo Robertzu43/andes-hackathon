@@ -41,9 +41,19 @@ Tokens are in `src/styles/tokens.css`: `--canvas`, `--surface`, `--ink`, `--mute
 
 49 owns the package/lock, entry, shared foundation/styles, global route/localisation and brand files. 45 owns API/session transport; 50 driver routes; 51 contact/privacy routes. 53/54/55 own optional Hairline/Anatomy visual modules and host; No unused visual dependency is installed in this foundation. A feature that actually imports an optional library must coordinate its package/lock update with49. Consume optional visuals lazily; their failure must not hide or disable task actions. No new illustration-only routes or live telemetry claims. Only component 44 integrates/merges after review.
 
+## Phone demo
+
+`web/src/main.tsx` mounts the driver screens and the contact routes on one in-memory demo session (`POST /v1/demo/session`, no OTP). Empezar registers a trip in Peru, the check-in screen sends «Estoy bien» and SOS, and «Ver el aviso como contacto» opens the seeded family account in the same window. Delivery copy says that a provider delivery is not the same as a person receiving it or acting on it. Live sending stays off.
+
+```sh
+npm --prefix web run test:phone
+```
+
+That builds this package and the backend, then drives Chrome through the journey against the real API and an owned Postgres. It needs Node 24, PostgreSQL 15+ (`pg_config` or `APP_INTEGRATION_PG_BIN`) and Chrome (`google-chrome` or `ANDES_CHROME_BINARY`). It is not part of `npm test`.
+
 ## What is runnable now
 
-The shared shell, generic metadata, router, locale choice, controls and session UI are runnable. Feature routes are explicit unavailable placeholders until their owners provide components; this is not a complete driver/contact journey. No fabricated accounts, statuses, delivery or working login are supplied.
+The shared shell, generic metadata, router, locale choice, controls and session UI are runnable. The phone demo mounts the driver trip, SOS and contact alert routes on the demo session. It does not send live alerts, share GPS, or verify a phone.
 
 Development-only component inspection pages:
 

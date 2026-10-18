@@ -58,7 +58,7 @@ export const draft: Decoder<T.TripDraft> = object({ id: uuid, status: literal('d
   missingFields: array(choice<Exclude<keyof T.TripFields, 'expectedArrivalAt'>>('truckId', 'origin', 'destination', 'country', 'locale', 'timeZone')) });
 export const confirmed: Decoder<T.ConfirmedTrip> = object({ id: uuid, status: literal('active'),
   fields: object({ ...fullFields, expectedArrivalAt: optional(date) }) });
-export const command: Decoder<T.CommandResult> = object({ id: uuid, command: commands, automaticEscalation: literal(false) });
+export const command: Decoder<T.CommandResult> = object({ id: uuid, command: commands, automaticEscalation: bool });
 export const trip: Decoder<T.Trip> = object({ id: uuid, driver_id: uuid, truck_id: uuid, origin: text, destination: text,
   country: text, locale: text, time_zone: text, status: choice('active', 'arrived', 'cancelled'), map_active: bool,
   checkins_active: bool, paused: bool, version: number(1, Infinity, true), created_at: date, closed_at: nullable(date),

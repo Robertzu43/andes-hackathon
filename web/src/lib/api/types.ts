@@ -20,7 +20,7 @@ export interface TripDraft extends IdResponse {
 export interface ConfirmTripInput { confirmed: true; contactGrantIds: UUID[]; fields?: Partial<TripFields> }
 export interface ConfirmedTrip extends IdResponse { status: 'active'; fields: TripFields }
 export type TripCommand = 'arrived' | 'cancel' | 'pause' | 'resume' | 'checkin_ok' | 'rest_report';
-export interface CommandResult extends IdResponse { command: TripCommand; automaticEscalation: false }
+export interface CommandResult extends IdResponse { command: TripCommand; automaticEscalation: boolean }
 export interface Trip extends IdResponse {
   driver_id: UUID; truck_id: UUID; origin: string; destination: string; country: string; locale: string;
   time_zone: string; status: 'active' | 'arrived' | 'cancelled'; map_active: boolean;
