@@ -1,0 +1,36 @@
+TAP version 13
+# Subtest: AWS database components survive pinned pg parsing with verified CA TLS
+ok 1 - AWS database components survive pinned pg parsing with verified CA TLS
+  ---
+  duration_ms: 2.705208
+  type: 'test'
+  ...
+# Subtest: non-superuser database owner bootstraps twice with app DML but no DDL or migration writes
+not ok 2 - non-superuser database owner bootstraps twice with app DML but no DDL or migration writes
+  ---
+  duration_ms: 260.397167
+  type: 'test'
+  location: '/private/tmp/andes-q60-ci-9d757a9/tests/database-config.test.mjs:22:1'
+  failureType: 'uncaughtException'
+  error: 'terminating connection due to administrator command'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    parseErrorMessage (/private/tmp/andes-q60-ci-9d757a9/node_modules/pg-protocol/dist/parser.js:306:11)
+    Parser.handlePacket (/private/tmp/andes-q60-ci-9d757a9/node_modules/pg-protocol/dist/parser.js:143:27)
+    Parser.parse (/private/tmp/andes-q60-ci-9d757a9/node_modules/pg-protocol/dist/parser.js:37:38)
+    Socket.<anonymous> (/private/tmp/andes-q60-ci-9d757a9/node_modules/pg-protocol/dist/index.js:12:42)
+    Socket.emit (node:events:509:28)
+    addChunk (node:internal/streams/readable:563:12)
+    readableAddChunkPushByteMode (node:internal/streams/readable:514:3)
+    Readable.push (node:internal/streams/readable:394:5)
+    TCP.onStreamRead (node:internal/stream_base_commons:189:23)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 319.234041

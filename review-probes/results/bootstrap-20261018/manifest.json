@@ -1,0 +1,53 @@
+{
+  "original": "9d757a909268ebf4c9b45068fa4954fed873ddc8",
+  "fixed": "b85b82753e8472d6c3a5042e3d1b2a859571af82",
+  "sameTestAtPR83": "b95ff267d297d1fe1f27fa8b016940996690691c",
+  "runtimeFixture": "06885f4736d730f567309c22e7163c9b92f2a195",
+  "node": "24.17.0",
+  "postgres": "16.14",
+  "files": {
+    "baseline-result.json": "bcebd13d238a77ac126cc4e2019b18ca63df4a97ac56ee163379a4c768d3acd3",
+    "baseline.tap": "19c2dc2a51a4f014025e8a889889189ba2a62af8a1c190600940e502fb6a2cc3",
+    "delayed-close-result.json": "0cf195d64edfa93e108082da543b5fe976bc4709e8021c314b822c486255c3d7",
+    "delayed-close-trace.jsonl": "62dae9f0021a57c083f542f8e77a1aa9205cdd7a161219476b410911caed5183",
+    "delayed-close.tap": "df764ecb05cfd6dc71acafd6515ad58458a86ab37041b25561c7cd69a6c51b39",
+    "fixed-delayed-close-result.json": "bcebd13d238a77ac126cc4e2019b18ca63df4a97ac56ee163379a4c768d3acd3",
+    "fixed-delayed-close-trace.jsonl": "5935c1691d28f518b89e4e86665089d91b219b5f031dafdee3743fcb5c8d7a35",
+    "fixed-delayed-close.tap": "6fc2014f899f7162998255a1dfa4d52701c8a19d9ac7618dc355067c1f0d2ed8",
+    "fixed-full-result.json": "bcebd13d238a77ac126cc4e2019b18ca63df4a97ac56ee163379a4c768d3acd3",
+    "fixed-full.tap": "096135ec7c79a51f886cd46f1b49fab5b810cfc65054085c39d68a4f4d9d3290",
+    "fixed-trace-result.json": "bcebd13d238a77ac126cc4e2019b18ca63df4a97ac56ee163379a4c768d3acd3",
+    "fixed-trace-trace.jsonl": "6bc12880b0924a8d92c066502bc15a03a81e123c5cc259a2b28a361ebcd2ce89",
+    "fixed-trace.tap": "f77617e2d683dfa3d21ce5d3355deb5cab2fabdae1b4303a0538ee728d7d2b9c",
+    "owned-cluster.json": "8644c6f9cee72950c833bb6c5e77b1c0a59786820f0424f6ee79e6532639e1c7",
+    "runtime-normal-close.json": "9276c13bc595818842a8cde9041792ebd2b1fb6e2b9bf4539e6485c6f584a2bd",
+    "trace-result.json": "bcebd13d238a77ac126cc4e2019b18ca63df4a97ac56ee163379a4c768d3acd3",
+    "trace-trace.jsonl": "b9688e48dcd652a34c3f01918e23da66667e8bb33992216f1e05b6fdf412d20b",
+    "trace.tap": "056c791baae792837fe53aa6185979b37adf9a335dbf16d763ce74912a4f37a1",
+    "ci-39080359469.txt.gz": "6ee98af44543811c8e967934501fa9e53930ffe1bd47f0d1aa9338f72a2ca013",
+    "ci-39080361836.txt.gz": "eb410046e045abcbd686d62fb44437622035ee92cf9cdc8e5c298dab40703234",
+    "ci-39081267239.txt.gz": "2315e7882c216ab2a744d4c29626c458ea154aa832f81c14dc7a2a38edb9beb4",
+    "portable-before-result.json": "e9c0a1caf775ec153ee7424758f6638f34e85262a340d43cddaa686b6c6eb9f3",
+    "portable-before-output.tap": "6cefed393cb82cf27aea0ade2ab3b0942ba7db09b7c42bab16d53543583ec6fd",
+    "portable-before-owned.json": "40b772934f4a32ed30df2a9d173dc6a0aade10cbeb5f7088a906865410ce3c78",
+    "portable-before-trace.jsonl": "ee9c26c8bc4f57054365da9f9d83f0c09aad70138ec204eda19e3ed17b636954",
+    "portable-after-result.json": "0c45a3d2390e4e41c7df8756d09e79bdd5883d3151368e4300db0bb5c013b037",
+    "portable-after-output.tap": "fea88930ba813fe6408d6eda7f36dedc2672a5a97641c552e34ee90c86a76bb2",
+    "portable-after-owned.json": "2a00dda517f3e9162eaac2f5318bbbdaba4b04bd1407a4a0c06348d768f1cde1",
+    "portable-after-trace.jsonl": "059b833872a74c2aa9252f4247665182aede0238df964cde07d3c6b7494a9c7a"
+  },
+  "compressedRawLogs": {
+    "ci-39080359469.txt.gz": {
+      "decompressedName": "ci-39080359469.txt",
+      "sha256": "947f1359052a0818f8bd4fa88c56d8781dd3d381dd1456a2d1780dc211ff35af"
+    },
+    "ci-39080361836.txt.gz": {
+      "decompressedName": "ci-39080361836.txt",
+      "sha256": "acc580066cf0afe07abdfe71b41737afbcac35fe8bde31fa24a52467f9f05369"
+    },
+    "ci-39081267239.txt.gz": {
+      "decompressedName": "ci-39081267239.txt",
+      "sha256": "cc2f4b48a00be643f7374d00755be50238b639724d39bae3838075d2e158b7dc"
+    }
+  }
+}

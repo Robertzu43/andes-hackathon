@@ -1,0 +1,27 @@
+{"time":"967390746166041","event":"delay-client-close","pid":64946}
+{"time":"967390750566625","event":"delay-client-close","pid":64947}
+{"time":"967390750781666","event":"pool-end-start","clients":[]}
+{"time":"967390750906541","event":"pool-end-resolved","clients":[]}
+{"time":"967390760845958","event":"pool-end-start","clients":[{"pid":64944,"user":"migration_cc479f237b0e401781f0035603f015c6","database":"bootstrap_cc479f237b0e401781f0035603f015c6","socketDestroyed":false,"ended":false},{"pid":64945,"user":"migration_cc479f237b0e401781f0035603f015c6","database":"bootstrap_cc479f237b0e401781f0035603f015c6","socketDestroyed":false,"ended":false}]}
+{"time":"967390760955583","event":"delay-client-close","pid":64945}
+{"time":"967390760996708","event":"delay-client-close","pid":64944}
+{"time":"967390761047208","event":"pool-end-resolved","clients":[{"pid":64944,"user":"migration_cc479f237b0e401781f0035603f015c6","database":"bootstrap_cc479f237b0e401781f0035603f015c6","socketDestroyed":false,"ended":false},{"pid":64945,"user":"migration_cc479f237b0e401781f0035603f015c6","database":"bootstrap_cc479f237b0e401781f0035603f015c6","socketDestroyed":false,"ended":false}]}
+{"time":"967390761081750","event":"pool-end-start","clients":[{"pid":64943,"user":"migration_cc479f237b0e401781f0035603f015c6","database":"andes_q46_dcf9aa11c8ef3a38","socketDestroyed":false,"ended":false}]}
+{"time":"967390761168500","event":"pool-end-resolved","clients":[{"pid":64943,"user":"migration_cc479f237b0e401781f0035603f015c6","database":"andes_q46_dcf9aa11c8ef3a38","socketDestroyed":false,"ended":false}]}
+{"time":"967390761239583","event":"drop-database-start","poolUser":"admin","database":"bootstrap_cc479f237b0e401781f0035603f015c6"}
+{"time":"967390761982083","event":"pool-error","code":"57P01","message":"terminating connection due to administrator command","pid":64947}
+{"time":"967390762190166","event":"uncaught","code":"57P01","message":"terminating connection due to administrator command"}
+{"time":"967390762567083","event":"pool-error","code":"57P01","message":"terminating connection due to administrator command","pid":64944}
+{"time":"967390762687333","event":"uncaught","code":"57P01","message":"terminating connection due to administrator command"}
+{"time":"967390762922625","event":"client-ended","pid":64944,"user":"migration_cc479f237b0e401781f0035603f015c6","database":"bootstrap_cc479f237b0e401781f0035603f015c6"}
+{"time":"967390762990291","event":"client-ended","pid":64947,"user":"app_\"'/%@_cc479f237b0e401781f0035603f015c6","database":"bootstrap_cc479f237b0e401781f0035603f015c6"}
+{"time":"967390763085291","event":"pool-error","code":"57P01","message":"terminating connection due to administrator command","pid":64946}
+{"time":"967390763139750","event":"uncaught","code":"57P01","message":"terminating connection due to administrator command"}
+{"time":"967390763232541","event":"pool-error","code":"57P01","message":"terminating connection due to administrator command","pid":64945}
+{"time":"967390763281875","event":"uncaught","code":"57P01","message":"terminating connection due to administrator command"}
+{"time":"967390763447375","event":"client-ended","pid":64943,"user":"migration_cc479f237b0e401781f0035603f015c6","database":"andes_q46_dcf9aa11c8ef3a38"}
+{"time":"967390763496625","event":"client-ended","pid":64945,"user":"migration_cc479f237b0e401781f0035603f015c6","database":"bootstrap_cc479f237b0e401781f0035603f015c6"}
+{"time":"967390763541291","event":"client-ended","pid":64946,"user":"app_\"'/%@_cc479f237b0e401781f0035603f015c6","database":"bootstrap_cc479f237b0e401781f0035603f015c6"}
+{"time":"967390883818666","event":"pool-end-start","clients":[{"pid":64942,"user":"andes_q46","database":"andes_q46_dcf9aa11c8ef3a38","socketDestroyed":false,"ended":false}]}
+{"time":"967390884007250","event":"pool-end-resolved","clients":[{"pid":64942,"user":"andes_q46","database":"andes_q46_dcf9aa11c8ef3a38","socketDestroyed":false,"ended":false}]}
+{"time":"967390885045250","event":"client-ended","pid":64942,"user":"andes_q46","database":"andes_q46_dcf9aa11c8ef3a38"}

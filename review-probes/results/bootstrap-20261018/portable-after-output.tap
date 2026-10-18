@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: AWS database components survive pinned pg parsing with verified CA TLS
+ok 1 - AWS database components survive pinned pg parsing with verified CA TLS
+  ---
+  duration_ms: 2.789584
+  type: 'test'
+  ...
+# Subtest: non-superuser database owner bootstraps twice with app DML but no DDL or migration writes
+ok 2 - non-superuser database owner bootstraps twice with app DML but no DDL or migration writes
+  ---
+  duration_ms: 283.003583
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 331.861875

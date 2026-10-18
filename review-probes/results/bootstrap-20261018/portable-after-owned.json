@@ -1,0 +1,8 @@
+{
+  "node": "v24.17.0",
+  "postgresVersion": "160014",
+  "clusterDirectory": "/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-q46-JQehBS",
+  "dataDirectory": "/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-q46-JQehBS/data",
+  "pid": 8696,
+  "port": 56560
+}

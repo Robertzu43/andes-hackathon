@@ -1,0 +1,15 @@
+{"time":"967390420818833","event":"client-ended","pid":64914,"user":"app_\"'/%@_037786298633480faa487716c7f0982a","database":"bootstrap_037786298633480faa487716c7f0982a"}
+{"time":"967390426601666","event":"pool-end-start","clients":[]}
+{"time":"967390427072916","event":"pool-end-resolved","clients":[]}
+{"time":"967390427817875","event":"client-ended","pid":64915,"user":"app_\"'/%@_037786298633480faa487716c7f0982a","database":"bootstrap_037786298633480faa487716c7f0982a"}
+{"time":"967390439956833","event":"pool-end-start","clients":[{"pid":64912,"user":"migration_037786298633480faa487716c7f0982a","database":"bootstrap_037786298633480faa487716c7f0982a","socketDestroyed":false,"ended":false},{"pid":64913,"user":"migration_037786298633480faa487716c7f0982a","database":"bootstrap_037786298633480faa487716c7f0982a","socketDestroyed":false,"ended":false}]}
+{"time":"967390440228291","event":"pool-end-resolved","clients":[{"pid":64912,"user":"migration_037786298633480faa487716c7f0982a","database":"bootstrap_037786298633480faa487716c7f0982a","socketDestroyed":false,"ended":false},{"pid":64913,"user":"migration_037786298633480faa487716c7f0982a","database":"bootstrap_037786298633480faa487716c7f0982a","socketDestroyed":false,"ended":false}]}
+{"time":"967390440410416","event":"pool-end-start","clients":[{"pid":64903,"user":"migration_037786298633480faa487716c7f0982a","database":"andes_q46_dcf9aa11c8ef3a38","socketDestroyed":false,"ended":false}]}
+{"time":"967390440579000","event":"pool-end-resolved","clients":[{"pid":64903,"user":"migration_037786298633480faa487716c7f0982a","database":"andes_q46_dcf9aa11c8ef3a38","socketDestroyed":false,"ended":false}]}
+{"time":"967390440728458","event":"drop-database-start","poolUser":"admin","database":"bootstrap_037786298633480faa487716c7f0982a"}
+{"time":"967390443227166","event":"client-ended","pid":64912,"user":"migration_037786298633480faa487716c7f0982a","database":"bootstrap_037786298633480faa487716c7f0982a"}
+{"time":"967390443340583","event":"client-ended","pid":64903,"user":"migration_037786298633480faa487716c7f0982a","database":"andes_q46_dcf9aa11c8ef3a38"}
+{"time":"967390443604458","event":"client-ended","pid":64913,"user":"migration_037786298633480faa487716c7f0982a","database":"bootstrap_037786298633480faa487716c7f0982a"}
+{"time":"967390532720750","event":"pool-end-start","clients":[{"pid":64901,"user":"andes_q46","database":"andes_q46_dcf9aa11c8ef3a38","socketDestroyed":false,"ended":false}]}
+{"time":"967390532851208","event":"pool-end-resolved","clients":[{"pid":64901,"user":"andes_q46","database":"andes_q46_dcf9aa11c8ef3a38","socketDestroyed":false,"ended":false}]}
+{"time":"967390533761666","event":"client-ended","pid":64901,"user":"andes_q46","database":"andes_q46_dcf9aa11c8ef3a38"}

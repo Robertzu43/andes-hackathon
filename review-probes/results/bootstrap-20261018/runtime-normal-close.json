@@ -1,0 +1,22 @@
+{
+  "source": "06885f4736d730f567309c22e7163c9b92f2a195",
+  "runtime": "v24.17.0",
+  "postgresPid": 95831,
+  "postgresPort": 56561,
+  "dataDirectory": "/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-q46-ZRwNFL/data",
+  "clusterDirectory": "/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-q46-ZRwNFL",
+  "directory": "/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-q46-browser-mVgKfO",
+  "database": "andes_q46_022e8184467213fe",
+  "webPort": 53083,
+  "processChain": "95831 95788 95788 /opt/homebrew/Cellar/postgresql@16/16.14/bin/postgres -D /var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-q46-ZRwNFL/data -k /var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-q46-ZRwNFL/socket -h 127.0.0.1 -p 56561 -c max_connections=100",
+  "after": {
+    "postgresGone": true,
+    "postgresPortClosed": true,
+    "webPortClosed": true,
+    "dataRemoved": true,
+    "clusterRemoved": true,
+    "extractionRemoved": true,
+    "sentinelStillAccepts": true,
+    "sentinelDirectoryPreserved": true
+  }
+}

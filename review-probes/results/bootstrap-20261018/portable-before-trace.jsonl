@@ -1,0 +1,27 @@
+{"time":"967757458189083","event":"delay-client-close","pid":8647}
+{"time":"967757462610333","event":"delay-client-close","pid":8648}
+{"time":"967757462804291","event":"pool-end-start","clients":[]}
+{"time":"967757462875291","event":"pool-end-resolved","clients":[]}
+{"time":"967757470290166","event":"pool-end-start","clients":[{"pid":8644,"user":"migration_d228e141044848b9ae53688582541b5b","database":"bootstrap_d228e141044848b9ae53688582541b5b","socketDestroyed":false,"ended":false},{"pid":8645,"user":"migration_d228e141044848b9ae53688582541b5b","database":"bootstrap_d228e141044848b9ae53688582541b5b","socketDestroyed":false,"ended":false}]}
+{"time":"967757470447791","event":"delay-client-close","pid":8645}
+{"time":"967757470520250","event":"delay-client-close","pid":8644}
+{"time":"967757470575708","event":"pool-end-resolved","clients":[{"pid":8644,"user":"migration_d228e141044848b9ae53688582541b5b","database":"bootstrap_d228e141044848b9ae53688582541b5b","socketDestroyed":false,"ended":false},{"pid":8645,"user":"migration_d228e141044848b9ae53688582541b5b","database":"bootstrap_d228e141044848b9ae53688582541b5b","socketDestroyed":false,"ended":false}]}
+{"time":"967757470610958","event":"pool-end-start","clients":[{"pid":8639,"user":"migration_d228e141044848b9ae53688582541b5b","database":"andes_q46_da7454ef58f9fc13","socketDestroyed":false,"ended":false}]}
+{"time":"967757470710291","event":"pool-end-resolved","clients":[{"pid":8639,"user":"migration_d228e141044848b9ae53688582541b5b","database":"andes_q46_da7454ef58f9fc13","socketDestroyed":false,"ended":false}]}
+{"time":"967757470786833","event":"drop-database-start","poolUser":"admin","database":"bootstrap_d228e141044848b9ae53688582541b5b"}
+{"time":"967757471423041","event":"pool-error","code":"57P01","message":"terminating connection due to administrator command","pid":8645}
+{"time":"967757471545125","event":"uncaught","code":"57P01","message":"terminating connection due to administrator command"}
+{"time":"967757471858208","event":"client-ended","pid":8645,"user":"migration_d228e141044848b9ae53688582541b5b","database":"bootstrap_d228e141044848b9ae53688582541b5b"}
+{"time":"967757471993750","event":"pool-error","code":"57P01","message":"terminating connection due to administrator command","pid":8647}
+{"time":"967757472052333","event":"uncaught","code":"57P01","message":"terminating connection due to administrator command"}
+{"time":"967757472154916","event":"pool-error","code":"57P01","message":"terminating connection due to administrator command","pid":8644}
+{"time":"967757472201583","event":"uncaught","code":"57P01","message":"terminating connection due to administrator command"}
+{"time":"967757472276208","event":"pool-error","code":"57P01","message":"terminating connection due to administrator command","pid":8648}
+{"time":"967757472317166","event":"uncaught","code":"57P01","message":"terminating connection due to administrator command"}
+{"time":"967757472375791","event":"client-ended","pid":8648,"user":"app_\"'/%@_d228e141044848b9ae53688582541b5b","database":"bootstrap_d228e141044848b9ae53688582541b5b"}
+{"time":"967757472421750","event":"client-ended","pid":8644,"user":"migration_d228e141044848b9ae53688582541b5b","database":"bootstrap_d228e141044848b9ae53688582541b5b"}
+{"time":"967757472461833","event":"client-ended","pid":8647,"user":"app_\"'/%@_d228e141044848b9ae53688582541b5b","database":"bootstrap_d228e141044848b9ae53688582541b5b"}
+{"time":"967757472589458","event":"client-ended","pid":8639,"user":"migration_d228e141044848b9ae53688582541b5b","database":"andes_q46_da7454ef58f9fc13"}
+{"time":"967757627635708","event":"pool-end-start","clients":[{"pid":8634,"user":"andes_q46","database":"andes_q46_da7454ef58f9fc13","socketDestroyed":false,"ended":false}]}
+{"time":"967757627782833","event":"pool-end-resolved","clients":[{"pid":8634,"user":"andes_q46","database":"andes_q46_da7454ef58f9fc13","socketDestroyed":false,"ended":false}]}
+{"time":"967757628795083","event":"client-ended","pid":8634,"user":"andes_q46","database":"andes_q46_da7454ef58f9fc13"}

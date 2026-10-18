@@ -1,0 +1,292 @@
+TAP version 13
+# Subtest: signed identity enforces issuer, audience, expiry, signature and driver/truck ownership
+ok 1 - signed identity enforces issuer, audience, expiry, signature and driver/truck ownership
+  ---
+  duration_ms: 372.849834
+  type: 'test'
+  ...
+# Subtest: contacts accept their own explicit scopes with a trusted verified phone before selection
+ok 2 - contacts accept their own explicit scopes with a trusted verified phone before selection
+  ---
+  duration_ms: 110.591292
+  type: 'test'
+  ...
+# Subtest: draft review and confirmation are explicit, complete and idempotent
+ok 3 - draft review and confirmation are explicit, complete and idempotent
+  ---
+  duration_ms: 89.987042
+  type: 'test'
+  ...
+# Subtest: location separates capture/receipt/read freshness, bounds history and honors revocation
+ok 4 - location separates capture/receipt/read freshness, bounds history and honors revocation
+  ---
+  duration_ms: 270.658292
+  type: 'test'
+  ...
+# Subtest: SOS rolls back all state on SQL failure and simultaneous taps create one incident and independent jobs
+ok 5 - SOS rolls back all state on SQL failure and simultaneous taps create one incident and independent jobs
+  ---
+  duration_ms: 224.148042
+  type: 'test'
+  ...
+# Subtest: trip and incident closure are independent; contact receipt/action are attributed and revoke cancels work
+ok 6 - trip and incident closure are independent; contact receipt/action are attributed and revoke cancels work
+  ---
+  duration_ms: 346.650292
+  type: 'test'
+  ...
+# Subtest: unqualified channels stay unavailable and accepted incident scope never grants map access
+ok 7 - unqualified channels stay unavailable and accepted incident scope never grants map access
+  ---
+  duration_ms: 233.226917
+  type: 'test'
+  ...
+# Subtest: migration is repeat-safe and transaction failures release clients without committing
+ok 8 - migration is repeat-safe and transaction failures release clients without committing
+  ---
+  duration_ms: 197.038167
+  type: 'test'
+  ...
+# Subtest: driver incident resolution preserves active trip and authorized attempts
+ok 9 - driver incident resolution preserves active trip and authorized attempts
+  ---
+  duration_ms: 244.667875
+  type: 'test'
+  ...
+# Subtest: standing contact revoke serializes with confirmation and blocks every current/future trip grant
+ok 10 - standing contact revoke serializes with confirmation and blocks every current/future trip grant
+  ---
+  duration_ms: 466.355083
+  type: 'test'
+  ...
+# Subtest: SOS and standing revoke complete when grant lock overlaps the SOS foreign-key insert
+ok 11 - SOS and standing revoke complete when grant lock overlaps the SOS foreign-key insert
+  ---
+  duration_ms: 302.475625
+  type: 'test'
+  ...
+# Subtest: mixed-case grant UUID confirmations take one canonical lock order and reject case-alias duplicates
+ok 12 - mixed-case grant UUID confirmations take one canonical lock order and reject case-alias duplicates
+  ---
+  duration_ms: 330.364
+  type: 'test'
+  ...
+# Subtest: AWS database components survive pinned pg parsing with verified CA TLS
+ok 13 - AWS database components survive pinned pg parsing with verified CA TLS
+  ---
+  duration_ms: 4.925666
+  type: 'test'
+  ...
+# Subtest: non-superuser database owner bootstraps twice with app DML but no DDL or migration writes
+ok 14 - non-superuser database owner bootstraps twice with app DML but no DDL or migration writes
+  ---
+  duration_ms: 355.209167
+  type: 'test'
+  ...
+# Subtest: recipient discovers incident from frozen alerts and can read and respond after arrival without stopping SOS channels
+ok 15 - recipient discovers incident from frozen alerts and can read and respond after arrival without stopping SOS channels
+  ---
+  duration_ms: 412.578375
+  type: 'test'
+  ...
+# Subtest: incident reads and acknowledgements recheck both consent grants and accepted incident scope
+ok 16 - incident reads and acknowledgements recheck both consent grants and accepted incident scope
+  ---
+  duration_ms: 445.433375
+  type: 'test'
+  ...
+# Subtest: outbox rollback publishes nothing, lost publish acknowledgement retries only transport with bounded backoff
+ok 17 - outbox rollback publishes nothing, lost publish acknowledgement retries only transport with bounded backoff
+  ---
+  duration_ms: 161.397708
+  type: 'test'
+  ...
+# Subtest: duplicate SQS and expired authorization leases never create a second external attempt
+ok 18 - duplicate SQS and expired authorization leases never create a second external attempt
+  ---
+  duration_ms: 110.082416
+  type: 'test'
+  ...
+# Subtest: stale claim cannot authorize, stop-first denies and authorize-first survives resolve/revoke
+ok 19 - stale claim cannot authorize, stop-first denies and authorize-first survives resolve/revoke
+  ---
+  duration_ms: 180.061083
+  type: 'test'
+  ...
+# Subtest: authorization rechecks standing scope, trip scope, phone and incident; arrival keeps SOS without coordinates
+ok 20 - authorization rechecks standing scope, trip scope, phone and incident; arrival keeps SOS without coordinates
+  ---
+  duration_ms: 288.482875
+  type: 'test'
+  ...
+# Subtest: scanner recovers expired transport and claims but keeps authorized work unknown; no blind DLQ replay
+ok 21 - scanner recovers expired transport and claims but keeps authorized work unknown; no blind DLQ replay
+  ---
+  duration_ms: 193.966625
+  type: 'test'
+  ...
+# Subtest: account and channel budgets persist and preserve emergency reserve across replicas
+ok 22 - account and channel budgets persist and preserve emergency reserve across replicas
+  ---
+  duration_ms: 258.396041
+  type: 'test'
+  ...
+# Subtest: early callbacks persist unmatched, exact response ID correlates, duplicates and contradictory late HTTP cannot regress delivery
+ok 23 - early callbacks persist unmatched, exact response ID correlates, duplicates and contradictory late HTTP cannot regress delivery
+  ---
+  duration_ms: 263.101167
+  type: 'test'
+  ...
+# Subtest: paused WhatsApp leaves later-batch SMS/voice and reads/close free; slots are bounded
+ok 24 - paused WhatsApp leaves later-batch SMS/voice and reads/close free; slots are bounded
+  ---
+  duration_ms: 463.32375
+  type: 'test'
+  ...
+# Subtest: rolled-back new intent is never published
+ok 25 - rolled-back new intent is never published
+  ---
+  duration_ms: 107.088083
+  type: 'test'
+  ...
+# Subtest: publish acknowledgement loss creates duplicate transport but still only one provider send
+ok 26 - publish acknowledgement loss creates duplicate transport but still only one provider send
+  ---
+  duration_ms: 312.237834
+  type: 'test'
+  ...
+# Subtest: old relay cannot acknowledge a newer lease
+ok 27 - old relay cannot acknowledge a newer lease
+  ---
+  duration_ms: 261.779875
+  type: 'test'
+  ...
+# Subtest: callback endpoint preserves raw bytes and needs no OIDC; failed SQL is not acknowledged
+ok 28 - callback endpoint preserves raw bytes and needs no OIDC; failed SQL is not acknowledged
+  ---
+  duration_ms: 224.844541
+  type: 'test'
+  ...
+# Subtest: unknown read result cannot authorize a second send while original emitter remains paused
+ok 29 - unknown read result cannot authorize a second send while original emitter remains paused
+  ---
+  duration_ms: 355.516833
+  type: 'test'
+  ...
+# Subtest: control publishes new outbox while provider reconciliation read is paused
+ok 30 - control publishes new outbox while provider reconciliation read is paused
+  ---
+  duration_ms: 274.983292
+  type: 'test'
+  ...
+# Subtest: global revoke-first blocks every authorization and no grant lock upgrades deadlock standing revoke
+ok 31 - global revoke-first blocks every authorization and no grant lock upgrades deadlock standing revoke
+  ---
+  duration_ms: 203.119666
+  type: 'test'
+  ...
+# Subtest: delivery facts never regress on late failed/queued/unknown callbacks and voice never implies human answer
+ok 32 - delivery facts never regress on late failed/queued/unknown callbacks and voice never implies human answer
+  ---
+  duration_ms: 141.45425
+  type: 'test'
+  ...
+# Subtest: daily quotas do not erase the sliding minute limit across UTC midnight
+ok 33 - daily quotas do not erase the sliding minute limit across UTC midnight
+  ---
+  duration_ms: 95.285666
+  type: 'test'
+  ...
+# Subtest: reconciliation GETs reserve account request budget before network
+ok 34 - reconciliation GETs reserve account request budget before network
+  ---
+  duration_ms: 133.32725
+  type: 'test'
+  ...
+# Subtest: ordinary reservations stop at configured emergency margin
+ok 35 - ordinary reservations stop at configured emergency margin
+  ---
+  duration_ms: 140.637083
+  type: 'test'
+  ...
+# Subtest: authorization independently rechecks current standing consent and per-trip consent
+ok 36 - authorization independently rechecks current standing consent and per-trip consent
+  ---
+  duration_ms: 636.128416
+  type: 'test'
+  ...
+# Subtest: control reconciles known IDs with new sends off and denies new authorization
+ok 37 - control reconciles known IDs with new sends off and denies new authorization
+  ---
+  duration_ms: 164.823291
+  type: 'test'
+  ...
+# Subtest: public TLS entry, private task/database boundaries and retained encrypted state
+ok 38 - public TLS entry, private task/database boundaries and retained encrypted state
+  ---
+  duration_ms: 0.867291
+  type: 'test'
+  ...
+# Subtest: task IAM isolates each queue; execution secrets and administrator never become task access
+ok 39 - task IAM isolates each queue; execution secrets and administrator never become task access
+  ---
+  duration_ms: 0.363208
+  type: 'test'
+  ...
+# Subtest: exact process wiring, bootstrap/live gates and conservative rolling capacity
+ok 40 - exact process wiring, bootstrap/live gates and conservative rolling capacity
+  ---
+  duration_ms: 0.145708
+  type: 'test'
+  ...
+# Subtest: image contains migration SQL/CA and CI runs real PostgreSQL tests without live credentials
+ok 41 - image contains migration SQL/CA and CI runs real PostgreSQL tests without live credentials
+  ---
+  duration_ms: 1.341916
+  type: 'test'
+  ...
+# Subtest: Zavu sends exact explicit channels without fallback and accepts 202/replay 409
+ok 42 - Zavu sends exact explicit channels without fallback and accepts 202/replay 409
+  ---
+  duration_ms: 17.544667
+  type: 'test'
+  ...
+# Subtest: ambiguous HTTP never retries; definitive nested limits are rejected; reads use GET only
+ok 43 - ambiguous HTTP never retries; definitive nested limits are rejected; reads use GET only
+  ---
+  duration_ms: 1.605375
+  type: 'test'
+  ...
+# Subtest: v2 signature authenticates exact bytes, signed project/sender and strict time window
+ok 44 - v2 signature authenticates exact bytes, signed project/sender and strict time window
+  ---
+  duration_ms: 2.771625
+  type: 'test'
+  ...
+# Subtest: provider configuration fails closed unless explicit live qualification is complete
+ok 45 - provider configuration fails closed unless explicit live qualification is complete
+  ---
+  duration_ms: 0.3865
+  type: 'test'
+  ...
+# Subtest: SQS adapter sends only IDs/version, rejects secret-bearing envelopes, and defers saturated messages
+ok 46 - SQS adapter sends only IDs/version, rejects secret-bearing envelopes, and defers saturated messages
+  ---
+  duration_ms: 47.1545
+  type: 'test'
+  ...
+# Subtest: sends-off configuration retains read-only provider but denies POST and delivery startup
+ok 47 - sends-off configuration retains read-only provider but denies POST and delivery startup
+  ---
+  duration_ms: 15.742875
+  type: 'test'
+  ...
+1..47
+# tests 47
+# suites 0
+# pass 47
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7934.621834

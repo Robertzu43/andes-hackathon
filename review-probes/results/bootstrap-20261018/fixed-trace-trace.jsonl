@@ -1,0 +1,15 @@
+{"time":"967445878673750","event":"client-ended","pid":70131,"user":"app_\"'/%@_b87f1f6ded6346a8866f2e14f2cf53f3","database":"bootstrap_b87f1f6ded6346a8866f2e14f2cf53f3"}
+{"time":"967445881638625","event":"pool-end-start","clients":[]}
+{"time":"967445881755458","event":"pool-end-resolved","clients":[]}
+{"time":"967445882435041","event":"client-ended","pid":70132,"user":"app_\"'/%@_b87f1f6ded6346a8866f2e14f2cf53f3","database":"bootstrap_b87f1f6ded6346a8866f2e14f2cf53f3"}
+{"time":"967445889756750","event":"pool-end-start","clients":[{"pid":70123,"user":"migration_b87f1f6ded6346a8866f2e14f2cf53f3","database":"bootstrap_b87f1f6ded6346a8866f2e14f2cf53f3","socketDestroyed":false,"ended":false},{"pid":70126,"user":"migration_b87f1f6ded6346a8866f2e14f2cf53f3","database":"bootstrap_b87f1f6ded6346a8866f2e14f2cf53f3","socketDestroyed":false,"ended":false}]}
+{"time":"967445889888958","event":"pool-end-resolved","clients":[{"pid":70123,"user":"migration_b87f1f6ded6346a8866f2e14f2cf53f3","database":"bootstrap_b87f1f6ded6346a8866f2e14f2cf53f3","socketDestroyed":false,"ended":false},{"pid":70126,"user":"migration_b87f1f6ded6346a8866f2e14f2cf53f3","database":"bootstrap_b87f1f6ded6346a8866f2e14f2cf53f3","socketDestroyed":false,"ended":false}]}
+{"time":"967445889923416","event":"pool-end-start","clients":[{"pid":70121,"user":"migration_b87f1f6ded6346a8866f2e14f2cf53f3","database":"andes_q46_cae82c875740b18d","socketDestroyed":false,"ended":false}]}
+{"time":"967445889966625","event":"pool-end-resolved","clients":[{"pid":70121,"user":"migration_b87f1f6ded6346a8866f2e14f2cf53f3","database":"andes_q46_cae82c875740b18d","socketDestroyed":false,"ended":false}]}
+{"time":"967445890943416","event":"client-ended","pid":70123,"user":"migration_b87f1f6ded6346a8866f2e14f2cf53f3","database":"bootstrap_b87f1f6ded6346a8866f2e14f2cf53f3"}
+{"time":"967445891145791","event":"client-ended","pid":70121,"user":"migration_b87f1f6ded6346a8866f2e14f2cf53f3","database":"andes_q46_cae82c875740b18d"}
+{"time":"967445891731500","event":"client-ended","pid":70126,"user":"migration_b87f1f6ded6346a8866f2e14f2cf53f3","database":"bootstrap_b87f1f6ded6346a8866f2e14f2cf53f3"}
+{"time":"967445891815541","event":"drop-database-start","poolUser":"admin","database":"bootstrap_b87f1f6ded6346a8866f2e14f2cf53f3"}
+{"time":"967445947952041","event":"pool-end-start","clients":[{"pid":70120,"user":"andes_q46","database":"andes_q46_cae82c875740b18d","socketDestroyed":false,"ended":false}]}
+{"time":"967445948067541","event":"pool-end-resolved","clients":[{"pid":70120,"user":"andes_q46","database":"andes_q46_cae82c875740b18d","socketDestroyed":false,"ended":false}]}
+{"time":"967445949020458","event":"client-ended","pid":70120,"user":"andes_q46","database":"andes_q46_cae82c875740b18d"}
