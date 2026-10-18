@@ -15,7 +15,7 @@ adapter sink ──► pipeline.mjs ──► queue.mjs ──► upload.mjs ─
 It durably queues **consented location samples** captured by the
 [#19 phone observation adapter](../phone-observations/README.md) and uploads
 them to Robert's backend (runtime contract: `docs/contracts/runtime.md` on
-branch `codex/aws-durable-backend`, not merged here).
+`main`).
 It has no UI, no SOS path, no automatic sensor start, no freshness or liveness
 claims, and no invented endpoints. An upload receipt is a server receipt fact —
 never evidence that a trip is healthy, fresh or being tracked right now.
@@ -48,28 +48,46 @@ tests inject an in-memory double. If IndexedDB is missing, blocked or refused,
 surface an explicit storage-unavailable state. There is no silent memory
 fallback that would pretend durability.
 
-Real-browser IndexedDB behaviour (quota, eviction, concurrent tabs) is not
-exercised by this slice's Node tests; it is follow-up evidence once the shared
-frontend foundation exists. Concurrent-tab writers are out of scope here.
+**Concurrency.** Every queue mutation runs under one origin-wide Web Lock
+(`navigator.locks`, `andes-observation-queue`) and re-reads storage inside it;
+nothing durable is cached in memory. Two tabs, or an in-flight upload and a
+sign-out wipe in one tab, therefore never interleave a read-modify-write: a
+wiped record is never re-created, queue ids never collide and a stale tab
+cannot erase another tab's revocation tombstone. Without Web Locks (browsers
+older than 2022) the lock only serialises one tab. Opening the queue resets
+`uploading` records to `pending`, including another live tab's in-flight
+batch; the server keeps the first sample per capture time, so the possible
+resend is harmless.
+
+Real-browser IndexedDB behaviour (quota, eviction) is not exercised by this
+slice's Node tests; it is follow-up evidence once the shared frontend
+foundation exists.
 
 ## Queue semantics (`queue.mjs`)
 
 - **Bounded**: 2000 retained records (`QUEUE_LIMITS.capacity`). Overflow evicts
-  the oldest `pending` record, counted as `droppedOverflow`. Records in flight
-  (`uploading`) are never evicted.
+  the oldest `failed` record, then the oldest `pending` one, counted as
+  `droppedOverflow`. Records in flight (`uploading`) are never evicted.
 - **Scoped**: every record carries `tripId` + `userId` (the signed-in owner's
   OIDC sub, supplied by the host — never read from an event). Enqueue and
-  drain are scoped; a flush uploads only the current subject's records.
+  drain are scoped; a flush uploads only the current subject's records, and
+  only with a bearer token whose `sub` is that subject (see the bridge).
 - **Retention mirrors the server window**: captures older than 24 h or more
-  than 30 s in the future are dropped with `droppedOutOfBounds` — at enqueue
-  and again at batch time, so aged-out records are never sent to a guaranteed
-  400. Duplicate capture timestamps within a trip keep the first queued copy
+  than 30 s in the future are dropped with `droppedOutOfBounds` at enqueue.
+  Every enqueue and every open sweeps the whole store: records of any owner
+  and state (including `failed`) whose capture is older than 24 h, records of
+  revoked scopes, and durable intents holding either, are deleted. At batch
+  time a capture within 60 s of the 24 h edge is dropped rather than sent to a
+  guaranteed 400, and one within 5 s of the +30 s edge is held (still
+  `pending`) until it is safely inside. Duplicate capture timestamps within a trip keep the first queued copy
   (`droppedDuplicate`), matching the server's first-commit-wins rule.
 - **Crash recovery**: on open, records left in `uploading` by an interrupted
   page return to `pending` once, counted as `recoveredAfterInterruption`.
-- **Revocation**: `wipeScope({ tripId, userId })` deletes every retained record
-  for the scope, counts `wipedByRevocation`, and remembers the scope as revoked
-  so late sink events cannot re-enter. The persisted tombstone is a one-way
+- **Revocation**: `wipeScope({ tripId, userId })` marks the scope revoked
+  synchronously (so a sample reaching the sink meanwhile is refused), persists
+  the tombstone before deleting anything, then deletes every retained record
+  and intent for the scope and counts `wipedByRevocation`. `takeBatch` yields
+  nothing for a revoked scope. The persisted tombstone is a one-way
   FNV-1a hash of the scope pair, never owner/trip plaintext — consent must
   survive restart, but the identity does not need to sit in durable meta to
   do that (reversing the hash requires already knowing both UUIDs). Consent
@@ -80,8 +98,8 @@ frontend foundation exists. Concurrent-tab writers are out of scope here.
   render "N samples not yet sent" / "storage unavailable" / "queue wiped"
   without inventing delivery state.
 - **Failed is a retained state**: records that exhaust upload attempts stay in
-  the queue as `failed` for inspection (`failedRetained`). Nothing is silently
-  discarded.
+  the queue as `failed` for inspection (`failedRetained`) until their capture
+  leaves the 24 h window, and are the first evicted when capacity is full.
 - **Sign-out is deletion**: `wipeUser(userId)` deletes every retained record
   for the subject, counts `wipedBySignout`, and revokes all of their scopes
   **for the session only** — the revocation is held in memory, never
@@ -94,18 +112,28 @@ frontend foundation exists. Concurrent-tab writers are out of scope here.
   `intent: { key, body, userId, tripId, sessionId }` — plus the owning
   `queueIds`. `stickyIntent` / `stickyScopes` / `clearStickyIntent` expose
   it. A reload cannot lose the original intent, so a retry can never regrow
-  or rekey. Wipes delete the intent record with the records.
+  or rekey. Wipes delete the intent record with the records, and no intent is
+  written for a revoked scope or once any of its records is gone, so a late
+  failure cannot resurrect wiped coordinates.
 
 ## Upload bridge (`upload.mjs`)
 
 Written directly against the runtime contract (see above for its location):
 
-- `POST {baseUrl}/v1/trips/{tripId}/locations` with `Authorization: Bearer`
-  from the host's `getAccessToken`, `Content-Type: application/json`, and an
-  `Idempotency-Key` derived as `loc1-<sha256hex>` of the canonical batch
-  descriptor (`{ v, route, tripId, samples }`). Same content → same key, so a
-  reconnect retry replays the server's persisted response instead of
-  double-inserting. 74 visible ASCII chars, within the 1–128 contract bound.
+- `POST {baseUrl}/v1/trips/{tripId}/locations` (trailing slashes on `baseUrl`
+  are ignored) with `Authorization: Bearer` from the host's `getAccessToken`,
+  `Content-Type: application/json`, and an `Idempotency-Key` derived as
+  `loc1-<sha256hex>` of the canonical batch descriptor
+  (`{ v, route, tripId, samples }`). Same content → same key, so a reconnect
+  retry replays the server's persisted response instead of double-inserting.
+  69 visible ASCII chars, within the 1–128 contract bound.
+- **Owner scoping.** `flush({ userId })` sends only that subject's records; a
+  flush with no owner yet (an `online` event before the first scoped flush)
+  sends nothing. Before every request the token's JWT `sub` (decoded, not
+  verified; the server verifies) must equal the batch's `userId`, otherwise
+  nothing is sent, the records stay `pending` and the pump reports
+  `auth-blocked` / `token-owner-mismatch`. One owner's coordinates never
+  travel with another identity's credentials; an opaque token is refused.
 - Batches of at most 100 samples (`batchSize` is validated against the server
   maximum), drained FIFO per scope, up to 10 batches per flush.
 - Source timestamps are preserved end to end: `capturedAt` is the adapter
@@ -121,9 +149,10 @@ Receipt handling — a batch is deleted only when the response **proves** it:
   samples sent. Anything else is a `receipt-mismatch` — and it is treated as
   AMBIGUOUS (the server may have persisted the batch): nothing is deleted,
   the records settle back to `pending` as retained unsent work, the exact
-  intent is pinned durably, `receiptMismatches` is counted and the pump halts
-  for operator attention. The next flush replays the identical payload under
-  the identical key.
+  intent is pinned durably, `receiptMismatches` is counted, an attempt is
+  spent and a backoff retry is scheduled. The retry replays the identical
+  payload under the identical key; after `maxAttempts` the records are
+  retained as `failed`.
 - **Ambiguous outcomes are sticky AND durable.** On a network error, 5xx or
   unverifiable receipt the server may already hold the batch, so the exact
   `(body, idempotency key)` are persisted per scope as a durable intent
@@ -134,9 +163,11 @@ Receipt handling — a batch is deleted only when the response **proves** it:
   identical payload BEFORE any new batch is taken; newer samples always
   follow as their own batch with their own key. A retry never regrows or
   rekeys, so a re-POST can never produce an `idempotency_conflict`. If the
-  records were wiped while sticky, the intent is abandoned with them. Sticky
-  retries consume attempts and can exhaust `maxAttempts` into the retained
-  `failed` state like any other failure.
+  records were wiped while sticky, or a sample has aged to within 60 s of the
+  24 h edge, the intent is abandoned and the survivors regroup under a new key.
+  **Network errors and timeouts never spend retry budget**: being offline
+  cannot fail a sample; it is resent on the next backoff retry or `online`
+  event. 5xx and unverifiable receipts do spend it.
 - **Retirement gates, synchronous where it matters.** The token is resolved
   first, then the batch records are re-read; a FINAL synchronous check of
   `stopped` and `isScopeRevoked` sits after the last await, immediately
@@ -147,7 +178,13 @@ Receipt handling — a batch is deleted only when the response **proves** it:
   no receipt fact is recreated after sign-out. The same gate sits in the
   rejection path: an ambiguous network failure surfacing after retirement
   settles the records without pinning a new sticky intent, so a post-sign-out
-  rejection cannot re-persist owner/trip/sample plaintext.
+  rejection cannot re-persist owner/trip/sample plaintext. `stop()` also aborts
+  the request on the wire; `pipeline.stop()`/`signOut()` stop the uploader
+  before any await.
+- **Timeouts cover the body.** `requestTimeoutMs` (15 s) spans the request and
+  the response body, so a stalled body cannot hang the shared flush. A
+  client-side failure (store error, missing `crypto.subtle`) releases the
+  batch back to `pending` instead of leaving it `uploading`.
 - `unacknowledgedBatches` in `state()` counts sticky batches awaiting a valid
   receipt.
 
@@ -156,12 +193,20 @@ Other responses:
 | Server response | Bridge behaviour |
 | --- | --- |
 | valid 2xx receipt | Records deleted, `uploaded` counted, receipt stored as a fact |
-| 401 / 403 / token unavailable | `auth-blocked`; records stay pending, attempts NOT burned (host problem, not retry budget) |
-| 400 `capture_time_out_of_bounds` | Permanent; `rejectedBounds` (should be unreachable given client-side window checks) |
-| 400 / 422 other | Permanent; `rejectedValidation` |
-| 404 | Permanent; `rejectedMissing` |
-| 409 `location_stopped` | Records stay pending without burning attempts; scope skipped for the rest of the flush; `tripStoppedRejections` counted. A map can be reactivated, so the samples are retained for a later flush |
+| 2xx that is not a valid receipt | Ambiguous: intent pinned, attempt counted, backoff, `receiptMismatches` |
+| network error / timeout | Ambiguous: intent pinned, attempt NOT counted, backoff and `online` retry |
+| 401 / token unavailable / token `sub` ≠ owner | `auth-blocked`; records stay pending, attempts NOT burned |
+| 403 `forbidden` | That trip is skipped for this flush; records stay pending (they expire with the window); other trips still upload |
+| 400 `invalid_request` / `capture_time_out_of_bounds`, several samples | Nothing deleted: the batch is halved until the offending sample is isolated |
+| 400 `invalid_request`, one sample | Permanent; `rejectedValidation` |
+| 400 `capture_time_out_of_bounds`, one sample older than 12 h | Permanent; `rejectedBounds` |
+| 400 `capture_time_out_of_bounds`, one recent sample | Device clock ahead of the server: attempt counted, backoff, resent later |
+| 404 `trip_not_found` | Permanent; `rejectedMissing` |
+| 404 with any other code (e.g. route not found) and other 4xx | Retried with backoff, attempt counted; nothing deleted |
+| 408 / 429 | Retried with backoff, attempt NOT counted |
+| 409 `location_stopped` | The trip is closed for good (the backend only clears `map_active` on arrival/cancel): the scope is wiped and tombstoned, `tripStoppedRejections` counted, never retried |
 | 409 `idempotency_conflict` | Permanent; `conflictErrors` — deterministic keys make this a client defect signal, never retried |
+| 5xx | Ambiguous: intent pinned, attempt counted, backoff |
 
 `flush()` is idempotent (concurrent callers join the same in-flight drain) and
 reconnect-aware: an optional injected `onlineTarget` (e.g. `window`) re-triggers
@@ -181,7 +226,7 @@ throws and never returns a value.
 Mapping rules, all counted at the boundary: schema mismatch → `unmappedSchema`;
 non-geolocation types → `unmappedNoRoute`; redacted coordinates →
 `droppedNoCoordinates`; missing accuracy → `droppedMissingAccuracy`;
-missing/non-epoch source time → `droppedBadSourceTime`. The pipeline declares
+missing/non-epoch or out-of-range source time → `droppedBadSourceTime`. The pipeline declares
 the schema string itself and deliberately does not import the adapter module —
 `web/` consumes the event shape, not the tools tree.
 
@@ -200,6 +245,8 @@ else {
     getAccessToken,           // host OIDC session; tokens are never stored here
     onlineTarget: window,     // reconnect trigger
   });
+  // ownerSubject MUST be the `sub` claim of the tokens getAccessToken returns;
+  // the uploader refuses to send a batch with a token for any other subject.
   const pipeline = createObservationPipeline({ queue, uploader, ownerSubject: oidcSub });
   const adapter = createPhoneObservationAdapter({ sink: pipeline.sink /* + qualification, contextKey */ });
   // adapter.start(...) / acquireLocation(...) remain explicit, gated, host-driven
@@ -216,7 +263,7 @@ Node 24.17 (app-supported runtime), no install, no server, no device:
 node --test web/tests/observations/*.test.mjs
 ```
 
-53 tests covering the queue (bounds, dedupe, overflow, FIFO, recovery,
+78 tests covering the queue (bounds, dedupe, overflow, FIFO, recovery,
 revocation, persistence across reopen, per-scope unsent exposure), the bridge
 (contract shape, batching, idempotent reconnect retry, every response class,
 owner scoping, stop, sticky ambiguous-batch retries — including across a full
@@ -224,5 +271,9 @@ queue+uploader restart —, receipt validation, final synchronous retirement
 gates before fetch and after response, network exhaustion) and the pipeline
 boundary (source-time preservation, redaction honored, no-route counts,
 lifecycle intent, synchronous sink contract, sign-out wipe, sign-out privacy
-and in-flight receipt suppression). Real-browser IndexedDB storage tests are
+and in-flight receipt suppression), plus one regression test per finding of
+the gatekeeper review of `170e83a` (owner/token scoping, sign-out and
+revocation races swept over store timings, two-tab writes, offline retries,
+closed trips, per-sample isolation and window margins, error codes, per-trip
+403, expiry, stuck uploads and far-future source times). Real-browser IndexedDB storage tests are
 follow-up evidence after the shared frontend foundation lands.
