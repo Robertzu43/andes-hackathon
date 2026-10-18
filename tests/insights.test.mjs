@@ -15,6 +15,13 @@ const seeded = (f, kind, latitude, longitude, at) => f.ctx.pool.query('INSERT IN
 const nextHour = f => f.advance(3600000); // public cells are recomputed once per hour
 async function hotspots(f, query = '') { const r = await f.app.inject({ method: 'GET', url: `/v1/insights/hotspots${query}` }); return { status: r.statusCode, body: r.json() }; }
 
+// PostgreSQL reads '-05:00' with the POSIX sign, so an offset zone would silently move every event into the wrong band.
+test('only IANA time-zone names are accepted at startup', async () => {
+  const { spawnSync } = await import('node:child_process'); const routes = new URL('../dist/insights/routes.js', import.meta.url).href;
+  const starts = zone => spawnSync(process.execPath, ['--input-type=module', '-e', `await import(${JSON.stringify(routes)})`], { env: { ...process.env, INSIGHTS_TIME_ZONE: zone } }).status === 0;
+  assert.deepEqual(['America/Lima', 'UTC', '-05:00', '+05', 'Unknown/Nowhere'].map(starts), [true, true, false, false, false]);
+});
+
 // Without the snapshot an incident's place is lost once location history is pruned, so hotspots would be empty.
 test('incident creation copies the latest trip location for later aggregation', async t => {
   const f = await fixture(t); const id = await sosAt(f, -12.325, -76.775);
