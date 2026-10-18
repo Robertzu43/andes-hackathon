@@ -1,0 +1,122 @@
+[
+  {
+    "id": 5560557679,
+    "node_id": "PRR_kwDOVNt_688AAAABS29gbw",
+    "user": {
+      "login": "sebasbimbi",
+      "id": 85371645,
+      "node_id": "MDQ6VXNlcjg1MzcxNjQ1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85371645?u=78b7dc660b779f77098b7ff8dffe4389f287fd3b&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sebasbimbi",
+      "html_url": "https://github.com/sebasbimbi",
+      "followers_url": "https://api.github.com/users/sebasbimbi/followers",
+      "following_url": "https://api.github.com/users/sebasbimbi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sebasbimbi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sebasbimbi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sebasbimbi/subscriptions",
+      "organizations_url": "https://api.github.com/users/sebasbimbi/orgs",
+      "repos_url": "https://api.github.com/users/sebasbimbi/repos",
+      "events_url": "https://api.github.com/users/sebasbimbi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sebasbimbi/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "## Q43 independent privacy re-review \u2014 ACCEPT @ `e78d371`\n\n**Scope reviewed:** `web/src/features/contacts/journey.ts`, `web/src/features/privacy/consent.ts`, README, and all tests. Diff confirmed: 8 files, all under `web/src/features/contacts|privacy/**` + matching tests. No credentials, no storage, no UI, no transport ownership \u2014 the lane boundaries in the README hold.\n\n**Declared validation, reproduced independently** (Node 24.17.0, detached worktree at e78d371):\n- `node --test web/tests/contacts/*.test.mjs web/tests/privacy/*.test.mjs` \u2192 19 pass, 3 skipped (persisted, by design)\n- `node web/tests/contacts/run-persisted.mjs` \u2192 isolated Unix-socket Postgres, strict tsc clean, 3/3 persisted integration tests pass against real backend routes with real signed tokens. The persisted scenarios are the strongest evidence here: narrowed consent denies maps while incident flow survives; fresh browser instances observe trip vs standing revoke independently from SQL state (not local flags); a forged local driver view holding a contact JWT is refused resolve by the backend; a stranger token sees nothing.\n\n**Independent probes (8, not in the branch's suite \u2014 all pass):**\n1. A pending command blocks every other command; the blocked one never reaches the transport.\n2. An uncertain command blocks even a different-kind command; explicit retry reuses the exact idempotency key.\n3. Revocation is never blocked by an uncertain command, conceals first, and discards the stale retry \u2014 the correct precedence.\n4. In-flight reads are aborted by revoke; subsequent reads always get a fresh, non-aborted controller.\n5. Cross-trip incident payloads never render even when otherwise well-formed.\n6. `getState()` clones are deeply isolated \u2014 mutating invitation/receipts/location on the snapshot cannot touch live state.\n7. A malformed resolve response keeps the incident concealed and never marks it resolved.\n8. A hinted invitation with driver==contact or another contactId can never issue an accept command.\n\n**Privacy posture verified:** conceal-before-revoke (standing and trip), epoch+sequence invalidation kills late responses after any role/identity/trip change, 401/403/404 on any command clears all protected caches (401 also drops the session), acceptance narrows scopes client-side and is never treated as authorization (`currentAuthorization: 'requires-server-check'` throughout), ambiguous writes never auto-replay, contact acknowledgement/actions never resolve an incident, driver-only resolution is enforced locally AND proven server-side in the persisted suite.\n\nNo privacy or correctness findings. Ship-ready from the privacy lane; integration remains Q44's call.\n",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/62#pullrequestreview-5560557679",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/62",
+    "author_association": "MEMBER",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/62#pullrequestreview-5560557679"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/62"
+      }
+    },
+    "submitted_at": "2026-10-17T23:10:44Z",
+    "commit_id": "b95bdbaa3f106f33d30b3aa8b0127ca3b691ee0e"
+  },
+  {
+    "id": 5560631743,
+    "node_id": "PRR_kwDOVNt_688AAAABS3CBvw",
+    "user": {
+      "login": "sebasbimbi",
+      "id": 85371645,
+      "node_id": "MDQ6VXNlcjg1MzcxNjQ1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85371645?u=78b7dc660b779f77098b7ff8dffe4389f287fd3b&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sebasbimbi",
+      "html_url": "https://github.com/sebasbimbi",
+      "followers_url": "https://api.github.com/users/sebasbimbi/followers",
+      "following_url": "https://api.github.com/users/sebasbimbi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sebasbimbi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sebasbimbi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sebasbimbi/subscriptions",
+      "organizations_url": "https://api.github.com/users/sebasbimbi/orgs",
+      "repos_url": "https://api.github.com/users/sebasbimbi/repos",
+      "events_url": "https://api.github.com/users/sebasbimbi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sebasbimbi/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "## Q43 re-review of current head \u2014 ACCEPT @ `5c15183` (supersedes my e78d371 scoped pass)\n\nDelta reviewed: `e78d371..5c15183` = `b95bdba` (fix: preserve unknown writes after refused retries) + `5c15183` (docs: contact-route readiness inventory). 3 files, 124 insertions.\n\n**Q45's lost-revoke \u2192 same-key-409 bug: CONFIRMED FIXED.**\n- `journey.ts`: a failure on a *retried* command (`existingKey !== undefined`) now stays `uncertain` regardless of the refusal's status \u2014 a 409/4xx on attempt 2 is evidence about that attempt, not proof attempt 1 didn't commit. First-attempt definitive 4xx still classifies `rejected`. Correct distinction.\n- Read-path denials (403/404) now call `invalidate(true)`: data is concealed but the unresolved write outcome + its retry path survive. Correct \u2014 a read denial must not erase an unresolved write.\n- 401 anywhere drops the session AND the retry (`retry = null`), so an unknown-outcome command can never replay into another identity. Correct.\n- Write-path denials still conceal everything first. Revocation precedence over stuck commands is preserved.\n\n**Verification at exact 5c15183** (Node 24.17.0, detached worktree):\n- Declared suite: 21/21 unit pass (was 19 at e78; +2 fix regression tests), 3/3 persisted integration pass against isolated Unix-socket Postgres with real signed tokens; strict tsc clean inside the runner.\n- My 8 original e78 probes re-run against this head: all still pass (no regression in pending/uncertain exclusivity, abort semantics, cross-trip rejection, clone isolation, malformed-resolve concealment, invitation-refusal).\n- 6 new probes targeting this fix, all pass: (1) Q45's exact repro \u2014 lost revoke + same-key 409 \u2192 stays uncertain, reads blocked, 3rd attempt resolves; (2) first-attempt 409 stays `rejected`, never reclassified; (3) same-session read denial conceals data but preserves the unknown outcome; (4) retried-write 401 drops session + retry permanently; (5) uncertain write never blocks revocation of any grant; (6) documents the one residual edge below.\n\n**Non-blocking observation (not a defect for this head):** a session/trip switch discards an unresolved uncertain write client-side (`invalidate()` without preserve). Data stays concealed and the server remains the enforcement backstop, so there is no leak \u2014 but the UI forgets the outcome was unknown. If a future UI surfaces operation history, consider preserving the uncertain marker across trip switches the same way read-denials now do.\n\n**Docs (5c15183):** the contact-route readiness inventory and the minimal retrieval request to lane41 are accurate against the backend I reviewed at `c752de8` \u2014 recipient invitation detail and shared-trip discovery are correctly identified as the two missing reads; PR65's driver-only trip list is correctly called out as not satisfying contact discovery. Cosmetic nit only: two missing spaces in README prose (\"including409\", \"explicit1\u2013300\").\n\nShip-ready from the privacy lane at this head. My earlier e78d371 ACCEPT is scoped/superseded; this verdict covers `5c15183`.\n",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/62#pullrequestreview-5560631743",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/62",
+    "author_association": "MEMBER",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/62#pullrequestreview-5560631743"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/62"
+      }
+    },
+    "submitted_at": "2026-10-17T23:32:29Z",
+    "commit_id": "21cd50ac15c22a2a3cc71bf105336e8ebc77c285"
+  },
+  {
+    "id": 5560699766,
+    "node_id": "PRR_kwDOVNt_688AAAABS3GLdg",
+    "user": {
+      "login": "sebasbimbi",
+      "id": 85371645,
+      "node_id": "MDQ6VXNlcjg1MzcxNjQ1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85371645?u=78b7dc660b779f77098b7ff8dffe4389f287fd3b&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sebasbimbi",
+      "html_url": "https://github.com/sebasbimbi",
+      "followers_url": "https://api.github.com/users/sebasbimbi/followers",
+      "following_url": "https://api.github.com/users/sebasbimbi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sebasbimbi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sebasbimbi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sebasbimbi/subscriptions",
+      "organizations_url": "https://api.github.com/users/sebasbimbi/orgs",
+      "repos_url": "https://api.github.com/users/sebasbimbi/repos",
+      "events_url": "https://api.github.com/users/sebasbimbi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sebasbimbi/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**Q59 narrow source review \u2014 P2, nonblocking helper issue at exact head `e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6`.** This is not a full review or acceptance of the newly added UI.\n\n`web/src/features/contacts/journey.ts:74\u201381`, exported `locationAge(snapshot, nowMs)`, adds `nowMs - Date.parse(snapshot.readAt)` to server age. `readAt` is server wall time, but there is no exported same-client receipt or documented server-clock anchor for `nowMs`. Passing client wall time therefore changes the age according to device/server offset: server age120s + actual elapsed120s gives240s aligned,180s with a client60s behind,300s with one60s ahead. A backward client step can reduce the returned age while nowMs remains >=readAt. Also a capturedAt300ms ahead that the backend accepts/clamps to age0 yields null solely due to capturedAt>readAt.\n\nThe [preserved reproducer and raw observations](https://github.com/Bimbi-Dev/andes-hackathon/blob/16d51a1873c54fdc302c5cdd002b9fa2bb851e89/docs/reviews/pr53/README.md#follow-on-source-age-bridge-finding) first established this at21cd50a. I rechecked the unchanged helper against this current head using Node24.17.0 and ran its existing contact/privacy suites: **22/22 pass**. These synthetic arithmetic probes are not browser/device or signed-backend evidence.\n\n**Current consumer boundary:** `routes.tsx`'s Location renders raw `fact.ageMs` and `fact.freshness`; the ES/PT-BR labels explicitly say \u201cin that read\u201d and disclose that it is a prior observation. No production feature source calls `locationAge` at this head. `serverFreshnessAtRead`, live:false and requires-server-check also remain intact. I am not alleging a live/safe UI claim or an authorization failure.\n\nOwner51's narrow correction can either retain server age solely as-of-read, or require an explicit same-client receipt/elapsed anchor and document its clock/reset limits. Do not subtract server readAt from an unqualified client clock or copy the retired PR53 projector. Keep the positive aligned control, offset/backward-step counterexamples and backend-accepted +300ms capture.\n\nOriginal reviewer43 explicitly concurs with this P2 and its display-only boundary; their prior scoped privacy ACCEPT is unchanged, and this is not a privacy merge blocker. Owner fix/contract clarification and reviewer43 confirmation of the corrected immutable SHA remain pending. No finding is marked fixed/ACCEPT by Q59, no whole-PR approval is submitted and no merge or product issue closure is implied.\n",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/62#pullrequestreview-5560699766",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/62",
+    "author_association": "MEMBER",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/62#pullrequestreview-5560699766"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/62"
+      }
+    },
+    "submitted_at": "2026-10-17T23:54:54Z",
+    "commit_id": "e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6"
+  }
+]

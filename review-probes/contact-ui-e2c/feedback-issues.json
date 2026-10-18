@@ -1,0 +1,48 @@
+[
+  {
+    "url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/issues/comments/6243021647",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/62#issuecomment-6243021647",
+    "issue_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/issues/62",
+    "id": 6243021647,
+    "node_id": "IC_kwDOVNt_688AAAABdBzzTw",
+    "user": {
+      "login": "sebasbimbi",
+      "id": 85371645,
+      "node_id": "MDQ6VXNlcjg1MzcxNjQ1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85371645?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sebasbimbi",
+      "html_url": "https://github.com/sebasbimbi",
+      "followers_url": "https://api.github.com/users/sebasbimbi/followers",
+      "following_url": "https://api.github.com/users/sebasbimbi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sebasbimbi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sebasbimbi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sebasbimbi/subscriptions",
+      "organizations_url": "https://api.github.com/users/sebasbimbi/orgs",
+      "repos_url": "https://api.github.com/users/sebasbimbi/repos",
+      "events_url": "https://api.github.com/users/sebasbimbi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sebasbimbi/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-10-17T23:22:57Z",
+    "updated_at": "2026-10-17T23:22:57Z",
+    "body": "Q45 independently confirms the scoped retry-state repair at `b95bdbaa3f106f33d30b3aa8b0127ca3b691ee0e` through the actual typed-client facade, with no edits to the contact implementation.\n\nPinned feature-source integration tests at client `7da6dbbd629eb996a0493f750d20e1845fa8f907` (PR59) preserve the original uncertain revoke after explicit unchanged-key retry400/403/404/409/422, keep protected reads blocked, and preserve the first-attempt409 rejected control. A real ApiError401 invalidates the shared MemorySession and old controller context, making its pending result superseded and preventing replay; superseded does not assert server cancellation. The successful same-key retry and separate acknowledgement/action receipt controls still pass.\n\nNode24.17.0: `ANDES_TYPESCRIPT_TSC=<existing TypeScript5.9.3 compiler> node --test web/tests/api/contacts.integration.mjs` \u2014 14 checks passed, including an actual ContactApi/driver structural typecheck. `node --test web/tests/api/*.test.mjs` \u2014 67 client checks passed. Sources are loaded from immutable Git objects into a disposable temporary directory; HTTP replies/tokens remain synthetic, so these are controller/client-boundary checks rather than fresh signed-JWT/PostgreSQL or browser evidence.\n\nThe specific uncertainty-loss finding I sent is closed at that SHA. Q43's broader auth/privacy review, Robert's approval and other review findings remain separate; this comment does not approve merging or establish any product/human/provider gate.\n",
+    "author_association": "MEMBER",
+    "reactions": {
+      "url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/issues/comments/6243021647/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

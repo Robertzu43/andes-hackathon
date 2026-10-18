@@ -1,0 +1,39 @@
+✔ a contact route needs no invented driver identity and cannot acquire owner resolution (4.468125ms)
+✔ invitation is only pending after an API receipt and sends no participant notification (0.510917ms)
+✔ acceptance narrows scopes and is never an authorization for a protected cached view (0.204916ms)
+✔ wrong identity, self invitation and missing scope cannot issue a command (0.108125ms)
+✔ unverified phone conflict is rejected without manufacturing an acceptance (0.16125ms)
+✔ protected location keeps source, receipt, read instant and old age separately (0.135375ms)
+✔ absent location is explicitly unavailable, malformed and cross-trip snapshots never render (0.2345ms)
+✔ auth/consent denial clears all protected data and preserves error distinctions (0.522916ms)
+✔ role, identity and trip changes discard protected caches and late responses (0.22825ms)
+✔ a slower previous read cannot overwrite the newer protected snapshot (0.123583ms)
+✔ standing and trip revoke conceal data before the write and invalidate previous reads (0.4115ms)
+✔ a denied command invalidates an in-flight protected read before it can reveal data (0.094042ms)
+✔ ambiguous writes never auto-replay; explicit retry reuses the exact key and body (0.1695ms)
+✔ contact acknowledgement and contradictory reported actions never resolve the incident (0.128625ms)
+✔ driver-only resolution requires a new read and invalidates pre-resolution protected reads (0.11ms)
+✔ a late acknowledged write cannot add another identity’s receipt after role switch (0.073708ms)
+✔ uncertain revoke conceals data until explicit same-key retry confirms the receipt (0.091125ms)
+✔ a refused retry cannot erase the original unknown revoke outcome or reopen protected reads (0.349958ms)
+✔ a known first-attempt conflict remains rejected; an unknown action survives a later read denial (0.142084ms)
+✔ malformed command responses remain uncertain and never create reassuring receipts (0.07225ms)
+﹣ persisted: narrowed consent denies maps while incident response survives arrival (0.304833ms) # run the isolated persisted scenario runner
+﹣ persisted: fresh browser instances observe trip revoke and standing revoke independently (0.045ms) # run the isolated persisted scenario runner
+﹣ persisted: local role/identity claims never replace authenticated credentials or driver resolution (0.036041ms) # run the isolated persisted scenario runner
+✔ unverified gateway cannot fetch or mutate a feature (1.193417ms)
+✔ real client and verified binding load contact references without manufacturing a driver; responses stay distinct (17.835125ms)
+✔ lost revoke and refused same-key retry conceal views and cannot reopen protected reads (6.15675ms)
+✔ revoke retires a slow catalog even when the HTTP fixture ignores abort (27.952833ms)
+✔ 401 through the actual client clears every bound feature and its catalog (6.19225ms)
+✔ catalog errors stay errors rather than empty success after a stop and restart (12.204208ms)
+✔ contact can narrow either requested scope without broadening or accepting nothing (0.867334ms)
+✔ operational receipts never authorize research reuse, restore consent or promise cancellation of in-flight work (0.116416ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 3
+ℹ todo 0
+ℹ duration_ms 154.654917

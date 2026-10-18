@@ -1,0 +1,6 @@
+PASS es native invitation input, validation, explicit scope and one POST
+PASS pt-BR native invitation input, validation, explicit scope and one POST
+PASS native Unicode action boundary and acknowledgement remain separate
+PASS native unknown revoke retry preserves key and cannot restore location or response
+PASS missing incident reference blocks native response without invented discovery
+PASS map denial leaves separately readable incident and response available

@@ -1,0 +1,39 @@
+{
+  "body": "Ir al contenido\nANDES\nIdioma\nEspañol\nPortuguês (BR)\nTu viaje\nCamiones\nContactos\nDemostración\nDatos de ejemplo. Esta demostración no envía avisos.\nViaje compartido\n\nCargando información…\n\nANDES · GOAT\nEntrar a ANDES\nPrivacidad",
+  "gateway": {
+    "state": "signed-out",
+    "mode": "demo"
+  },
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/v1/me",
+      "key": null,
+      "body": null
+    },
+    {
+      "method": "GET",
+      "path": "/v1/me",
+      "key": null,
+      "body": null
+    },
+    {
+      "method": "GET",
+      "path": "/v1/trips/00000000-0000-4000-8000-000000000003/snapshot",
+      "key": null,
+      "body": null
+    },
+    {
+      "method": "GET",
+      "path": "/v1/incidents/00000000-0000-4000-8000-000000000005",
+      "key": null,
+      "body": null
+    },
+    {
+      "method": "GET",
+      "path": "/v1/trips/00000000-0000-4000-8000-000000000003/snapshot",
+      "key": null,
+      "body": null
+    }
+  ]
+}

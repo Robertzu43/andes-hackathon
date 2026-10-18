@@ -1,0 +1,20 @@
+{
+  "candidate": "e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6",
+  "input": "native CDP key/mouse/text; synthetic HTTP/identity only",
+  "results": [
+    {
+      "name": "es native invitation input, validation, explicit scope and one POST",
+      "pass": true
+    },
+    {
+      "name": "pt-BR native invitation input, validation, explicit scope and one POST",
+      "pass": true
+    },
+    {
+      "name": "native Unicode action boundary and acknowledgement remain separate",
+      "pass": false,
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n1 !== 0\n"
+    }
+  ],
+  "runtime": []
+}

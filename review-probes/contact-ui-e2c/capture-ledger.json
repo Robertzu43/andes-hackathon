@@ -1,0 +1,674 @@
+[
+  {
+    "file": "author-browser/contacts-empty-full.png",
+    "sha256": "d2dbe639c42869e3b5f074210bbac8ea746b71f464a8d2b258fad598ff618e33",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/contacts-empty.png",
+    "sha256": "d2dbe639c42869e3b5f074210bbac8ea746b71f464a8d2b258fad598ff618e33",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/contacts-forbidden-full.png",
+    "sha256": "e35b3b3b476f62c6f6fde570f094186964be818d9afbfd84f8197d14b7630670",
+    "width": 390,
+    "height": 918
+  },
+  {
+    "file": "author-browser/contacts-forbidden.png",
+    "sha256": "72a3aad5a671a468e40579bdd8393d179640f109b2ea0b2f3743ab8491763dd6",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/contacts-server-error-full.png",
+    "sha256": "4931fa1b45a9d218de6204b8268debe86d051624d1735fd7c5a18dccc057fd02",
+    "width": 390,
+    "height": 918
+  },
+  {
+    "file": "author-browser/contacts-server-error.png",
+    "sha256": "86e3f885956c17337e5f0afd59f139a7a4c68b66b6c9fb8e5640e15c72d01ab5",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/contacts-signed-out-full.png",
+    "sha256": "cc3fb7cdcd35b5c6fc4643a1bc78344a59bbd7855d414809e48632aac6c19f8f",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/contacts-signed-out.png",
+    "sha256": "cc3fb7cdcd35b5c6fc4643a1bc78344a59bbd7855d414809e48632aac6c19f8f",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/contacts-truncated-full.png",
+    "sha256": "8e028ae8e23915f3e6d2d0ed54ddf785182051d39bcd1846d9476bd7af94f734",
+    "width": 390,
+    "height": 1315
+  },
+  {
+    "file": "author-browser/contacts-truncated.png",
+    "sha256": "0b083cc47d88d32c60b5f32419ee38eceb3fbf4eec65562926403ade261ce816",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/es-contacts-1440-full.png",
+    "sha256": "ca7d17fe0d11d8db756025fed1cb4e2c6aee677ebcbc49310c54894f8bcf247d",
+    "width": 1440,
+    "height": 1108
+  },
+  {
+    "file": "author-browser/es-contacts-1440.png",
+    "sha256": "073979dac20c6abf21ed95f46ebc9f4046f88f27b7a2f9cd7ce4935ae0f9afcd",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "author-browser/es-contacts-1920-full.png",
+    "sha256": "f455dfcd500cb01e1da998c6fb8a4d172b9416574efbdc293674507cd5002712",
+    "width": 1920,
+    "height": 1108
+  },
+  {
+    "file": "author-browser/es-contacts-1920.png",
+    "sha256": "4e23bccdb599e16bbf2146cc4697a4a4838c5637421262a0f7e8b053068148ce",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "author-browser/es-contacts-360-full.png",
+    "sha256": "157a1cae775c2668452c88a3c050fd74f6a0d8880bfab803031885e31df6b982",
+    "width": 360,
+    "height": 1299
+  },
+  {
+    "file": "author-browser/es-contacts-360.png",
+    "sha256": "76073bf51ea847426bd65bae526c6451f449f239b02f05188916caefaf50bbe2",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "author-browser/es-contacts-390-full.png",
+    "sha256": "0f6f389cac351e08bdbdbf03f5891d61557172237d3e433a11ec2160d46e11e1",
+    "width": 390,
+    "height": 1273
+  },
+  {
+    "file": "author-browser/es-contacts-390.png",
+    "sha256": "4d754bf76659b87bd9fcceda34f3f48329c09c99e4771c5f560b78672b88a881",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/es-contacts-430-full.png",
+    "sha256": "cc5e07d25134a8e2f5229e5b4f830833dc51c3d1d72f926697978ea5d2e9be18",
+    "width": 430,
+    "height": 1162
+  },
+  {
+    "file": "author-browser/es-contacts-430.png",
+    "sha256": "1364d8d99540c5d402e0f683f0c539a067465d218ee931e3d59f58f06d6d0067",
+    "width": 430,
+    "height": 932
+  },
+  {
+    "file": "author-browser/es-invitation-1440-full.png",
+    "sha256": "310899de0febe9bb8c946f48242af7bf74b7ab8d54108a14450fec6fbd5a5cd0",
+    "width": 1440,
+    "height": 934
+  },
+  {
+    "file": "author-browser/es-invitation-1440.png",
+    "sha256": "dc9c71e5cf6c07c28436b20d9e8e86e3ec9e1658232601d1dfdcaaa934d4d67d",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "author-browser/es-invitation-1920-full.png",
+    "sha256": "700260cb7d7a11e9ddfce2fbb44f334f4ba12c1d3cc23558c093bd183b67387f",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "author-browser/es-invitation-1920.png",
+    "sha256": "700260cb7d7a11e9ddfce2fbb44f334f4ba12c1d3cc23558c093bd183b67387f",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "author-browser/es-invitation-360-full.png",
+    "sha256": "1a39510e84bc0c7eaeaabfe372310c1dfefcc8c5a404f858031f32a19a95a028",
+    "width": 360,
+    "height": 1059
+  },
+  {
+    "file": "author-browser/es-invitation-360.png",
+    "sha256": "2482df2a5846c4b20e40829833259fff44947d8066761ace4fcb7900c3d82543",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "author-browser/es-invitation-390-full.png",
+    "sha256": "701bb02dcf3f29731c548bd1916503f04a7a5e8120947b61d83ef0ab75ac2df7",
+    "width": 390,
+    "height": 1035
+  },
+  {
+    "file": "author-browser/es-invitation-390.png",
+    "sha256": "fca299d355c7fd90d8f526ee9a1524b964a8028a9202e0ba0d47b20ed9f87b0c",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/es-invitation-430-full.png",
+    "sha256": "a3176366a90869de73d822072281017b3733f859169810ef822ef3ef85e70d33",
+    "width": 430,
+    "height": 993
+  },
+  {
+    "file": "author-browser/es-invitation-430.png",
+    "sha256": "9a7c4e1460380b406e8473ed8d0ee59d556268ddc61241f0b5d3a6e0a0c5a616",
+    "width": 430,
+    "height": 932
+  },
+  {
+    "file": "author-browser/es-privacy-1440-full.png",
+    "sha256": "d6fdad5925a276f3e9e6e3e4c50d6f73ae6f982c3976ef217ce70d9af7c34e57",
+    "width": 1440,
+    "height": 1491
+  },
+  {
+    "file": "author-browser/es-privacy-1440.png",
+    "sha256": "c463927f00eba92745878c59722e83c9f1835ed68286337c534de136550ee6c4",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "author-browser/es-privacy-1920-full.png",
+    "sha256": "911a8a74a6b248202d39ef246f43d3d992afe39d16719658480f5543bbaa0a0e",
+    "width": 1920,
+    "height": 1491
+  },
+  {
+    "file": "author-browser/es-privacy-1920.png",
+    "sha256": "5d39e26b67b4d1a0e1796e83fa83bd3839c49aaa530b620796e89f4b9b4bbbe0",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "author-browser/es-privacy-360-full.png",
+    "sha256": "d166fa5bd4a7a401ac79b956af567ace8d323f37ad6bb8d3c910c3ee6e507b5a",
+    "width": 360,
+    "height": 1706
+  },
+  {
+    "file": "author-browser/es-privacy-360.png",
+    "sha256": "a4cac39d3908ebdc3e5d492937792baffe6c9031b712959b9810a812dbaf7569",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "author-browser/es-privacy-390-full.png",
+    "sha256": "5d754fcce3809f0dc1a86e93db88fd80ba1cb82247e09069770de543c655bfa0",
+    "width": 390,
+    "height": 1679
+  },
+  {
+    "file": "author-browser/es-privacy-390.png",
+    "sha256": "57570c4541878902f489df4a5c7c6a284e04a1ced1c886ffd321d6df8f45580f",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/es-privacy-430-full.png",
+    "sha256": "78eb045431fc5b00c141d5bbc89127c17fc6cd65cf0f0e46fa6bc0dd5251a9a3",
+    "width": 430,
+    "height": 1637
+  },
+  {
+    "file": "author-browser/es-privacy-430.png",
+    "sha256": "f447ae292369cd3e13d295f2c8e8b7a792ef067f545963e106744ebb8753301a",
+    "width": 430,
+    "height": 932
+  },
+  {
+    "file": "author-browser/es-trip-1440-full.png",
+    "sha256": "414c2badd759a05eb38511b67345f6dfe11fef8455323fb9f4ab02d06945f394",
+    "width": 1440,
+    "height": 1857
+  },
+  {
+    "file": "author-browser/es-trip-1440.png",
+    "sha256": "9ade2078bc6dab671a7a9d11e6b349633414859132a3d88fc4e9679c6b191a52",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "author-browser/es-trip-1920-full.png",
+    "sha256": "7294054f6a64dccb0ebc1352f53bc8b12ebd1d75018a3587af97803cb4396bd8",
+    "width": 1920,
+    "height": 1857
+  },
+  {
+    "file": "author-browser/es-trip-1920.png",
+    "sha256": "3acc71765005048b2a78511f4c6a1c42064dfdd4d280b57ab5db8c4c7677807a",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "author-browser/es-trip-360-full.png",
+    "sha256": "15d640cfe12003ec8b347cd6df5cf30d125bd534ef9a130c96ab34a18d43d5a3",
+    "width": 360,
+    "height": 2875
+  },
+  {
+    "file": "author-browser/es-trip-360.png",
+    "sha256": "c2cd91e1582b9655a5d9384cda7ca60a29df49cd653b82219d1a90b0ba097b03",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "author-browser/es-trip-390-full.png",
+    "sha256": "e83e5a9b0d103940913e832ca5be18adb372da628a2364d75cbdcba169a52c4f",
+    "width": 390,
+    "height": 2781
+  },
+  {
+    "file": "author-browser/es-trip-390.png",
+    "sha256": "015e2b69ae0f8be3e263ad5c49a8e6040a25bc4c17914f6edb7d6d03fdcb1bd0",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/es-trip-430-full.png",
+    "sha256": "266e5437c1b0a18f0f14af641bea27074be79f008610da4ee5a9cbd9d9558680",
+    "width": 430,
+    "height": 2633
+  },
+  {
+    "file": "author-browser/es-trip-430.png",
+    "sha256": "1885ba4e70312103d01f589acdbd0e92b5534ce79f18a45038d4a28c69e366af",
+    "width": 430,
+    "height": 932
+  },
+  {
+    "file": "author-browser/invitation-receipt-full.png",
+    "sha256": "6c102ae56211021e325fe6e72280bf7cfa35b1678c2977fdcfee8d20f0054944",
+    "width": 390,
+    "height": 1400
+  },
+  {
+    "file": "author-browser/invitation-receipt.png",
+    "sha256": "49df644d3c5d51a136e50c44f9e09d8a88b629a5c884e7823da6b3c8a23a9190",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/missing-recipient-reference-full.png",
+    "sha256": "b9cc719110b74d7974977aa02bda4e5e4fdc643e2372c28bcae3642752744642",
+    "width": 390,
+    "height": 2737
+  },
+  {
+    "file": "author-browser/missing-recipient-reference.png",
+    "sha256": "a2ca1cba3a26b4375241548aef33567edf0cc8e223291cf2d55fe63229c3ce0a",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/own-distinct-response-receipts-full.png",
+    "sha256": "37bb3b16a6b8e7ccd7dd44d931468df5fd3c9721950c6f4217d095312e748982",
+    "width": 390,
+    "height": 3206
+  },
+  {
+    "file": "author-browser/own-distinct-response-receipts.png",
+    "sha256": "dfd8faf7689168f0f46512bff9a607efe5c2a48774cad532097ce9a0d43d5a0e",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/pt-BR-contacts-1440-full.png",
+    "sha256": "b4e178a882f7263e7e152bd72de031cd39c874f53800e785ab9b453c8abc2095",
+    "width": 1440,
+    "height": 1108
+  },
+  {
+    "file": "author-browser/pt-BR-contacts-1440.png",
+    "sha256": "79868e66f2b158f82ad261a39c5dcd28af23bf58537053727231e3966b0e4b57",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "author-browser/pt-BR-contacts-1920-full.png",
+    "sha256": "510823c0c651adadb85414addd43f5993c79a3cbddb84258b684bccd70ed2c43",
+    "width": 1920,
+    "height": 1108
+  },
+  {
+    "file": "author-browser/pt-BR-contacts-1920.png",
+    "sha256": "ffc603a26712e343f79dd014ddf2798d7e43ac87e018a289ad5b19f215371583",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "author-browser/pt-BR-contacts-360-full.png",
+    "sha256": "86d4b96f6e701d183a5f2f3861525f01828ee5d9ee0e886b80bd52d2abe3d91e",
+    "width": 360,
+    "height": 1349
+  },
+  {
+    "file": "author-browser/pt-BR-contacts-360.png",
+    "sha256": "cc010d1689bb681e6eb83b9db234fe42aac9c658b420b26994a05656496c4aed",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "author-browser/pt-BR-contacts-390-full.png",
+    "sha256": "c892107d35da09f3e5f2af482e90ed6c7f84d20d706d57a8eee18e79e50647a0",
+    "width": 390,
+    "height": 1273
+  },
+  {
+    "file": "author-browser/pt-BR-contacts-390.png",
+    "sha256": "34d3b7e6912c663b95e486a817aa691d8e958dceb6d93e8a127db5a6e2192ab0",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/pt-BR-contacts-430-full.png",
+    "sha256": "78f6084596e46acaef38bebd461ba982a8c7462b4b31394d03812a235b27d401",
+    "width": 430,
+    "height": 1251
+  },
+  {
+    "file": "author-browser/pt-BR-contacts-430.png",
+    "sha256": "0a35b4b9225c0b615a521691f1ecadc5835c549968d55c922fc6fe5c1bf797bf",
+    "width": 430,
+    "height": 932
+  },
+  {
+    "file": "author-browser/pt-BR-expanded-form-reduced-motion-full.png",
+    "sha256": "2b964a2147e04e0bb9d5b9dcb441dfe8142c4ae4faa29da159a99c187106f2d3",
+    "width": 390,
+    "height": 2129
+  },
+  {
+    "file": "author-browser/pt-BR-expanded-form-reduced-motion.png",
+    "sha256": "8157e69a612cd1ab741dc93f06f910a881191f7d3039cafb5dd71a92e3745f7a",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/pt-BR-invitation-1440-full.png",
+    "sha256": "d09039d7607479b69871cf07ffdd38ec6cd4f2a753b767ff1fcef4a00e20a6f1",
+    "width": 1440,
+    "height": 934
+  },
+  {
+    "file": "author-browser/pt-BR-invitation-1440.png",
+    "sha256": "db08672cf6db26d6388359ab194e7024e1b38c7499426d9a924791c524abbac2",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "author-browser/pt-BR-invitation-1920-full.png",
+    "sha256": "7a0cc69db403e6e41d6e9e77bc14221d1a1f4a2f463b764b5f45219bf3a445d2",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "author-browser/pt-BR-invitation-1920.png",
+    "sha256": "7a0cc69db403e6e41d6e9e77bc14221d1a1f4a2f463b764b5f45219bf3a445d2",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "author-browser/pt-BR-invitation-360-full.png",
+    "sha256": "e8c7250db7125b617d614c67f1f8909aefed4868f37e1bd28dbd74e9b2d59f5e",
+    "width": 360,
+    "height": 1038
+  },
+  {
+    "file": "author-browser/pt-BR-invitation-360.png",
+    "sha256": "07d1e3f110f62501f3a4fed3a9adc5f1e1f4d8feea9183dd7ed49ada1cb3d1c7",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "author-browser/pt-BR-invitation-390-full.png",
+    "sha256": "48c001f2bbb11c2784b6410f5cdbf66f57f5e575ed027dc70fc919d50d60d48c",
+    "width": 390,
+    "height": 1014
+  },
+  {
+    "file": "author-browser/pt-BR-invitation-390.png",
+    "sha256": "78904e501276309fe5a423e1dbdcbe0efd97c87e48aef87febb21bb9f9f16847",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/pt-BR-invitation-430-full.png",
+    "sha256": "22412c8f5284042b13a8ac9349b5e4057528f959c39c9f8a5ac6b3d496763d4c",
+    "width": 430,
+    "height": 993
+  },
+  {
+    "file": "author-browser/pt-BR-invitation-430.png",
+    "sha256": "4f629e02b47f99ceda4701abde945455c9e5e093af025fbe6521008227ed8b1c",
+    "width": 430,
+    "height": 932
+  },
+  {
+    "file": "author-browser/pt-BR-narrow-primary-response-full.png",
+    "sha256": "114636118ec89519dbfcfdee7fac46f31f87ae8d536d1ac0b9a4aca6133136c7",
+    "width": 360,
+    "height": 2854
+  },
+  {
+    "file": "author-browser/pt-BR-narrow-primary-response.png",
+    "sha256": "6449f70fca5e8f3a8d592c707c462758326d5a6c1319d284e62ce9d1f48f71a0",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "author-browser/pt-BR-privacy-1440-full.png",
+    "sha256": "9e0107420cdb54de4c89d83010df29a9526385b92bac938b7aa988bcfe8c00c1",
+    "width": 1440,
+    "height": 1491
+  },
+  {
+    "file": "author-browser/pt-BR-privacy-1440.png",
+    "sha256": "d8db67d5481852093c5afab261b43eede9b61a929d141f3be8e47ce14aaf8471",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "author-browser/pt-BR-privacy-1920-full.png",
+    "sha256": "ce3bc9a5328c263fe5e6b53a5e1d89744f8c7fe0bf7c9d51be4c371841c96d6d",
+    "width": 1920,
+    "height": 1491
+  },
+  {
+    "file": "author-browser/pt-BR-privacy-1920.png",
+    "sha256": "8996ddaa56cea82d7bf1023a6e0f73878b9595778190ed0ebb4649f1e006fb84",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "author-browser/pt-BR-privacy-360-full.png",
+    "sha256": "0218904f2b3b2ce14ebb0fad8ced943c6219820e6ce48aa91e090ad3552688a4",
+    "width": 360,
+    "height": 1756
+  },
+  {
+    "file": "author-browser/pt-BR-privacy-360.png",
+    "sha256": "1d119eac36870483f88917b15bd118e6f22c9483ff9531d34f56b49a89b1be74",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "author-browser/pt-BR-privacy-390-full.png",
+    "sha256": "11b388800b7640305574f1fc72dee0b86bd6a002264ade321a4196972fbb57b7",
+    "width": 390,
+    "height": 1679
+  },
+  {
+    "file": "author-browser/pt-BR-privacy-390.png",
+    "sha256": "61995aa4d5e56da84b66117facd5d02f538e5c377e8f76f905c2fc4dd16ab814",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/pt-BR-privacy-430-full.png",
+    "sha256": "41c8ecaf60830fe889ba06c3545f0df8f85d8b1630053d847f6d47a34900e701",
+    "width": 430,
+    "height": 1658
+  },
+  {
+    "file": "author-browser/pt-BR-privacy-430.png",
+    "sha256": "b4b05baba1d48c2f8353276023b820d130383b570ac6af66bde027c47c3f97a3",
+    "width": 430,
+    "height": 932
+  },
+  {
+    "file": "author-browser/pt-BR-trip-1440-full.png",
+    "sha256": "d09ae127dd9c99e69dd0195a978b9eb460acdef07bf99441f17912fadd7bf152",
+    "width": 1440,
+    "height": 1857
+  },
+  {
+    "file": "author-browser/pt-BR-trip-1440.png",
+    "sha256": "120df6d5f716b715a418557ff8fc093f95fbb9ba77904b8a06648797147a8739",
+    "width": 1440,
+    "height": 900
+  },
+  {
+    "file": "author-browser/pt-BR-trip-1920-full.png",
+    "sha256": "05ceee6b3898f3e5eb11279c7bf61dd6cd173f98fd56afe23890f89fff0bc800",
+    "width": 1920,
+    "height": 1857
+  },
+  {
+    "file": "author-browser/pt-BR-trip-1920.png",
+    "sha256": "cc856d855e1de06d1c2083b5197c1081eb9cd40133681106564f6c57451f4d04",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "author-browser/pt-BR-trip-360-full.png",
+    "sha256": "024b5c47fb30abf1f1c12f87b4847dcf74c8462072c955ceda922f976a1993cb",
+    "width": 360,
+    "height": 2854
+  },
+  {
+    "file": "author-browser/pt-BR-trip-360.png",
+    "sha256": "6449f70fca5e8f3a8d592c707c462758326d5a6c1319d284e62ce9d1f48f71a0",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "author-browser/pt-BR-trip-390-full.png",
+    "sha256": "b4bc5ff77e132b07b7aaceedc837468e6240759125f87311cc7d8a4afe3da675",
+    "width": 390,
+    "height": 2714
+  },
+  {
+    "file": "author-browser/pt-BR-trip-390.png",
+    "sha256": "ff3522a4020dbe03281b5f4a462bbec382384aae754f7ce6af4455d30eea44fd",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/pt-BR-trip-430-full.png",
+    "sha256": "d00a6cb4a13f838b6e3bbd662d090bfd356481163f6f618b1a9e9f74c23fb80d",
+    "width": 430,
+    "height": 2692
+  },
+  {
+    "file": "author-browser/pt-BR-trip-430.png",
+    "sha256": "051f479e7f7f4608c0e60552d25eee6b1cd183738df535327cbebf93b495d5b5",
+    "width": 430,
+    "height": 932
+  },
+  {
+    "file": "author-browser/trip-no-location-full.png",
+    "sha256": "081316cd003829607a691434284d2c41127bb60c33f19c7c0fb42c118c5a0306",
+    "width": 390,
+    "height": 2173
+  },
+  {
+    "file": "author-browser/trip-no-location.png",
+    "sha256": "ff3522a4020dbe03281b5f4a462bbec382384aae754f7ce6af4455d30eea44fd",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/trip-resolved-full.png",
+    "sha256": "dbd43513ff8221d0a0cb847b514b5b36d16dd89ae5be93d6102be8ca6879aa6c",
+    "width": 390,
+    "height": 2854
+  },
+  {
+    "file": "author-browser/trip-resolved.png",
+    "sha256": "e6e79787b967efe6bc16cc6fd97fb69fa72a7b9bab661f50140149cce26531a3",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "author-browser/unknown-revoke-after-refused-retry-full.png",
+    "sha256": "febc91cc2be93b7089e331d37045e82500c8bf14dd19d3256d1ddc5938313ff4",
+    "width": 390,
+    "height": 2489
+  },
+  {
+    "file": "author-browser/unknown-revoke-after-refused-retry.png",
+    "sha256": "7b61aa015a304701b7e1dbef051cade4e724cd8eb8d177439e782c9f34e02997",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "file": "captures/FAIL-map-denial-leaves-separately-readable-incident-and-response-available.png",
+    "sha256": "40bdff758100ad5089be804be6504f51c2a15d14bd03a94973f73b9b77430964",
+    "width": 360,
+    "height": 2242
+  },
+  {
+    "file": "captures/FAIL-native-401-refresh-clears-protected-facts--receipts-and-same-actor-draft.png",
+    "sha256": "b429a1ac6cd86dab6b85e216d556a12e51c1e1de042df6098e9c478f3d66e6b7",
+    "width": 360,
+    "height": 800
+  },
+  {
+    "file": "captures/FAIL-native-Unicode-action-boundary-and-acknowledgement-remain-separate.png",
+    "sha256": "a93c357f42c69b0e903bb044b61dcac4d1f1422e3d8113b45c91742ed01f1c9d",
+    "width": 360,
+    "height": 3002
+  },
+  {
+    "file": "captures/es-native-invite-receipt.png",
+    "sha256": "69f3366c56acf43acfaafb2a047cbc350bc5b78bdbf250f284bed1ecc7f3b5b5",
+    "width": 360,
+    "height": 1452
+  },
+  {
+    "file": "captures/native-unknown-revoke-after409.png",
+    "sha256": "3dc4ce29feeaf3f976f10d643b999b7e6bb764511542245524f7ed4c0d8f745d",
+    "width": 360,
+    "height": 2508
+  },
+  {
+    "file": "captures/pt-BR-native-invite-receipt.png",
+    "sha256": "62570a87a6cc5571331d53ea6ba2d8a6b4e50a76f3de261fc1d32fd5748129e1",
+    "width": 360,
+    "height": 1501
+  }
+]

@@ -1,0 +1,16 @@
+✔ source age is explicitly as of the server read, with no current-time estimate (1.520334ms)
+✔ aligned clock after 120 seconds cannot alter the raw as-of-read age (0.094875ms)
+✔ client clock 60 seconds behind cannot alter the raw as-of-read age (0.04875ms)
+✔ client clock 60 seconds ahead cannot alter the raw as-of-read age (0.890666ms)
+✔ backward step still after server read cannot alter the raw as-of-read age (0.074833ms)
+✔ rollback before server read cannot alter the raw as-of-read age (0.044875ms)
+✔ backend-accepted 300ms future capture preserves the server-clamped zero age (0.084ms)
+✔ unavailable source age remains null, not a fabricated elapsed age (0.06125ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 76.991709

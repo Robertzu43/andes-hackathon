@@ -1,0 +1,11 @@
+after denial {"status":"ready","failure":null,"journey":{"session":{"actorId":"00000000-0000-4000-8000-000000000002","view":"contact"},"trip":{"id":"00000000-0000-4000-8000-000000000003","driverId":null},"invitation":null,"location":{"status":"denied","data":null},"incident":{"status":"unread","data":null},"receipts":[],"tripRevoked":false,"operation":{"kind":"","status":"idle","failure":null},"privacy":{"standingReceipt":"unknown","tripReceipt":"unknown","currentAuthorization":"requires-server-check","restoreRevokedConsent":"unsupported","previouslyAuthorizedWork":"may-still-complete","researchReuse":"not-implemented","deletion":"unsupported"}},"catalog":{"status":"unread","data":null,"failure":null}}
+after reread {"status":"ready","failure":null,"journey":{"session":{"actorId":"00000000-0000-4000-8000-000000000002","view":"contact"},"trip":{"id":"00000000-0000-4000-8000-000000000003","driverId":null},"invitation":null,"location":{"status":"denied","data":null},"incident":{"status":"recorded","data":{"id":"00000000-0000-4000-8000-000000000005","tripId":"00000000-0000-4000-8000-000000000003","status":"active","createdAt":"2026-10-17T12:00:00.000Z","resolvedAt":null,"groupCapability":"unavailable"}},"receipts":[],"tripRevoked":false,"operation":{"kind":"","status":"idle","failure":null},"privacy":{"standingReceipt":"unknown","tripReceipt":"unknown","currentAuthorization":"requires-server-check","restoreRevokedConsent":"unsupported","previouslyAuthorizedWork":"may-still-complete","researchReuse":"not-implemented","deletion":"unsupported"}},"catalog":{"status":"unread","data":null,"failure":null}}
+✔ map denial then separate incident reread restores response capability (18.712542ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 102.968167

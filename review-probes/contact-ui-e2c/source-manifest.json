@@ -1,0 +1,180 @@
+[
+  {
+    "sha": "e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6",
+    "count": 19,
+    "allComposedFilesMatchGitObjects": true,
+    "files": [
+      {
+        "path": "web/src/features/contacts/README.md",
+        "blob": "f33977fe55d3ae0d54d1304422c1f9773b04441a"
+      },
+      {
+        "path": "web/src/features/contacts/journey.ts",
+        "blob": "c61c32d2531e7962569e8b1fc1987e7e34f228fc"
+      },
+      {
+        "path": "web/src/features/contacts/messages.ts",
+        "blob": "30d5bdbcfbd903210f460d3f089309336b5ae21d"
+      },
+      {
+        "path": "web/src/features/contacts/routes.tsx",
+        "blob": "2a37824d14789b1e5c9ef9d7e20dfea1dd2c70ac"
+      },
+      {
+        "path": "web/src/features/contacts/ui.css",
+        "blob": "a7ca9ea2f96fa55a2f115b2b28c26a6f181029db"
+      },
+      {
+        "path": "web/src/features/contacts/view-store.ts",
+        "blob": "1e4d90928e44ed1b26d8b82db290be11890c37fb"
+      },
+      {
+        "path": "web/src/features/privacy/consent.ts",
+        "blob": "20572451f60a63d7924ab00fcb47ff0e8a49b773"
+      },
+      {
+        "path": "web/src/features/privacy/page.tsx",
+        "blob": "eaf31fa14d09c6fac9197f41cae4d0a5bde2495a"
+      },
+      {
+        "path": "web/tests/contacts/browser-check.mjs",
+        "blob": "47664601997c4ed802dbdf2e457f8a3c81c0ca58"
+      },
+      {
+        "path": "web/tests/contacts/compose-ui.mjs",
+        "blob": "7e7c4b52ed0ad2fc09fd4e871f75bd7af65b36d5"
+      },
+      {
+        "path": "web/tests/contacts/fixture.html",
+        "blob": "b0e1ae611724542817849f8b5708bdd88fac06c8"
+      },
+      {
+        "path": "web/tests/contacts/fixture.tsx",
+        "blob": "0c9cdaf120c0932fb8f9c5fbd8e5745b62e5c132"
+      },
+      {
+        "path": "web/tests/contacts/fixtures.mjs",
+        "blob": "ecaed410bf99ddca44efc8ac0d7b7e2f79fe9f26"
+      },
+      {
+        "path": "web/tests/contacts/journey.test.mjs",
+        "blob": "329d0adb76279d84da03e3d5d6ceeb5ae340faca"
+      },
+      {
+        "path": "web/tests/contacts/persisted.test.mjs",
+        "blob": "3c282e20d82bd7fdb9617f650efbb34ffaba5175"
+      },
+      {
+        "path": "web/tests/contacts/run-persisted.mjs",
+        "blob": "858ef15fcd6086b49585d2d2cb535ae6413b0942"
+      },
+      {
+        "path": "web/tests/contacts/ui-tsconfig.json",
+        "blob": "a725b3ff55d7af94827b44a3966fdc96acea8130"
+      },
+      {
+        "path": "web/tests/contacts/view.integration.mjs",
+        "blob": "51fb033320cf43fc49a930b88b4423be257139f7"
+      },
+      {
+        "path": "web/tests/privacy/consent.test.mjs",
+        "blob": "7cf34a8f5b00ff5ddf448fdd1bb94a7681348243"
+      }
+    ]
+  },
+  {
+    "sha": "1fd365ee7805cd83b2b1a1706973788dea6f805e",
+    "count": 22,
+    "allComposedFilesMatchGitObjects": true,
+    "files": [
+      {
+        "path": "web/src/features/contacts/README.md",
+        "blob": "76219cb8a71e89e673a2c828dab1e4053b209558"
+      },
+      {
+        "path": "web/src/features/contacts/journey.ts",
+        "blob": "607ba9ad4b80509d37d2f37aa5fe3b75e39ad22c"
+      },
+      {
+        "path": "web/src/features/contacts/messages.ts",
+        "blob": "30d5bdbcfbd903210f460d3f089309336b5ae21d"
+      },
+      {
+        "path": "web/src/features/contacts/routes.tsx",
+        "blob": "2a37824d14789b1e5c9ef9d7e20dfea1dd2c70ac"
+      },
+      {
+        "path": "web/src/features/contacts/ui.css",
+        "blob": "a7ca9ea2f96fa55a2f115b2b28c26a6f181029db"
+      },
+      {
+        "path": "web/src/features/contacts/view-store.ts",
+        "blob": "1e4d90928e44ed1b26d8b82db290be11890c37fb"
+      },
+      {
+        "path": "web/src/features/privacy/consent.ts",
+        "blob": "20572451f60a63d7924ab00fcb47ff0e8a49b773"
+      },
+      {
+        "path": "web/src/features/privacy/page.tsx",
+        "blob": "eaf31fa14d09c6fac9197f41cae4d0a5bde2495a"
+      },
+      {
+        "path": "web/tests/contacts/browser-check.mjs",
+        "blob": "47664601997c4ed802dbdf2e457f8a3c81c0ca58"
+      },
+      {
+        "path": "web/tests/contacts/compose-ui.mjs",
+        "blob": "7e7c4b52ed0ad2fc09fd4e871f75bd7af65b36d5"
+      },
+      {
+        "path": "web/tests/contacts/fixture.html",
+        "blob": "b0e1ae611724542817849f8b5708bdd88fac06c8"
+      },
+      {
+        "path": "web/tests/contacts/fixture.tsx",
+        "blob": "0c9cdaf120c0932fb8f9c5fbd8e5745b62e5c132"
+      },
+      {
+        "path": "web/tests/contacts/fixtures.mjs",
+        "blob": "ecaed410bf99ddca44efc8ac0d7b7e2f79fe9f26"
+      },
+      {
+        "path": "web/tests/contacts/journey.test.mjs",
+        "blob": "6647802d77b26bbeb6a4a99acd554ecab96d26d0"
+      },
+      {
+        "path": "web/tests/contacts/location-age-baseline.json",
+        "blob": "fab29606d98aeeacaa0655d6e4a9a50d7c302d22"
+      },
+      {
+        "path": "web/tests/contacts/location-age.test.mjs",
+        "blob": "5262531b62911b8819d6954e6f2d5579aafbd7a5"
+      },
+      {
+        "path": "web/tests/contacts/location-age.types.ts",
+        "blob": "00677463a3206a03b76f28d0aaf3ce287c08d824"
+      },
+      {
+        "path": "web/tests/contacts/persisted.test.mjs",
+        "blob": "3c282e20d82bd7fdb9617f650efbb34ffaba5175"
+      },
+      {
+        "path": "web/tests/contacts/run-persisted.mjs",
+        "blob": "858ef15fcd6086b49585d2d2cb535ae6413b0942"
+      },
+      {
+        "path": "web/tests/contacts/ui-tsconfig.json",
+        "blob": "a725b3ff55d7af94827b44a3966fdc96acea8130"
+      },
+      {
+        "path": "web/tests/contacts/view.integration.mjs",
+        "blob": "51fb033320cf43fc49a930b88b4423be257139f7"
+      },
+      {
+        "path": "web/tests/privacy/consent.test.mjs",
+        "blob": "7cf34a8f5b00ff5ddf448fdd1bb94a7681348243"
+      }
+    ]
+  }
+]

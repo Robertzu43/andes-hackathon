@@ -1,0 +1,225 @@
+{
+  "composition": {
+    "target": "/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-l51-ui-dlAmGf",
+    "foundation": "3283fe675ebeee04bb2be8a62f42ab5c475b4b0e",
+    "api": "db7034fc9e1dba035b87368117376e9730d6b830",
+    "featureBase": "e2c1e677cf3ec3fa9c7f91529b082ab5b8ff91e6",
+    "featureWorkingTree": ""
+  },
+  "results": [
+    {
+      "name": "es-contacts-390",
+      "pass": true
+    },
+    {
+      "name": "es-privacy-390",
+      "pass": true
+    },
+    {
+      "name": "es-invitation-390",
+      "pass": true
+    },
+    {
+      "name": "es-trip-390",
+      "pass": true
+    },
+    {
+      "name": "es-contacts-1440",
+      "pass": true
+    },
+    {
+      "name": "es-privacy-1440",
+      "pass": true
+    },
+    {
+      "name": "es-invitation-1440",
+      "pass": true
+    },
+    {
+      "name": "es-trip-1440",
+      "pass": true
+    },
+    {
+      "name": "es-contacts-1920",
+      "pass": true
+    },
+    {
+      "name": "es-privacy-1920",
+      "pass": true
+    },
+    {
+      "name": "es-invitation-1920",
+      "pass": true
+    },
+    {
+      "name": "es-trip-1920",
+      "pass": true
+    },
+    {
+      "name": "es-contacts-360",
+      "pass": true
+    },
+    {
+      "name": "es-privacy-360",
+      "pass": true
+    },
+    {
+      "name": "es-invitation-360",
+      "pass": true
+    },
+    {
+      "name": "es-trip-360",
+      "pass": true
+    },
+    {
+      "name": "es-contacts-430",
+      "pass": true
+    },
+    {
+      "name": "es-privacy-430",
+      "pass": true
+    },
+    {
+      "name": "es-invitation-430",
+      "pass": true
+    },
+    {
+      "name": "es-trip-430",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-contacts-390",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-privacy-390",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-invitation-390",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-trip-390",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-contacts-1440",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-privacy-1440",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-invitation-1440",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-trip-1440",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-contacts-1920",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-privacy-1920",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-invitation-1920",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-trip-1920",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-contacts-360",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-privacy-360",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-invitation-360",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-trip-360",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-contacts-430",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-privacy-430",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-invitation-430",
+      "pass": true
+    },
+    {
+      "name": "pt-BR-trip-430",
+      "pass": true
+    },
+    {
+      "name": "invite-validation-keyboard-explicit-scope-and-no-duplicate-post",
+      "pass": true
+    },
+    {
+      "name": "acknowledgement-action-escape-and-session-clearing",
+      "pass": true
+    },
+    {
+      "name": "unknown-revoke-refused-retry-retains-key-and-conceals-facts",
+      "pass": true
+    },
+    {
+      "name": "contacts-empty",
+      "pass": true
+    },
+    {
+      "name": "contacts-forbidden",
+      "pass": true
+    },
+    {
+      "name": "contacts-server-error",
+      "pass": true
+    },
+    {
+      "name": "contacts-truncated",
+      "pass": true
+    },
+    {
+      "name": "contacts-signed-out",
+      "pass": true
+    },
+    {
+      "name": "trip-no-location",
+      "pass": true
+    },
+    {
+      "name": "trip-resolved",
+      "pass": true
+    },
+    {
+      "name": "missing-recipient-references-disable-actions-without-invented-reads",
+      "pass": true
+    },
+    {
+      "name": "reduced-motion-and-expanded-portuguese-form",
+      "pass": true
+    },
+    {
+      "name": "primary-response-visible-on-narrow-portuguese-phone",
+      "pass": true
+    }
+  ],
+  "count": 53,
+  "scope": "Builder checks: real React/foundation/API code with synthetic in-memory HTTP replies; no backend/browser OIDC/device qualification or independent acceptance"
+}

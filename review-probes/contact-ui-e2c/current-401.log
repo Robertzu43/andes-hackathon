@@ -1,0 +1,31 @@
+{"gateway":"signed-out","status":"verifying","session":null,"location":null}
+✖ Q52 401 clears data and reaches a closed recoverable view rather than permanent verification (52.988875ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 130.607917
+
+✖ failing tests:
+
+test at tests/contacts/q52-independent.integration.mjs:40:1
+✖ Q52 401 clears data and reaches a closed recoverable view rather than permanent verification (52.988875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'verifying'
+  - 'closed'
+  
+      at TestContext.<anonymous> (file:///private/var/folders/m2/6hvf0pb97tscs3c57f8fk3b40000gn/T/andes-l51-ui-QN6JYO/web/tests/contacts/q52-independent.integration.mjs:46:120)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'verifying',
+    expected: 'closed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
