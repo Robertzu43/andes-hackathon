@@ -44,7 +44,7 @@ Keep the shared contract exactly:
 - A owns `web/src/lib/api/types.ts`, `responses.ts`, `web/tests/api/runtime.test.mjs`, `runtime.integration.mjs`. B owns the other web files. B imports A's `DemoWorld`; no compatibility union, cast hiding old fields or parallel session decoder.
 - A also owns the coordinated correction `CommandResult.automaticEscalation: boolean` and a boolean command decoder; the actual backend already returns `true`. B Task 5 depends on that correction, not merely A Task 6.
 - Recipient discovery is already implemented in `src/client-read/recipient.ts` and mounted in `src/api/app.ts`; its contract document's “not implemented” banner is stale. B adds web bindings only.
-- A owns root CI changes. B Task 9 supplies `npm --prefix web run test:phone`; A must run it in CI. No B task edits root CI, backend or Plan C.
+- A owns root CI until a narrow coordinated handoff for B Task 9. After A confirms no concurrent workflow edit, Task 9 ships `npm --prefix web run test:phone` and its CI hook together on the same tested integration head; A reviews that hunk. No B task edits backend or Plan C.
 
 ## Execution order and PR groups
 
@@ -365,7 +365,7 @@ assert.equal(arrivedWithActiveIncidentStillReachable, true);
 **Files:**
 - Create: `web/tests/phone/backend.integration.mjs`, `backend-fixture.mjs`
 - Modify: `web/package.json`, `web/README.md`
-- External handoff, A only: `.github/workflows/ci.yml` app-integration job
+- Conditional modify after A confirms no concurrent workflow edit: `.github/workflows/ci.yml` app-integration job, only the `test:phone` dependency/setup/command hook; A reviews the hunk
 
 **Interfaces:**
 - Produces: `npm --prefix web run test:phone` builds current root/backend and production web then runs `node --test tests/phone/backend.integration.mjs`; command exits nonzero on any failure or missing dependency, never silently skips.
@@ -396,10 +396,10 @@ Also cover an open check/missed-check incident upgraded by SOS (same incident ID
 - [ ] **Step 2: Run RED.** `n24 npm --prefix web run test:phone`. Initially FAIL: missing script/screens/runner; after runner creation, the added regression must fail on the prior implementation. Preserve the named assertion and baseline SHA.
 - [ ] **Step 3: Implement the bounded test seam and CI handoff.** Generate the demo issuer and pass a fictional-number OTP sender plus fixed code **only through in-process `demoPhone:{...limits,send,code}`**. Use A's actual `claimJob/authorizeJob(...,demoPolicy)/finishAttempt` with a fake provider to process persisted jobs, no SQS/AWS or live worker. Test limits are synthetic explicit options, not proposed live caps. Use two independent browser profiles; enter the shared link through the actual contact UI and never log it. Assert driver and contact delivery/status views separately; report provider acceptance as fake, not device delivery. Cleanup browser, app/context and owned DB in finally.
 
-Give A this exact CI sequence in the existing Node24 app-integration job after root `npm ci` and PostgreSQL-bin discovery: `npm --prefix web ci`, then `npm --prefix web run test:phone`. Ensure headless Chrome is present via `ANDES_CHROME_BINARY` (existing CDP helper), choose an isolated PostgreSQL port and `LC_ALL=C` on macOS. Archive redacted TAP/results for the exact tested SHA. A must demonstrate a failing assertion makes that CI job fail; a script existing without a running CI step does not satisfy #97.
+After A confirms no concurrent workflow edit, add this exact CI sequence in the existing Node24 app-integration job after root `npm ci` and PostgreSQL-bin discovery: `npm --prefix web ci`, then `npm --prefix web run test:phone`. Ship the runner and CI hook together on this same integration PR head and have A review the narrow workflow hunk. Ensure headless Chrome is present via `ANDES_CHROME_BINARY` (existing CDP helper), choose an isolated PostgreSQL port and `LC_ALL=C` on macOS. Archive redacted TAP/results for the exact tested SHA. Demonstrate a failing assertion makes that CI job fail; a script existing without a running CI step or a different-head CI run does not satisfy #97.
 
 - [ ] **Step 4: Run GREEN.** `n24 npm --prefix web run test:phone`, `n24 npm --prefix web test`, and the existing isolated backend harness. Expected zero failures/skips, no external fetches, successful owned-resource cleanup. Verify the actual named CI job ran `test:phone` on the proposed head; keep HOLD if the CI handoff is missing. No physical GPS/channel delivery qualification is claimed.
-- [ ] **Step 5: Commit.** Stage only the four B-owned files; `git commit -m "test(web): Exercise the production phone journey against the real backend"`. Record A's CI commit and matching run separately, without staging root files.
+- [ ] **Step 5: Commit.** Stage the four B-owned files plus the narrow authorized CI hunk after A's no-concurrent-edit confirmation; `git commit -m "test(web): Exercise the production phone journey against the real backend"`. Record A's confirmation/review and the matching same-head CI run.
 
 ---
 
