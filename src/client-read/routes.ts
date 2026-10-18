@@ -108,7 +108,7 @@ export function clientReadRoutes(app: FastifyInstance, ctx: Context) {
     }));
 }
 
-async function readSnapshot<T>(ctx: Context, read: (client: Client) => Promise<T>): Promise<ClientRead<T>> {
+export async function readSnapshot<T>(ctx: Context, read: (client: Client) => Promise<T>): Promise<ClientRead<T>> {
   return readTransaction(ctx.telemetryPool, async client => {
     // BEGIN alone does not pin the PostgreSQL snapshot; establish it before sampling readAt.
     await client.query('SELECT pg_current_snapshot()');

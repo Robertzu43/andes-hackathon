@@ -10,6 +10,7 @@ import { contactRoutes } from '../contacts/routes.js';
 import { locationRoutes } from '../location/routes.js';
 import { incidentRoutes } from '../incidents/routes.js';
 import { clientReadRoutes } from '../client-read/routes.js';
+import { recipientReadRoutes } from '../client-read/recipient.js';
 import { demoRoutes, type DemoIssuer } from '../demo.js';
 import { insightRoutes } from '../insights/routes.js';
 declare module 'fastify' { interface FastifyRequest { actor: Actor } }
@@ -40,7 +41,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
   checkRoutes(app, ctx);
   if (demo) demoRoutes(app, ctx, demo);
   app.get('/v1/me', async request => ({ id: request.actor.id }));
-  clientReadRoutes(app, ctx);
+  clientReadRoutes(app, ctx); recipientReadRoutes(app, ctx);
   tripRoutes(app, ctx, automaticChecks); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport); insightRoutes(app, ctx, Boolean(demo));
   if (callbackConfig) callbackRoutes(app, ctx, callbackConfig);
   return app;
