@@ -431,6 +431,10 @@ actual signed demo issuer, native HTTP and PostgreSQL for all three personas,
 all five owner reads with an injected server-clock assertion, explicit arrival,
 committed-response loss and same-key sharing replay,
 one persisted sharing event, changed-body409, stale location, active SOS after
-arrival and revoked-contact403. No external provider/worker runs. This proves
+arrival and revoked-contact403. Separate synthetic non-demo and demo issuers
+reject each other's signed tokens with401 in both directions. A real verifier
+refusal after demo authentication clears the memory session, gateway and bound
+controller context. Test teardown observes actual PostgreSQL client socket close
+before database removal. No external provider/worker runs. This proves
 those additive routes at the stated isolated sources; it does not qualify browser
 demo acquisition, final backend composition or PR74's backend policy.

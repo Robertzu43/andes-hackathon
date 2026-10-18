@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync,mkdtempSync,readFileSync,rmSync,symlinkSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
+import {createRequire} from 'node:module';
 import {dirname,join} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import test from 'node:test';
-import {MemorySession,createApiClient,createDemoSessionGateway} from '../../src/lib/api/index.ts';
+import {MemorySession,createApiClient,createDemoSessionGateway,bindJourneySession} from '../../src/lib/api/index.ts';
 
 const BACKEND='4c138ca1d00742400a850cd72b0888cc59260a36';
 const READS='3ea6e1b06e6dc3d3d01360f28ae9c61751657830';
@@ -20,6 +21,13 @@ test('PR74 plus published PR65 reads work through real signed HTTP/PostgreSQL',a
   assert.ok(dependencies&&compiler,'Explicit existing backend dependencies/compiler required; no implicit install');
   const archive=mkdtempSync(join(tmpdir(),'andes-api-runtime-'));
   const blob=(sha,path)=>execFileSync('git',['show',`${sha}:${path}`],{cwd:repo});
+  const socketClosures=[];
+  const observe=context=>{
+    for(const pool of [context.pool,context.telemetryPool])pool.on('connect',client=>{
+      socketClosures.push(new Promise(resolve=>client.connection.stream.once('close',resolve)));
+    });
+    return context;
+  };
   let resources,app,ctx;
   try{
     assert.ok(readFileSync(join(dirname(dependencies),'package-lock.json')).equals(blob(BACKEND,'package-lock.json')),
@@ -39,11 +47,16 @@ test('PR74 plus published PR65 reads work through real signed HTTP/PostgreSQL',a
     const {createContext,migrate}=await import(pathToFileURL(join(archive,'dist/db.js')));
     const {demoIssuer}=await import(pathToFileURL(join(archive,'dist/demo.js')));
     const {createApp}=await import(pathToFileURL(join(archive,'dist/api/app.js')));
+    const {generateKeyPair,SignJWT}=await import(pathToFileURL(createRequire(join(archive,'package.json')).resolve('jose')));
     const {clientReadRoutes}=await import(pathToFileURL(join(archive,'dist/client-read/routes.js')));
     const serverReadStart=new Date();
-    ctx=createContext(resources.url,()=>serverReadStart);await migrate(ctx.pool);
+    ctx=observe(createContext(resources.url,()=>serverReadStart));await migrate(ctx.pool);
     const issuer=await demoIssuer({ZAVU_LIVE_SEND:'false'});
-    app=createApp({ctx,auth:issuer.auth,demo:issuer});
+    let denyDemoTokens=false;
+    app=createApp({ctx,auth:{...issuer.auth,keyResolver:async(...args)=>{
+      if(denyDemoTokens)throw Error('Synthetic verifier rejection');
+      return issuer.auth.keyResolver(...args);
+    }},demo:issuer});
     clientReadRoutes(app,ctx);
     const origin=await app.listen({port:0,host:'127.0.0.1'});
 
@@ -117,7 +130,51 @@ test('PR74 plus published PR65 reads work through real signed HTTP/PostgreSQL',a
       install('family');await assert.rejects(api.getTripStatus(draft.id),e=>e.status===403&&e.kind==='forbidden');
       session.clear();
     });
+
+    await t.test('separate non-demo and demo issuer tokens cannot cross-validate in either direction',async()=>{
+      const {publicKey,privateKey}=await generateKeyPair('RS256');
+      const realIssuer='https://identity.example.invalid',audience='andes-client-test';
+      const realCtx=observe(createContext(resources.url,()=>serverReadStart));
+      const realApp=createApp({ctx:realCtx,auth:{issuer:realIssuer,audience,keyResolver:async()=>publicKey}});
+      try{
+        const realOrigin=await realApp.listen({port:0,host:'127.0.0.1'});
+        const session=new MemorySession();const demoApi=createApiClient({baseUrl:origin,session});
+        const realApi=createApiClient({baseUrl:realOrigin,session});
+        const world=await demoApi.createDemoSession({demo:true});
+        const claims=JSON.parse(Buffer.from(world.driver.token.split('.')[1],'base64url').toString('utf8'));
+        session.setCredentials({issuer:claims.iss,subject:claims.sub,accessToken:world.driver.token,expiresAt:claims.exp*1000});
+        assert.equal((await demoApi.getIdentity()).id,world.driver.id);
+        await assert.rejects(realApi.getIdentity(),error=>error.status===401);
+        assert.equal(session.snapshot().status,'anonymous');
+        const expires=Math.floor(Date.now()/1000)+120;
+        const realToken=await new SignJWT({}).setProtectedHeader({alg:'RS256'}).setIssuer(realIssuer)
+          .setAudience(audience).setSubject('synthetic-real-identity').setIssuedAt().setExpirationTime(expires).sign(privateKey);
+        session.setCredentials({issuer:realIssuer,subject:'synthetic-real-identity',accessToken:realToken,expiresAt:expires*1000});
+        assert.equal(typeof (await realApi.getIdentity()).id,'string');
+        await assert.rejects(demoApi.getIdentity(),error=>error.status===401);
+        assert.equal(session.snapshot().status,'anonymous');
+      }finally{await realApp.close();}
+    });
+
+    await t.test('an actual server401 clears a verified demo session, gateway and bound context',async()=>{
+      const session=new MemorySession();const api=createApiClient({baseUrl:origin,session});
+      const gateway=createDemoSessionGateway({session,api,persona:'driver'});
+      let actor=null;const binding=bindJourneySession(session,api,id=>{actor=id;});
+      try{
+        await gateway.begin();assert.equal(gateway.getSnapshot().state,'authenticated');
+        await binding.activate();assert.notEqual(actor,null);
+        denyDemoTokens=true;
+        await assert.rejects(api.getIdentity(),error=>error.status===401&&error.kind==='unauthenticated');
+        assert.equal(session.snapshot().status,'anonymous');assert.equal(actor,null);
+        assert.notEqual(gateway.getSnapshot().state,'authenticated');
+      }finally{denyDemoTokens=false;binding.dispose();gateway.dispose();}
+    });
   }finally{
-    try{if(app)await app.close();else await ctx?.close();}finally{try{await resources?.cleanup();}finally{rmSync(archive,{recursive:true,force:true});}}
+    try{
+      if(app)await app.close();else await ctx?.close();
+      // pg-pool bookkeeping can finish before socket end. Observe protocol close
+      // before the disposable helper drops the database, rather than sleeping.
+      await Promise.all(socketClosures);
+    }finally{try{await resources?.cleanup();}finally{rmSync(archive,{recursive:true,force:true});}}
   }
 });
