@@ -1,0 +1,56 @@
+{"gateway":"signed-out","status":"verifying","session":null,"location":null}
+✖ Q52 401 clears data and reaches a closed recoverable view rather than permanent verification (51.755ms)
+✔ unverified gateway cannot fetch or mutate a feature (1.451916ms)
+✔ real client and verified binding load contact references without manufacturing a driver; responses stay distinct (19.345541ms)
+✔ lost revoke and refused same-key retry conceal views and cannot reopen protected reads (7.383458ms)
+✔ revoke retires a slow catalog even when the HTTP fixture ignores abort (27.78725ms)
+✖ 401 clears both bound views, exposes session recovery and permits explicit re-authentication (8.09475ms)
+✔ catalog errors stay errors rather than empty success after a stop and restart (12.769708ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 5
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 155.764292
+
+✖ failing tests:
+
+test at tests/contacts/q52-401.integration.mjs:40:1
+✖ Q52 401 clears data and reaches a closed recoverable view rather than permanent verification (51.755ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'verifying'
+  - 'closed'
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-corrections-ttk9_sy2/contact-helper-parent/web/tests/contacts/q52-401.integration.mjs:46:120)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'verifying',
+    expected: 'closed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/contacts/view.integration.mjs:90:1
+✖ 401 clears both bound views, exposes session recovery and permits explicit re-authentication (8.09475ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'verifying'
+  - 'closed'
+  
+      at TestContext.<anonymous> (file:///private/tmp/andes-q52-corrections-ttk9_sy2/contact-helper-parent/web/tests/contacts/view.integration.mjs:102:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'verifying',
+    expected: 'closed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,16 @@
+{"gateway":"signed-out","status":"closed","session":null,"location":null}
+✔ Q52 401 clears data and reaches a closed recoverable view rather than permanent verification (50.185792ms)
+✔ unverified gateway cannot fetch or mutate a feature (1.369917ms)
+✔ real client and verified binding load contact references without manufacturing a driver; responses stay distinct (18.47475ms)
+✔ lost revoke and refused same-key retry conceal views and cannot reopen protected reads (7.441417ms)
+✔ revoke retires a slow catalog even when the HTTP fixture ignores abort (28.830791ms)
+✔ 401 clears both bound views, exposes session recovery and permits explicit re-authentication (12.590333ms)
+✔ catalog errors stay errors rather than empty success after a stop and restart (10.785875ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 165.747417

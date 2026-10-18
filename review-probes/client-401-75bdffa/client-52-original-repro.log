@@ -1,0 +1,10 @@
+{"gateway":"signed-out","status":"closed","session":null,"location":null}
+✔ Q52 401 clears data and reaches a closed recoverable view rather than permanent verification (47.755167ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 126.733709

@@ -1,0 +1,11 @@
+{
+  "foundation": "3283fe675ebeee04bb2be8a62f42ab5c475b4b0e",
+  "feature": "efe1629d70374b1202c7535161b3c07f59c8af46",
+  "apiBase": "db7034fc9e1dba035b87368117376e9730d6b830",
+  "onlyOverlay": {
+    "path": "web/src/lib/api/journeys.ts",
+    "sha": "75bdffa42d858c82a8dcb0af11bc78803e3d9a09",
+    "sha256": "a76892f47d0ad6b9ddcf75c78e849d38c7ef98e8c04796ace77fcbe8d71b685d"
+  },
+  "scope": "Independent existing P2 remediation only, no full API adoption"
+}

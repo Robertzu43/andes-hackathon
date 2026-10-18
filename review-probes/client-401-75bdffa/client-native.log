@@ -1,0 +1,117 @@
+▶ every current operation uses its sourced route, method, payload and credentials
+  ✔ getIdentity  (4.513458ms)
+  ✔ createTruck  (0.403ms)
+  ✔ inviteContact  (0.243334ms)
+  ✔ acceptContact  (0.21325ms)
+  ✔ revokeContact  (0.217792ms)
+  ✔ createDraft  (0.219292ms)
+  ✔ confirmTrip  (0.179125ms)
+  ✔ getTrip  (0.242042ms)
+  ✔ commandTrip arrived (0.231167ms)
+  ✔ commandTrip cancel (0.262333ms)
+  ✔ commandTrip pause (0.127708ms)
+  ✔ commandTrip resume (0.104875ms)
+  ✔ commandTrip checkin_ok (0.098042ms)
+  ✔ commandTrip rest_report (0.091541ms)
+  ✔ uploadLocations  (0.236334ms)
+  ✔ getSnapshot  (0.305917ms)
+  ✔ revokeTripContact  (0.233166ms)
+  ✔ reportSos  (2.820833ms)
+  ✔ getIncident  (0.227292ms)
+  ✔ acknowledgeIncident  (0.112833ms)
+  ✔ reportAction  (0.101959ms)
+  ✔ resolveIncident  (0.079583ms)
+✔ every current operation uses its sourced route, method, payload and credentials (12.475417ms)
+✔ configuration is explicit and rejects unsafe token destinations (0.36225ms)
+✔ invalid credential values fail with safe local errors (0.103125ms)
+✔ explicit proxy base path is preserved (0.10775ms)
+✔ missing, expired and cleared sessions send nothing and snapshots contain no token (0.179916ms)
+▶ HTTP distinctions remain actionable and server text never becomes an error
+  ✔ 400 (0.240292ms)
+  ✔ 401 (0.10775ms)
+  ✔ 403 (0.089416ms)
+  ✔ 404 (0.076333ms)
+  ✔ 409 (0.088666ms)
+  ✔ 422 (0.076459ms)
+  ✔ 500 (0.090959ms)
+  ✔ 503 (0.078375ms)
+✔ HTTP distinctions remain actionable and server text never becomes an error (1.036167ms)
+✔ safe backend codes are preserved without private error payloads (0.099ms)
+✔ write requires a bounded visible-ASCII key and UUID resources cannot escape the route (0.514875ms)
+✔ payload is captured before async work and explicit retries preserve key and content (0.150667ms)
+✔ UUID case aliases preserve the same backend idempotency path scope (0.135459ms)
+✔ network failure never replays a write or exposes transport cause (0.145459ms)
+✔ caller cancellation before dispatch sends nothing; cancellation after dispatch stays unknown (0.244333ms)
+✔ local timeout aborts one attempt and does not imply server cancellation (11.035917ms)
+✔ session replacement aborts old work and a stale 401 cannot erase the new session (0.348542ms)
+✔ a request expiring in flight aborts without refreshing or replaying (25.904167ms)
+✔ invalid success, HTML and impossible snapshots remain protocol errors (0.849917ms)
+✔ stale location and attributed action facts are preserved (0.097542ms)
+✖ native fetch reaches a loopback HTTP server and refuses credential redirects (3.714291ms)
+✔ reviewed contact UI closes both views after actual-client 401 and permits explicit session recovery (25.52375ms)
+✔ unconfigured gateway is inert and publishes stable immutable token-free snapshots (1.70375ms)
+✔ acquisition alone cannot authenticate: actual identity verification must finish (20.440125ms)
+✔ repeated begin shares one explicit acquisition and does not auto-refresh (0.611333ms)
+✔ end during acquisition cannot install delayed credentials or publish authenticated (0.519458ms)
+✔ backend refusal and an old identity response never become authenticated (1.9915ms)
+✔ private synchronous provider errors yield only a stable error state and allow explicit retry (0.720875ms)
+✔ subscription signals are token-free, snapshots stay referentially stable between changes (0.294667ms)
+✔ session expiry changes the gateway without acquiring or verifying again (52.393416ms)
+✔ synchronous subscriber cancellation cannot strand a future explicit sign-in (0.469958ms)
+✔ a reentrant begin from a subscriber shares the same verification promise (0.247083ms)
+✔ contact facade maps actual aliases and preserves original write key, signal and action (23.1745ms)
+✔ contact facade preserves exact ApiError ambiguity and status without retrying (1.159542ms)
+✔ session binding activates only from the server UUID and clears immediately on signout/rotation (0.542958ms)
+✔ session binding cannot activate an old response after account change or disposal (0.554042ms)
+✔ 401 invalidates every bound protected journey without inventing another identity (0.507833ms)
+✔ 401 teardown cannot invoke a disposed binding later in the same session notification (0.647625ms)
+✔ subscribed session expires and clears a view without another request (52.06775ms)
+✔ one failing view cannot prevent other views clearing; unsubscribe retires callbacks (0.243459ms)
+▶ five additive reads use only their actual GET routes with no owner/body/key
+  ✔ getProfile (12.889ms)
+  ✔ getBootstrap (5.23075ms)
+  ✔ listTrucks (0.363584ms)
+  ✔ listContacts (0.280916ms)
+  ✔ listTrips (0.267375ms)
+✔ five additive reads use only their actual GET routes with no owner/body/key (19.730792ms)
+✔ bootstrap preserves revoked management facts, regional fields, selected grants and truncation (0.33675ms)
+✔ empty focused lists and unknown phone remain real empty/unverified facts (0.387583ms)
+✔ list bounds, duplicate identities, wrong limits and contradictory buckets fail closed (3.16675ms)
+✔ unverified and malformed consent/profile responses cannot become accepted capabilities (0.703084ms)
+✔ read failures remain failures rather than fabricated empty catalogues (1.537416ms)
+✔ all five reads require and preserve the source timestamp rather than substituting a client clock (2.494125ms)
+✔ an old bootstrap reply cannot populate a replacement session (0.23025ms)
+✔ status preserves latest active SOS after arrival and source facts without inventing readAt (18.38525ms)
+✔ status distinguishes omitted location, unavailable location and server asking deadline (1.104375ms)
+✔ malformed status enums and contradictory location/delivery facts fail closed (1.831ms)
+✔ sharing uses one explicit key/body and an ambiguous response is never replayed (0.956583ms)
+✔ new arrival/role fields pass through without creating regional or time defaults (0.3895ms)
+✔ demo session is explicit, anonymous and unkeyed even with another active identity (0.409917ms)
+✔ demo404/429 and ambiguous creation retain their safe status without clearing or replaying an account (0.415042ms)
+✔ malformed or non-synthetic demo responses cannot become a world (0.6495ms)
+✔ demo gateway authenticates each explicitly chosen persona only after actual typed me (4.497875ms)
+✔ demo gateway rejects token metadata and mismatched server identity without caching personas (1.045625ms)
+✔ demo logout retires late acquisition and a later explicit begin creates a new world (0.705167ms)
+ℹ tests 91
+ℹ suites 0
+ℹ pass 90
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 205.566917
+
+✖ failing tests:
+
+test at web/tests/api/client.test.mjs:246:1
+✖ native fetch reaches a loopback HTTP server and refuses credential redirects (3.714291ms)
+  Error: listen EPERM: operation not permitted 127.0.0.1
+      at Server.setupListenHandle [as _listen2] (node:net:1987:21)
+      at listenInCluster (node:net:2066:12)
+      at node:net:2275:7
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'EPERM',
+    errno: -1,
+    syscall: 'listen',
+    address: '127.0.0.1'
+  }

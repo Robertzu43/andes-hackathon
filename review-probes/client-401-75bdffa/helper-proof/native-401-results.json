@@ -1,0 +1,37 @@
+{
+  "api": "75bdffa42d858c82a8dcb0af11bc78803e3d9a09",
+  "feature": "efe1629d70374b1202c7535161b3c07f59c8af46",
+  "apiBase": "db7034fc9e1dba035b87368117376e9730d6b830",
+  "apiScope": "only journeys.ts overlay from75bdffa",
+  "foundation": "3283fe675ebeee04bb2be8a62f42ab5c475b4b0e",
+  "results": [
+    {
+      "operation": "read",
+      "closed": {
+        "gateway": "signed-out",
+        "privateVisible": false,
+        "receipts": 0,
+        "gate": true
+      },
+      "explicitAccessAction": "native Enter on existing session-primary",
+      "recovered": true,
+      "draftCleared": true,
+      "receiptsCleared": true
+    },
+    {
+      "operation": "write",
+      "closed": {
+        "gateway": "signed-out",
+        "privateVisible": false,
+        "receipts": 0,
+        "gate": true
+      },
+      "explicitAccessAction": "native Enter on existing session-primary",
+      "recovered": true,
+      "draftCleared": true,
+      "receiptsCleared": true
+    }
+  ],
+  "runtime": [],
+  "scope": "Owned native browser inputs on immutable existing UI with synthetic fixture HTTP and identity; no provider/backend/deployment"
+}

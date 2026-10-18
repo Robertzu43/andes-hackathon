@@ -1,0 +1,42 @@
+[
+  {
+    "id": 5560759013,
+    "node_id": "PRR_kwDOVNt_688AAAABS3Jy5Q",
+    "user": {
+      "login": "sebasbimbi",
+      "id": 85371645,
+      "node_id": "MDQ6VXNlcjg1MzcxNjQ1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/85371645?u=78b7dc660b779f77098b7ff8dffe4389f287fd3b&v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/sebasbimbi",
+      "html_url": "https://github.com/sebasbimbi",
+      "followers_url": "https://api.github.com/users/sebasbimbi/followers",
+      "following_url": "https://api.github.com/users/sebasbimbi/following{/other_user}",
+      "gists_url": "https://api.github.com/users/sebasbimbi/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/sebasbimbi/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/sebasbimbi/subscriptions",
+      "organizations_url": "https://api.github.com/users/sebasbimbi/orgs",
+      "repos_url": "https://api.github.com/users/sebasbimbi/repos",
+      "events_url": "https://api.github.com/users/sebasbimbi/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/sebasbimbi/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "ACCEPT \u2014 scoped client-contract review at `2860d8593f90e1a327ac86cee0ef313d94692489`.\n\nReviewed the status/sharing/demo/readAt production delta at `5b3fadc9167baac2d1cb91720e650a1a0b901e4f`. Fresh checks there passed: 89 author native tests, 16 actual-controller fixture checks with synthetic HTTP, 3 frozen-foundation compile checks, both strict TypeScript configurations, 68 independent checks and 5 actual signed HTTP/PostgreSQL checks. The independent cases cover all five required root readAt fields, source/privacy projections, explicit sharing replay, anonymous demo acquisition, selected-persona verification, refusals, retired replies and expiry bounds. Synthetic JWT claims alone never establish authentication.\n\nThe current head changes only runtime.integration.mjs and documentation; the production API tree is byte-identical (`c0198b1dddc2c884c43637cc0082350956498d07`). Independently inspected that delta and freshly executed its real HTTP/PostgreSQL suite: 7 passed, 0 failed. Separate signed synthetic issuers reject each other's tokens in BOTH directions; a real verifier401 clears the verified memory session, gateway and bound controller context. Owned PostgreSQL16.14 port56447 was cleaned up. Unchanged earlier unit/compile/independent inputs were not rerun just for this test-only head.\n\nContract pins remain backend PR74 `4c138ca1d00742400a850cd72b0888cc59260a36`, owner reads PR65 `3ea6e1b06e6dc3d3d01360f28ae9c61751657830`, and temporary resource helper `c2501a40253b50b1406371f8fd7ebeaf309ec00c`. This is an explicit temporary test composition, not a backend merge. Independent evidence is preserved in PR55 commit `76e0ae5`.\n\nNo blocking client finding. This verdict does not approve backend policy timing/auth/privacy, browser/CORS/device/provider behavior, or whole-app acceptance; those retain their separate owners and source pins. PR59/7e and the older API78/backendebc bridge evidence remain unchanged. Q44 owns integration.",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/Bimbi-Dev/andes-hackathon/pull/81#pullrequestreview-5560759013",
+    "pull_request_url": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/81",
+    "author_association": "MEMBER",
+    "_links": {
+      "html": {
+        "href": "https://github.com/Bimbi-Dev/andes-hackathon/pull/81#pullrequestreview-5560759013"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/Bimbi-Dev/andes-hackathon/pulls/81"
+      }
+    },
+    "submitted_at": "2026-10-18T00:16:14Z",
+    "commit_id": "2860d8593f90e1a327ac86cee0ef313d94692489"
+  }
+]
