@@ -14,10 +14,12 @@ Snapshot aging requires matching nonempty trip aliases, and both repeated SOS
 responses must remain active with unavailable group capability. Three additional
 reviewer counterexamples failed before these predicate repairs.
 
-Current coordinated reference: reviewed backend
-`5591c9b55fe7f4505e36ccee96d27aa913e0debf`. The earlier source/evidence at
-`ebc8fb1d36f441ef012ca585201cefabf61383d6` remains historical and its receipts
-are rejected by this current checker; they must never be relabelled. Read
+Current reference: `main` backend `02f3647462a4db57ae1ce81f1023fc83d3d06a46`.
+`BACKEND_SHA` in `oracle.mjs` is the only copy; the receipt producer in
+`scripts/app-integration/receipts.mjs` imports it. Earlier bindings
+`5591c9b55fe7f4505e36ccee96d27aa913e0debf` and
+`ebc8fb1d36f441ef012ca585201cefabf61383d6` are historical; their receipts are
+rejected by this checker and must never be relabelled. Read
 `docs/contracts/runtime.md`, `package.json`, `docs/evidence/backend-progress.md`,
 `src/api/app.ts`, `src/trips/routes.ts`, `src/contacts/routes.ts`,
 `src/location/routes.ts`, `src/incidents/routes.ts`, and existing test helpers.
