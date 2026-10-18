@@ -24,6 +24,12 @@ export async function demoIssuer(env: NodeJS.ProcessEnv): Promise<DemoIssuer> {
 }
 export function demoRoutes(app: FastifyInstance, ctx: Context, demo: DemoIssuer) {
   const people = demo.phones;
+  // Personas invite only within their own world, so worlds cannot pool their consented phone onto one trip.
+  app.addHook('preHandler', async request => {
+    if (request.method !== 'POST' || request.routeOptions.url !== '/v1/contacts') return;
+    const worlds = (await ctx.pool.query("SELECT count(DISTINCT split_part(subject,':',1))::int AS n FROM identities WHERE id IN ($1,$2)", [request.actor.id, (request.body as { contactId: string }).contactId])).rows[0].n;
+    if (worlds > 1) problem(403, 'demo_world_boundary');
+  });
   let windowStart = 0, created = 0;
   app.post('/v1/demo/session', { schema: { body: empty } }, async () => {
     const now = ctx.clock().getTime();

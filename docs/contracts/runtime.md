@@ -119,7 +119,12 @@ Alert-text settings for the delivery workers: `EMERGENCY_NUMBERS` (JSON by trip 
 
 ## Demo mode
 
-For the judges' demo only. `DEMO_MODE=true` replaces OIDC with an in-process RS256 demo issuer (`src/demo.ts`). Real identity tokens are rejected, and every other route keeps the same JWT, ownership and consent checks. Live sends are refused unless `DEMO_LIVE_PHONE` names the one consented E.164 number. The family persona then uses that number, and the Zavu qualification must set `allowedDestinations` (the API and workers refuse to start otherwise). `authorizeJob` marks every other destination `unavailable` / `destination_not_allowed` before any provider call, so the fictional numbers and other people can never be contacted. Never enable demo mode on a deployment with real users.
+For the judges' demo only. `DEMO_MODE=true` replaces OIDC with an in-process RS256 demo issuer (`src/demo.ts`). Real identity tokens are rejected, and every other route keeps the same JWT, ownership and consent checks. Live sends are refused by default. They are possible only through three gates, each failing closed:
+1. `DEMO_LIVE_PHONE` names the one consented E.164 number (the demo issuer refuses to start otherwise). Only the family persona uses it; the driver and colleague keep fictional numbers.
+2. The Zavu qualification sets `allowedDestinations` to exactly `[DEMO_LIVE_PHONE]` and a `demoLimits` budget `{perIncident, perSession}` (positive integers; the API and workers refuse to start otherwise).
+3. `authorizeJob`, before quota or any provider call, marks any other destination `unavailable` / `destination_not_allowed`, and any job past the budget `unavailable` / `demo_budget_exhausted`. `perIncident` counts attempts on the incident; `perSession` counts attempts to the recipient identity, which is the world's one consented persona. Both are counted under the account lock. The global budget is the qualification's existing `dailyLimit` / `channelDailyLimit` / `minuteLimit`.
+
+So the fictional numbers and other people can never be contacted. Personas can invite only personas of their own world (403 `demo_world_boundary`), so worlds cannot pool the consented phone onto one trip. The budget is operator policy, not a code default; a single family persona needs 3 attempts per alert wave (6 if a missed-check alert is followed by an SOS). Never enable demo mode on a deployment with real users.
 
 `POST /v1/demo/session` with `{}` is unauthenticated and needs no Idempotency-Key (a deliberate exception: there is no actor yet). Each call creates an isolated synthetic world:
 - a driver, a `family` contact and a `colleague` contact, with fictional `+1555555010x` numbers;
