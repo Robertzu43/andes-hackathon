@@ -5,6 +5,7 @@ import { createContext, databaseConfig } from './db.js';
 import { createApp } from './api/app.js';
 import { demoIssuer } from './demo.js';
 import { checkConfig } from './checks/sweep.js';
+import { loadCoachingMemory } from './coaching/memory.js';
 const { OIDC_ISSUER, OIDC_AUDIENCE, OIDC_JWKS_URL } = process.env;
 // Unset means 0. Anything else must be the digit 0, 1, 2 or 3; blank and whitespace fail startup. HOST defaults to 0.0.0.0. A deploy behind one proxy sets TRUST_PROXY_HOPS=1. Never `true`.
 const rawHops = process.env.TRUST_PROXY_HOPS;
@@ -14,10 +15,14 @@ const demo = process.env.DEMO_MODE === 'true' ? await demoIssuer(process.env) : 
 if (!demo && (!OIDC_ISSUER || !OIDC_AUDIENCE || !OIDC_JWKS_URL)) throw new Error('Trusted OIDC configuration required');
 const provider = configuredProvider(process.env);
 const callbackConfig = loadCallbackConfig(process.env);
+// Optional post-trip notes: unset stays off; partial or invalid config stays off with a warning (no URL or key is logged).
+const coachingMemory = loadCoachingMemory(process.env, reason =>
+  process.stderr.write(`${JSON.stringify({ level: 'warn', event: 'coaching_memory_disabled', reason })}\n`));
 const ctx = createContext(databaseConfig());
 const app = createApp({ ctx, channelSupport: provider?.qualification.live ? provider.qualification.entries : [], callbackConfig, auth: demo?.auth ?? { issuer: OIDC_ISSUER!, audience: OIDC_AUDIENCE!, jwksUrl: OIDC_JWKS_URL! }, demo,
   automaticChecks: checkConfig(process.env) !== null, // same timings as the control worker
-  webRoot: fileURLToPath(new URL('../web/dist', import.meta.url)), trustProxyHops }); // build web/ first; a missing build fails here
+  webRoot: fileURLToPath(new URL('../web/dist', import.meta.url)), trustProxyHops,
+  coachingMemory }); // build web/ first; a missing build fails here
 let closing = false;
 async function shutdown() { if (closing) return; closing = true; await app.close(); }
 process.once('SIGTERM', () => void shutdown()); process.once('SIGINT', () => void shutdown());

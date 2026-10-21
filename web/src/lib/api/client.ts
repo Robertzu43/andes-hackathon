@@ -21,7 +21,7 @@ const knownCodes = new Set(['invalid_request', 'idempotency_key_required', 'idem
   'contact_not_accepted', 'trip_not_found', 'trip_closed', 'invalid_consent_request', 'contact_not_found',
   'contact_already_invited', 'grant_not_found', 'verified_phone_mismatch', 'invalid_consent_scope',
   'consent_revoked', 'already_accepted', 'location_stopped', 'capture_time_out_of_bounds', 'map_inactive',
-  'incident_not_found', 'incident_resolved', 'demo_rate_limited']);
+  'incident_not_found', 'incident_resolved', 'demo_rate_limited', 'memory_not_configured', 'memory_unavailable']);
 const catalogOperations = new Set(['getProfile', 'getBootstrap', 'listTrucks', 'listContacts', 'listTrips']);
 
 function resource(id: string): string {
@@ -195,6 +195,9 @@ export function createApiClient(config: ApiClientConfig) {
       write('reportAction', () => `v1/incidents/${resource(id)}/actions`, { action }, decode.action, options),
     resolveIncident: (id: T.UUID, options: T.WriteOptions) =>
       write('resolveIncident', () => `v1/incidents/${resource(id)}/resolve`, {}, decode.resolution, options),
+    getCoachingNote: (options?: T.RequestOptions) => request('getCoachingNote', 'v1/coaching/note', decode.coachingNote, options),
+    saveCoachingNote: (body: T.CoachingNoteInput, options: T.WriteOptions) => write('saveCoachingNote', 'v1/coaching/note', body, decode.coachingSaved, options),
+    deleteCoachingNote: (options: T.WriteOptions) => write('deleteCoachingNote', 'v1/coaching/note/delete', {}, decode.coachingDeleted, options),
   };
 }
 export type ApiClient = ReturnType<typeof createApiClient>;
