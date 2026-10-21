@@ -13,7 +13,7 @@ export class CoachingMemoryUnavailable extends Error {}
 const EXTERNAL_ID = 'tandem-post-trip-note';
 const NOTE_MAX = 280;
 const loopback = ['localhost', '127.0.0.1', '[::1]'];
-/** Both or neither: no URL and no key leaves the feature off; anything partial or malformed fails startup. */
+/** Both or neither: no URL and no key leaves the feature off; partial or malformed values are rejected by the parser. */
 export function coachingMemoryConfig(env: NodeJS.ProcessEnv): CoachingMemoryConfig | null {
   const { ATOMICMEMORY_API_URL: url, ATOMICMEMORY_API_KEY: apiKey, ATOMICMEMORY_TIMEOUT_MS: timeout } = env;
   if (!url && !apiKey) return null;
@@ -49,9 +49,9 @@ export function createCoachingMemory({ apiUrl, apiKey, timeoutMs }: CoachingMemo
       response = await transport(url, { method, signal, redirect: 'error', headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json',
         ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
     } catch { throw new CoachingMemoryUnavailable('memory request failed'); }
-    if (response.status === 404) return null;
-    if (response.status !== 200) throw new CoachingMemoryUnavailable(`memory status ${response.status}`);
-    try { return await response.json() as unknown; } catch { throw new CoachingMemoryUnavailable('memory response was not JSON'); }
+    if (response.status === 404 && method !== 'POST') return null;
+    if (!response.ok) throw new CoachingMemoryUnavailable(`memory status ${response.status}`);
+    try { const value: unknown = await response.json(); return value; } catch { throw new CoachingMemoryUnavailable('memory response was not JSON'); }
   }
   async function lookup(signal: AbortSignal, actorId: string) {
     const found = await call(signal, 'GET', `/v1/memories/by-external-id/${EXTERNAL_ID}`, { user_id: subject(actorId) });
@@ -78,6 +78,7 @@ export function createCoachingMemory({ apiUrl, apiKey, timeoutMs }: CoachingMemo
       const found = await lookup(signal, actorId);
       if (!found) return false;
       await call(signal, 'DELETE', `/v1/memories/${encodeURIComponent(found.id)}`, { user_id: subject(actorId) });
+      if (await lookup(signal, actorId)) throw new CoachingMemoryUnavailable('deletion did not read back');
       return true;
     }
   };

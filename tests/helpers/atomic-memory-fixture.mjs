@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 export async function atomicMemoryFixture({ apiKey = 'fixture-key', port = 0 } = {}) {
   const records = new Map(); // `${user_id}\n${externalId}` -> { id, content, user_id }
   const requests = [];
-  const state = { delayMs: 0, failStatus: null };
+  const state = { delayMs: 0, failStatus: null, ingestStatus: 200, deleteBody: null };
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, 'http://fixture');
     let body = '';
@@ -24,9 +24,9 @@ export async function atomicMemoryFixture({ apiKey = 'fixture-key', port = 0 } =
     if (request.method === 'POST' && url.pathname === '/v1/memories/ingest/quick') {
       const externalId = parsed.metadata?.externalId, key = `${user}\n${externalId}`;
       const existing = records.get(key);
-      if (existing) { existing.content = parsed.conversation; return send(200, { episode_id: randomUUID(), memories_stored: 0, memories_updated: 1, stored_memory_ids: [], updated_memory_ids: [existing.id] }); }
+      if (existing) { existing.content = parsed.conversation; return send(state.ingestStatus, { episode_id: randomUUID(), memories_stored: 0, memories_updated: 1, stored_memory_ids: [], updated_memory_ids: [existing.id] }); }
       const id = randomUUID(); records.set(key, { id, content: parsed.conversation, user_id: user });
-      return send(200, { episode_id: randomUUID(), memories_stored: 1, memories_updated: 0, stored_memory_ids: [id], updated_memory_ids: [] });
+      return send(state.ingestStatus, { episode_id: randomUUID(), memories_stored: 1, memories_updated: 0, stored_memory_ids: [id], updated_memory_ids: [] });
     }
     const byExternal = /^\/v1\/memories\/by-external-id\/([^/]+)$/.exec(url.pathname);
     if (request.method === 'GET' && byExternal) {
@@ -35,6 +35,7 @@ export async function atomicMemoryFixture({ apiKey = 'fixture-key', port = 0 } =
     }
     const byId = /^\/v1\/memories\/([^/]+)$/.exec(url.pathname);
     if (request.method === 'DELETE' && byId) {
+      if (state.deleteBody) return send(200, state.deleteBody);
       for (const [key, found] of records) if (found.id === byId[1] && found.user_id === user) { records.delete(key); return send(200, { success: true }); }
       return send(404, { error: 'Memory not found' });
     }

@@ -108,3 +108,21 @@ test('at startup a partial or invalid memory configuration turns notes off with 
   assert.deepEqual((await f.req('GET', '/v1/coaching/note')).body, { available: false });
   assert.equal((await f.req('POST', `/v1/trips/${await f.trip([await f.grant()])}/sos`, {})).status, 200);
 });
+
+
+test('a 201 ingest response is confirmed by reading the saved note back', async t => {
+  const { memory, f } = await withMemory(t);
+  memory.state.ingestStatus = 201;
+  assert.deepEqual(await save(f, 'Descansar en Ica'), { status: 200, body: { saved: true, note: { text: 'Descansar en Ica' } } });
+  assert.deepEqual((await f.req('GET', '/v1/coaching/note')).body.note, { text: 'Descansar en Ica' });
+});
+
+test('delete cannot claim success if the provider leaves the note in place', async t => {
+  const { memory, f } = await withMemory(t);
+  await save(f, 'Conservar hasta confirmar borrado');
+  for (const body of [{ success: false }, {}, { success: true }]) {
+    memory.state.deleteBody = body;
+    assert.deepEqual(await f.req('POST', '/v1/coaching/note/delete', {}), { status: 503, body: { code: 'memory_unavailable' } });
+    assert.deepEqual((await f.req('GET', '/v1/coaching/note')).body.note, { text: 'Conservar hasta confirmar borrado' });
+  }
+});

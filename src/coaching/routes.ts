@@ -18,8 +18,8 @@ export function coachingRoutes(app: FastifyInstance, memory: CoachingMemory | un
     return provider(reply, async m => ({ available: true, note: await m.read(request.actor.id) }));
   });
   // Explicit consent on every save: the driver chooses to keep this text beyond the trip.
-  app.post('/v1/coaching/note', { schema: { body: object({ text: noteSchema, consent: { const: true } }) } }, async (request, reply) => {
-    const { text } = request.body as { text: string };
+  app.post<{ Body: { text: string; consent: true } }>('/v1/coaching/note', { schema: { body: object({ text: noteSchema, consent: { const: true } }) } }, async (request, reply) => {
+    const { text } = request.body;
     return provider(reply, async m => ({ saved: true, note: await m.save(request.actor.id, text.trim()) }));
   });
   app.post('/v1/coaching/note/delete', { schema: { body: object({}) } }, async (request, reply) =>
