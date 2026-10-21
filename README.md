@@ -9,7 +9,7 @@
 
 <p align="center"><strong>Tu gente, contigo en ruta.</strong></p>
 
-<p align="center">Track Seguridad · Equipo GOAT</p>
+<p align="center">Track Seguridad</p>
 
 <p align="center">
   <a href="https://an-1dc2ae9cdfee46e6bfe399ec607092d5.ecs.us-east-1.on.aws"><code>Demo ↗</code></a>
@@ -19,7 +19,7 @@
 
 Tándem es una app para el transportista que maneja su propio camión. Las personas que él elige (su familia, sus colegas) ven su viaje y si pidió ayuda. Si toca SOS, o si deja de dar señales y no responde «Estoy bien», el servidor les avisa por SMS, WhatsApp y llamada. No hay central de monitoreo: la red de apoyo es la gente que el conductor ya tiene.
 
-ANDES es el nombre del repositorio; Tándem es la app; GOAT es el equipo.
+ANDES es el nombre del repositorio; Tándem es la app.
 
 ## Para el jurado
 
@@ -113,7 +113,7 @@ Todo entra por PR. Robert fusiona todos, incluidos los suyos, con `--match-head-
 ## Tracción
 
 > [!WARNING]
-> Una entrevista, informada por Sebastian Bimbi: un camionero de Colombia quiere usar Tándem y declaró que pagaría hasta US$100 al mes. Es intención declarada, no una venta ni una validación representativa. No hay usuarios ni uso real todavía.
+> Una entrevista reportada: un camionero de Colombia quiere usar Tándem y declaró que pagaría hasta US$100 al mes. Es intención declarada, no una venta ni una validación representativa. No hay usuarios ni uso real todavía.
 
 El protocolo completo ([#8](https://github.com/Robertzu43/andes-hackathon/issues/8)) es exploratorio: cinco pares de conductor y contacto, cada uno reconstruye un viaje preocupante y uno normal. Las guías en español y portugués, el brief de la cohorte y las planillas están en [`docs/research/`](docs/research/README.md).
 
@@ -162,13 +162,10 @@ docker compose run --rm bootstrap
 docker compose --profile api up -d api
 ```
 
-## Equipo y licencia
+## Mantenimiento y licencia
 
-Somos el equipo **GOAT**. El conductor y su gente avanzan juntos, en tándem: por eso el símbolo son dos caminos que forman una T.
+**Roberto** ([@Robertzu43](https://github.com/Robertzu43)) es el único mantenedor actual de Tándem. El proyecto conserva los aportes de su etapa colaborativa y su historial de contribuciones.
 
-| | Responsabilidades principales |
-|---|---|
-| **Robert** ([@Robertzu43](https://github.com/Robertzu43)) | Arquitectura, estado del servidor y contratos de eventos, envío durable, integraciones de canales, infraestructura y evaluación reproducible |
-| **Sebastian** ([@sebasbimbi](https://github.com/sebasbimbi)) | Evidencia con conductores, acceso al proveedor, la app web (base, cliente tipado, recorridos del conductor y del contacto), consentimiento y decisiones de piloto; el pitch deck |
+El conductor y su gente avanzan juntos, en tándem: por eso el símbolo son dos caminos que forman una T.
 
 **Licencia:** sin licencia definida todavía.
