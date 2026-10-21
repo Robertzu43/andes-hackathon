@@ -26,6 +26,9 @@ export function fixture(t) {
   let catalog = { readAt: '2026-10-18T09:00:00Z', trucks: [{ id: ids.truck, label: 'Demo' }], contacts: accepted() };
   let reads = 0;
   let savedFields = fields;
+  // Post-trip note API: off unless a test switches it on, mirroring the backend default.
+  const note = { available: false, stored: null, fail: null, calls: [] };
+  const noteCall = (name, value) => { note.calls.push(name); if (note.fail?.includes(name)) return Promise.reject(new Error('fixture provider failure')); return Promise.resolve(value()); };
   const trip = () => ({ id: ids.draft, driver_id: ids.actor, truck_id: ids.truck, ...savedFields, time_zone: 'America/Lima',
     status: 'active', paused: false, map_active: true, checkins_active: true, version: 1 });
   const reply = request => {
@@ -46,11 +49,14 @@ export function fixture(t) {
   journey.setSession(ids.actor); journey.setInteractionMode('stationary'); journey.setNetwork('online');
   const gateway = { getSnapshot: () => ({ state: 'authenticated', mode: 'demo' }), subscribe: () => () => {} };
   const runtime = { journey, gateway, familyGateway: gateway, binding: { activate: async () => {} },
-    api: { getBootstrap: async () => { reads++; return structuredClone(catalog); } },
+    api: { getBootstrap: async () => { reads++; return structuredClone(catalog); },
+      getCoachingNote: () => noteCall('read', () => note.available ? { available: true, note: note.stored && { text: note.stored } } : { available: false }),
+      saveCoachingNote: body => noteCall('save', () => { note.stored = body.text; note.consent = body.consent; return { saved: true, note: { text: body.text } }; }),
+      deleteCoachingNote: () => noteCall('delete', () => { const deleted = note.stored !== null; note.stored = null; return { deleted }; }) },
     world: { get: async () => ({ world: { family: { id: ids.family }, colleague: { id: ids.colleague } } }) },
     session: {}, familyApi: {}, familySession: {} };
   t.after(() => journey.dispose());
-  return { runtime, journey, calls, handlers, reply, trip, reads: () => reads,
+  return { runtime, journey, calls, handlers, reply, trip, note, reads: () => reads,
     catalog: value => { catalog = value; }, getCatalog: () => structuredClone(catalog) };
 }
 export async function prepare(view) {

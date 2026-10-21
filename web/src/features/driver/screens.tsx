@@ -5,6 +5,7 @@ import { formattedTimestamp } from '../../foundation/time.ts';
 import type { DriverJourney, JourneySnapshot } from './controller.mjs';
 import { driverMessages, type DriverMessage } from './messages.ts';
 import { contactMessages } from '../contacts/messages.ts';
+import { CoachingNotePanel } from './coaching.tsx';
 import type { PhoneDemoRuntime } from '../../app/runtime.ts';
 import type { Bootstrap, TripStatus } from '../../lib/api/index.ts';
 
@@ -209,6 +210,7 @@ export function Prepare({ runtime }: { runtime: PhoneDemoRuntime }) {
     <p>{t('reloadBody')}</p><Link to="/">{t('startOver')}</Link></section>;
   const unknown = view.operations.confirm?.state === 'unknown';
   return <section className="tandem-flow"><h1>{t('prepareTitle')}</h1>
+    <CoachingNotePanel api={runtime.api} variant="prepare" />
     <p>{catalog && grants(catalog) && failure !== 'contactWaiting' ? t('contactsReady') : t('contactWaiting')}</p>
     {!catalog && !failure ? <p role="status">{t('loading')}</p> : view.draft ? <>
       <p>{t('savedDraft')}</p>
@@ -262,7 +264,7 @@ function TripBody({ runtime, view, tripId, mode }: { runtime: PhoneDemoRuntime; 
       {!current && <p>{t(status ? 'statusStale' : 'statusUnknown')}</p>}
       {readAt && <p>{t('statusReadAt')} <time dateTime={readAt}>{formattedTimestamp(readAt, locale) ?? readAt}</time></p>}
     </div>
-    {mode === 'summary' ? <p>{t('summaryBody')}</p> : <>
+    {mode === 'summary' ? <><p>{t('summaryBody')}</p><CoachingNotePanel api={runtime.api} variant="summary" /></> : <>
       {current && (check ? <p role="status">{t('checkOpen')} <time dateTime={check.askUntil}>{formattedTimestamp(check.askUntil, locale) ?? check.askUntil}</time></p>
         : <p>{t('noCheck')}</p>)}
       <div className="tandem-sos"><PrimaryAction data-action="sos" tone="danger" busy={sos?.state === 'pending'} onClick={() => void runtime.journey.requestHelp()}>
@@ -282,6 +284,7 @@ function TripBody({ runtime, view, tripId, mode }: { runtime: PhoneDemoRuntime; 
     {view.tripId && mode !== 'checkin' && <Link data-action="open-checkin" to={`/trips/${view.tripId}/check-in`}>{t('openCheck')}</Link>}
     {view.tripId && mode !== 'alerts' && <Link to={`/trips/${view.tripId}/alerts`}>{t('alertsLink')}</Link>}
     {view.tripId && <Link data-action="open-contact" to={`/contact/trips/${view.tripId}`}>{t('contactView')}</Link>}
+    {view.tripId && mode !== 'summary' && <Link data-action="open-summary" to={`/trips/${view.tripId}/summary`}>{t('summaryLink')}</Link>}
   </section>;
 }
 export function Trip({ runtime, tripId, mode }: { runtime: PhoneDemoRuntime; tripId: string; mode: 'active' | 'checkin' | 'alerts' | 'summary' }) {

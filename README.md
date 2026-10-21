@@ -125,6 +125,25 @@ El protocolo completo ([#8](https://github.com/Robertzu43/andes-hackathon/issues
 - La demo es una tarea en una zona, sin alta disponibilidad ni prueba de carga. Los tokens de demo terminan al reiniciar, hay un máximo de 30 sesiones por minuto y el modo demo nunca se debe activar con usuarios reales.
 - Mapa de zonas: tres cuentas verificadas coordinadas pueden publicar una celda; antes de datos reales hay que subir el mínimo, ponderar por antigüedad o agregar ruido. Las coordenadas aún no tienen política de borrado.
 - Los límites del backend aceptados para la demo están en el [contrato](docs/contracts/runtime.md#known-backend-limits-accepted-for-the-demo).
+- La nota posviaje en Atomic Memory es opcional y está apagada por defecto. Es una nota libre del conductor, no un análisis de su manejo.
+
+## Nota posviaje (Atomic Memory, opcional)
+
+Al cerrar un viaje, el resumen (`/trips/:id/summary`) permite guardar una nota corta para el próximo viaje («descansar en Ica antes de las 22 h»). Al preparar el siguiente viaje, la nota aparece arriba del formulario y se puede corregir o borrar. Guardar exige marcar el consentimiento cada vez.
+
+- **Apagada por defecto.** Sin `ATOMICMEMORY_API_URL` y `ATOMICMEMORY_API_KEY` la API responde `available: false` y la app dice que no se guarda nada. Una configuración parcial o inválida también la deja apagada, con una advertencia `coaching_memory_disabled` en el log; el backend de seguridad arranca igual.
+- **Por identidad verificada.** El sujeto en Atomic Memory es `tandem-driver:<id>` de la identidad autenticada (OIDC o persona de demo); el cliente no lo puede elegir. Hay un solo registro por conductor (`externalId` fijo), así que corregir reemplaza.
+- **Guardado confirmado.** La API solo responde «guardada» si, después de `ingest/quick`, la lectura por `externalId` devuelve exactamente el texto. Cualquier fallo, clave equivocada, respuesta inesperada o demora mayor a `ATOMICMEMORY_TIMEOUT_MS` (2 s por defecto) responde `503 memory_unavailable` y la app dice que no pudo confirmar.
+- **Fuera del camino de seguridad.** Viajes, chequeos, SOS y envíos no leen ni esperan la nota; ninguna transacción de base de datos queda abierta mientras responde el proveedor.
+
+Para probarla en local sin el servicio real hay un *fixture* (no es Atomic Memory) con las cuatro rutas documentadas:
+
+```sh
+FIXTURE_PORT=17350 node tests/helpers/atomic-memory-fixture.mjs   # imprime la URL y la clave del fixture
+npm run build
+DATABASE_URL=… DEMO_MODE=true ATOMICMEMORY_API_URL=http://127.0.0.1:17350 ATOMICMEMORY_API_KEY=fixture-key PORT=3000 npm start
+ANDES_API_PROXY_TARGET=http://127.0.0.1:3000 npm --prefix web run dev
+```
 
 ## Estructura y comandos
 

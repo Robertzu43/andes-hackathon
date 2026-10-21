@@ -105,3 +105,10 @@ export interface Bootstrap extends ServerRead {
   limits: { trucks: 100; contacts: 100; activeTrips: 50; recentTrips: 20 };
   hasMore: { trucks: boolean; contacts: boolean; activeTrips: boolean; recentTrips: boolean };
 }
+
+/** Optional post-trip note (Atomic Memory). `available: false` means the server has it switched off. */
+export interface CoachingNote { text: string }
+export type CoachingNoteRead = { available: false } | { available: true; note: CoachingNote | null };
+export interface CoachingNoteInput { text: string; consent: true }
+export interface CoachingNoteSaved { saved: true; note: CoachingNote }
+export interface CoachingNoteDeleted { deleted: boolean }

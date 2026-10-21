@@ -176,3 +176,10 @@ export const bootstrap: Decoder<T.Bootstrap> = object({ profile: profileData, tr
   trips: object({ active: activeRows, recent: recentRows }),
   limits: object({ trucks: literal(100), contacts: literal(100), activeTrips: literal(50), recentTrips: literal(20) }),
   hasMore: object({ trucks: bool, contacts: bool, activeTrips: bool, recentTrips: bool }), readAt: date });
+const coachingText = object({ text: text });
+export const coachingNote: Decoder<T.CoachingNoteRead> = value => {
+  const { available } = object({ available: bool })(value);
+  return available ? { available, note: object({ note: nullable(coachingText) })(value).note } : { available };
+};
+export const coachingSaved: Decoder<T.CoachingNoteSaved> = object({ saved: literal(true), note: coachingText });
+export const coachingDeleted: Decoder<T.CoachingNoteDeleted> = object({ deleted: bool });

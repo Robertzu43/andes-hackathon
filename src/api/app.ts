@@ -13,10 +13,12 @@ import { clientReadRoutes } from '../client-read/routes.js';
 import { recipientReadRoutes } from '../client-read/recipient.js';
 import { demoRoutes, type DemoIssuer } from '../demo.js';
 import { insightRoutes } from '../insights/routes.js';
+import { coachingRoutes } from '../coaching/routes.js';
+import type { CoachingMemory } from '../coaching/memory.js';
 import { isWebRoute, webRoutes } from './web.js';
 declare module 'fastify' { interface FastifyRequest { actor: Actor } }
-export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer; automaticChecks?: boolean; webRoot?: string; trustProxyHops?: number }
-export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo, automaticChecks = false, webRoot, trustProxyHops = 0 }: AppOptions) {
+export interface AppOptions { ctx: Context; auth: AuthConfig; channelSupport?: ChannelSupport[]; callbackConfig?: CallbackConfig; demo?: DemoIssuer; automaticChecks?: boolean; webRoot?: string; trustProxyHops?: number; coachingMemory?: CoachingMemory }
+export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo, automaticChecks = false, webRoot, trustProxyHops = 0, coachingMemory }: AppOptions) {
   const authenticate = authenticator(auth);
   // Exactly this many proxies (0 = none), so request.ip is the address the nearest trusted proxy saw. Never `true`.
   // shortcut: Fastify 5.12 ignores a numeric hop count, so this function trusts exactly that many hops. Revisit if the proxy addresses are known.
@@ -47,6 +49,7 @@ export function createApp({ ctx, auth, channelSupport = [], callbackConfig, demo
   app.get('/v1/me', async request => ({ id: request.actor.id }));
   clientReadRoutes(app, ctx); recipientReadRoutes(app, ctx);
   tripRoutes(app, ctx, automaticChecks); contactRoutes(app, ctx); locationRoutes(app, ctx); incidentRoutes(app, ctx, channelSupport); insightRoutes(app, ctx, Boolean(demo));
+  coachingRoutes(app, coachingMemory);
   if (callbackConfig) callbackRoutes(app, ctx, callbackConfig);
   if (webRoot) webRoutes(app, webRoot);
   return app;
