@@ -14,6 +14,12 @@ TAGS="Key=project,Value=andes-hackathon"
 # Live Zavu is off unless ZAVU_LIVE_SEND=true, and these stay unset (TWILIO_* adds SOS voice calls) for the web/dist + POST /v1/demo/session deploy. The app DB password stays required.
 SECRETS="zavu-api-key:ZAVU_API_KEY zavu-callback-secret:ZAVU_CALLBACK_SECRET zavu-qualification:ZAVU_QUALIFICATION_JSON demo-phone-pepper:DEMO_PHONE_PEPPER zavu-project-id:ZAVU_PROJECT_ID zavu-sender-id:ZAVU_SENDER_ID demo-live-phone:DEMO_LIVE_PHONE twilio-account-sid:TWILIO_ACCOUNT_SID twilio-auth-token:TWILIO_AUTH_TOKEN twilio-from:TWILIO_FROM"
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+# Shared employer account: never create hackathon resources there, whatever ANDES_AWS_ACCOUNT says.
+# Only `teardown` may run there, to remove the demo created there by mistake on 2026-10-18.
+APTSNY_ACCOUNT=645868669589
+if [ "$ACCOUNT" = "$APTSNY_ACCOUNT" ] || [ "$ANDES_AWS_ACCOUNT" = "$APTSNY_ACCOUNT" ]; then
+  [ "${1:-}" = teardown ] || { echo "Refusing: $APTSNY_ACCOUNT is the shared AptsNY account (only teardown is allowed there)" >&2; exit 1; }
+fi
 # Explicit opt-in per account: a wrong or default profile cannot deploy (or tear down) anything.
 [ "$ACCOUNT" = "$ANDES_AWS_ACCOUNT" ] || { echo "Refusing: profile account $ACCOUNT is not ANDES_AWS_ACCOUNT" >&2; exit 1; }
 REPO="$ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com/$N"

@@ -173,6 +173,13 @@ esac
     const refused=spawnSync('infra/demo/deploy.sh',['service'],{env:{PATH:`${dir}:/usr/bin:/bin`,AWS_PROFILE:'stub',ANDES_AWS_ACCOUNT:'123456789012',AWS_REGION:'us-east-1',AWS_STUB_LOG:log,ZAVU_LIVE_SEND:'true'},encoding:'utf8',timeout:15000});
     assert.equal(refused.status,1);assert.match(refused.stderr,/ZAVU_LIVE_SEND=true needs ZAVU_API_KEY/);
     assert.ok(!readFileSync(log,'utf8').includes('express-gateway-service'));
+    // The shared AptsNY account is refused even when it is the explicit opt-in; only teardown may run there.
+    for(const step of ['prepare','service']){
+      writeFileSync(log,'');
+      const employer=spawnSync('infra/demo/deploy.sh',[step],{env:{PATH:`${dir}:/usr/bin:/bin`,AWS_PROFILE:'stub',ANDES_AWS_ACCOUNT:'645868669589',AWS_REGION:'us-east-1',AWS_STUB_LOG:log},encoding:'utf8',timeout:15000});
+      assert.equal(employer.status,1);assert.match(employer.stderr,/shared AptsNY account/);
+      assert.ok(!readFileSync(log,'utf8').split('\n').some(call=>call&&!call.includes('sts get-caller-identity')));
+    }
     const live={ZAVU_LIVE_SEND:'true',ZAVU_API_KEY:'k',ZAVU_QUALIFICATION_JSON:'{}',ZAVU_PROJECT_ID:'p',ZAVU_SENDER_ID:'s',ZAVU_CALLBACK_SECRET:'c',DEMO_LIVE_PHONE:'+15555550101'};
     run('service',live);
     assert.equal(JSON.parse(readFileSync(serviceJson,'utf8')).primaryContainer.environment.find(item=>item.name==='ZAVU_LIVE_SEND').value,'true');
